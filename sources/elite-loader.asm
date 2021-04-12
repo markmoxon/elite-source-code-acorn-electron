@@ -3,7 +3,6 @@ INCLUDE "sources/elite-header.h.asm"
 CODE% = &4400
 LOAD% = &4400
 
-
 TRTB%   = $0004
 L0005   = $0005
 L0006   = $0006
@@ -569,7 +568,6 @@ OSCLI   = $FFF7
         EQUB    $01,$01,$04,$01
 
         EQUB    $04,$F8,$2C,$04,$06,$08,$16
-
 
 .L5247
         EQUB    $00,$00,$81,$7E,$00,$6C,$FC,$FF
@@ -1387,10 +1385,6 @@ L5635 = L5634+1
         EQUB    $00,$00,$00,$00,$00,$00
 
 .BeebDisEndAddr
-
-
-
-
 
 PRINT "S.ELITEDA ", ~CODE%, " ", ~P%, " ", ~LOAD%, " ", ~LOAD%
 SAVE "output/ELITEDA.bin", CODE%, P%, LOAD%
