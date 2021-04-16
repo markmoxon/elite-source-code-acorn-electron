@@ -1,56 +1,152 @@
+\ ******************************************************************************
+\
+\ ELECTRON ELITE LOADER SOURCE
+\
+\ Electron Elite was written by Ian Bell and David Braben and is copyright
+\ Acornsoft 1984
+\
+\ The code on this site has been disassembled from the version released on Ian
+\ Bell's personal website at http://www.elitehomepage.org/
+\
+\ The commentary is copyright Mark Moxon, and any misunderstandings or mistakes
+\ in the documentation are entirely my fault
+\
+\ The terminology and notations used in this commentary are explained at
+\ https://www.bbcelite.com/about_site/terminology_used_in_this_commentary.html
+\
+\ ------------------------------------------------------------------------------
+\
+\ This source file produces the following binary file:
+\
+\   * output/ELITEDA.bin
+\
+\ ******************************************************************************
+
 INCLUDE "sources/elite-header.h.asm"
+
+\ ******************************************************************************
+\
+\ Configuration variables
+\
+\ ******************************************************************************
 
 CODE% = &4400
 LOAD% = &4400
 
-TRTB%   = $0004
-ZP      = $0070
-P       = $0072
-Q       = $0073
-YY      = $0074
-T       = $0075
-SC      = $0076
-SCH     = $0077
-BLPTR   = $0078
-V219    = $007A
-L0081   = $0081
-BLN     = $0083
-EXCN    = $0085
-L0087   = $0087
-L0088   = $0088
-L00F4   = $00F4
-USERV   = $0200
-BRKV    = $0202
-IRQ1V   = $0204
-WRCHV   = $020E
-RDCHV   = $0210
-KEYV    = $0228
+USERV   = &0200
+BRKV    = &0202
+IRQ1V   = &0204
+WRCHV   = &020E
+RDCHV   = &0210
+KEYV    = &0228
 
-L0258   = $0258
-L0B11   = $0B11
-L0B3D   = $0B3D
-L0C24   = $0C24
+OSWRCH = &FFEE          \ The address for the OSWRCH routine
+OSBYTE = &FFF4          \ The address for the OSBYTE routine
+OSWORD = &FFF1          \ The address for the OSWORD routine
+OSCLI = &FFF7           \ The address for the OSCLI routine
 
-L0D00   = $0D00
-L0D02   = $0D02
-L0D03   = $0D03
-L0D04   = $0D04
-L0D05   = $0D05
-L0D08   = $0D08
-L0D0A   = $0D0A
-L0D0B   = $0D0B
-L0D0C   = $0D0C
-L0D0D   = $0D0D
-L0D0E   = $0D0E
-L0D0F   = $0D0F
+VIA = &FE00             \ Memory-mapped space for accessing internal hardware,
+                        \ such as the video ULA, 6845 CRTC and 6522 VIAs (also
+                        \ known as SHEILA)
 
-VIA     = $FE00
-OSBYTE  = $FFF4
-OSWRCH  = $FFEE
-OSWORD  = $FFF1
-OSCLI   = $FFF7
+\ ******************************************************************************
+\
+\       Name: ZP
+\       Type: Workspace
+\    Address: &0004 to &0005 and &0070 to &0086
+\   Category: Workspaces
+\    Summary: Important variables used by the loader
+\
+\ ******************************************************************************
 
- org &4400
+ORG &0004
+
+.TRTB%
+
+ SKIP 2                 \ TRTB%(1 0) points to the keyboard translation table,
+                        \ which is used to translate internal key numbers to
+                        \ ASCII
+
+ORG &0070
+
+.ZP
+
+ SKIP 2                 \ Stores addresses used for moving content around
+
+.P
+
+ SKIP 1                 \ Temporary storage, used in a number of places
+
+.Q
+
+ SKIP 1                 \ Temporary storage, used in a number of places
+
+.YY
+
+ SKIP 1                 \ Temporary storage, used in a number of places
+
+.T
+
+ SKIP 1                 \ Temporary storage, used in a number of places
+
+.SC
+
+ SKIP 1                 \ Screen address (low byte)
+                        \
+                        \ Elite draws on-screen by poking bytes directly into
+                        \ screen memory, and SC(1 0) is typically set to the
+                        \ address of the character block containing the pixel
+                        \ we want to draw (see the deep dives on "Drawing
+                        \ monochrome pixels in mode 4" and "Drawing colour
+                        \ pixels in mode 5" for more details)
+
+.SCH
+
+ SKIP 1                 \ Screen address (high byte)
+
+.BLPTR
+
+ SKIP 2                 \ Gets set to &03CA as part of the obfuscation code
+
+.V219
+
+ SKIP 2                 \ Gets set to &0218 as part of the obfuscation code
+
+ SKIP 4                 \ These bytes appear to be unused
+
+.K3
+
+ SKIP 1                 \ Temporary storage, used in a number of places
+
+.BLCNT
+
+ SKIP 2                 \ Stores the tape loader block count as part of the copy
+                        \ protection code in IRQ1
+
+.BLN
+
+ SKIP 2                 \ Gets set to &03C6 as part of the obfuscation code
+
+.EXCN
+
+ SKIP 2                 \ Gets set to &03C2 as part of the obfuscation code
+
+.L0087
+
+ SKIP 1                 \ ???
+
+.L0088
+
+ SKIP 1                 \ ???
+
+\ ******************************************************************************
+\
+\ ELITE LOADER
+\
+\ ******************************************************************************
+
+ORG CODE%
+
  EQUB &DC, &00, &03, &60, &6B, &A9, &77, &00
  EQUB &64, &6C, &B5, &71, &6D, &6E, &B1, &77
  EQUB &00, &67, &B2, &62, &32, &20, &00, &AF
@@ -828,7 +924,7 @@ L5313 = abrk+1
  LDY #&00
  STY ZP
  LDX #&20
- STY L0081
+ STY BLCNT
  STX P
 
 .L540B
@@ -857,7 +953,7 @@ L5313 = abrk+1
  STY P
  JSR crunchit
 
- JMP L0B11
+ JMP &0B11
 
  NOP
  NOP
@@ -1271,9 +1367,9 @@ L5313 = abrk+1
 
  PLA
  PLA
- LDA L0C24,Y
+ LDA &0C24,Y
  PHA
- EOR L0B3D,Y
+ EOR &0B3D,Y
  NOP
  NOP
  NOP
@@ -1297,7 +1393,7 @@ L5313 = abrk+1
  JSR OSCLI
 
  LDA #&03
- STA L0258
+ STA &0258
  LDA #&8C
  LDX #&0C
  LDY #&00
@@ -1309,7 +1405,7 @@ L5313 = abrk+1
  JSR OSBYTE
 
  LDA #&40
- STA L0D00
+ STA &0D00
  LDX #&4A
  LDY #&00
  STY ZP
@@ -1340,28 +1436,28 @@ L5313 = abrk+1
  LDA RDCHV+1
  STA USERV+1
  LDA KEYV
- STA L0D04
+ STA &0D04
  LDA KEYV+1
- STA L0D05
+ STA &0D05
  LDA #&10
  STA KEYV
  LDA #&0D
  STA KEYV+1
- LDA L0D0E
+ LDA &0D0E
  STA BRKV
- LDA L0D0F
+ LDA &0D0F
  STA BRKV+1
- LDA L0D0A
+ LDA &0D0A
  STA WRCHV
- LDA L0D0B
+ LDA &0D0B
  STA WRCHV+1
  LDA IRQ1V
- STA L0D02
+ STA &0D02
  LDA IRQ1V+1
- STA L0D03
- LDA L0D0C
+ STA &0D03
+ LDA &0D0C
  STA IRQ1V
- LDA L0D0D
+ LDA &0D0D
  STA IRQ1V+1
  LDA #&FC
  JSR L0BC2
@@ -1374,11 +1470,11 @@ L5313 = abrk+1
  LDA #&3F
  STA VIA+&03
  CLI
- JMP (L0D08)
+ JMP (&0D08)
 
 .L0BC2
 
- STA L00F4
+ STA &00F4
  STA VIA+&05
  RTS
 
