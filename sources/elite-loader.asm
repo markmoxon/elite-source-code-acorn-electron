@@ -145,6 +145,15 @@ ORG &0070
 \
 \ ******************************************************************************
 
+\ ******************************************************************************
+\
+\       Name: Elite loader (Part 1 of ???)
+\       Type: Subroutine
+\   Category: Loader
+\    Summary: Include binaries for recursive tokens and images
+\
+\ ******************************************************************************
+
 ORG CODE%
 
  EQUB &DC, &00, &03, &60, &6B, &A9, &77, &00
@@ -597,6 +606,15 @@ ORG CODE%
  EQUB &00, &00, &00, &00, &00, &00, &00, &00
  EQUB &00, &00, &00, &00, &00, &00, &00, &00
 
+\ ******************************************************************************
+\
+\       Name: Elite loader (Part 2 of ???)
+\       Type: Subroutine
+\   Category: Loader
+\    Summary: ???
+\
+\ ******************************************************************************
+
 .ENTRY
 
  JMP ENTRY2
@@ -638,6 +656,20 @@ ORG CODE%
 
  EQUB &56, &54, &D8, &06, &00
 
+\ ******************************************************************************
+\
+\       Name: doPROT1
+\       Type: Subroutine
+\   Category: Copy protection
+\    Summary: Routine to self-modify the loader code
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine modifies various bits of code in-place as part of the copy
+\ protection mechanism. It is called with A = &48 and X = 255.
+\
+\ ******************************************************************************
+
 .doPROT1
 
  LDY #&DB
@@ -658,6 +690,41 @@ ORG CODE%
 .David7
 
  BCC Ian1
+
+\ ******************************************************************************
+\
+\       Name: Elite loader (Part 3 of ???)
+\       Type: Subroutine
+\   Category: Loader
+\    Summary: ???
+\
+\ ------------------------------------------------------------------------------
+\
+\ 4 pages from &4400-&47FF to &0400-&07FF - Text Tokens
+\ 1 page from &4F00 to &5B00  - ELITE
+\ 1 page from &5000 to &5960  - Acornsoft presents on row 2
+\ 1 page from &5100 to &73A0  - (C) Acornsoft 1984
+\ Saturn
+\ Loop - Dashboard:
+\     1 page from &4800 to &7620           = &7620
+\     1 page from &4900 to &7720 + &40     = &7760
+\     1 page from &4A00 to &7820 + 2 * &40 = &78A0
+\     1 page from &4B00 to &7920 + 3 * &40 = &79E0
+\     1 page from &4C00 to &7A20 + 4 * &40 = &7B20
+\     1 page from &4D00 to &7B20 + 5 * &40 = &7C60
+\     1 page from &4E00 to &7C20 + 6 * &40 = &7DA0
+\ Standard mode 4 with &20 margin on each side, &5800 to &7FFF
+\ Bottom row not used by dashboard, &7EC0 to &7FFF
+\ 1 page from &5615 to &0B00
+\
+\ JMP &0B10 to load game at &2000 and move down to &0D00
+\
+\ JSR &0BC2 later, too
+\
+\ Then JMP (&0D08) starts game
+\ &0D08 is in main game code so this jumps to &3FB6, DEATH2+2
+\
+\ ******************************************************************************
 
 .ENTRY2
 
