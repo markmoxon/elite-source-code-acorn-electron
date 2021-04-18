@@ -57,11 +57,8 @@ NI% = 36                \ The number of bytes in each ship's data block (as
                         \ stored in INWK and K%)
 
 OSBYTE = &FFF4          \ The address for the OSBYTE routine
-
 OSWORD = &FFF1          \ The address for the OSWORD routine
-
-OSRDCH  = &FFE0         \ The address for the OSRDCH routine
-
+OSRDCH = &FFE0          \ The address for the OSRDCH routine
 OSFILE = &FFDD          \ The address for the OSFILE routine
 
 VIA = &FE00             \ Memory-mapped space for accessing internal hardware,
@@ -7033,7 +7030,7 @@ NEXT
  LSR A
  LSR A
 
- STA SCH
+ STA SCH                \ ???
  LSR A
  ROR SC
  LSR A

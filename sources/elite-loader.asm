@@ -30,15 +30,20 @@ INCLUDE "sources/elite-header.h.asm"
 \
 \ ******************************************************************************
 
+N% = 17                 \ N% is set to the number of bytes in the VDU table, so
+                        \ we can loop through them in part 2 below
+
+LEN = 506
+
 CODE% = &4400
 LOAD% = &4400
 
-USERV   = &0200
-BRKV    = &0202
-IRQ1V   = &0204
-WRCHV   = &020E
-RDCHV   = &0210
-KEYV    = &0228
+USERV = &0200           \ The address for the user vector
+BRKV = &0202            \ The address for the break vector
+IRQ1V = &0204           \ The address for the interrupt vector
+WRCHV = &020E           \ The address for the write character vector
+RDCHV = &0210           \ The address for the read character vector
+KEYV = &0228            \ The address for the keyboard vector
 
 OSWRCH = &FFEE          \ The address for the OSWRCH routine
 OSBYTE = &FFF4          \ The address for the OSBYTE routine
@@ -152,509 +157,268 @@ ORG &0070
 \   Category: Loader
 \    Summary: Include binaries for recursive tokens and images
 \
+\ ------------------------------------------------------------------------------
+\
+\ The loader bundles a number of binary files in with the loader code, and moves
+\ them to their correct memory locations in part 3 below.
+\
+\ There is one file containing code:
+\
+\   * WORDS9.bin contains the recursive token table, which is moved to &0400
+\     before the main game is loaded
+\
+\ and four files containing images, which are all moved into screen memory by
+\ the loader:
+\
+\   * P.A-SOFT.bin contains the "ACORNSOFT" title across the top of the loading
+\     screen, which gets moved to screen address &5960, on the second character
+\     row of the monochrome mode 4 screen
+\
+\   * P.ELITE.bin contains the "ELITE" title across the top of the loading
+\     screen, which gets moved to screen address &5B00, on the fourth character
+\     row of the monochrome mode 4 screen
+\
+\   * P.(C)ASFT.bin contains the "(C) Acornsoft 1984" title across the bottom
+\     of the loading screen, which gets moved to screen address &73A0, the
+\     penultimate character row of the monochrome mode 4 screen, just above the
+\     dashboard
+\
+\   * P.DIALS.bin contains the dashboard, which gets moved to screen address
+\     &7620, which is the starting point of the dashboard at the bottom of the
+\     monochrome mode 4 screen
+\
+\ The routine ends with a jump to the start of the loader code at ENTRY.
+\
 \ ******************************************************************************
 
 ORG CODE%
 
- EQUB &DC, &00, &03, &60, &6B, &A9, &77, &00
- EQUB &64, &6C, &B5, &71, &6D, &6E, &B1, &77
- EQUB &00, &67, &B2, &62, &32, &20, &00, &AF
- EQUB &B5, &6D, &77, &BA, &7A, &2E, &00, &70
- EQUB &7A, &70, &BF, &6E, &00, &73, &BD, &A6
- EQUB &00, &21, &03, &A8, &71, &68, &66, &77
- EQUB &03, &85, &70, &00, &AF, &67, &AB, &77
- EQUB &BD, &A3, &00, &62, &64, &BD, &60, &76
- EQUB &6F, &77, &76, &B7, &6F, &00, &BD, &60
- EQUB &6B, &03, &00, &62, &B5, &B7, &A0, &03
- EQUB &00, &73, &6C, &BA, &03, &00, &A8, &AF
- EQUB &6F, &7A, &03, &00, &76, &6D, &6A, &77
- EQUB &00, &75, &6A, &66, &74, &03, &00, &B9
- EQUB &B8, &B4, &77, &7A, &00, &B8, &A9, &60
- EQUB &6B, &7A, &00, &65, &66, &76, &67, &A3
- EQUB &00, &6E, &76, &6F, &B4, &0E, &81, &00
- EQUB &AE, &60, &77, &B2, &BA, &9A, &00, &D8
- EQUB &6E, &76, &6D, &BE, &77, &00, &60, &BC
- EQUB &65, &BB, &B3, &62, &60, &7A, &00, &67
- EQUB &66, &6E, &6C, &60, &B7, &60, &7A, &00
- EQUB &60, &BA, &73, &BA, &B2, &66, &03, &E8
- EQUB &B2, &66, &00, &70, &6B, &6A, &73, &00
- EQUB &73, &71, &6C, &67, &76, &60, &77, &00
- EQUB &03, &B6, &70, &B3, &00, &6B, &76, &6E
- EQUB &B8, &03, &60, &6C, &6F, &BC, &6A, &A3
- EQUB &00, &6B, &7A, &73, &B3, &70, &73, &62
- EQUB &A6, &03, &00, &70, &6B, &BA, &77, &03
- EQUB &E9, &82, &00, &AE, &E8, &B8, &A6, &00
- EQUB &73, &6C, &73, &76, &6F, &B2, &6A, &BC
- EQUB &00, &64, &71, &6C, &70, &70, &03, &99
- EQUB &6A, &75, &6A, &77, &7A, &00, &66, &60
- EQUB &BC, &6C, &6E, &7A, &00, &03, &6F, &6A
- EQUB &64, &6B, &77, &03, &7A, &66, &A9, &70
- EQUB &00, &BF, &60, &6B, &0D, &A2, &B5, &6F
- EQUB &00, &60, &62, &70, &6B, &00, &03, &A5
- EQUB &55, &6A, &BC, &00, &59, &82, &22, &00
- EQUB &77, &A9, &A0, &77, &03, &6F, &6C, &E8
- EQUB &00, &49, &03, &69, &62, &6E, &6E, &BB
- EQUB &00, &71, &B8, &A0, &00, &70, &77, &00
- EQUB &93, &03, &6C, &65, &03, &00, &70, &66
- EQUB &55, &00, &03, &60, &A9, &64, &6C, &25
- EQUB &00, &66, &B9, &6A, &73, &00, &65, &6C
- EQUB &6C, &67, &00, &BF, &7B, &B4, &6F, &AA
- EQUB &00, &B7, &AE, &6C, &62, &60, &B4, &B5
- EQUB &70, &00, &70, &B6, &B5, &70, &00, &6F
- EQUB &6A, &B9, &BA, &0C, &74, &AF, &AA, &00
- EQUB &6F, &76, &7B, &76, &BD, &AA, &00, &6D
- EQUB &A9, &60, &6C, &B4, &60, &70, &00, &D8
- EQUB &73, &76, &77, &B3, &70, &00, &A8, &60
- EQUB &6B, &AF, &B3, &7A, &00, &56, &6C, &7A
- EQUB &70, &00, &65, &6A, &AD, &A9, &6E, &70
- EQUB &00, &65, &76, &71, &70, &00, &6E, &AF
- EQUB &B3, &A3, &70, &00, &64, &6C, &6F, &67
- EQUB &00, &73, &6F, &B2, &AF, &76, &6E, &00
- EQUB &A0, &6E, &0E, &E8, &BC, &AA, &00, &A3
- EQUB &6A, &B1, &03, &5C, &70, &00, &0B, &7A
- EQUB &0C, &6D, &0A, &1C, &00, &03, &60, &71
- EQUB &00, &6F, &A9, &A0, &00, &65, &6A, &B3
- EQUB &A6, &00, &70, &A8, &55, &00, &64, &AD
- EQUB &B1, &00, &71, &BB, &00, &7A, &66, &55
- EQUB &6C, &74, &00, &61, &6F, &76, &66, &00
- EQUB &61, &B6, &60, &68, &00, &35, &00, &70
- EQUB &6F, &6A, &6E, &7A, &00, &61, &76, &64
- EQUB &0E, &66, &7A, &BB, &00, &6B, &BA, &6D
- EQUB &BB, &00, &61, &BC, &7A, &00, &65, &B2
- EQUB &00, &65, &76, &71, &71, &7A, &00, &71
- EQUB &6C, &67, &B1, &77, &00, &65, &71, &6C
- EQUB &64, &00, &6F, &6A, &A7, &71, &67, &00
- EQUB &6F, &6C, &61, &E8, &B3, &00, &A5, &71
- EQUB &67, &00, &6B, &76, &6E, &B8, &6C, &6A
- EQUB &67, &00, &65, &66, &6F, &AF, &66, &00
- EQUB &AF, &70, &66, &60, &77, &00, &88, &B7
- EQUB &AE, &AB, &00, &60, &6C, &6E, &00, &D8
- EQUB &6E, &B8, &67, &B3, &00, &03, &67, &AA
- EQUB &77, &71, &6C, &7A, &BB, &00, &61, &7A
- EQUB &03, &67, &0D, &61, &B7, &B0, &6D, &03
- EQUB &05, &03, &6A, &0D, &B0, &55, &00, &8D
- EQUB &03, &03, &93, &2E, &03, &99, &03, &03
- EQUB &03, &8D, &03, &85, &03, &65, &BA, &03
- EQUB &70, &62, &A2, &2E, &29, &00, &65, &71
- EQUB &BC, &77, &00, &AD, &A9, &00, &A2, &65
- EQUB &77, &00, &BD, &64, &6B, &77, &00, &5A
- EQUB &6F, &6C, &74, &24, &00, &40, &32, &DF
- EQUB &02, &00, &66, &7B, &77, &B7, &03, &00
- EQUB &73, &76, &6F, &70, &66, &98, &00, &B0
- EQUB &62, &6E, &98, &00, &65, &76, &66, &6F
- EQUB &00, &6E, &BE, &70, &6A, &A2, &00, &C0
- EQUB &ED, &03, &61, &62, &7A, &00, &66, &0D
- EQUB &60, &0D, &6E, &0D, &86, &00, &45, &44
- EQUB &70, &00, &45, &4B, &70, &00, &4A, &03
- EQUB &70, &60, &6C, &6C, &73, &70, &00, &AA
- EQUB &60, &62, &73, &66, &03, &60, &62, &73
- EQUB &70, &76, &A2, &00, &5A, &61, &6C, &6E
- EQUB &61, &00, &5A, &8D, &00, &5F, &AF, &64
- EQUB &03, &F4, &00, &59, &03, &9E, &00, &62
- EQUB &55, &00, &6F, &6F, &00, &E6, &19, &23
- EQUB &00, &AF, &D8, &AF, &64, &03, &49, &00
- EQUB &B1, &B3, &64, &7A, &03, &00, &64, &62
- EQUB &B6, &60, &B4, &60, &00, &2E, &DF, &04
- EQUB &70, &03, &6D, &62, &6E, &66, &1C, &03
- EQUB &00, &67, &6C, &60, &68, &00, &26, &A2
- EQUB &64, &A3, &03, &E8, &B2, &AB, &19, &00
- EQUB &DF, &03, &27, &2E, &2E, &2E, &25, &3C
- EQUB &03, &86, &2A, &21, &2E, &9E, &86, &2A
- EQUB &20, &2E, &60, &BC, &AE, &B4, &BC, &2A
- EQUB &00, &6A, &BF, &6E, &00, &03, &03, &6F
- EQUB &6C, &62, &67, &03, &6D, &66, &74, &03
- EQUB &DF, &03, &C2, &2E, &2E, &00, &25, &5F
- EQUB &BB, &00, &B7, &B4, &6D, &64, &19, &00
- EQUB &03, &BC, &03, &00, &2E, &2B, &EC, &6E
- EQUB &B1, &77, &19, &25, &00, &60, &A2, &B8
- EQUB &00, &6C, &65, &65, &B1, &67, &B3, &00
- EQUB &65, &76, &64, &6A, &B4, &B5, &00, &6B
- EQUB &A9, &6E, &A2, &70, &70, &00, &6E, &6C
- EQUB &E8, &6F, &7A, &03, &35, &00, &8F, &00
- EQUB &88, &00, &62, &61, &6C, &B5, &03, &88
- EQUB &00, &D8, &73, &66, &77, &B1, &77, &00
- EQUB &67, &B8, &A0, &71, &6C, &AB, &00, &67
- EQUB &66, &62, &67, &6F, &7A, &00, &0E, &0E
- EQUB &0E, &0E, &03, &66, &03, &6F, &03, &6A
- EQUB &03, &77, &03, &66, &03, &0E, &0E, &0E
- EQUB &0E, &00, &73, &AD, &70, &B1, &77, &00
- EQUB &2B, &64, &62, &6E, &66, &03, &6C, &B5
- EQUB &71, &00, &73, &71, &AA, &70, &03, &65
- EQUB &6A, &AD, &03, &BA, &03, &70, &73, &62
- EQUB &A6, &0F, &DF, &0D, &2E, &2E, &00, &0B
- EQUB &60, &0A, &03, &62, &60, &BA, &6D, &A4
- EQUB &65, &77, &03, &12, &1A, &1B, &17, &00
+PRINT "WORDS9 = ",~P%
+INCBIN "output/WORDS9.bin"
 
- EQUB &FF, &C0, &DF, &D8, &DF, &D8, &D8, &C0
- EQUB &FF, &00, &7C, &60, &7C, &0C, &7C, &00
- EQUB &FF, &00, &00, &00, &00, &00, &00, &FF
- EQUB &FF, &00, &00, &00, &00, &00, &00, &FF
- EQUB &FF, &00, &00, &00, &00, &00, &00, &FF
- EQUB &FF, &00, &00, &00, &00, &00, &00, &FF
- EQUB &FF, &E3, &EC, &F0, &C0, &C0, &C0, &C0
- EQUB &FF, &00, &00, &00, &00, &00, &00, &00
- EQUB &FF, &00, &00, &00, &00, &00, &00, &00
- EQUB &FF, &00, &00, &00, &00, &00, &00, &00
- EQUB &FF, &00, &00, &00, &00, &00, &00, &00
- EQUB &FF, &00, &00, &00, &00, &00, &00, &00
- EQUB &FF, &00, &00, &00, &00, &00, &00, &00
- EQUB &FF, &00, &00, &00, &00, &00, &00, &00
- EQUB &FF, &00, &00, &00, &00, &00, &00, &00
- EQUB &FF, &00, &00, &00, &00, &00, &00, &00
- EQUB &FF, &00, &00, &00, &00, &00, &00, &00
- EQUB &FF, &00, &00, &00, &00, &00, &00, &00
- EQUB &FF, &00, &00, &00, &00, &00, &00, &00
- EQUB &FF, &00, &00, &00, &00, &00, &00, &00
- EQUB &FF, &00, &00, &00, &00, &00, &00, &00
- EQUB &FF, &00, &00, &00, &00, &00, &00, &00
- EQUB &FF, &00, &00, &00, &00, &00, &00, &00
- EQUB &FF, &E3, &EC, &F0, &F0, &E0, &E0, &C0
- EQUB &FF, &10, &00, &10, &00, &10, &00, &10
- EQUB &FF, &E3, &3B, &3F, &0F, &0F, &07, &07
- EQUB &FF, &00, &00, &00, &00, &00, &33, &FF
- EQUB &FF, &00, &00, &00, &00, &00, &33, &FF
- EQUB &FF, &00, &00, &00, &00, &00, &33, &FF
- EQUB &FF, &00, &00, &00, &00, &00, &33, &FF
- EQUB &FF, &00, &3E, &30, &3E, &06, &3E, &00
- EQUB &FF, &03, &FB, &CB, &FB, &C3, &C3, &03
- EQUB &C0, &C0, &DF, &DB, &DF, &DB, &DB, &C0
- EQUB &00, &00, &7C, &60, &7C, &0C, &7C, &00
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &C0, &C0, &C0, &C0, &C0, &C0, &C0, &C0
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &00, &01, &28
- EQUB &00, &00, &00, &00, &00, &00, &28, &00
- EQUB &00, &00, &00, &00, &02, &A0, &08, &00
- EQUB &00, &00, &00, &00, &28, &C0, &00, &00
- EQUB &00, &00, &00, &00, &8A, &00, &00, &00
- EQUB &00, &00, &00, &00, &2A, &00, &08, &00
- EQUB &00, &00, &00, &00, &88, &00, &00, &00
- EQUB &00, &00, &00, &00, &A2, &00, &00, &00
- EQUB &00, &00, &00, &00, &20, &C8, &08, &00
- EQUB &00, &00, &00, &00, &00, &A0, &02, &00
- EQUB &00, &00, &00, &00, &00, &00, &80, &0A
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &C0, &C0, &EA, &C0, &C0, &60, &60, &60
- EQUB &00, &00, &82, &00, &00, &10, &00, &10
- EQUB &03, &03, &AB, &03, &03, &03, &07, &07
- EQUB &00, &00, &00, &00, &00, &00, &0C, &FF
- EQUB &00, &00, &00, &00, &00, &00, &CC, &FF
- EQUB &C0, &C0, &00, &00, &00, &C0, &CC, &FF
- EQUB &00, &00, &00, &00, &00, &00, &CC, &FF
- EQUB &00, &00, &3E, &32, &3E, &34, &36, &00
- EQUB &03, &03, &C3, &C3, &C3, &C3, &FB, &03
- EQUB &C0, &C0, &DF, &D8, &DF, &D8, &D8, &C0
- EQUB &00, &00, &6C, &6C, &6C, &6C, &7C, &00
- EQUB &00, &00, &00, &00, &00, &00, &C3, &FF
- EQUB &00, &00, &00, &00, &00, &00, &0C, &FF
- EQUB &00, &00, &00, &00, &00, &00, &30, &FF
- EQUB &00, &00, &00, &00, &00, &00, &C3, &FF
- EQUB &C0, &C0, &C0, &C0, &C0, &C0, &C0, &C0
- EQUB &00, &00, &00, &00, &00, &00, &02, &08
- EQUB &00, &00, &00, &0A, &20, &80, &00, &00
- EQUB &02, &28, &80, &08, &00, &00, &00, &00
- EQUB &00, &00, &00, &88, &00, &00, &00, &00
- EQUB &00, &00, &00, &88, &02, &00, &08, &00
- EQUB &20, &00, &80, &88, &00, &00, &00, &00
- EQUB &0C, &00, &00, &88, &00, &00, &00, &00
- EQUB &00, &00, &00, &C8, &00, &00, &0C, &00
- EQUB &08, &00, &08, &80, &08, &00, &08, &00
- EQUB &00, &00, &00, &88, &00, &00, &0C, &00
- EQUB &0C, &00, &00, &C8, &00, &00, &00, &00
- EQUB &02, &00, &00, &88, &00, &00, &00, &00
- EQUB &00, &00, &80, &08, &20, &00, &08, &00
- EQUB &00, &00, &00, &88, &00, &00, &00, &00
- EQUB &40, &0A, &00, &88, &00, &00, &00, &00
- EQUB &00, &00, &80, &28, &02, &00, &00, &00
- EQUB &30, &30, &1C, &0C, &07, &81, &20, &08
- EQUB &00, &10, &00, &10, &00, &FF, &00, &00
- EQUB &0F, &0F, &3F, &3B, &E3, &FF, &03, &03
- EQUB &00, &00, &00, &00, &00, &00, &0C, &FF
- EQUB &00, &00, &00, &00, &00, &00, &30, &FF
- EQUB &C0, &C0, &00, &00, &00, &C0, &C3, &FF
- EQUB &00, &00, &00, &00, &00, &00, &0C, &FF
- EQUB &00, &00, &3C, &36, &36, &36, &3C, &00
- EQUB &03, &03, &FB, &C3, &C3, &C3, &FB, &03
- EQUB &C0, &C0, &DF, &D8, &D8, &D8, &DF, &C0
- EQUB &00, &00, &7E, &18, &18, &18, &18, &00
- EQUB &00, &00, &00, &00, &00, &00, &C0, &FF
- EQUB &00, &00, &00, &00, &00, &00, &C0, &FF
- EQUB &00, &00, &00, &00, &00, &00, &C0, &FF
- EQUB &00, &00, &00, &00, &00, &00, &C0, &FF
- EQUB &C0, &C0, &C0, &C0, &C0, &C0, &C0, &C0
- EQUB &00, &20, &20, &80, &88, &00, &80, &00
- EQUB &00, &00, &00, &00, &88, &00, &00, &00
- EQUB &00, &00, &00, &00, &88, &00, &00, &00
- EQUB &00, &00, &00, &00, &88, &00, &08, &00
- EQUB &20, &00, &80, &00, &88, &00, &00, &00
- EQUB &00, &00, &00, &00, &88, &00, &00, &00
- EQUB &00, &00, &00, &00, &88, &00, &00, &00
- EQUB &00, &00, &00, &00, &88, &00, &00, &00
- EQUB &08, &C0, &08, &08, &9C, &7F, &08, &00
- EQUB &00, &C0, &00, &00, &88, &00, &00, &00
- EQUB &00, &00, &00, &00, &88, &00, &00, &00
- EQUB &00, &00, &00, &00, &88, &00, &00, &00
- EQUB &02, &00, &00, &00, &88, &00, &00, &00
- EQUB &00, &00, &80, &00, &88, &00, &08, &00
- EQUB &00, &00, &00, &00, &88, &00, &00, &00
- EQUB &00, &00, &00, &00, &88, &00, &00, &00
- EQUB &08, &02, &02, &00, &88, &00, &00, &00
- EQUB &00, &00, &00, &80, &00, &80, &00, &80
- EQUB &03, &03, &03, &03, &03, &03, &03, &03
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &03, &0F, &03, &03, &0F, &00, &00
- EQUB &03, &03, &03, &03, &03, &83, &03, &03
- EQUB &C0, &C0, &D8, &D8, &D8, &D8, &DF, &C0
- EQUB &00, &00, &7E, &18, &18, &18, &18, &00
- EQUB &00, &00, &00, &00, &00, &00, &C3, &FF
- EQUB &00, &00, &00, &00, &00, &00, &0C, &FF
- EQUB &00, &00, &00, &00, &00, &00, &30, &FF
- EQUB &00, &00, &00, &00, &00, &00, &C0, &FF
- EQUB &C0, &C0, &C0, &C0, &C0, &C0, &C0, &C0
- EQUB &80, &20, &20, &08, &08, &02, &00, &00
- EQUB &00, &00, &00, &00, &00, &80, &88, &20
- EQUB &00, &00, &00, &00, &02, &00, &88, &00
- EQUB &20, &00, &80, &00, &00, &00, &88, &00
- EQUB &00, &00, &00, &00, &00, &00, &88, &00
- EQUB &00, &00, &00, &00, &00, &00, &88, &00
- EQUB &00, &00, &00, &00, &00, &00, &88, &00
- EQUB &00, &00, &00, &00, &00, &00, &88, &00
- EQUB &08, &00, &08, &00, &08, &00, &88, &00
- EQUB &00, &00, &00, &00, &00, &00, &88, &00
- EQUB &00, &00, &00, &00, &00, &00, &88, &00
- EQUB &00, &00, &00, &00, &00, &00, &88, &00
- EQUB &00, &00, &00, &00, &00, &00, &88, &00
- EQUB &02, &00, &00, &00, &00, &00, &88, &00
- EQUB &00, &00, &80, &00, &20, &00, &88, &00
- EQUB &00, &00, &00, &00, &00, &00, &88, &02
- EQUB &00, &02, &02, &0A, &08, &20, &80, &00
- EQUB &80, &00, &00, &00, &00, &00, &00, &00
- EQUB &03, &03, &03, &03, &03, &03, &03, &03
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &0F, &01, &0F, &0C, &0F, &00, &00, &00
- EQUB &83, &83, &83, &03, &83, &03, &03, &03
- EQUB &C0, &C0, &DF, &DB, &DF, &DB, &DB, &C0
- EQUB &00, &00, &60, &60, &60, &60, &7C, &00
- EQUB &00, &00, &00, &00, &00, &00, &C3, &FF
- EQUB &00, &00, &00, &00, &00, &00, &03, &FF
- EQUB &00, &00, &00, &00, &00, &00, &03, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &C0, &C0, &C0, &C0, &C0, &C0, &C0, &C0
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &08, &02, &00, &00, &00, &00, &00, &00
- EQUB &20, &80, &20, &04, &00, &00, &00, &00
- EQUB &00, &00, &00, &80, &28, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &A0, &02, &00
- EQUB &00, &00, &00, &00, &00, &00, &88, &00
- EQUB &00, &00, &00, &00, &00, &00, &00, &A2
- EQUB &00, &00, &00, &00, &00, &00, &00, &28
- EQUB &08, &00, &08, &00, &08, &00, &08, &8A
- EQUB &00, &00, &00, &00, &00, &00, &00, &22
- EQUB &00, &00, &00, &00, &00, &00, &00, &88
- EQUB &00, &00, &00, &00, &00, &00, &22, &80
- EQUB &00, &00, &00, &00, &00, &0A, &80, &00
- EQUB &00, &00, &00, &00, &28, &00, &00, &00
- EQUB &02, &00, &0A, &A0, &00, &00, &00, &00
- EQUB &10, &80, &00, &00, &00, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &03, &03, &03, &03, &03, &03, &03, &03
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &0F, &01, &0F, &01, &0F, &00, &00, &0C
- EQUB &83, &83, &83, &83, &83, &03, &03, &03
- EQUB &C0, &DC, &DF, &C7, &DF, &DC, &C0, &FF
- EQUB &00, &00, &F8, &DC, &F8, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &C0, &C0, &C0, &C0, &F0, &EC, &E3, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &0F, &0C, &0F, &0C, &0F, &00, &FF
- EQUB &00, &CC, &0C, &0C, &0C, &CF, &00, &FF
- EQUB &00, &1E, &0C, &0C, &0C, &DE, &00, &FF
- EQUB &00, &FC, &30, &30, &30, &30, &00, &FF
- EQUB &00, &FC, &C0, &F0, &C0, &FC, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &03, &03, &03, &03, &0F, &3B, &E3, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &0C, &0D, &0D, &0F, &01, &00, &00, &FF
- EQUB &03, &83, &83, &83, &83, &03, &03, &FF
- EQUB &00, &00, &00, &00, &00, &00, &07, &3F
- EQUB &00, &00, &00, &03, &1F, &FF, &FF, &FF
- EQUB &00, &0F, &7F, &FF, &FF, &FF, &FF, &FF
- EQUB &00, &FF, &FF, &FF, &FF, &E0, &80, &FF
- EQUB &00, &FF, &E0, &00, &FF, &00, &00, &FF
- EQUB &00, &FF, &00, &00, &FE, &00, &00, &FE
- EQUB &00, &FF, &00, &00, &00, &00, &03, &0F
- EQUB &00, &E1, &07, &0F, &3F, &FF, &FF, &FF
- EQUB &00, &FF, &FF, &FF, &FF, &FF, &FF, &FF
- EQUB &00, &FF, &FE, &FC, &F0, &E0, &C0, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &83
- EQUB &00, &3F, &00, &00, &00, &00, &00, &FF
- EQUB &00, &FF, &0F, &0F, &0F, &0F, &1F, &FF
- EQUB &00, &FF, &FF, &FF, &FF, &FF, &FF, &FF
- EQUB &00, &FF, &FC, &FC, &FC, &FC, &FE, &FF
- EQUB &00, &FF, &00, &00, &00, &00, &00, &FF
- EQUB &00, &87, &00, &00, &00, &00, &00, &E0
- EQUB &00, &FF, &00, &00, &00, &00, &00, &00
- EQUB &00, &FF, &7F, &7F, &3F, &1F, &0F, &07
- EQUB &00, &FF, &FF, &FF, &FF, &FF, &FF, &FF
- EQUB &00, &FF, &C0, &E0, &F8, &FC, &FE, &FF
- EQUB &00, &E0, &00, &00, &00, &00, &00, &80
- EQUB &00, &FF, &3F, &1F, &07, &01, &00, &00
- EQUB &00, &FF, &FF, &FF, &FF, &FF, &7F, &1F
- EQUB &00, &FF, &E0, &F8, &FF, &FF, &FF, &FF
- EQUB &00, &FF, &00, &00, &FF, &C0, &F0, &FF
- EQUB &00, &FC, &00, &00, &FF, &00, &00, &FF
- EQUB &00, &00, &00, &00, &80, &00, &00, &FF
- EQUB &00, &00, &00, &00, &00, &00, &00, &FE
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &00, &00, &07
- EQUB &00, &00, &00, &00, &03, &1F, &F8, &C3
- EQUB &00, &00, &0F, &7C, &FF, &0F, &7C, &F0
- EQUB &00, &3F, &8F, &7C, &F1, &8F, &3F, &3F
- EQUB &00, &C0, &8F, &7C, &F0, &C0, &1F, &F0
- EQUB &00, &FF, &9F, &00, &00, &03, &8F, &07
- EQUB &00, &01, &1F, &7C, &F8, &E1, &C7, &FE
- EQUB &00, &FE, &1F, &7C, &F8, &F1, &E3, &07
- EQUB &00, &1F, &3E, &7C, &FF, &FB, &F0, &E1
- EQUB &00, &FC, &3E, &7C, &F0, &E0, &F8, &F8
- EQUB &00, &3E, &3E, &7F, &7F, &7C, &7C, &FC
- EQUB &00, &7C, &7C, &BE, &FE, &FE, &3E, &3F
- EQUB &00, &3F, &7C, &3E, &0F, &00, &1F, &03
- EQUB &00, &E0, &7C, &00, &F8, &1F, &0F, &FF
- EQUB &00, &7F, &F8, &3E, &1F, &8F, &C7, &00
- EQUB &00, &83, &F8, &3E, &1F, &87, &E3, &7F
- EQUB &00, &FF, &F8, &3E, &0F, &C7, &F1, &E0
- EQUB &00, &CF, &00, &00, &FE, &E0, &F8, &7E
- EQUB &00, &FF, &1F, &03, &00, &00, &00, &00
- EQUB &00, &00, &00, &E0, &7C, &1F, &03, &00
- EQUB &00, &00, &00, &00, &00, &80, &F0, &7E
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &01, &03, &07
- EQUB &00, &00, &01, &0E, &38, &E0, &C3, &87
- EQUB &00, &38, &C3, &0E, &38, &E0, &9C, &E1
- EQUB &00, &7C, &B8, &00, &03, &07, &38, &C0
- EQUB &00, &70, &70, &E0, &C0, &00, &00, &00
- EQUB &00, &00, &00, &01, &03, &0F, &1C, &39
- EQUB &00, &3F, &E7, &DE, &FD, &73, &E7, &C7
- EQUB &00, &00, &00, &7E, &CE, &81, &39, &E1
- EQUB &00, &00, &00, &3F, &E7, &EE, &DE, &F8
- EQUB &00, &00, &00, &3F, &7F, &70, &F0, &E0
- EQUB &00, &00, &00, &9F, &9D, &3D, &3D, &39
- EQUB &00, &00, &00, &C7, &EE, &E7, &C0, &CF
- EQUB &00, &00, &00, &F3, &07, &E7, &73, &E1
- EQUB &00, &00, &01, &F1, &B9, &BC, &BC, &F8
- EQUB &00, &F1, &C0, &E1, &F8, &F0, &70, &78
- EQUB &00, &C0, &E0, &FC, &70, &38, &3C, &0F
- EQUB &00, &00, &00, &00, &00, &00, &00, &80
- EQUB &00, &70, &7C, &0E, &07, &03, &01, &03
- EQUB &00, &7C, &77, &3D, &07, &80, &E0, &FC
- EQUB &00, &7E, &BB, &DE, &F3, &39, &3C, &7C
- EQUB &00, &0E, &87, &E3, &F3, &DE, &F7, &1F
- EQUB &00, &00, &80, &E0, &F8, &FF, &83, &80
- EQUB &00, &00, &00, &00, &00, &00, &80, &E0
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
+ALIGN 256
+
+PRINT "P.DIALS = ",~P%
+INCBIN "binaries/P.DIALS.bin"
+
+PRINT "P.ELITE = ",~P%
+INCBIN "binaries/P.ELITE.bin"
+
+PRINT "P.A-SOFT = ",~P%
+INCBIN "binaries/P.A-SOFT.bin"
+
+PRINT "P.(C)ASFT = ",~P%
+INCBIN "binaries/P.(C)ASFT.bin"
+
+.run
+
+ JMP ENTRY              \ Jump to ENTRY to start the loading process
 
 \ ******************************************************************************
 \
-\       Name: Elite loader (Part 2 of ???)
+\       Name: B%
+\       Type: Variable
+\   Category: Screen mode
+\    Summary: VDU commands for setting the square mode 4 screen
+\  Deep dive: The split-screen mode
+\             Drawing monochrome pixels in mode 4
+\
+\ ------------------------------------------------------------------------------
+\
+\ This block contains the bytes that get written by OSWRCH to set up the screen
+\ mode (this is equivalent to using the VDU statement in BASIC).
+\
+\ It defines the whole screen using a square, monochrome mode 4 configuration;
+\ the mode 5 part for the dashboard is implemented in the IRQ1 routine.
+\
+\ The top part of Elite's screen mode is based on mode 4 but with the following
+\ differences:
+\
+\   * 32 columns, 31 rows (256 x 248 pixels) rather than 40, 32
+\
+\   * The horizontal sync position is at character 45 rather than 49, which
+\     pushes the screen to the right (which centres it as it's not as wide as
+\     the normal screen modes)
+\
+\   * Screen memory goes from &6000 to &7EFF, which leaves another whole page
+\     for code (i.e. 256 bytes) after the end of the screen. This is where the
+\     Python ship blueprint slots in
+\
+\   * The text window is 1 row high and 13 columns wide, and is at (2, 16)
+\
+\   * The cursor is disabled
+\
+\ This almost-square mode 4 variant makes life a lot easier when drawing to the
+\ screen, as there are 256 pixels on each row (or, to put it in screen memory
+\ terms, there's one page of memory per row of pixels). For more details of the
+\ screen mode, see the deep dive on "Drawing monochrome pixels in mode 4".
+\
+\ There is also an interrupt-driven routine that switches the bytes-per-pixel
+\ setting from that of mode 4 to that of mode 5, when the raster reaches the
+\ split between the space view and the dashboard. See the deep dive on "The
+\ split-screen mode" for details.
+\
+\ ******************************************************************************
+
+.B%
+
+ EQUB 22, 4             \ Switch to screen mode 4
+
+ EQUB 28                \ Define a text window as follows:
+ EQUB 8, 19, 23, 10     \
+                        \   * Left = 8
+                        \   * Right = 23
+                        \   * Top = 10
+                        \   * Bottom = 19
+                        \
+                        \ i.e. 9 rows high, 15 columns wide at (8, 10)
+
+ EQUB 23, 1, 0, 0       \ Disable the cursor
+ EQUB 0, 0, 0
+ EQUB 0, 0, 0
+
+\ ******************************************************************************
+\
+\       Name: E%
+\       Type: Variable
+\   Category: Sound
+\    Summary: Sound envelope definitions
+\
+\ ------------------------------------------------------------------------------
+\
+\ This table contains the sound envelope data, which is passed to OSWORD by the
+\ FNE macro to create the four sound envelopes used in-game. Refer to chapter 30
+\ of the BBC Micro User Guide for details of sound envelopes and what all the
+\ parameters mean.
+\
+\ The envelopes are as follows:
+\
+\   * Envelope 1 is the sound of our own laser firing
+\
+\   * Envelope 2 is the sound of lasers hitting us, or hyperspace
+\
+\   * Envelope 3 is the first sound in the two-part sound of us dying, or the
+\     second sound in the two-part sound of us making hitting or killing an
+\     enemy ship
+\
+\   * Envelope 4 is the sound of E.C.M. firing
+\
+\ ******************************************************************************
+
+.E%
+
+ EQUB 1, 1, 0, 111, -8, 4, 1, 8, 126, 0, 0, -126, 126, 126
+
+ EQUB 2, 1, 14, -18, -1, 44, 32, 50, 6, 1, 0, -2, 120, 126
+ EQUB 3, 1, 1, -1, -3, 17, 32, 128, 1, 0, 0, -1, 1, 1
+ EQUB 4, 1, 4, -8, 44, 4, 6, 8, 22, 0, 0, -127, 126, 0
+
+\ ******************************************************************************
+\
+\       Name: swine
 \       Type: Subroutine
-\   Category: Loader
-\    Summary: ???
+\   Category: Copy protection
+\    Summary: Resets the machine if the copy protection detects a problem
 \
 \ ******************************************************************************
 
-.ENTRY
+.swine
 
- JMP ENTRY2
+ JMP (&FFFC)            \ Jump to the address in &FFFC to reset the machine
 
- EQUB &16
-
- EQUB &04, &1C, &08, &13, &17, &0A, &17, &01
- EQUB &00, &00, &00, &00, &00, &00, &00, &00
-
- EQUB &01, &01, &00, &6F, &F8, &04, &01, &08
- EQUB &7E, &00, &00, &82, &7E, &7E, &02, &01
- EQUB &0E, &EE, &FF, &2C, &20, &32, &06, &01
- EQUB &00, &FE, &78, &7E, &03, &01, &01, &FF
- EQUB &FD, &11, &20, &80, &01, &00, &00, &FF
- EQUB &01, &01, &04, &01
-
- EQUB &04, &F8, &2C, &04, &06, &08, &16
-
-.L5247
-
- EQUB &00, &00, &81, &7E, &00, &6C, &FC, &FF
+\ ******************************************************************************
+\
+\       Name: OSB
+\       Type: Subroutine
+\   Category: Utility routines
+\    Summary: A convenience routine for calling OSBYTE with Y = 0
+\
+\ ******************************************************************************
 
 .OSB
 
- LDY #&00
- JMP OSBYTE
+ LDY #0                 \ Call OSBYTE with Y = 0, returning from the subroutine
+ JMP OSBYTE             \ using a tail call (so we can call OSB to call OSBYTE
+                        \ for when we know we want Y set to 0)
+
+\ ******************************************************************************
+\
+\       Name: Authors' names
+\       Type: Variable
+\   Category: Copy protection
+\    Summary: The authors' names, buried in the code
+\
+\ ------------------------------------------------------------------------------
+\
+\ Contains the authors' names, plus an unused OS command string that would
+\ *RUN the main game code, which isn't what actually happens (so presumably
+\ this is to throw the crackers off the scent).
+\
+\ ******************************************************************************
 
  EQUS "RUN ELITEcode"
-
- EQUB &0D
+ EQUB 13
 
  EQUS "By D.Braben/I.Bell"
+ EQUB 13
 
- EQUB &0D
+ EQUB &B0
 
- EQUB &B0, &F7, &FF
+\ ******************************************************************************
+\
+\       Name: oscliv
+\       Type: Variable
+\   Category: Utility routines
+\    Summary: Contains the address of OSCLIV, for executing OS commands
+\
+\ ******************************************************************************
 
-.L5278
+.oscliv
 
- EQUB &56, &54, &D8, &06, &00
+ EQUW &FFF7             \ Address of OSCLIV, for executing OS commands
+                        \ (specifically the *LOAD that loads the main game code)
+
+\ ******************************************************************************
+\
+\       Name: David9
+\       Type: Variable
+\   Category: Copy protection
+\    Summary: Address used as part of the stack-based decryption loop
+\
+\ ------------------------------------------------------------------------------
+\
+\ This address is used in the decryption loop starting at David2 in part 4, and
+\ is used to jump back into the loop at David5.
+\
+\ ******************************************************************************
+
+.David9
+
+ EQUW &5456             \ ???
+
+ CLD                    \ This instruction is not used
+
+\ ******************************************************************************
+\
+\       Name: David23
+\       Type: Variable
+\   Category: Copy protection
+\    Summary: Address pointer to the start of the 6502 stack
+\
+\ ------------------------------------------------------------------------------
+\
+\ This two-byte address points to the start of the 6502 stack, which descends
+\ from the end of page 2, less LEN bytes, which comes out as &01DF. So when we
+\ push 33 bytes onto the stack (LEN being 33), this address will point to the
+\ start of those bytes, which means we can push executable code onto the stack
+\ and run it by calling this address with a JMP (David23) instruction. Sneaky
+\ stuff!
+\
+\ ******************************************************************************
+
+.David23
+
+ EQUW (512-LEN)         \ The address of LEN bytes before the start of the stack
 
 \ ******************************************************************************
 \
@@ -672,28 +436,92 @@ ORG CODE%
 
 .doPROT1
 
- LDY #&DB
- STY TRTB%
- LDY #&EF
+ LDY #&DB               \ Store &EFDB in TRTB%(1 0) to point to the keyboard
+ STY TRTB%              \ translation table for OS 0.1 (which we will overwrite
+ LDY #&EF               \ with a call to OSBYTE later)
  STY TRTB%+1
- LDY #&02
+
+ LDY #2                 \ Set the high byte of V219(1 0) to 2
  STY V219+1
- CMP L5247,X
+
+ CMP swine-5,X          \ ???
+
  LDY #&18
- STY V219+1,X
- RTS
+ STY V219+1,X           \ Set the low byte of V219(1 0) to &18 (as X = 255), so
+                        \ V219(1 0) now contains &0218
 
-.L5291
-
- EQUB &CA
-
-.David7
-
- BCC Ian1
+ RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
 \
-\       Name: Elite loader (Part 3 of ???)
+\       Name: MHCA
+\       Type: Variable
+\   Category: Copy protection
+\    Summary: Used to set one of the vectors in the copy protection code
+\
+\ ------------------------------------------------------------------------------
+\
+\ This value is used to set the low byte of BLPTR(1 0), when it's set in PLL1
+\ as part of the copy protection.
+\
+\ ******************************************************************************
+
+.MHCA
+
+ EQUB &CA               \ The low byte of BLPTR(1 0)
+
+\ ******************************************************************************
+\
+\       Name: David7
+\       Type: Subroutine
+\   Category: Copy protection
+\    Summary: Part of the multi-jump obfuscation code in PROT1
+\
+\ ------------------------------------------------------------------------------
+\
+\ This instruction is part of the multi-jump obfuscation in PROT1 (see part 2 of
+\ the loader), which does the following jumps:
+\
+\   David8 -> FRED1 -> David7 -> Ian1 -> David3
+\
+\ ******************************************************************************
+
+.David7
+
+ BCC Ian1               \ This instruction is part of the multi-jump obfuscation
+                        \ in PROT1
+
+\ ******************************************************************************
+\
+\       Name: FNE
+\       Type: Macro
+\   Category: Sound
+\    Summary: Macro definition for defining a sound envelope
+\
+\ ------------------------------------------------------------------------------
+\
+\ The following macro is used to define the four sound envelopes used in the
+\ game. It uses OSWORD 8 to create an envelope using the 14 parameters in the
+\ the I%-th block of 14 bytes at location E%. This OSWORD call is the same as
+\ BBC BASIC's ENVELOPE command.
+\
+\ See variable E% for more details of the envelopes themselves.
+\
+\ ******************************************************************************
+
+MACRO FNE I%
+
+  LDX #LO(E%+I%*14)     \ Set (Y X) to point to the I%-th set of envelope data
+  LDY #HI(E%+I%*14)     \ in E%
+
+  LDA #8                \ Call OSWORD with A = 8 to set up sound envelope I%
+  JSR OSWORD
+
+ENDMACRO
+
+\ ******************************************************************************
+\
+\       Name: Elite loader (Part 2 of ???)
 \       Type: Subroutine
 \   Category: Loader
 \    Summary: ???
@@ -726,7 +554,7 @@ ORG CODE%
 \
 \ ******************************************************************************
 
-.ENTRY2
+.ENTRY
 
  NOP
  NOP
@@ -795,7 +623,10 @@ ORG CODE%
  NOP
  NOP
  NOP
- LDA #&20
+
+ LDA #&20               \ Set A to the op code for a JSR call with absolute
+                        \ addressing
+
  NOP
 
 .Ian1
@@ -805,56 +636,63 @@ ORG CODE%
  NOP
  NOP
  NOP
- LSR A
- LDX #&03
- STX BLPTR+1
- STX BLN+1
- STX EXCN+1
- LDX #&00
- LDY #&00
+
+ LSR A                  \ Set A = 16
+
+ LDX #3                 \ Set the high bytes of BLPTR(1 0), BLN(1 0) and
+ STX BLPTR+1            \ EXCN(1 0) to &3. We will fill in the high bytes in
+ STX BLN+1              \ the PLL1 routine, and will then use these values in
+ STX EXCN+1             \ the IRQ1 handler
+
+ LDX #0                 \ Call OSBYTE with A = 16 and X = 0 to set the joystick
+ LDY #0                 \ port to sample 0 channels (i.e. disable it)
  JSR OSBYTE
 
- LDX #&FF
- LDA #&95
+ LDX #255               \ Call doPROT1 to change an instruction in the PROT1
+ LDA #&95               \ routine and set up another couple of variables
  JSR doPROT1
 
- LDA #&90
- JSR OSB
+ LDA #144               \ Call OSBYTE with A = 144, X = 255 and Y = 0 to move
+ JSR OSB                \ the screen down one line and turn screen interlace on
 
- EQUB &2C
+ EQUB &2C               \ Skip the next instruction by turning it into
+                        \ &2C &D0 &A1, or BIT &A1D0, which does nothing apart
+                        \ from affect the flags ???
 
 .FRED1
 
- BNE David7
+ BNE David7             \ This instruction is skipped if we came from above,
+                        \ otherwise this is part of the multi-jump obfuscation
+                        \ in PROT1
 
- LDA #&F7
- LDX #&00
+ LDA #247               \ Call OSBYTE with A = 247 and X = Y = 0 to disable the
+ LDX #0                 \ BREAK intercept code by poking 0 into the first value
  JSR OSB
 
- LDA #&8F
- LDX #&0C
- LDY #&FF
- JSR OSBYTE
+ LDA #143               \ Call OSBYTE 143 to issue a paged ROM service call of
+ LDX #&C                \ type &C with argument &FF, which is the "NMI claim"
+ LDY #&FF               \ service call that asks the current user of the NMI
+ JSR OSBYTE             \ space to clear it out
 
- LDA #&0D
+ LDA #13                \ Set A = 13 for the next OSBYTE call
 
 .abrk
 
- LDX #&00
-L5313 = abrk+1
- JSR OSB
+ LDX #0                 \ Call OSBYTE with A = 13, X = 0 and Y = 0 to disable
+ JSR OSB                \ the "output buffer empty" event
 
- LDA #&E1
- LDX #&80
- JSR OSB
+ LDA #225               \ Call OSBYTE with A = 225, X = 128 and Y = 0 to set
+ LDX #128               \ the function keys to return ASCII codes for SHIFT-fn
+ JSR OSB                \ keys (i.e. add 128)
 
- LDA #&AC
- LDX #&00
- LDY #&FF
+ LDA #172               \ Call OSBYTE 172 to read the address of the MOS
+ LDX #0                 \ keyboard translation table into (Y X)
+ LDY #255
  JSR OSBYTE
 
- STX TRTB%
- STY TRTB%+1
+ STX TRTB%              \ Store the address of the keyboard translation table in
+ STY TRTB%+1            \ TRTB%(1 0)
+
  NOP
  NOP
  NOP
@@ -866,14 +704,20 @@ L5313 = abrk+1
  NOP
  NOP
  NOP
- LDA #&0D
- LDX #&02
+
+ LDA #13                \ Call OSBYTE with A = 13, X = 2 and Y = 0 to disable
+ LDX #2                 \ the "character entering keyboard buffer" event
  JSR OSB
 
- LDX #&FF
- TXS
- INX
- LDY #&00
+.OS01
+
+ LDX #&FF               \ Set the stack pointer to &01FF, which is the standard
+ TXS                    \ location for the 6502 stack, so this instruction
+                        \ effectively resets the stack
+
+ INX                    \ Set X = 0, to use as a counter in the following loop
+ 
+ LDY #0
 
 .David3
 
@@ -897,23 +741,26 @@ L5313 = abrk+1
 
 .LOOP
 
- LDA (ZP),Y
+ LDA (ZP),Y             \ Pass the Y-th byte of the B% table to OSWRCH
  JSR OSWRCH
 
- INY
- CPY #&11
- BNE LOOP
+ INY                    \ Increment the loop counter
 
- LDA #&01
+ CPY #N%                \ Loop back for the next byte until we have done them
+ BNE LOOP               \ all (the number of bytes was set in N% above)
+
+ LDA #1
  TAX
  TAY
- LDA L5313
+ LDA abrk+1
  CMP (V219),Y
- LDA #&04
- JSR OSB
 
- LDA #&09
- LDX #&00
+ LDA #4                 \ Call OSBYTE with A = 4, X = 1 and Y = 0 to disable
+ JSR OSB                \ cursor editing, so the cursor keys return ASCII values
+                        \ and can therefore be used in-game
+
+ LDA #9                 \ Call OSBYTE with A = 9, X = 0 and Y = 0 to disable
+ LDX #0                 \ flashing colours
  JSR OSB
 
  LDA #&6C
@@ -921,25 +768,11 @@ L5313 = abrk+1
  NOP
  NOP
  BIT L544F
- LDX #&14
- LDY #&52
- LDA #&08
- JSR OSWORD
 
- LDX #&22
- LDY #&52
- LDA #&08
- JSR OSWORD
-
- LDX #&30
- LDY #&52
- LDA #&08
- JSR OSWORD
-
- LDX #&3E
- LDY #&52
- LDA #&08
- JSR OSWORD
+ FNE 0                  \ Set up sound envelopes 0-3 using the FNE macro
+ FNE 1
+ FNE 2
+ FNE 3
 
  LDX #&04
  STX Q
@@ -1051,23 +884,9 @@ L5313 = abrk+1
  NOP
  NOP
 
-.L5452
+.RAND
 
- EQUB &49
-
-.L5453
-
- EQUB &53
-
-.L5454
-
- EQUB &78
-
-.L5455
-
- EQUB &6C
-
-.L5456
+ EQUD &6C785349         \ The random number seed used for drawing Saturn
 
  NOP
  NOP
@@ -1243,16 +1062,16 @@ L5313 = abrk+1
 
 .DORND
 
- LDA L5453
+ LDA RAND+1
  TAX
- ADC L5455
- STA L5453
- STX L5455
- LDA L5452
+ ADC RAND+3
+ STA RAND+1
+ STX RAND+3
+ LDA RAND
  TAX
- ADC L5454
- STA L5452
- STX L5454
+ ADC RAND+2
+ STA RAND
+ STX RAND+2
  RTS
 
 .SQUA2
@@ -1440,7 +1259,7 @@ L5313 = abrk+1
  NOP
  NOP
  NOP
- JMP (L5278)
+ JMP (David9)
 
 .LOADcode
 
