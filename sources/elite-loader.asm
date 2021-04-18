@@ -35,6 +35,8 @@ N% = 17                 \ N% is set to the number of bytes in the VDU table, so
 
 LEN = 506
 
+LE% = &0B00
+
 CODE% = &4400
 LOAD% = &4400
 
@@ -152,7 +154,7 @@ ORG &0070
 
 \ ******************************************************************************
 \
-\       Name: Elite loader (Part 1 of ???)
+\       Name: Elite loader (Part 1 of 5)
 \       Type: Subroutine
 \   Category: Loader
 \    Summary: Include binaries for recursive tokens and images
@@ -172,20 +174,19 @@ ORG &0070
 \
 \   * P.A-SOFT.bin contains the "ACORNSOFT" title across the top of the loading
 \     screen, which gets moved to screen address &5960, on the second character
-\     row of the monochrome mode 4 screen
+\     row of the space view
 \
 \   * P.ELITE.bin contains the "ELITE" title across the top of the loading
 \     screen, which gets moved to screen address &5B00, on the fourth character
-\     row of the monochrome mode 4 screen
+\     row of the space view
 \
 \   * P.(C)ASFT.bin contains the "(C) Acornsoft 1984" title across the bottom
 \     of the loading screen, which gets moved to screen address &73A0, the
-\     penultimate character row of the monochrome mode 4 screen, just above the
-\     dashboard
+\     penultimate character row of the space view, just above the dashboard
 \
 \   * P.DIALS.bin contains the dashboard, which gets moved to screen address
-\     &7620, which is the starting point of the dashboard at the bottom of the
-\     monochrome mode 4 screen
+\     &7620, which is the starting point of the dashboard, just below the space
+\     view
 \
 \ The routine ends with a jump to the start of the loader code at ENTRY.
 \
@@ -219,44 +220,43 @@ INCBIN "binaries/P.(C)ASFT.bin"
 \       Name: B%
 \       Type: Variable
 \   Category: Screen mode
-\    Summary: VDU commands for setting the square mode 4 screen
-\  Deep dive: The split-screen mode
-\             Drawing monochrome pixels in mode 4
+\    Summary: VDU commands for changing to a standard mode 4 screen
 \
 \ ------------------------------------------------------------------------------
 \
 \ This block contains the bytes that get written by OSWRCH to set up the screen
 \ mode (this is equivalent to using the VDU statement in BASIC).
 \
-\ It defines the whole screen using a square, monochrome mode 4 configuration;
-\ the mode 5 part for the dashboard is implemented in the IRQ1 routine.
+\ The Electron version of Elite is unique in that it uses a standard mode 4
+\ screen, rather than the custom square mode used in the BBC versions. This is
+\ because the Electron lacks the 6845 CRTC chip, which the BBC versions use to
+\ customise the mode.
 \
-\ The top part of Elite's screen mode is based on mode 4 but with the following
-\ differences:
+\ To make the Electron screen appear square like the BBC versions, there is a
+\ blank 32-byte (&20-byte) margin on each end of each character row, so each
+\ character row consists of 32 blank bytes on the left, then a page (256 bytes)
+\ of screen memory containing the game display, then another 32 blank bytes on
+\ the right. Screen memory is from &5800 to &7FFF, and the bottom row from &7EC0
+\ to &7FFF is left blank, again to be consistent with look of the BBC version.
+\ This means the screen takes up more memory on the Electron version than on the
+\ BBC versions, despite showing the same amount of content.
 \
-\   * 32 columns, 31 rows (256 x 248 pixels) rather than 40, 32
+\ On top of this, the Electron also lacks the Video ULA of the BBC Micro, so the
+\ famous split-screen mode of the BBC versions can't be implemented in the
+\ Electron version, as the BBC versions reprogram the ULA to create the coloured
+\ dashboard. As a result, not only does the Electron suffer from the bigger
+\ memory footprint of the screen, it also has to stick to the same palette for
+\ the whole screen, so while the space view is the same monochrome mode 4 view
+\ as in the BBC versions, the dashboard has to be in the same screen mode, so
+\ it's also monochrome (though it has twice the number of horizontal pixels as
+\ the four-colour mode 5 dashboard of the BBC versions, so it is noticeably
+\ sharper, at least).
 \
-\   * The horizontal sync position is at character 45 rather than 49, which
-\     pushes the screen to the right (which centres it as it's not as wide as
-\     the normal screen modes)
+\ The following are also set up:
 \
-\   * Screen memory goes from &6000 to &7EFF, which leaves another whole page
-\     for code (i.e. 256 bytes) after the end of the screen. This is where the
-\     Python ship blueprint slots in
-\
-\   * The text window is 1 row high and 13 columns wide, and is at (2, 16)
+\   * The text window is 9 rows high and 15 columns wide, and is at (8, 10)
 \
 \   * The cursor is disabled
-\
-\ This almost-square mode 4 variant makes life a lot easier when drawing to the
-\ screen, as there are 256 pixels on each row (or, to put it in screen memory
-\ terms, there's one page of memory per row of pixels). For more details of the
-\ screen mode, see the deep dive on "Drawing monochrome pixels in mode 4".
-\
-\ There is also an interrupt-driven routine that switches the bytes-per-pixel
-\ setting from that of mode 4 to that of mode 5, when the raster reaches the
-\ split between the space view and the dashboard. See the deep dive on "The
-\ split-screen mode" for details.
 \
 \ ******************************************************************************
 
@@ -308,7 +308,6 @@ INCBIN "binaries/P.(C)ASFT.bin"
 .E%
 
  EQUB 1, 1, 0, 111, -8, 4, 1, 8, 126, 0, 0, -126, 126, 126
-
  EQUB 2, 1, 14, -18, -1, 44, 32, 50, 6, 1, 0, -2, 120, 126
  EQUB 3, 1, 1, -1, -3, 17, 32, 128, 1, 0, 0, -1, 1, 1
  EQUB 4, 1, 4, -8, 44, 4, 6, 8, 22, 0, 0, -127, 126, 0
@@ -521,36 +520,16 @@ ENDMACRO
 
 \ ******************************************************************************
 \
-\       Name: Elite loader (Part 2 of ???)
+\       Name: Elite loader (Part 2 of 5)
 \       Type: Subroutine
 \   Category: Loader
-\    Summary: ???
+\    Summary: Perform a number of OS calls, set up sound, push routines on stack
 \
 \ ------------------------------------------------------------------------------
 \
-\ 4 pages from &4400-&47FF to &0400-&07FF - Text Tokens
-\ 1 page from &4F00 to &5B00  - ELITE
-\ 1 page from &5000 to &5960  - Acornsoft presents on row 2
-\ 1 page from &5100 to &73A0  - (C) Acornsoft 1984
-\ Saturn
-\ Loop - Dashboard:
-\     1 page from &4800 to &7620           = &7620
-\     1 page from &4900 to &7720 + &40     = &7760
-\     1 page from &4A00 to &7820 + 2 * &40 = &78A0
-\     1 page from &4B00 to &7920 + 3 * &40 = &79E0
-\     1 page from &4C00 to &7A20 + 4 * &40 = &7B20
-\     1 page from &4D00 to &7B20 + 5 * &40 = &7C60
-\     1 page from &4E00 to &7C20 + 6 * &40 = &7DA0
-\ Standard mode 4 with &20 margin on each side, &5800 to &7FFF
-\ Bottom row not used by dashboard, &7EC0 to &7FFF
-\ 1 page from &5615 to &0B00
-\
-\ JMP &0B10 to load game at &2000 and move down to &0D00
-\
-\ JSR &0BC2 later, too
-\
-\ Then JMP (&0D08) starts game
-\ &0D08 is in main game code so this jumps to &3FB6, DEATH2+2
+\ This part of the loader does a number of calls to OS routines, sets up the
+\ sound envelopes, pushes 33 bytes onto the stack that will be used later, and
+\ sends us on a wild goose chase, just for kicks.
 \
 \ ******************************************************************************
 
@@ -604,8 +583,10 @@ ENDMACRO
  NOP
  NOP
  NOP
+
  LDA #&60
  STA L0088
+
  NOP
  NOP
  NOP
@@ -774,6 +755,54 @@ ENDMACRO
  FNE 2
  FNE 3
 
+\ ******************************************************************************
+\
+\       Name: Elite loader (Part 3 of 5)
+\       Type: Subroutine
+\   Category: Loader
+\    Summary: Move and decrypt recursive tokens and images
+\
+\ ------------------------------------------------------------------------------
+\
+\ Move and decrypt the following memory blocks:
+\
+\   * WORDS9: move 4 pages (1024 bytes) from &4400 (CODE%) to &0400
+\
+\   * P.ELITE: move 1 page (256 bytes) from &4F00 (CODE% + &B00) to &5B00
+\
+\   * P.A-SOFT: move 1 page (256 bytes) from &5000 (CODE% + &C00) to &5960
+\
+\   * P.(C)ASFT: move 1 page (256 bytes) from &5100 (CODE% + &D00) to &73A0
+\
+\   * P.DIALS: move 7 pages (1792 bytes) from &4800 (CODE% + &400) to &7620
+\
+\   * Move 1 page (256 bytes) from &5615 (UU%) to &0B00-&0BFF
+\
+\ and call the routine to draw Saturn between P.(C)ASFT and P.DIALS.
+\
+\ The dashboard image (P.DIALS) is moved into screen memory one page at a time,
+\ but not in a contiguous manner - it has to take into account the &20 bytes of
+\ blank margin at each edge of the screen (see the description of the screen
+\ mode in B% above). So the seven rows of the dashboard are actually moved into
+\ screen memory like this:
+\
+\     1 page from &4800 to &7620           = &7620
+\     1 page from &4900 to &7720 + &40     = &7760
+\     1 page from &4A00 to &7820 + 2 * &40 = &78A0
+\     1 page from &4B00 to &7920 + 3 * &40 = &79E0
+\     1 page from &4C00 to &7A20 + 4 * &40 = &7B20
+\     1 page from &4D00 to &7B20 + 5 * &40 = &7C60
+\     1 page from &4E00 to &7C20 + 6 * &40 = &7DA0
+\
+\ See part 1 above for more details on the above files and the locations that
+\ they are moved to.
+\
+\ The code at UU% (see below) forms part of the loader code and is moved before
+\ being run, so it's tucked away safely while the main game code is loaded and
+\ decrypted.
+\
+\ ******************************************************************************
+
  LDX #&04
  STX Q
  LDA #&44
@@ -853,7 +882,23 @@ ENDMACRO
  STY P
  JSR crunchit
 
- JMP &0B11
+\ ******************************************************************************
+\
+\       Name: Elite loader (Part 4 of 5)
+\       Type: Subroutine
+\   Category: Loader
+\    Summary: Copy more code onto stack, decrypt TUT block, set up IRQ1 handler
+\
+\ ------------------------------------------------------------------------------
+\
+\ This part copies more code onto the stack (from BLOCK to ENDBLOCK), decrypts
+\ the code from TUT onwards, and sets up the IRQ1 handler for the split-screen
+\ mode.
+\
+\ ******************************************************************************
+
+ JMP &0B11              \ Call relocated UU% routine to load the main game code
+                        \ at &2000, move it down to &0D00 and run it
 
  NOP
  NOP
@@ -1261,11 +1306,40 @@ ENDMACRO
  NOP
  JMP (David9)
 
-.LOADcode
+\ ******************************************************************************
+\
+\       Name: UU%
+\       Type: Workspace
+\    Address: &0B00
+\   Category: Workspaces
+\    Summary: Marker for a block that is moved as part of the obfuscation
+\
+\ ------------------------------------------------------------------------------
+\
+\ The code from here to the end of the file gets copied to &0B00 (LE%) by part
+\ 3. It is called from part 4.
+\
+\ ******************************************************************************
 
- org &0B00
+.UU%
 
-.LOAD
+Q% = P% - LE%
+ORG LE%
+
+\ ******************************************************************************
+\
+\       Name: Elite loader (Part 5 of 5)
+\       Type: Subroutine
+\   Category: Loader
+\    Summary: Set up interrupt vectors, calculate checksums, run main game code
+\
+\ ------------------------------------------------------------------------------
+\
+\ This is the final part of the loader. It sets up some of the main game's
+\ interrupt vectors and calculates various checksums, before finally handing
+\ over to the main game.
+\
+\ ******************************************************************************
 
  EQUB &10, &10, &10, &10, &10, &10, &10, &10
  EQUB &10, &10, &10, &10, &10, &10, &10, &10
@@ -1280,6 +1354,7 @@ ENDMACRO
 
  LDA #&03
  STA &0258
+
  LDA #&8C
  LDX #&0C
  LDY #&00
@@ -1356,7 +1431,7 @@ ENDMACRO
  LDA #&3F
  STA VIA+&03
  CLI
- JMP (&0D08)
+ JMP (&0D08)            \ Starts game, &0D08 is in main game code so this jumps to &3FB6, DEATH2+2
 
 .L0BC2
 
@@ -1364,14 +1439,29 @@ ENDMACRO
  STA VIA+&05
  RTS
 
+\ ******************************************************************************
+\
+\       Name: MESS1
+\       Type: Variable
+\   Category: Utility routines
+\    Summary: Contains an OS command string for loading the main game code
+\
+\ ******************************************************************************
+
  EQUS "LOAD EliteCo FFFF2000"
 
- EQUB &0D, &00, &00, &00, &00, &00, &00, &00
- EQUB &00, &00, &00, &00, &00, &00
+ EQUB 13
+ 
+ SKIP 13
 
-COPYBLOCK LOAD, P%, LOADcode
+\ ******************************************************************************
+\
+\ Save output/ELITE.unprot.bin
+\
+\ ******************************************************************************
 
-ORG LOADcode + P% - LOAD
+COPYBLOCK LE%, P%, UU%  \ Copy the block that we assembled at LE% to UU%, which
+                        \ is where it will actually run
 
-PRINT "S.ELITEDA ", ~CODE%, " ", ~P%, " ", ~LOAD%, " ", ~LOAD%
-SAVE "output/ELITEDA.bin", CODE%, P%, LOAD%
+PRINT "S.ELITEDA ", ~CODE%, " ", ~UU% + (P% - LE%), " ", ~run, " ", ~CODE%
+SAVE "output/ELITEDA.bin", CODE%, UU% + (P% - LE%), run, CODE%

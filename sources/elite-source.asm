@@ -18,7 +18,13 @@
 \
 \ This source file produces the following binary files:
 \
-\   * output/ELITECO.bin
+\   * output/ELTA.bin
+\   * output/ELTB.bin
+\   * output/ELTC.bin
+\   * output/ELTD.bin
+\   * output/ELTE.bin
+\   * output/ELTF.bin
+\   * output/ELTG.bin
 \   * output/SHIPS.bin
 \   * output/WORDS9.bin
 \
