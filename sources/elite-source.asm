@@ -3045,30 +3045,11 @@ ORG CODE%
 
 LOAD_A% = LOAD%
 
- EQUB &40
-
-.L0D01
-
- EQUB &00
-
-.L0D02
-
- EQUB &00, &00
-
-.L0D04
-
- EQUB &00, &00
-
-.L0D06
-
- EQUB &00, &00, &B6, &3F, &F8, &1C, &25, &0D
- EQUB &B9, &3F, &08, &2C, &01, &0D
-
 \ ******************************************************************************
 \
 \       Name: S%
 \       Type: Workspace
-\    Address: &0D14 to &0D24
+\    Address: &0D00 to &0D24
 \   Category: Workspaces
 \    Summary: Vector addresses, compass colour and configuration settings
 \
@@ -3081,13 +3062,47 @@ LOAD_A% = LOAD%
 
 .S%
 
- EQUW &0230             \ ???
+ EQUB &40               \ This gets set to &40 by elite-loader.asm ???
 
- EQUW &6028
+.L0D01
 
- EQUW &6C28
+ EQUB 0                 \ ???
 
- EQUW &0D04
+ EQUW 0                 \ Gets set to the original value of IRQ1V by
+                        \ elite-loader.asm
+
+ EQUW 0                 \ Gets set to the original value of KEYV by
+                        \ elite-loader.asm
+
+.L0D06
+
+ EQUW 0                 \ ???
+
+ EQUW TT170             \ The entry point for the main game; once the main code
+                        \ has been loaded, decrypted and moved to the right
+                        \ place by elite-loader.asm, the game is started by a
+                        \ JMP (S%+8) instruction, which jumps to the main entry
+                        \ point at TT170 via this location
+
+ EQUW TT26              \ WRCHV is set to point here by elite-loader.asm
+
+ EQUW IRQ1              \ IRQ1V is set to point here by elite-loader.asm
+
+ EQUW BR1               \ BRKV is set to point here by elite-loader.asm
+
+.KEY1
+
+ PHP                    \ KEYV jumps here, as set by elite-loader.asm ???
+
+ BIT &0D01
+ BMI P%+4
+ PLP
+ RTS
+
+ PLP
+
+ JMP (S%+4)             \ Jump to the original value of KEYV to process the key
+                        \ press as normal
 
 .COMC
 
@@ -3195,11 +3210,9 @@ LOAD_A% = LOAD%
                         \ Toggled by pressing "K" when paused, see the DKS3
                         \ routine for details
 
- EQUB &AD
+.IRQ1
 
-.L0D26
-
- ASL XX16+4
+ LDA L0D06
  EOR #&FF
  STA L0D06
  ORA L0D01
@@ -3213,7 +3226,8 @@ LOAD_A% = LOAD%
 
 .L0D3D
 
- JMP (L0D02)
+ JMP (S%+2)             \ Jump to the original value of IRQ1V to process the
+                        \ interrupt as normal
 
 \ ******************************************************************************
 \
@@ -15617,8 +15631,13 @@ L3E5C = L3E5A+2
 
  JSR RES2
 
+.TT170
+
  LDX #&FF
  TXS
+
+.BR1
+
  LDX #&03
  STX XC
  JSR FX200
@@ -16215,7 +16234,7 @@ L418E = SPS1+1
  SEC
  CLV
  SEI
- JMP (L0D04)
+ JMP (S%+4)
 
 .L42D6
 
