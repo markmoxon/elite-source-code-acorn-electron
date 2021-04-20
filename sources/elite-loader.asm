@@ -33,17 +33,15 @@ INCLUDE "sources/elite-header.h.asm"
 N% = 17                 \ N% is set to the number of bytes in the VDU table, so
                         \ we can loop through them in part 2 below
 
-LEN = 506               \ ???
-
-LE% = &0B00
+LE% = &0B00             \ LE% is the address to which the code from UU% onwards
+                        \ is copied in part 3
 
 C% = &0D00              \ C% is set to the location that the main game code gets
                         \ moved to after it is loaded
 
-S% = C%                 \ S% points to the entry point for the main game code
+L% = &2000              \ L% is the load address of the main game code file
 
-CODE% = &4400
-LOAD% = &4400
+S% = C%                 \ S% points to the entry point for the main game code
 
 USERV = &0200           \ The address for the user vector
 BRKV = &0202            \ The address for the break vector
@@ -143,19 +141,16 @@ ORG &0070
 
  SKIP 2                 \ Gets set to &03C2 as part of the obfuscation code
 
-.L0087
-
- SKIP 1                 \ ???
-
-.L0088
-
- SKIP 1                 \ ???
-
 \ ******************************************************************************
 \
 \ ELITE LOADER
 \
 \ ******************************************************************************
+
+CODE% = &4400
+LOAD% = &4400
+
+ORG CODE%
 
 \ ******************************************************************************
 \
@@ -196,8 +191,6 @@ ORG &0070
 \ The routine ends with a jump to the start of the loader code at ENTRY.
 \
 \ ******************************************************************************
-
-ORG CODE%
 
 PRINT "WORDS9 = ",~P%
 INCBIN "output/WORDS9.bin"
@@ -422,7 +415,9 @@ INCBIN "binaries/P.(C)ASFT.bin"
 
 .David23
 
- EQUW (512-LEN)         \ The address of LEN bytes before the start of the stack
+ EQUW 6                 \ This value is not used in this unprotected version of
+                        \ the loader, though why the crackers set it to 6 is a
+                        \ mystery
 
 \ ******************************************************************************
 \
@@ -533,8 +528,11 @@ ENDMACRO
 \ ------------------------------------------------------------------------------
 \
 \ This part of the loader does a number of calls to OS routines, sets up the
-\ sound envelopes, pushes 33 bytes onto the stack that will be used later, and
-\ sends us on a wild goose chase, just for kicks.
+\ sound envelopes, and pushes 33 bytes onto the stack. A lot of the code in this
+\ routine has been removed or hobbled to remove the protection; for a full
+\ picture of the protection that's missing, see the source code for the BBC
+\ Micro cassette version, which contains almost exactly the same protection code
+\ as the original Electron version.
 \
 \ ******************************************************************************
 
@@ -589,8 +587,8 @@ ENDMACRO
  NOP
  NOP
 
- LDA #&60
- STA L0088
+ LDA #&60               \ This appears to be a lone instruction left over from
+ STA &0088              \ the unprotected code, as this value is never used
 
  NOP                    \ This part of the loader has been disabled by the
  NOP                    \ crackers, as this is an unprotected version
@@ -704,27 +702,40 @@ ENDMACRO
 
  INX                    \ Set X = 0, to use as a counter in the following loop
  
- LDY #0
+                        \ The following loop copies the crunchit routine into
+                        \ zero page, though this unprotected version of the
+                        \ loader doesn't call it there, so this has no effect
+
+ LDY #0                 \ Set a counter in Y for the copy
 
 .David3
 
- LDA crunchit,Y
+ LDA crunchit,Y         \ Copy the Y-th byte of crunchit
 
 .PROT1
 
- STA TRTB%+2,X
- INX
- INY
- CPY #&21
- BNE David3
+ STA TRTB%+2,X          \ And store it in the X-th byte of zero page after the
+                        \ TRTB%(1 0) variable
 
- LDA #&03
- STA ZP
- LDA #&95
- BIT PROT1
- LDA #&52
- STA ZP+1
- LDY #&00
+ INX                    \ Increment both byte counters
+ INY
+
+ CPY #33                \ Loop back to copy the next byte until we have copied
+ BNE David3             \ all 33 bytes
+
+ LDA #LO(B%)            \ Set the low byte of ZP(1 0) to point to the VDU code
+ STA ZP                 \ table at B%
+
+ LDA #&95               \ This part of the loader has been disabled by the
+ BIT PROT1              \ crackers, as this is an unprotected version (the BIT
+                        \ instruction is an STA instruction in the full version,
+                        \ but it has been hobbled here)
+
+ LDA #HI(B%)            \ Set the high byte of ZP(1 0) to point to the VDU code
+ STA ZP+1               \ table at B%
+
+ LDY #0                 \ We are now going to send the N% VDU bytes in the table
+                        \ at B% to OSWRCH to set up the screen mode
 
 .LOOP
 
@@ -736,10 +747,10 @@ ENDMACRO
  CPY #N%                \ Loop back for the next byte until we have done them
  BNE LOOP               \ all (the number of bytes was set in N% above)
 
- LDA #1
- TAX
- TAY
- LDA abrk+1
+ LDA #1                 \ This part of the loader has been disabled by the
+ TAX                    \ crackers, as this is an unprotected version (the CMP
+ TAY                    \ instruction is an STA instruction in the full version,
+ LDA abrk+1             \ but it has been hobbled here)
  CMP (V219),Y
 
  LDA #4                 \ Call OSBYTE with A = 4, X = 1 and Y = 0 to disable
@@ -750,13 +761,11 @@ ENDMACRO
  LDX #0                 \ flashing colours
  JSR OSB
 
- LDA #&6C
-
- NOP                    \ This part of the loader has been disabled by the
- NOP                    \ crackers, as this is an unprotected version
- NOP
-
- BIT L544F
+ LDA #&6C               \ This part of the loader has been disabled by the
+ NOP                    \ crackers, as this is an unprotected version (the BIT
+ NOP                    \ instruction is an STA instruction in the full version,
+ NOP                    \ but it has been hobbled here)
+ BIT &544F
 
  FNE 0                  \ Set up sound envelopes 0-3 using the FNE macro
  FNE 1
@@ -768,15 +777,15 @@ ENDMACRO
 \       Name: Elite loader (Part 3 of 5)
 \       Type: Subroutine
 \   Category: Loader
-\    Summary: Move and decrypt recursive tokens and images
+\    Summary: Move recursive tokens and images
 \
 \ ------------------------------------------------------------------------------
 \
-\ Move and decrypt the following memory blocks:
+\ Move the following memory blocks:
 \
 \   * WORDS9: move 4 pages (1024 bytes) from &4400 (CODE%) to &0400
 \
-\   * P.ELITE: move 1 page (256 bytes) from &4F00 (CODE% + &B00) to &5B00
+\   * P.ELITE: move 1 page (256 bytes) from &4F00 (CODE% + &B00) to &5BE0
 \
 \   * P.A-SOFT: move 1 page (256 bytes) from &5000 (CODE% + &C00) to &5960
 \
@@ -809,99 +818,118 @@ ENDMACRO
 \ being run, so it's tucked away safely while the main game code is loaded and
 \ decrypted.
 \
+\ In the unprotected version of the loader, the images are encrypted and this
+\ part also decrypts them, but this is an unprotected version of the game, so
+\ the encryption part of the crunchit routine is disabled.
+\
 \ ******************************************************************************
 
- LDX #&04
- STX Q
- LDA #&44
- STA ZP+1
- LDY #&00
- LDA #&18
- CMP (SC,X)
- STY ZP
- STY P
- JSR crunchit
+ LDX #4                 \ Set the following:
+ STX P+1                \
+ LDA #HI(CODE%)         \   P(1 0) = &0400
+ STA ZP+1               \   ZP(1 0) = CODE%
+ LDY #0                 \   (X Y) = &400 = 1024
+ LDA #256-232           \
+ CMP (V219-4,X)         \ The CMP instruction is an STA instruction in the
+ STY ZP                 \ protected version of the loader, but this version has
+ STY P                  \ been hacked to remove the protection, and the crackers
+                        \ just switched the STA to a CMP to disable this bit of
+                        \ the protection code
 
- LDX #&01
- LDA #&4F
- STA ZP+1
- LDA #&5B
- STA Q
+ JSR crunchit           \ Call crunchit to move &400 bytes from CODE% to &0400.
+                        \ We loaded WORDS9.bin to CODE% in part 1, so this moves
+                        \ WORDS9
+
+ LDX #1                 \ Set the following:
+ LDA #(HI(CODE%)+&B)    \
+ STA ZP+1               \   P(1 0) = &5BE0
+ LDA #&5B               \   ZP(1 0) = CODE% + &B
+ STA P+1                \   (X Y) = &100 = 256
  LDA #&E0
  STA P
- LDY #&00
- JSR crunchit
+ LDY #0
 
- LDX #&01
- LDA #&50
- STA ZP+1
- LDA #&59
- STA Q
+ JSR crunchit           \ Call crunchit to move &100 bytes from CODE% + &B to
+                        \ &5BE0, so this moves P.ELITE
+
+ LDX #1                 \ Set the following:
+ LDA #(HI(CODE%)+&C)    \
+ STA ZP+1               \   P(1 0) = &5960
+ LDA #&59               \   ZP(1 0) = CODE% + &C
+ STA P+1                \   (X Y) = &100 = 256
  LDA #&60
  STA P
- LDY #&00
- JSR crunchit
+ LDY #0
 
- LDX #&01
- LDA #&51
- STA ZP+1
- LDA #&73
- STA Q
+ JSR crunchit           \ Call crunchit to move &100 bytes from CODE% + &C to
+                        \ &5960, so this moves P.A-SOFT
+
+ LDX #1                 \ Set the following:
+ LDA #(HI(CODE%)+&D)    \
+ STA ZP+1               \   P(1 0) = &73A0
+ LDA #&73               \   ZP(1 0) = CODE% + &D
+ STA P+1                \   (X Y) = &100 = 256
  LDA #&A0
  STA P
- LDY #&00
- JSR crunchit
+ LDY #0
 
- JSR PLL1
+ JSR crunchit           \ Call crunchit to move &100 bytes from CODE% + &D to
+                        \ &73A0, so this moves P.(C)ASFT
 
- LDA #&48
- STA ZP+1
- LDA #&76
- STA Q
- LDY #&00
- STY ZP
- LDX #&20
+ JSR PLL1               \ Call PLL1 to draw Saturn
+
+ LDA #(HI(CODE%)+4)     \ Set the following:
+ STA ZP+1               \
+ LDA #&76               \   P(1 0) = &7620
+ STA P+1                \   ZP(1 0) = CODE% + &4
+ LDY #0                 \   Y = 0
+ STY ZP                 \
+ LDX #&20               \ Also set BLCNT = 0
  STY BLCNT
  STX P
 
-.L540B
+.dialsL
 
- LDX #&01
- JSR crunchit
+ LDX #1                 \ Set (X Y) = &100 = 256
 
- CLC
+ JSR crunchit           \ Call crunchit to move &100 bytes from ZP(1 0) to
+                        \ P(1 0), so this moves P.DIALS one row at a time
+
+ CLC                    \ Set P(1 0) = P(1 0) + &40 to skip the screen margins
  LDA P
  ADC #&40
  STA P
- LDA Q
- ADC #&00
- STA Q
- CMP #&7E
- BCC L540B
+ LDA P+1
+ ADC #0
+ STA P+1
 
- LDX #&01
- LDA #&56
- STA ZP+1
- LDA #&15
- STA ZP
- LDA #&0B
- STA Q
- LDY #&00
+ CMP #&7E               \ Loop back to copy the next row of the dashboard until
+ BCC dialsL             \ we have poked the last one into screen memory
+
+ LDX #1                 \ Set the following:
+ LDA #HI(UU%)           \
+ STA ZP+1               \   P(1 0) = LE%
+ LDA #LO(UU%)           \   ZP(1 0) = UU%
+ STA ZP                 \   (X Y) = &100 = 256
+ LDA #HI(LE%)
+ STA P+1
+ LDY #0
  STY P
- JSR crunchit
+
+ JSR crunchit           \ Call crunchit to move &100 bytes from UU% to LE%
 
 \ ******************************************************************************
 \
 \       Name: Elite loader (Part 4 of 5)
 \       Type: Subroutine
 \   Category: Loader
-\    Summary: Copy more code onto stack, decrypt TUT block, set up IRQ1 handler
+\    Summary: Call part 5 of the loader now that is has been relocated
 \
 \ ------------------------------------------------------------------------------
 \
-\ This part copies more code onto the stack (from BLOCK to ENDBLOCK), decrypts
-\ the code from TUT onwards, and sets up the IRQ1 handler for the split-screen
-\ mode.
+\ In the protected version of the loader, this part copies more code onto the
+\ stack and decrypts a chunk of loader code before calling part 5, but in the
+\ unprotected version it's mostly NOPs.
 \
 \ ******************************************************************************
 
@@ -930,11 +958,8 @@ ENDMACRO
  NOP
  NOP
  NOP
-
-.L544F
-
- NOP                    \ This part of the loader has been disabled by the
- NOP                    \ crackers, as this is an unprotected version
+ NOP
+ NOP
  NOP
 
 .RAND
@@ -969,208 +994,495 @@ ENDMACRO
  NOP
  NOP
 
+\ ******************************************************************************
+\
+\       Name: PLL1
+\       Type: Subroutine
+\   Category: Drawing planets
+\    Summary: Draw Saturn on the loading screen
+\
+\ ------------------------------------------------------------------------------
+\
+\ Part 1 (PLL1) x 1280 - planet
+\
+\   * Draw pixels at (x, y) where:
+\
+\     r1 = random number from 0 to 255
+\     r2 = random number from 0 to 255
+\     (r1^2 + r1^2) < 128^2
+\
+\     y = r2, squished into 64 to 191 by negation
+\
+\     x = SQRT(128^2 - (r1^2 + r1^2)) / 2
+\
+\ Part 2 (PLL2) x 477 - stars
+\
+\   * Draw pixels at (x, y) where:
+\
+\     y = random number from 0 to 255
+\     y = random number from 0 to 255
+\     (x^2 + y^2) div 256 > 17
+\
+\ Part 3 (PLL3) x 1280 - rings
+\
+\   * Draw pixels at (x, y) where:
+\
+\     r5 = random number from 0 to 255
+\     r6 = random number from 0 to 255
+\     r7 = r5, squashed into -32 to 31
+\
+\     32 <= (r5^2 + r6^2 + r7^2) / 256 <= 79
+\     Draw 50% fewer pixels when (r6^2 + r7^2) / 256 <= 16
+\
+\     x = r5 + r7
+\     y = r5
+\
+\ Draws pixels within the diagonal band of horizontal width 64, from top-left to
+\ bottom-right of the screen.
+\
+\ ******************************************************************************
+
 .PLL1
 
- JSR DORND
+                        \ The following loop iterates CNT(1 0) times, i.e. &500
+                        \ or 1280 times, and draws the planet part of the
+                        \ loading screen's Saturn
 
- JSR SQUA2
+ JSR DORND              \ Set A and X to random numbers, say A = r1
 
- STA ZP+1
- LDA P
+ JSR SQUA2              \ Set (A P) = A * A
+                        \           = r1^2
+
+ STA ZP+1               \ Set ZP(1 0) = (A P)
+ LDA P                  \             = r1^2
  STA ZP
- JSR DORND
 
- STA YY
- JSR SQUA2
+ JSR DORND              \ Set A and X to random numbers, say A = r2
 
- TAX
- LDA P
- ADC ZP
- STA ZP
- TXA
+ STA YY                 \ Set YY = A
+                        \        = r2
+
+ JSR SQUA2              \ Set (A P) = A * A
+                        \           = r2^2
+
+ TAX                    \ Set (X P) = (A P)
+                        \           = r2^2
+
+ LDA P                  \ Set (A ZP) = (X P) + ZP(1 0)
+ ADC ZP                 \
+ STA ZP                 \ first adding the low bytes
+
+ TXA                    \ And then adding the high bytes
  ADC ZP+1
- BCS PLC1
 
- STA ZP+1
- LDA #&01
- SBC ZP
- STA ZP
- LDA #&40
+ BCS PLC1               \ If the addition overflowed, jump down to PLC1 to skip
+                        \ to the next pixel
+
+ STA ZP+1               \ Set ZP(1 0) = (A ZP)
+                        \             = r1^2 + r2^2
+
+ LDA #1                 \ Set ZP(1 0) = &4001 - ZP(1 0) - (1 - C)
+ SBC ZP                 \             = 128^2 - ZP(1 0)
+ STA ZP                 \
+                        \ (as the C flag is clear), first subtracting the low
+                        \ bytes
+
+ LDA #&40               \ And then subtracting the high bytes
  SBC ZP+1
  STA ZP+1
- BCC PLC1
 
- JSR ROOT
+ BCC PLC1               \ If the subtraction underflowed, jump down to PLC1 to
+                        \ skip to the next pixel
 
- LDA ZP
- LSR A
+                        \ If we get here, then both calculations fitted into
+                        \ 16 bits, and we have:
+                        \
+                        \   ZP(1 0) = 128^2 - (r1^2 + r2^2)
+                        \
+                        \ where ZP(1 0) >= 0
+
+ JSR ROOT               \ Set ZP = SQRT(ZP(1 0))
+
+ LDA ZP                 \ Set X = ZP >> 1
+ LSR A                  \       = SQRT(128^2 - (a^2 + b^2)) / 2
  TAX
- LDA YY
- CMP #&80
- ROR A
- JSR PIX
+
+ LDA YY                 \ Set A = YY
+                        \       = r2
+
+ CMP #128               \ If YY >= 128, set the C flag (so the C flag is now set
+                        \ to bit 7 of A)
+
+ ROR A                  \ Rotate A and set the sign bit to the C flag, so bits
+                        \ 6 and 7 are now the same, i.e. A is a random number in
+                        \ one of these ranges:
+                        \
+                        \   %00000000 - %00111111  = 0 to 63    (r2 = 0 - 127)
+                        \   %11000000 - %11111111  = 192 to 255 (r2 = 128 - 255)
+                        \
+                        \ The PIX routine flips bit 7 of A before drawing, and
+                        \ that makes -A in these ranges:
+                        \
+                        \   %10000000 - %10111111  = 128-191
+                        \   %01000000 - %01111111  = 64-127
+                        \
+                        \ so that's in the range 64 to 191
+
+ JSR PIX                \ Draw a pixel at screen coordinate (X, -A), i.e. at
+                        \
+                        \   (ZP / 2, -A)
+                        \
+                        \ where ZP = SQRT(128^2 - (r1^2 + r2^2))
+                        \
+                        \ So this is the same as plotting at (x, y) where:
+                        \
+                        \   r1 = random number from 0 to 255
+                        \   r1 = random number from 0 to 255
+                        \   (r1^2 + r1^2) < 128^2
+                        \
+                        \   y = r2, squished into 64 to 191 by negation
+                        \
+                        \   x = SQRT(128^2 - (r1^2 + r1^2)) / 2
+                        \
+                        \ which is what we want
 
 .PLC1
 
- DEC CNT
- BNE PLL1
+ DEC CNT                \ Decrement the counter in CNT (the low byte)
 
- DEC L55B8
- BNE PLL1
+ BNE PLL1               \ Loop back to PLL1 until CNT = 0
 
- LDX #&C2
- STX EXCN
- LDX #&60
- STX L0087
+ DEC CNT+1              \ Decrement the counter in CNT+1 (the high byte)
+
+ BNE PLL1               \ Loop back to PLL1 until CNT+1 = 0
+
+ LDX #&C2               \ Set the low byte of EXCN(1 0) to &C2, so we now have
+ STX EXCN               \ EXCN(1 0) = &03C2, which we will use in the IRQ1
+                        \ handler (this has nothing to do with drawing Saturn,
+                        \ it's all part of the copy protection)
+
+ LDX #&60               \ ???
+ STX &0087
+
+                        \ The following loop iterates CNT2(1 0) times, i.e. &1DD
+                        \ or 477 times, and draws the background stars on the
+                        \ loading screen
 
 .PLL2
 
- JSR DORND
+ JSR DORND              \ Set A and X to random numbers, say A = r3
 
- TAX
- JSR SQUA2
+ TAX                    \ Set X = A
+                        \       = r3
 
- STA ZP+1
- JSR DORND
+ JSR SQUA2              \ Set (A P) = A * A
+                        \           = r3^2
 
- STA YY
- JSR SQUA2
+ STA ZP+1               \ Set ZP+1 = A
+                        \          = r3^2 / 256
 
- ADC ZP+1
- CMP #&11
+ JSR DORND              \ Set A and X to random numbers, say A = r4
+
+ STA YY                 \ Set YY = r4
+
+ JSR SQUA2              \ Set (A P) = A * A
+                        \           = r4^2
+
+ ADC ZP+1               \ Set A = A + r3^2 / 256
+                        \       = r4^2 / 256 + r3^2 / 256
+                        \       = (r3^2 + r4^2) / 256
+
+ CMP #&11               \ If A < 17, jump down to PLC2 to skip to the next pixel
  BCC PLC2
 
- LDA YY
- JSR PIX
+ LDA YY                 \ Set A = r4
+
+ JSR PIX                \ Draw a pixel at screen coordinate (X, -A), i.e. at
+                        \ (r3, -r4), where (r3^2 + r4^2) / 256 >= 17
+                        \
+                        \ Negating a random number from 0 to 255 still gives a
+                        \ random number from 0 to 255, so this is the same as
+                        \ plotting at (x, y) where:
+                        \
+                        \   x = random number from 0 to 255
+                        \   y = random number from 0 to 255
+                        \   (x^2 + y^2) div 256 >= 17
+                        \
+                        \ which is what we want
 
 .PLC2
 
- DEC CNT2
- BNE PLL2
+ DEC CNT2               \ Decrement the counter in CNT2 (the low byte)
 
- DEC L55BA
- BNE PLL2
+ BNE PLL2               \ Loop back to PLL2 until CNT2 = 0
 
- LDX #&CA
+ DEC CNT2+1             \ Decrement the counter in CNT2+1 (the high byte)
+
+ BNE PLL2               \ Loop back to PLL2 until CNT2+1 = 0
+
+ LDX #&CA               \ ???
  NOP
  STX BLPTR
  LDX #&C6
  STX BLN
 
+                        \ The following loop iterates CNT3(1 0) times, i.e. &500
+                        \ or 1280 times, and draws the rings around the loading
+                        \ screen's Saturn
+
 .PLL3
 
- JSR DORND
+ JSR DORND              \ Set A and X to random numbers, say A = r5
 
- STA ZP
- JSR SQUA2
+ STA ZP                 \ Set ZP = r5
 
- STA ZP+1
- JSR DORND
+ JSR SQUA2              \ Set (A P) = A * A
+                        \           = r5^2
 
- STA YY
- JSR SQUA2
+ STA ZP+1               \ Set ZP+1 = A
+                        \          = r5^2 / 256
 
- STA T
- ADC ZP+1
- STA ZP+1
- LDA ZP
- CMP #&80
- ROR A
- CMP #&80
- ROR A
- ADC YY
- TAX
- JSR SQUA2
+ JSR DORND              \ Set A and X to random numbers, say A = r6
 
- TAY
- ADC ZP+1
- BCS PLC3
+ STA YY                 \ Set YY = r6
 
- CMP #&50
- BCS PLC3
+ JSR SQUA2              \ Set (A P) = A * A
+                        \           = r6^2
 
- CMP #&20
+ STA T                  \ Set T = A
+                        \       = r6^2 / 256
+
+ ADC ZP+1               \ Set ZP+1 = A + r5^2 / 256
+ STA ZP+1               \          = r6^2 / 256 + r5^2 / 256
+                        \          = (r5^2 + r6^2) / 256
+
+ LDA ZP                 \ Set A = ZP
+                        \       = r5
+
+ CMP #128               \ If A >= 128, set the C flag (so the C flag is now set
+                        \ to bit 7 of ZP, i.e. bit 7 of A)
+
+ ROR A                  \ Rotate A and set the sign bit to the C flag, so bits
+                        \ 6 and 7 are now the same
+
+ CMP #128               \ If A >= 128, set the C flag (so again, the C flag is
+                        \ set to bit 7 of A)
+
+ ROR A                  \ Rotate A and set the sign bit to the C flag, so bits
+                        \ 5-7 are now the same, i.e. A is a random number in one
+                        \ of these ranges:
+                        \
+                        \   %00000000 - %00011111  = 0-31
+                        \   %11100000 - %11111111  = 224-255
+                        \
+                        \ In terms of signed 8-bit integers, this is a random
+                        \ number from -32 to 31. Let's call it r7
+
+ ADC YY                 \ Set X = A + YY
+ TAX                    \       = r7 + r6
+
+ JSR SQUA2              \ Set (A P) = r7 * r7
+
+ TAY                    \ Set Y = A
+                        \       = r7 * r7 / 256
+
+ ADC ZP+1               \ Set A = A + ZP+1
+                        \       = r7^2 / 256 + (r5^2 + r6^2) / 256
+                        \       = (r5^2 + r6^2 + r7^2) / 256
+
+ BCS PLC3               \ If the addition overflowed, jump down to PLC3 to skip
+                        \ to the next pixel
+
+ CMP #80                \ If A >= 80, jump down to PLC3 to skip to the next
+ BCS PLC3               \ pixel
+
+ CMP #32                \ If A < 32, jump down to PLC3 to skip to the next pixel
  BCC PLC3
 
- TYA
- ADC T
- CMP #&10
+ TYA                    \ Set A = Y + T
+ ADC T                  \       = r7^2 / 256 + r6^2 / 256
+                        \       = (r6^2 + r7^2) / 256
+
+ CMP #16                \ If A > 16, skip to PL1 to plot the pixel
  BCS PL1
 
- LDA ZP
- BPL PLC3
+ LDA ZP                 \ If ZP is positive (50% chance), jump down to PLC3 to
+ BPL PLC3               \ skip to the next pixel
 
 .PL1
 
- LDA YY
- JSR PIX
+ LDA YY                 \ Set A = YY
+                        \       = r6
+
+ JSR PIX                \ Draw a pixel at screen coordinate (X, -A), where:
+                        \
+                        \   X = (random -32 to 31) + r6
+                        \   A = r6
+                        \
+                        \ Negating a random number from 0 to 255 still gives a
+                        \ random number from 0 to 255, so this is the same as
+                        \ plotting at (x, y) where:
+                        \
+                        \   r5 = random number from 0 to 255
+                        \   r6 = random number from 0 to 255
+                        \   r7 = r5, squashed into -32 to 31
+                        \
+                        \   x = r5 + r7
+                        \   y = r5
+                        \
+                        \   32 <= (r5^2 + r6^2 + r7^2) / 256 <= 79
+                        \   Draw 50% fewer pixels when (r6^2 + r7^2) / 256 <= 16
+                        \
+                        \ which is what we want
 
 .PLC3
 
- DEC CNT3
- BNE PLL3
+ DEC CNT3               \ Decrement the counter in CNT3 (the low byte)
 
- DEC L55BC
- BNE PLL3
+ BNE PLL3               \ Loop back to PLL3 until CNT3 = 0
+
+ DEC CNT3+1             \ Decrement the counter in CNT3+1 (the high byte)
+
+ BNE PLL3               \ Loop back to PLL3 until CNT3+1 = 0
+
+\ ******************************************************************************
+\
+\       Name: DORND
+\       Type: Subroutine
+\   Category: Utility routines
+\    Summary: Generate random numbers
+\  Deep dive: Generating random numbers
+\
+\ ------------------------------------------------------------------------------
+\
+\ Set A and X to random numbers. The C and V flags are also set randomly.
+\
+\ This is a simplified version of the DORND routine in the main game code. It
+\ swaps the two calculations around and omits the ROL A instruction, but is
+\ otherwise very similar. See the DORND routine in the main game code for more
+\ details.
+\
+\ ******************************************************************************
 
 .DORND
 
- LDA RAND+1
- TAX
+ LDA RAND+1             \ r1´ = r1 + r3 + C
+ TAX                    \ r3´ = r1
  ADC RAND+3
  STA RAND+1
  STX RAND+3
- LDA RAND
- TAX
+
+ LDA RAND               \ X = r2´ = r0
+ TAX                    \ A = r0´ = r0 + r2
  ADC RAND+2
  STA RAND
  STX RAND+2
- RTS
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: SQUA2
+\       Type: Subroutine
+\   Category: Maths (Arithmetic)
+\    Summary: Calculate (A P) = A * A
+\
+\ ------------------------------------------------------------------------------
+\
+\ Do the following multiplication of unsigned 8-bit numbers:
+\
+\   (A P) = A * A
+\
+\ This uses the same approach as routine SQUA2 in the main game code, which
+\ itself uses the MU11 routine to do the multiplication. See those routines for
+\ more details.
+\
+\ ******************************************************************************
 
 .SQUA2
 
- BPL SQUA
+ BPL SQUA               \ If A > 0, jump to SQUA
 
- EOR #&FF
- CLC
- ADC #&01
+ EOR #&FF               \ Otherwise we need to negate A for the SQUA algorithm
+ CLC                    \ to work, so we do this using two's complement, by
+ ADC #1                 \ setting A = ~A + 1
 
 .SQUA
 
- STA Q
- STA P
- LDA #&00
- LDY #&08
- LSR P
+ STA Q                  \ Set Q = A and P = A
+
+ STA P                  \ Set P = A
+
+ LDA #0                 \ Set A = 0 so we can start building the answer in A
+
+ LDY #8                 \ Set up a counter in Y to count the 8 bits in P
+
+ LSR P                  \ Set P = P >> 1
+                        \ and C flag = bit 0 of P
 
 .SQL1
 
- BCC SQ1
-
- CLC
- ADC Q
+ BCC SQ1                \ If C (i.e. the next bit from P) is set, do the
+ CLC                    \ addition for this bit of P:
+ ADC Q                  \
+                        \   A = A + Q
 
 .SQ1
 
- ROR A
- ROR P
- DEY
- BNE SQL1
+ ROR A                  \ Shift A right to catch the next digit of our result,
+                        \ which the next ROR sticks into the left end of P while
+                        \ also extracting the next bit of P
 
-.L5575
+ ROR P                  \ Add the overspill from shifting A to the right onto
+                        \ the start of P, and shift P right to fetch the next
+                        \ bit for the calculation into the C flag
 
- RTS
+ DEY                    \ Decrement the loop counter
+
+ BNE SQL1               \ Loop back for the next bit until P has been rotated
+                        \ all the way
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: PIX
+\       Type: Subroutine
+\   Category: Drawing pixels
+\    Summary: Draw a single pixel at a specific coordinate
+\
+\ ------------------------------------------------------------------------------
+\
+\ Draw a pixel at screen coordinate (X, -A). The sign bit of A gets flipped
+\ before drawing, and then the routine uses the same approach as the PIXEL
+\ routine in the main game code, except it plots a single pixel from TWOS
+\ instead of a two pixel dash from TWOS2. This applies to the top part of the
+\ screen (the monochrome mode 4 space view).
+\ screen (the space view).
+\
+\ See the PIXEL routine in the main game code for more details.
+\
+\ Arguments:
+\
+\   X                   The screen x-coordinate of the pixel to draw
+\
+\   A                   The screen y-coordinate of the pixel to draw, negated
+\
+\ ******************************************************************************
 
 .PIX
 
- LDY #&80
+ LDY #&80               \ ???
  STY ZP
- TAY
- EOR #&80
- CMP #&F8
- BCS L5575
 
- LSR A
+ TAY                    \ Copy A into Y, for use later
+
+ EOR #%10000000         \ Flip the sign of A
+
+ CMP #&F8               \ ???
+ BCS PIX-1
+
+ LSR A                  \ ???
  LSR A
  LSR A
  STA ZP+1
@@ -1192,117 +1504,247 @@ ENDMACRO
 
 .L559F
 
- TYA
- AND #&07
+ TYA                    \ Set Y = Y AND %111
+ AND #%00000111
  TAY
- TXA
- AND #&07
+
+ TXA                    \ Set X = X AND %111
+ AND #%00000111
  TAX
- LDA L55AF,X
+
+ LDA TWOS,X             \ Otherwise fetch a pixel from TWOS and OR it into ZP+Y
  ORA (ZP),Y
  STA (ZP),Y
- RTS
 
-.L55AF
+ RTS                    \ Return from the subroutine
 
- EQUB &80
+\ ******************************************************************************
+\
+\       Name: TWOS
+\       Type: Variable
+\   Category: Drawing pixels
+\    Summary: Ready-made single-pixel character row bytes for mode 4
+\
+\ ------------------------------------------------------------------------------
+\
+\ Ready-made bytes for plotting one-pixel points in mode 4 (the top part of the
+\ split screen). See the PIX routine for details.
+\
+\ ******************************************************************************
 
- EQUB &40, &20, &10, &08, &04, &02, &01
+.TWOS
+
+ EQUB %10000000
+ EQUB %01000000
+ EQUB %00100000
+ EQUB %00010000
+ EQUB %00001000
+ EQUB %00000100
+ EQUB %00000010
+ EQUB %00000001
+
+\ ******************************************************************************
+\
+\       Name: CNT
+\       Type: Variable
+\   Category: Drawing planets
+\    Summary: A counter for use in drawing Saturn's planetary body
+\
+\ ------------------------------------------------------------------------------
+\
+\ Defines the number of iterations of the PLL1 loop, which draws the planet part
+\ of the loading screen's Saturn.
+\
+\ ******************************************************************************
 
 .CNT
 
- EQUB &00
+ EQUW &0500             \ The number of iterations of the PLL1 loop (1280)
 
-.L55B8
-
- EQUB &05
+\ ******************************************************************************
+\
+\       Name: CNT2
+\       Type: Variable
+\   Category: Drawing planets
+\    Summary: A counter for use in drawing Saturn's background stars
+\
+\ ------------------------------------------------------------------------------
+\
+\ Defines the number of iterations of the PLL2 loop, which draws the background
+\ stars on the loading screen.
+\
+\ ******************************************************************************
 
 .CNT2
 
- EQUB &DD
+ EQUW &01DD             \ The number of iterations of the PLL2 loop (477)
 
-.L55BA
-
- EQUB &01
+\ ******************************************************************************
+\
+\       Name: CNT3
+\       Type: Variable
+\   Category: Drawing planets
+\    Summary: A counter for use in drawing Saturn's rings
+\
+\ ------------------------------------------------------------------------------
+\
+\ Defines the number of iterations of the PLL3 loop, which draws the rings
+\ around the loading screen's Saturn.
+\
+\ ******************************************************************************
 
 .CNT3
 
- EQUB &00
+ EQUW &0500             \ The number of iterations of the PLL3 loop (1280)
 
-.L55BC
-
- EQUB &05
+\ ******************************************************************************
+\
+\       Name: ROOT
+\       Type: Subroutine
+\   Category: Maths (Arithmetic)
+\    Summary: Calculate ZP = SQRT(ZP(1 0))
+\
+\ ------------------------------------------------------------------------------
+\
+\ Calculate the following square root:
+\
+\   ZP = SQRT(ZP(1 0))
+\
+\ This routine is identical to LL5 in the main game code - it even has the same
+\ label names. The only difference is that LL5 calculates Q = SQRT(R Q), but
+\ apart from the variables used, the instructions are identical, so see the LL5
+\ routine in the main game code for more details on the algorithm used here.
+\
+\ ******************************************************************************
 
 .ROOT
 
- LDY ZP+1
+ LDY ZP+1               \ Set (Y Q) = ZP(1 0)
  LDA ZP
  STA Q
- LDX #&00
- STX ZP
- LDA #&08
 
-.L55C9
+                        \ So now to calculate ZP = SQRT(Y Q)
 
+ LDX #0                 \ Set X = 0, to hold the remainder
+
+ STX ZP                 \ Set ZP = 0, to hold the result
+
+ LDA #8                 \ Set P = 8, to use as a loop counter
  STA P
 
 .LL6
 
- CPX ZP
+ CPX ZP                 \ If X < ZP, jump to LL7
  BCC LL7
 
- BNE LL8
+ BNE LL8                \ If X > ZP, jump to LL8
 
- CPY #&40
- BCC LL7
+ CPY #64                \ If Y < 64, jump to LL7 with the C flag clear,
+ BCC LL7                \ otherwise fall through into LL8 with the C flag set
 
 .LL8
 
- TYA
- SBC #&40
- TAY
- TXA
+ TYA                    \ Set Y = Y - 64
+ SBC #64                \
+ TAY                    \ This subtraction will work as we know C is set from
+                        \ the BCC above, and the result will not underflow as we
+                        \ already checked that Y >= 64, so the C flag is also
+                        \ set for the next subtraction
+
+ TXA                    \ Set X = X - ZP
  SBC ZP
  TAX
 
 .LL7
 
- ROL ZP
- ASL Q
- TYA
- ROL A
- TAY
- TXA
- ROL A
- TAX
- ASL Q
- TYA
- ROL A
- TAY
- TXA
- ROL A
- TAX
- DEC P
- BNE LL6
+ ROL ZP                 \ Shift the result in Q to the left, shifting the C flag
+                        \ into bit 0 and bit 7 into the C flag
 
- RTS
+ ASL Q                  \ Shift the dividend in (Y S) to the left, inserting
+ TYA                    \ bit 7 from above into bit 0
+ ROL A
+ TAY
+
+ TXA                    \ Shift the remainder in X to the left
+ ROL A
+ TAX
+
+ ASL Q                  \ Shift the dividend in (Y S) to the left
+ TYA
+ ROL A
+ TAY
+
+ TXA                    \ Shift the remainder in X to the left
+ ROL A
+ TAX
+
+ DEC P                  \ Decrement the loop counter
+
+ BNE LL6                \ Loop back to LL6 until we have done 8 loops
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: crunchit
+\       Type: Subroutine
+\   Category: Copy protection
+\    Summary: Multi-byte decryption and copying routine
+\
+\ ------------------------------------------------------------------------------
+\
+\ In the unprotected version of the loader on this site, this routine just moves
+\ data frommone location to another. In the protected version, it also decrypts
+\ the data as it is moved, but that part is disabled in the following.
+\
+\ Arguments:
+\
+\   (X Y)               The number of bytes to copy
+\
+\   ZP(1 0)             The source address
+\
+\   P(1 0)              The destination address
+\
+\ ******************************************************************************
 
 .crunchit
 
- LDA (ZP),Y
- NOP
+ LDA (ZP),Y             \ Copy the Y-th byte of ZP(1 0) to the Y-th byte of
+ NOP                    \ P(1 0), without any decryption (hence the NOPs)
  NOP
  NOP
  STA (P),Y
- DEY
- BNE crunchit
 
- INC Q
- INC ZP+1
- DEX
- BNE crunchit
+ DEY                    \ Decrement the byte counter
 
- RTS
+ BNE crunchit           \ Loop back to crunchit to copy the next byte until we
+                        \ have done a whole page
+
+ INC P+1                \ Increment the high bytes of the source and destination
+ INC ZP+1               \ addresses so we can copy the next page
+
+ DEX                    \ Decrement the page counter
+
+ BNE crunchit           \ Loop back to crunchit to copy the next page until we
+                        \ have done X pages
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: BEGIN%
+\       Type: Subroutine
+\   Category: Copy protection
+\    Summary: Single-byte decryption and copying routine, run on the stack
+\
+\ ------------------------------------------------------------------------------
+\
+\ This code is not run in the unprotected version of the loader. In the full
+\ version it is stored with the instructions reversed so it can be copied onto
+\ the stack to be run, and it doesn't contain any NOPs, so this is presumably a
+\ remnant of the cracking process.
+\
+\ ******************************************************************************
 
  PLA
  PLA
@@ -1332,6 +1774,7 @@ ENDMACRO
 .UU%
 
 Q% = P% - LE%
+
 ORG LE%
 
 \ ******************************************************************************
@@ -1386,12 +1829,12 @@ ORG LE%
                         \ game code from where we just loaded it at &2000, down
                         \ to &0D00 where we will run it
 
- LDY #&00               \ Set the source and destination addresses for the copy:
+ LDY #0                 \ Set the source and destination addresses for the copy:
  STY ZP                 \
- STY P                  \   ZP(1 0) = &2000
- LDA #&20               \   P(1 0) = &0D00
+ STY P                  \   ZP(1 0) = L% = &2000
+ LDA #HI(L%)            \   P(1 0) = C% = &0D00
  STA ZP+1               \
- LDA #&0D               \ and set Y = 0 to act as a byte counter in the
+ LDA #HI(C%)            \ and set Y = 0 to act as a byte counter in the
  STA P+1                \ following loop
 
 .MVDL
@@ -1497,6 +1940,7 @@ ORG LE%
 
  EQUB 13
  
+
  SKIP 13                \ These bytes appear to be unused
 
 \ ******************************************************************************
