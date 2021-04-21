@@ -1939,7 +1939,6 @@ ORG LE%
  EQUS "LOAD EliteCo FFFF2000"
 
  EQUB 13
- 
 
  SKIP 13                \ These bytes appear to be unused
 
