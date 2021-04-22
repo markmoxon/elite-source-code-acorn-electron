@@ -2617,21 +2617,6 @@ ORG &0BE0
                         \ for details of how Elite stores the local universe in
                         \ FRIN, UNIV and K%
 
-.CABTMP
-
- SKIP 0                 \ Cabin temperature
-                        \
-                        \ The ambient cabin temperature in deep space is 30,
-                        \ which is displayed as one notch on the dashboard bar
-                        \
-                        \ We get higher temperatures closer to the sun
-                        \
-                        \ CABTMP shares a location with MANY, but that's OK as
-                        \ MANY+0 would contain the number of ships of type 0,
-                        \ and as there is no ship type 0 (they start at 1), the
-                        \ byte at MANY+0 is not used for storing a ship type
-                        \ and can be used for the cabin temperature instead
-
 .LAS2
 
  SKIP 0                 \ Laser power for the current laser
@@ -2798,16 +2783,6 @@ ORG &0BE0
                         \
                         \     * 1 = the string " DESTROYED" gets added to the
                         \       end of the message
-
-.LSX
-
- SKIP 0                 \ LSX is an alias that points to the first byte of the
-                        \ sun line heap at LSO
-                        \
-                        \   * &FF indicates the sun line heap is empty
-                        \
-                        \   * Otherwise the LSO heap contains the line data for
-                        \     the sun
 
 .LSO
 
@@ -17003,9 +16978,6 @@ LOAD_D% = LOAD% + P% - CODE%
  STX K4+1
  STX K3+1
 
-\STX LSX                \ This instruction is commented out in the original
-                        \ source
-
  INX                    \ Set LSP = 1 to reset the ball line heap
  STX LSP
 
@@ -17014,9 +16986,6 @@ LOAD_D% = LOAD% + P% - CODE%
 
  JSR CIRCLE2            \ Call CIRCLE2 to draw a circle with the centre at
                         \ (K3(1 0), K4(1 0)) and radius K
-
-\LDA #&FF               \ These instructions are commented out in the original
-\STA LSX                \ source
 
  RTS                    \ Return from the subroutine
 
@@ -26549,11 +26518,11 @@ ENDIF
 \
 \   * The ship data blocks ascending from K% at &0900
 \
-\   * The ship line heap descending from WP at &0D40
+\   * The ship line heap descending from WP at &0BE0
 \
 \   * WP workspace variables from FRIN to de, which include the ship slots for
 \     the local bubble of universe, and various flight and ship status variables
-\     (only a portion of the LSX/LSO sun line heap is cleared)
+\     (only a portion of the LSO space station line heap is cleared)
 \
 \ ******************************************************************************
 
