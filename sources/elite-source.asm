@@ -376,7 +376,7 @@ ORG &0000
 
 .KY12
 
- SKIP 1                 \ TAB is being pressed
+ SKIP 1                 \ "-" is being pressed
                         \
                         \   * 0 = no
                         \
@@ -2727,23 +2727,10 @@ ORG &0BE0
 
 .HFX
 
- SKIP 1                 \ A flag that toggles the hyperspace colour effect
-                        \
-                        \   * 0 = no colour effect
-                        \
-                        \   * Non-zero = hyperspace colour effect enabled
-                        \
-                        \ When HFS is set to 1, the mode 4 screen that makes
-                        \ up the top part of the display is temporarily switched
-                        \ to mode 5 (the same screen mode as the dashboard),
-                        \ which has the effect of blurring and colouring the
-                        \ hyperspace rings in the top part of the screen. The
-                        \ code to do this is in the LINSCN routine, which is
-                        \ called as part of the screen mode routine at IRQ1.
-                        \ It's in LINSCN that HFX is checked, and if it is
-                        \ non-zero, the top part of the screen is not switched
-                        \ to mode 4, thus leaving the top part of the screen in
-                        \ the more colourful mode 5
+ SKIP 1                 \ This flag is unused in this version of Elite. In the
+                        \ other versions, setting HFX to a non-zero value makes
+                        \ the hyperspace rings multi-coloured, but the Electron
+                        \ version is monochrome, so this has no effect
 
 .EV
 
@@ -3430,7 +3417,7 @@ LOAD_A% = LOAD%
 \
 \   * Space and "?" to speed up and slow down
 \   * "U", "T" and "M" to disarm, arm and fire missiles
-\   * TAB to fire an energy bomb
+\   * "-" to fire an energy bomb
 \   * ESCAPE to launch an escape pod
 \   * "J" to initiate an in-system jump
 \   * "E" to deploy E.C.M. anti-missile countermeasures
@@ -3469,7 +3456,9 @@ LOAD_A% = LOAD%
  AND NOMSL              \ in NOMSL is non-zero, keep going, otherwise jump down
  BEQ MA20               \ to MA20 to skip the following
 
- JSR L3903              \ ???
+ JSR ABORT-2            \ The "disarm missiles" key is being pressed, so call
+                        \ ABORT-2 to disarm the missile and update the missile
+                        \ indicators on the dashboard to white squares (Y = &09)
 
  LDA #40                \ Call the NOISE routine with A = 40 to make a low,
  JSR NOISE              \ long beep to indicate the missile is now disarmed
@@ -3514,7 +3503,7 @@ LOAD_A% = LOAD%
 
  LDA MSTG               \ If MSTG = &FF then there is no target lock, so jump to
  BMI MA64               \ MA64 to skip the following (also skipping the checks
-                        \ for TAB, ESCAPE, "J" and "E")
+                        \ for "-", ESCAPE, "J" and "E")
 
  JSR FRMIS              \ The "fire missile" key is being pressed and we have
                         \ a missile lock, so call the FRMIS routine to fire
@@ -3522,7 +3511,7 @@ LOAD_A% = LOAD%
 
 .MA24
 
- LDA KY12               \ If TAB is being pressed, keep going, otherwise jump
+ LDA KY12               \ If "-" is being pressed, keep going, otherwise jump
  BEQ MA76               \ jump down to MA76 to skip the following
 
  ASL BOMB               \ The "energy bomb" key is being pressed, so double
@@ -3767,9 +3756,9 @@ LOAD_A% = LOAD%
 \
 \ ******************************************************************************
 
- LDA BOMB               \ If we set off our energy bomb by pressing TAB (see
- BPL MA21               \ MA24 above), then BOMB is now negative, so this skips
-                        \ to MA21 if our energy bomb is not going off
+ LDA BOMB               \ If we set off our energy bomb (see MA24 above), then
+ BPL MA21               \ BOMB is now negative, so this skips to MA21 if our
+                        \ energy bomb is not going off
 
  CPY #2*SST             \ If the ship in Y is the space station, jump to BA21
  BEQ MA21               \ as energy bombs are useless against space stations
@@ -4410,9 +4399,9 @@ LOAD_A% = LOAD%
 
 .MA18
 
- LDA BOMB               \ If we set off our energy bomb by pressing TAB (see
- BPL MA77               \ MA24 above), then BOMB is now negative, so this skips
-                        \ to MA77 if our energy bomb is not going off
+ LDA BOMB               \ If we set off our energy bomb (see MA24 above), then
+ BPL MA77               \ BOMB is now negative, so this skips to MA21 if our
+                        \ energy bomb is not going off
 
  ASL BOMB               \ We set off our energy bomb, so rotate BOMB to the
                         \ left by one place. BOMB was rotated left once already
@@ -6293,12 +6282,10 @@ LOAD_A% = LOAD%
 \       Name: MV40
 \       Type: Subroutine
 \   Category: Moving
-\    Summary: Rotate the planet or sun by our ship's pitch and roll
+\    Summary: Rotate the planet's location in space by the amount of pitch and
+\             roll of our ship
 \
 \ ------------------------------------------------------------------------------
-\
-\ Rotate the planet or sun's location in space by the amount of pitch and roll
-\ of our ship.
 \
 \ We implement this using the same equations as in part 5 of MVEIT, where we
 \ rotated the current ship's location by our pitch and roll. Specifically, the
@@ -6944,7 +6931,7 @@ NEXT
 
  STA P                  \ Store A in P, so P = |X2 - X1|, or |delta_x|
 
- SEC                    \ ???
+ SEC                    \ Set the C flag, ready for the subtraction below
 
  LDA Y2                 \ Set A = Y2 - Y1
  SBC Y1                 \       = delta_y
@@ -7954,8 +7941,8 @@ NEXT
  TAX
 
  LDA ZZ                 \ If distance in ZZ >= 144, then this point is a very
- CMP #144               \ long way away, so jump to PX14 to ???
- BCS PX14
+ CMP #144               \ long way away, so jump to PX14 to fetch a 2-pixel dash
+ BCS PX14               \ from TWOS2 and EOR it into SC+Y
 
  LDA TWOS2,X            \ Otherwise fetch a 2-pixel dash from TWOS2 and EOR it
  EOR (SC),Y             \ into SC+Y
@@ -10031,11 +10018,9 @@ NEXT
                         \
                         \ and so on
 
- BCC L1D54              \ ???
+ BCC P%+4               \ ???
 
  INC SCH
-
-.L1D54
 
  CPY #127               \ If the character number (which is in Y) <> 127, then
  BNE RR2                \ skip to RR2 to print that character, otherwise this is
@@ -10172,7 +10157,9 @@ NEXT
 
  LDA DELTA              \ Fetch our ship's speed into A, in the range 0-40
 
- JSR DIL                \ ???
+ JSR DIL                \ Draw the speed indicator using a range of 0-31, and
+                        \ increment SC to point to the next indicator (the roll
+                        \ indicator)
 
 \ ******************************************************************************
 \
@@ -10279,8 +10266,9 @@ NEXT
                         \ bank indicators, so we can calculate each of the four
                         \ energy banks' values and store them in XX12
 
- LDA ENERGY             \ ???
- LSR A
+ LDA ENERGY             \ Set A = Q = ENERGY / 2, so they are both now in the
+ LSR A                  \ range 0-127 (so that's a maximum of 32 in each of the
+                        \ banks, and a maximum of 31 in the top bank)
 
  STA Q                  \ Set Q to A, so we can use Q to hold the remaining
                         \ energy as we work our way through each bank, from the
@@ -10990,7 +10978,7 @@ LOAD_C% = LOAD% +P% - CODE%
  LDX #COPS              \ Set X to the ship type for a cop
 
  LDA #%11100001         \ Set the AI flag to give the ship E.C.M., enable AI and
-                        \ make it pretty aggressive (48 out of 63)
+                        \ make it pretty aggressive (56 out of 63)
 
  JMP SFS1               \ Jump to SFS1 to spawn the ship, returning from the
                         \ subroutine using a tail call
@@ -11767,9 +11755,9 @@ LOAD_C% = LOAD% +P% - CODE%
 
  JSR ANGRY              \ Call ANGRY to make the target ship hostile
 
- LDY #4                 \ We have just launched a missile, so we need to remove
+ LDY #&04               \ We have just launched a missile, so we need to remove
  JSR ABORT              \ missile lock and hide the leftmost indicator on the
-                        \ dashboard by setting it to black (Y = 4) ???
+                        \ dashboard by setting it to black (Y = &04)
 
  DEC NOMSL              \ Reduce the number of missiles we have by 1
 
@@ -12138,10 +12126,9 @@ LOAD_C% = LOAD% +P% - CODE%
  LDA #56                \ Call the NOISE routine with A = 56 to make the sound
  JSR NOISE              \ of the hyperspace drive being engaged
 
- LDA #1                 \ Set HFX to 1, which switches the screen mode to a full
- STA HFX                \ mode 5 screen, therefore making the hyperspace rings
-                        \ multi-coloured and all zig-zaggy (see the IRQ1 routine
-                        \ for details)
+ LDA #1                 \ Set HFX to 1. In the other versions, this makes the
+ STA HFX                \ hyperspace rings multi-coloured, but the Electron
+                        \ version is monochrome, so this has no effect
 
  LDA #4                 \ Set the step size for the hyperspace rings to 4, so
                         \ there are more sections in the rings and they are
@@ -12150,8 +12137,8 @@ LOAD_C% = LOAD% +P% - CODE%
 
  JSR HFS2               \ Call HFS2 to draw the hyperspace tunnel rings
 
- DEC HFX                \ Set HFX back to 0, so we switch back to the normal
-                        \ split-screen mode
+ DEC HFX                \ Set HFX back to 0, which has no effect in the Electron
+                        \ version
 
  RTS                    \ Return from the subroutine
 
@@ -22065,10 +22052,10 @@ LOAD_E% = LOAD% + P% - CODE%
                         \ is the x-offset from the centre of the compass of the
                         \ dot we want to draw. Returns with the C flag clear
 
- TXA                    \ Set COMX = 193 + X, as 186 is the pixel x-coordinate
+ TXA                    \ Set COMX = 193 + X, as 184 is the pixel x-coordinate
  ADC #193               \ of the leftmost dot possible on the compass, and X can
- STA COMX               \ be -9, which would be 195 - 9 = 186. This also means
-                        \ that the highest value for COMX is 195 + 9 = 204,
+ STA COMX               \ be -9, which would be 193 - 9 = 184. This also means
+                        \ that the highest value for COMX is 193 + 9 = 202,
                         \ which is the pixel x-coordinate of the rightmost dot
                         \ in the compass... but the compass dot is actually two
                         \ pixels wide, so the compass dot can overlap the right
@@ -22264,8 +22251,7 @@ LOAD_E% = LOAD% + P% - CODE%
  CLC                    \ ???
  ADC #8                 \ position of four in this character block, so we add
  STA SC                 \ 8 to the screen address to move onto the next block
-                        \ along (as there are 8 bytes in a character block).
-                        \ The C flag was cleared above, so this ADC is correct
+                        \ along (as there are 8 bytes in a character block)
 
  BCC P%+4               \ If the addition we just did overflowed, then increment
  INC SC+1               \ the high byte of SC(1 0), as this means we just moved
@@ -22798,10 +22784,6 @@ LOAD_E% = LOAD% + P% - CODE%
 
  RTS                    \ Return from the subroutine
 
-.L3903
-
- LDY #&09
-
 \ ******************************************************************************
 \
 \       Name: ABORT
@@ -22809,7 +22791,20 @@ LOAD_E% = LOAD% + P% - CODE%
 \   Category: Dashboard
 \    Summary: Disarm missiles and update the dashboard indicators
 \
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   Y                   The new status of the leftmost missile indicator
+\
+\ Other entry points:
+\
+\   ABORT-2             Set the indicator to disarmed (white square)
+\
 \ ******************************************************************************
+
+ LDY #&09               \ Set Y = &09 so we set the missile to a white square
+                        \ (disarmed)
 
 .ABORT
 
@@ -23018,7 +23013,7 @@ LOAD_E% = LOAD% + P% - CODE%
 \
 \ ------------------------------------------------------------------------------
 \
-\ Each indicator is a rectangle that's 3 pixels wide and 5 pixels high. If the
+\ Each indicator is a rectangle that's 6 pixels wide and 5 pixels high. If the
 \ indicator is set to black, this effectively removes a missile.
 \
 \ Arguments:
@@ -23027,15 +23022,15 @@ LOAD_E% = LOAD% + P% - CODE%
 \                       from right to left, so indicator NOMSL is the leftmost
 \                       indicator)
 \
-\   Y                   The colour of the missile indicator:
+\   Y                   The status of the missile indicator:
 \
-\                         * &00 = black (no missile)
+\                         * &04 = black (no missile)
 \
-\                         * &0E = red (armed and locked)
+\                         * &11 = black "T" in white square (armed and locked)
 \
-\                         * &E0 = yellow/white (armed)
+\                         * &0D = black box in white square (armed)
 \
-\                         * &EE = green/cyan (disarmed)
+\                         * &09 = white square (disarmed)
 \
 \ Returns:
 \
@@ -23047,10 +23042,10 @@ LOAD_E% = LOAD% + P% - CODE%
 
 .MSBAR
 
- TXA                    \ Set T = X * 8
- PHA
+ TXA                    \ Store X on the stack, so we can preserve it across
+ PHA                    \ the call to the subroutine
 
- ASL A
+ ASL A                  \ Set T = X * 8
  ASL A
  ASL A
  STA T
@@ -23076,44 +23071,69 @@ LOAD_E% = LOAD% + P% - CODE%
 
  LDA #&7D               \ Set the high byte of SC(1 0) to &7D, the character row
  STA SCH                \ that contains the missile indicators (i.e. the bottom
-                        \ row of the screen) ???
+                        \ row of the screen)
 
- TYA                    \ Set A to the correct colour, which is a 3-pixel wide
-                        \ mode 5 character row in the correct colour (for
-                        \ example, a green block has Y = &EE, or %11101110, so
-                        \ the missile blocks are 3 pixels wide, with the
-                        \ fourth pixel on the character row being empty)
-
- TAX                    \ ???
+ TYA                    \ Set X to the indicator status that was passed to the
+ TAX                    \ subroutine, so we can use it below as an index into
+                        \ the MDIALS table when fetching the bitmap to set the
+                        \ missile indicator to
 
  LDY #5                 \ We now want to draw this line five times, so set a
                         \ counter in Y
 
 .MBL1
 
- LDA L3961,X            \ ???
+ LDA MDIALS,X           \ Fetch the X-th bitmap from the MDIALS table
 
  STA (SC),Y             \ Draw the 3-pixel row, and as we do not use EOR logic,
                         \ this will overwrite anything that is already there
                         \ (so drawing a black missile will delete what's there)
 
- DEX                    \ ???
+ DEX                    \ Decrement the bitmap counter for the next row
 
  DEY                    \ Decrement the counter for the next row
 
  BNE MBL1               \ Loop back to MBL1 if have more rows to draw
 
- PLA                    \ ???
+ PLA                    \ Restore X from the stack, so that it's preserved
  TAX
 
  RTS                    \ Return from the subroutine
 
-.L3961
+\ ******************************************************************************
+\
+\       Name: MDIALS
+\       Type: Variable
+\   Category: Dashboard
+\    Summary: The missile indicator bitmaps for the monochrome dashboard
+\
+\ ******************************************************************************
 
- EQUB &00
- EQUB &00, &00, &00, &00, &FC, &FC, &FC, &FC
- EQUB &FC, &84, &B4, &84, &FC, &C4, &EC, &EC
- EQUB &FC
+.MDIALS
+
+ EQUB %00000000         \ No missile (black)
+ EQUB %00000000
+ EQUB %00000000
+ EQUB %00000000
+ EQUB %00000000
+
+ EQUB %11111100         \ Disarmed (white square)
+ EQUB %11111100         \
+ EQUB %11111100         \ Shares the first row from the next indicator
+ EQUB %11111100
+\EQUB %11111100
+
+ EQUB %11111100         \ Armed (black box in white square)
+ EQUB %10000100         \
+ EQUB %10110100         \ Shares the first row from the next indicator
+ EQUB %10000100
+\EQUB %11111100
+
+ EQUB %11111100         \ Armed and locked (black "T" in white square)
+ EQUB %11000100
+ EQUB %11101100
+ EQUB %11101100
+ EQUB %11111100
 
 \ ******************************************************************************
 \
@@ -23256,13 +23276,13 @@ LOAD_E% = LOAD% + P% - CODE%
 \       Name: PLANET
 \       Type: Subroutine
 \   Category: Drawing planets
-\    Summary: Draw the planet or sun
+\    Summary: Draw the planet
 \
 \ ------------------------------------------------------------------------------
 \
 \ Arguments:
 \
-\   INWK                The planet or sun's ship data block
+\   INWK                The planet's ship data block
 \
 \ ******************************************************************************
 
@@ -23323,9 +23343,11 @@ LOAD_E% = LOAD% + P% - CODE%
 
 .PL82
 
- JSR WPLS2              \ ???
+ JSR WPLS2              \ Call WPLS2 to remove the planet from the screen
 
- JMP CIRCLE
+ JMP CIRCLE             \ Jump to CIRCLE to draw the planet (which is just a
+                        \ simple circle) and return from the subroutine using
+                        \ a tail call
 
 \ ******************************************************************************
 \
@@ -24288,7 +24310,10 @@ LOAD_F% = LOAD% + P% - CODE%
 
  BNE KS5                \ If our missile is not locked on this ship, jump to KS5
 
- JSR L3903              \ ???
+ JSR ABORT-2            \ Otherwise we need to remove our missile lock, so call
+                        \ ABORT-2 to disarm the missile and update the missile
+                        \ indicators on the dashboard to disarmed (white
+                        \ squares)
 
  LDA #200               \ Print recursive token 40 ("TARGET LOST") as an
  JSR MESS               \ in-flight message
@@ -25831,8 +25856,9 @@ LOAD_F% = LOAD% + P% - CODE%
                         \ and set the current view type in QQ11 to 6 (death
                         \ screen)
 
- LDX #&32               \ ???
- STX LASCT
+ LDX #50                \ Set the laser count to 50 to act as a counter in the
+ STX LASCT              \ D2 loop below, so this setting determines how long the
+                        \ death animation lasts
 
  JSR BOX                \ Call BOX to redraw the same white border (BOX is part
                         \ of TT66), which removes the border as it is drawn
@@ -25846,15 +25872,15 @@ LOAD_F% = LOAD% + P% - CODE%
  STA XC
 
  LDA #146               \ Print recursive token 146 ("{all caps}GAME OVER")
- STA MCNT               \ ???
- JSR ex
+ STA MCNT               \ and reset the main loop counter to 146, so all
+ JSR ex                 \ timer-based calls will be stopped
 
 .D1
 
  JSR Ze                 \ Call Ze to initialise INWK to a potentially hostile
                         \ ship, and set A and X to random values
 
- LDA #&20               \ ???
+ LDA #32                \ Set x_lo = 32
  STA INWK
 
  LDY #0                 \ Set the following to 0: the current view in QQ11
@@ -26461,7 +26487,7 @@ ENDIF
  JSR OSBYTE
 
  LDX #LO(RLINE)         \ Set (Y X) to point to the RLINE parameter block
- LDY #HI(RLINE)         \ configuration block below, which reads a line from
+ LDY #HI(RLINE)         \ configuration block below
 
  LDA #0                 \ Call OSWORD with A = 0 to read a line from the current
  DEC L0D01              \ ???
@@ -27548,7 +27574,7 @@ ENDIF
 
                         \ These are the secondary flight controls:
 
- EQUB &17               \ TAB       KYTB+8      Energy bomb
+ EQUB &17               \ -         KYTB+8      Energy bomb
  EQUB &70               \ ESCAPE    KYTB+9      Launch escape pod
  EQUB &23               \ T         KYTB+10     Arm missile
  EQUB &35               \ U         KYTB+11     Unarm missile
