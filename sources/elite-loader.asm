@@ -391,9 +391,9 @@ INCBIN "binaries/P.(C)ASFT.bin"
 
 .David9
 
- EQUW &5456             \ ???
+EQUW David5            \ The address of David5
 
- CLD                    \ This instruction is not used
+CLD                    \ This instruction is not used
 
 \ ******************************************************************************
 \
@@ -443,7 +443,9 @@ INCBIN "binaries/P.(C)ASFT.bin"
  LDY #2                 \ Set the high byte of V219(1 0) to 2
  STY V219+1
 
- CMP swine-5,X          \ ???
+ CMP swine-5,X          \ This part of the loader has been disabled by the
+                        \ crackers, by changing an STA to a CMP (as this is an
+                        \ unprotected version)
 
  LDY #&18
  STY V219+1,X           \ Set the low byte of V219(1 0) to &18 (as X = 255), so
@@ -966,6 +968,8 @@ ENDMACRO
 
  EQUD &6C785349         \ The random number seed used for drawing Saturn
 
+.David5
+
  NOP                    \ This part of the loader has been disabled by the
  NOP                    \ crackers, as this is an unprotected version
  NOP
@@ -1161,8 +1165,10 @@ ENDMACRO
                         \ handler (this has nothing to do with drawing Saturn,
                         \ it's all part of the copy protection)
 
- LDX #&60               \ ???
- STX &0087
+ LDX #&60               \ This is normally part of the copy protection, but it's
+ STX &0087              \ been disabled in this unprotected version so this has
+                        \ no effect (though the crackers presumably thought they
+                        \ might as well still set the value just in case)
 
                         \ The following loop iterates CNT2(1 0) times, i.e. &1DD
                         \ or 477 times, and draws the background stars on the
@@ -1220,10 +1226,10 @@ ENDMACRO
 
  BNE PLL2               \ Loop back to PLL2 until CNT2+1 = 0
 
- LDX #&CA               \ ???
- NOP
- STX BLPTR
- LDX #&C6
+ LDX #&CA               \ This is normally part of the copy protection, but it's
+ NOP                    \ been disabled in this unprotected version so this has
+ STX BLPTR              \ no effect (though the crackers presumably thought they
+ LDX #&C6               \ might as well still set the values just in case)
  STX BLN
 
                         \ The following loop iterates CNT3(1 0) times, i.e. &500
@@ -1468,41 +1474,103 @@ ENDMACRO
 \
 \   A                   The screen y-coordinate of the pixel to draw, negated
 \
+\ Other entry points:
+\
+\   PIX-1               Contains an RTS
+\
 \ ******************************************************************************
 
 .PIX
 
- LDY #&80               \ ???
+ LDY #&80               \ Set ZP = 128 for use in the calculation below
  STY ZP
 
  TAY                    \ Copy A into Y, for use later
 
  EOR #%10000000         \ Flip the sign of A
 
- CMP #&F8               \ ???
- BCS PIX-1
+ CMP #248               \ If the y-coordinate in A >= 248, then this is the
+ BCS PIX-1              \ bottom row of the screen, which we want to leave blank
+                        \ as it's below the bottom of the dashboard, so return
+                        \ from the subroutine (as PIX-1 contains an RTS)
 
- LSR A                  \ ???
- LSR A
- LSR A
- STA ZP+1
- LSR A
+                        \ We now calculate the address of the character block
+                        \ containing the pixel (x, y) and put it in ZP(1 0)
+                        \
+                        \ Each character row on the mode 4 screen consists of a
+                        \ blank 32-byte border (32 pixels wide, 8 pixels high),
+                        \ then 256 bytes of visible screen (256 pixels wide, 8
+                        \ pixels high), and then another 32-byte border
+                        \
+                        \ This gives a total of 32 + 256 + 32 = 320 bytes per
+                        \ character row, so we can now calculate the address of
+                        \ the first visible pixel in the row containing (x, y)
+                        \
+                        \ First, we calculate the number of the character row
+                        \ containing this pixel, which is y div 8 as each row
+                        \ is 8 pixels high
+                        \
+                        \ We then take the start address of screen memory
+                        \ (&5800), and add 320 bytes for each of these character
+                        \ rows, to get the address of the first pixel on that
+                        \ row, but at the left edge of the left border
+                        \
+                        \ Finally, to indent by the correct margin to get to the
+                        \ first visible pixel, we add 32 bytes for the left
+                        \ margin, so in all we have:
+                        \
+                        \      &5800 + (char row * 320) + 32
+                        \      &5800 + (char row * (256 + 64)) + 32
+                        \    = &5800 + (char row * 256) + (char row * 64) + 32
+                        \
+                        \ so that's what we calculate here
+
+ LSR A                  \ Set A = A >> 3
+ LSR A                  \       = y div 8
+ LSR A                  \       = character row number
+
+                        \ Also, as ZP = 128, we have:
+                        \
+                        \   (A ZP) = (A 128)
+                        \          = (A * 256) + 128
+                        \          = 4 * ((A * 64) + 32)
+                        \          = 4 * ((char row * 64) + 32)
+
+ STA ZP+1               \ Set ZP+1 = A, so (ZP+1 0) = A * 256
+                        \                           = char row * 256
+
+ LSR A                  \ Set (A ZP) = (A ZP) / 4
+ ROR ZP                 \            = (4 * ((char row * 64) + 32)) / 4
+ LSR A                  \            = char row * 64 + 32
  ROR ZP
- LSR A
- ROR ZP
- ADC ZP+1
- ADC #&58
- STA ZP+1
- TXA
- EOR #&80
- AND #&F8
+
+ ADC ZP+1               \ Set ZP(1 0) = (A ZP) + (ZP+1 0) + &5800
+ ADC #&58               \             = (char row * 64 + 32)
+ STA ZP+1               \               + char row * 256
+                        \               + &5800
+                        \
+                        \ which is what we want, so ZP(1 0) contains the address
+                        \ of the first visible pixel on the character row
+                        \ containing the point (x, y)
+                        \
+                        \ To get the address of the character block on this row
+                        \ that contains (x, y), we need to move right by the
+                        \ correct number of character blocks, which is x div 8,
+                        \ and there are 8 bytes per character block, so we need
+                        \ to add (x div 8) * 8, or (x >> 3) * 8
+
+ TXA                    \ Set ZP(1 0) = ZP(1 0) + (X >> 3) * 8
+ EOR #%10000000
+ AND #%11111000
  ADC ZP
  STA ZP
- BCC L559F
 
- INC ZP+1
+ BCC P%+4               \ If the addition of the low bytes overflowed, increment
+ INC ZP+1               \ the high byte
 
-.L559F
+                        \ So ZP(1 0) now contains the address of the first pixel
+                        \ in the character block containing the (x, y), taking
+                        \ the screen borders into consideration
 
  TYA                    \ Set Y = Y AND %111
  AND #%00000111
@@ -1512,7 +1580,7 @@ ENDMACRO
  AND #%00000111
  TAX
 
- LDA TWOS,X             \ Otherwise fetch a pixel from TWOS and OR it into ZP+Y
+ LDA TWOS,X             \ Fetch a pixel from TWOS and OR it into ZP+Y
  ORA (ZP),Y
  STA (ZP),Y
 
@@ -1907,9 +1975,12 @@ ORG LE%
  JSR VIA05              \ clear and paging register at SHEILA &05
 
  LDA #&60               \ Set the screen start address registers at SHEILA &02
- STA VIA+&02            \ and SHEILA &03 so screen memory starts at &7EC0 ???
- LDA #&3F
- STA VIA+&03
+ STA VIA+&02            \ and SHEILA &03 so screen memory starts at &7EC0. This
+ LDA #&3F               \ gives us a blank line at the top of the screen (for
+ STA VIA+&03            \ the screen memory between &7EC0 and &7FFF, as one row
+                        \ of mode 4 is &140 bytes), and then the rest of the
+                        \ screen memory from &5800 to &7EBF cover the second
+                        \ row and down
 
  CLI                    \ Re-enable interrupts
 

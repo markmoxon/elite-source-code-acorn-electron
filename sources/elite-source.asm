@@ -582,7 +582,7 @@ ORG &0000
 
  SKIP 1                 \ Temporary storage, used in a number of places
 
- SKIP 16                \ ???
+ SKIP 16                \ These bytes appear to be unused
 
 .Q
 
@@ -2656,7 +2656,7 @@ ORG &0BE0
                         \ are in our local bubble, which is the same as saying
                         \ "space station present"
 
- SKIP 2                 \ ???
+ SKIP 2                 \ These bytes appear to be unused
 
 .L0BFB
 
@@ -3009,9 +3009,9 @@ LOAD_A% = LOAD%
 
 \ ******************************************************************************
 \
-\       Name: S%
+\       Name: S% (Part 1 of 2)
 \       Type: Workspace
-\    Address: &0D00 to &0D24
+\    Address: &0D00 to &0D0F
 \   Category: Workspaces
 \    Summary: Vector addresses, compass colour and configuration settings
 \
@@ -3028,7 +3028,8 @@ LOAD_A% = LOAD%
 
 .L0D01
 
- EQUB 0                 \ ???
+ EQUB 0                 \ ??? Gets decreased when we are asking for keyboard
+                        \ input
 
  EQUW 0                 \ Gets set to the original value of IRQ1V by
                         \ elite-loader.asm
@@ -3052,19 +3053,40 @@ LOAD_A% = LOAD%
 
  EQUW BR1               \ BRKV is set to point here by elite-loader.asm
 
+\ ******************************************************************************
+\
+\       Name: KEY1
+\       Type: Subroutine
+\   Category: Keyboard
+\    Summary: The main keyboard interrupt handler (KEYV points here)
+\
+\ ******************************************************************************
+
 .KEY1
 
- PHP                    \ KEYV jumps here, as set by elite-loader.asm ???
+ PHP                    \ ???
 
  BIT &0D01
+
  BMI P%+4
  PLP
+
  RTS
 
  PLP
 
  JMP (S%+4)             \ Jump to the original value of KEYV to process the key
                         \ press as normal
+
+\ ******************************************************************************
+\
+\       Name: S% (Part 2 of 2)
+\       Type: Workspace
+\    Address: &0D1C to &0D24
+\   Category: Workspaces
+\    Summary: Compass colour and configuration settings
+\
+\ ******************************************************************************
 
 .COMC
 
@@ -3172,21 +3194,37 @@ LOAD_A% = LOAD%
                         \ Toggled by pressing "K" when paused, see the DKS3
                         \ routine for details
 
+\ ******************************************************************************
+\
+\       Name: IRQ1
+\       Type: Subroutine
+\   Category: Utility routines
+\    Summary: The main interrupt handler (IRQ1V points here)
+\
+\ ******************************************************************************
+
 .IRQ1
 
- LDA L0D06
+ LDA L0D06              \ ???
  EOR #&FF
  STA L0D06
+
  ORA L0D01
- BMI L0D3D
+ BMI jvec
 
  LDA VIA+&05
  ORA #&20
  STA VIA+&05
- LDA &00FC
- RTI
 
-.L0D3D
+ LDA &FC                \ Restore the value of A from before the call to the
+                        \ interrupt handler (the MOS stores the value of A in
+                        \ location &FC before calling the interrupt handler)
+
+ RTI                    \ Return from interrupts, so this interrupt is not
+                        \ passed on to the next interrupt handler, but instead
+                        \ the interrupt terminates here
+
+.jvec
 
  JMP (S%+2)             \ Jump to the original value of IRQ1V to process the
                         \ interrupt as normal
@@ -3285,9 +3323,10 @@ LOAD_A% = LOAD%
 
  AND #%10000000         \ Extract the flipped sign of the roll rate
 
- JMP P%+11              \ ???
+ JMP P%+11              \ This skips over the following block of bytes, which
+                        \ appear to be unused; it isn't clear what they do
 
- EQUB &A1, &BB
+ EQUB &A1, &BB          \ These bytes appear to be unused
  EQUB &80, &00
  EQUB &90, &01
  EQUB &D6, &F1
@@ -4325,8 +4364,9 @@ LOAD_A% = LOAD%
 
 .q2
 
- LDA DLY                \ ???
- BNE KS1S
+ LDA DLY                \ If we already have an in-flight message on-screen (in
+ BNE KS1S               \ which case DLY > 0), jump to KS1S to skip showing an
+                        \ on-screen bounty for this kill
 
  LDY #10                \ Fetch byte #10 of the ship's blueprint, which is the
  LDA (XX0),Y            \ low byte of the bounty awarded when this ship is
@@ -4719,9 +4759,9 @@ LOAD_A% = LOAD%
  LDA ECMA               \ If an E.C.M is going off (our's or an opponent's) then
  BEQ MA66               \ keep going, otherwise skip to MA66
 
- DEC ECMA               \ ???
- DEC ECMA               \ Decrement the E.C.M. countdown timer, and if it has
- BNE MA66               \ reached zero, keep going, otherwise skip to MA66
+ DEC ECMA               \ Decrement the E.C.M. countdown timer twice, and if it
+ DEC ECMA               \ has reached zero, keep going, otherwise skip to MA66               
+ BNE MA66
 
 .MA70
 
@@ -7376,8 +7416,9 @@ NEXT
                         \ documented in TIS2
 
  TXA                    \ ???
- AND #&07
+ AND #7
  TAX
+
  LDA TWOS,X
  STA R
 
@@ -7600,11 +7641,9 @@ NEXT
  SBC #7                 \ previous character along to the left
  STA SC
 
- BCS L17F2              \ ???
+ BCS P%+4              \ ???
 
  DEC SCH
-
-.L17F2
 
  CLC                    \ Clear the C flag so it doesn't affect the additions
                         \ below
@@ -10472,16 +10511,16 @@ NEXT
  INY                    \ And draw the third pixel row, incrementing Y
  STA (SC),Y
 
- TYA                    \ ???
- CLC
- ADC #&06
- BCC L1E4E
+ TYA                    \ Add 6 to Y, so Y is now 8 more than when we started
+ CLC                    \ this loop iteration, so Y now points to the address
+ ADC #6                 \ of the first line of the indicator bar in the next
+                        \ character block (as each character is 8 bytes of
+                        \ screen memory)
 
- INC SCH
+ BCC P%+4               \ If the addition of the low bytes of SC overflowed,
+ INC SCH                \ increment the high byte
 
-.L1E4E
-
- TAY
+ TAY                    \ Transfer the updated value (Y + 6) back into Y
 
  DEX                    \ Decrement the loop counter for the next character
                         \ block along in the indicator
@@ -22215,11 +22254,9 @@ LOAD_E% = LOAD% + P% - CODE%
  AND #&F8
  ADC SC
  STA SC
- BCC L37D0
 
+ BCC P%+4
  INC SCH
-
-.L37D0
 
  LDA Y1                 \ ???
  AND #&07
@@ -22234,9 +22271,7 @@ LOAD_E% = LOAD% + P% - CODE%
  STA (SC),Y             \ remove it later without ruining the background that's
                         \ already on-screen
 
- JSR L37E4              \ ???
-
-.L37E4
+ JSR P%+3              \ ??? Run the following twice
 
  INX
  LDA TWOS,X
@@ -23050,13 +23085,24 @@ LOAD_E% = LOAD% + P% - CODE%
  ASL A
  STA T
 
- LDA #&D1               \ Set SC = ???
- SBC T                  \        = 
- STA SC
+ LDA #209               \ Set SC = &80 + 32 + 49 - T
+ SBC T                  \        = &80 + 32 + 48 + 1 - (X * 8)
+ STA SC                 \
+                        \ The &80 part comes from the fact that the character
+                        \ row containing the missile starts at address &7D80,
+                        \ and the low byte of this is &80
+                        \
+                        \ The 32 part comes from the 32-byte blank border to
+                        \ the left of the screen
+                        \
+                        \ And the 48 part is from character block 7, which is
+                        \ the character block containing the missile indicators
 
                         \ So the low byte of SC(1 0) contains the row address
                         \ for the rightmost missile indicator, made up as
                         \ follows:
+                        \
+                        \   * &80 + 32 as described above
                         \
                         \   * 48 (character block 7, as byte #7 * 8 = 48), the
                         \     character block of the rightmost missile
@@ -23069,9 +23115,10 @@ LOAD_E% = LOAD% + P% - CODE%
                         \     missile, for X = 1 we hop to the left by one
                         \     character, and so on
 
- LDA #&7D               \ Set the high byte of SC(1 0) to &7D, the character row
- STA SCH                \ that contains the missile indicators (i.e. the bottom
-                        \ row of the screen)
+ LDA #&7D               \ Set the high byte of SC(1 0) to &7D, the high byte of
+ STA SCH                \ &7D80, which is the start of the character row that
+                        \ contains the missile indicators (i.e. the bottom row
+                        \ of the screen)
 
  TYA                    \ Set X to the indicator status that was passed to the
  TAX                    \ subroutine, so we can use it below as an index into
@@ -24141,7 +24188,7 @@ LOAD_F% = LOAD% + P% - CODE%
 
  JSR ZINF               \ Call ZINF to reset the INWK ship workspace
 
- LDA #0                 \ ???
+ LDA #0                 \ Set A = 0 so we can zero the following flags
 
  STA FRIN+1             \ Set the second slot in the FRIN table to 0, which
                         \ sets this slot to empty, so when we call NWSHP below
@@ -24589,16 +24636,20 @@ LOAD_F% = LOAD% + P% - CODE%
 
 .SFX
 
- EQUB &11               \ ???
+ EQUB &11,&01,&00,&03   \ 0  - Lasers fired by us
+ EQUB &11,&02,&2C,&04   \ 8  - We're being hit by lasers
+ EQUB &11,&03,&F0,&06   \ 16 - We died 1 / We made a hit or kill 2
+ EQUB &10,&F1,&04,&05   \ 24 - We died 2 / We made a hit or kill 1
+ EQUB &01,&F1,&BC,&01   \ 32 - Short, high beep
+ EQUB &11,&F4,&0C,&08   \ 40 - Long, low beep
+ EQUB &10,&F1,&04,&06   \ 48 - Missile launched / Ship launched from station
+ EQUB &10,&02,&60,&10   \ 56 - Hyperspace drive engaged
+ EQUB &11,&04,&C2,&FF   \ 64 - E.C.M. on
+ EQUB &11,&00,&00,&00   \ 72 - E.C.M. off
 
- EQUB &01, &00, &03, &11, &02, &2C, &04, &11
- EQUB &03, &F0, &06, &10, &F1, &04, &05, &01
- EQUB &F1, &BC, &01, &11, &F4, &0C, &08, &10
- EQUB &F1, &04, &06, &10, &02, &60, &10, &11
- EQUB &04, &C2, &FF, &11, &00, &00, &00
-
- EQUB &70, &24, &56, &56, &42, &28, &C8, &D0
- EQUB &F0, &E0
+ EQUB &70,&24,&56,&56   \ ???
+ EQUB &42,&28,&C8,&D0
+ EQUB &F0,&E0
 
 \ ******************************************************************************
 \
@@ -25388,21 +25439,21 @@ LOAD_F% = LOAD% + P% - CODE%
 
 .MLOOP
 
- LDA LASCT              \ ???
- SBC #4
- BCS L3E2E
+ LDA LASCT              \ Set A to the value of LASCT, the laser pulse count
 
+ SBC #4                 \ Decrement the value of LASCT by 4
+
+ BCS P%+4               \ If we just reduced LASCT below 0, set it to 0
  LDA #0
 
-.L3E2E
-
- STA LASCT
+ STA LASCT              \ Store the decremented value of X in LASCT, so LASCT
+                        \ gets reduced by 4, but not into negative territory
 
  LDX #&FF               \ Set the stack pointer to &01FF, which is the standard
  TXS                    \ location for the 6502 stack, so this instruction
                         \ effectively resets the stack
 
- INX                    \ ???
+ INX                    \ Set L0D01 = 0 ???
  STX L0D01
 
  LDX GNTMP              \ If the laser temperature in GNTMP is non-zero,
@@ -25858,7 +25909,10 @@ LOAD_F% = LOAD% + P% - CODE%
 
  LDX #50                \ Set the laser count to 50 to act as a counter in the
  STX LASCT              \ D2 loop below, so this setting determines how long the
-                        \ death animation lasts
+                        \ death animation lasts (LASCT decreases by 4 for each
+                        \ iteration round the main loop, and we also decrement
+                        \ it by 1 below to give a total of 5, so this makes the
+                        \ animation last for 10 iterations of the main loop)
 
  JSR BOX                \ Call BOX to redraw the same white border (BOX is part
                         \ of TT66), which removes the border as it is drawn
@@ -25942,7 +25996,9 @@ LOAD_F% = LOAD% + P% - CODE%
                         \ move everything about
 
  DEC LASCT              \ Decrement the counter in LASCT, which we set above,
-                        \ so for each loop around D2, we decrement LASCT twice
+                        \ so for each loop around D2, we decrement LASCT by 5
+                        \ (the main loop decrements it by 4, and this one makes
+                        \ it 5)
 
  BNE D2                 \ Loop back to call the main flight loop again, until we
                         \ have called it 127 times
