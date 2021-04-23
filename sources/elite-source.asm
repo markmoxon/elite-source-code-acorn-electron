@@ -2658,13 +2658,17 @@ ORG &0BE0
 
  SKIP 2                 \ These bytes appear to be unused
 
-.L0BFB
+.SFXPR
 
- SKIP 2                 \ ???
+ SKIP 1                 \ The priority of the current sound on channel 0
 
-.L0BFD
+ SKIP 1                 \ The priority of the current sound on channel 1
 
- SKIP 2                 \ ???
+.SFXDU
+
+ SKIP 1                 \ The duration counter of the current sound on channel 0
+
+ SKIP 1                 \ The duration counter of the current sound on channel 1
 
 .ECMP
 
@@ -3024,7 +3028,8 @@ LOAD_A% = LOAD%
 
 .S%
 
- EQUB &40               \ This gets set to &40 by elite-loader.asm ???
+ EQUB &40               \ This gets set to &40 by elite-loader.asm as part of
+                        \ the copy protection
 
 .L0D01
 
@@ -3245,6 +3250,9 @@ LOAD_A% = LOAD%
 \
 \   * Seed the random number generator
 \
+\   * Update the sound channel's duration counter to ensure sounds are allocated
+\     a minimum duration (unless they are stopped by a higher priority sound)
+\
 \ Other entry points:
 \
 \   M%                  The entry point for the main flight loop
@@ -3262,21 +3270,33 @@ LOAD_A% = LOAD%
  STA RAND               \ Store the seed in the first byte of the four-byte
                         \ random number seed that's stored in RAND
 
- LDA #0                 \ ???
- LDX #1
+                        \ The following processes each sound channel to ensure
+                        \ that sounds last for their minimum duration (see the
+                        \ SFX variable for more details)
 
-.L0D49
+ LDA #0                 \ Set A = 0 so we can use it for resetting the sound
+                        \ channel's duration and priority values below
 
- DEC L0BFD,X
- BPL L0D54
+ LDX #1                 \ Set X as a sound channel counter, starting with
+                        \ channel 1 and then doing channel 0
 
- STA L0BFD,X
- STA L0BFB,X
+.SFXL
 
-.L0D54
+ DEC SFXDU,X            \ Decrement this sound channel's SFXDU duration value
 
- DEX
- BPL L0D49
+ BPL P%+8               \ If the duration is still positive, skip the following
+                        \ two instructions
+
+ STA SFXDU,X            \ The duration just reached zero, so the sound on this
+ STA SFXPR,X            \ channel has reached the end of its mimumum duration,
+                        \ so we zero the channel's SFXDU duration and SFXPR
+                        \ priority values so any new sounds that need to be made
+                        \ will be made regardless of priority
+
+ DEX                    \ Decrement the sound channel
+
+ BPL SFXL               \ Loop back to process the next sound channel until we have
+                        \ done both
 
 \ ******************************************************************************
 \
@@ -3528,12 +3548,12 @@ LOAD_A% = LOAD%
                         \ value &FF, as we just loaded it from MSTG and checked
                         \ that it was negative)
 
- LDY #&0D               \ Change the leftmost missile indicator to yellow/white
- JSR MSBAR              \ on the missile bar (this call changes the leftmost
-                        \ indicator because we set X to the number of missiles
-                        \ in NOMSL above, and the indicators are numbered from
-                        \ right to left, so X is the number of the leftmost
-                        \ indicator) ???
+ LDY #&0D               \ Change the leftmost missile indicator to a black box
+ JSR MSBAR              \ in a white square on the missile bar (this call
+                        \ changes the leftmost indicator because we set X to the
+                        \ number of missiles in NOMSL above, and the indicators
+                        \ are numbered from right to left, so X is the number of
+                        \ the leftmost indicator)
 
 .MA25
 
@@ -3963,10 +3983,11 @@ LOAD_A% = LOAD%
 
  LDA #3                 \ Set A to 3 to denote we may be scooping an escape pod
 
- CPX #ESC               \ ???
- BNE oily
+ CPX #ESC               \ If this is not an escape pod, jump to oily to randomly
+ BNE oily               \ decide the canister's contents
 
- BEQ slvy2
+ BEQ slvy2              \ This is an escape pod, so jump to slvy2 with A set to
+                        \ 3, so we scoop up the escape pod as slaves
 
 .oily
 
@@ -4237,7 +4258,8 @@ LOAD_A% = LOAD%
  LDY #&11               \ lock, with the targeted ship's slot number in X
  JSR ABORT2             \ (which we stored in XSAV at the start of this ship's
                         \ loop at MAL1), and set the colour of the missile
-                        \ indicator to the colour in Y (red = &0E) ???
+                        \ indicator to the colour in Y (black "T" in white
+                        \ square = &11)
 
 .MA47
 
@@ -6338,12 +6360,20 @@ LOAD_A% = LOAD%
 \
 \ See the deep dive on "Rotating the universe" for more details on the above.
 \
+\ Arguments:
+\
+\   X                   The type of the planet or sun
+\
+\ Other entry points:
+\
+\   MV40-1              Contains an RTS
+\
 \ ******************************************************************************
 
 .MV40
 
- TXA                    \ ???
- LSR A
+ TXA                    \ If bit 0 of X is set, then this is the sun, so return
+ LSR A                  \ from the subroutine (as MV40-1 contains an RTS)
  BCS MV40-1
 
  LDA ALPHA              \ Set Q = -ALPHA, so Q contains the angle we want to
@@ -7196,9 +7226,8 @@ NEXT
  ADC #8                 \ character along to the right
  STA SC
 
- BCC LI7                \ ???
-
- INC SCH
+ BCC LI7                \ If the addition of the low bytes of SC overflowed,
+ INC SCH                \ increment the high byte
 
 .LI7
 
@@ -7290,9 +7319,8 @@ NEXT
  ADC #8                 \ character along to the right
  STA SC
 
- BCC LI10               \ ???
-
- INC SCH
+ BCC LI10               \ If the addition of the low bytes overflowed, increment
+ INC SCH                \ the high byte of SC(1 0)
 
 .LI10
 
@@ -7551,10 +7579,10 @@ NEXT
  ADC #8                 \ character along to the right
  STA SC
 
- BCC LIC5               \ ???
+ BCC LIC5               \ If the addition of the low bytes of SC overflowed,
+ INC SCH                \ increment the high byte
 
- INC SCH
- CLC
+ CLC                    \ Clear the C flag
 
 .LIC5
 
@@ -7641,9 +7669,8 @@ NEXT
  SBC #7                 \ previous character along to the left
  STA SC
 
- BCS P%+4              \ ???
-
- DEC SCH
+ BCS P%+4               \ If the subtraction of the low bytes of SC underflowed,
+ DEC SCH                \ decrement the high byte
 
  CLC                    \ Clear the C flag so it doesn't affect the additions
                         \ below
@@ -7797,12 +7824,13 @@ NEXT
 
 .HLOIN
 
- LDX Y1                 \ ???
- STX Y2
+ LDX Y1                 \ Set Y2 = Y1, so we can use the normal line-drawing
+ STX Y2                 \ routine to draw a horizontal line
 
 .HL1
 
- JMP LL30               \ ???
+ JMP LL30               \ Draw a line from (X1, Y1) to (X2, Y2), which will be
+                        \ horizontal because we set Y2 to Y1 above
 
 \ ******************************************************************************
 \
@@ -10057,9 +10085,8 @@ NEXT
                         \
                         \ and so on
 
- BCC P%+4               \ ???
-
- INC SCH
+ BCC P%+4               \ If the addition of the low byte overflowed, increment
+ INC SCH                \ the high byte
 
  CPY #127               \ If the character number (which is in Y) <> 127, then
  BNE RR2                \ skip to RR2 to print that character, otherwise this is
@@ -10189,10 +10216,10 @@ NEXT
 
 .DIALS
 
- LDA #&F0               \ ???
- STA SC
- LDA #&76
- STA SC+1
+ LDA #&F0               \ Set SC(1 0) = &76F0, which is the screen address for
+ STA SC                 \ the character block containing the left end of the
+ LDA #&76               \ top indicator in the right part of the dashboard, the
+ STA SC+1               \ one showing our speed
 
  LDA DELTA              \ Fetch our ship's speed into A, in the range 0-40
 
@@ -10549,7 +10576,7 @@ NEXT
 
 .DL3
 
- ASL A                  \ ???
+ ASL A                  \ Shift the mask left so bit 0 is cleared
 
  DEC Q                  \ Decrement the counter for the number of columns to
                         \ blank out
@@ -15236,6 +15263,8 @@ NEXT
 \                       view name. This can be used to remove the border and
 \                       view name, as it is drawn using EOR logic
 \
+\   BORDER              Just draw the border
+\
 \ ******************************************************************************
 
 .TTX66
@@ -15253,8 +15282,9 @@ NEXT
  STA de                 \ Clear de, the flag that appends " DESTROYED" to the
                         \ end of the next text token, so that it doesn't
 
- LDX #&58               \ ???
- JSR LYN
+ LDX #&58               \ Call LYN with X = &58 to clear the screen from page
+ JSR LYN                \ &58 to page &75, which clears the whole screen (as
+                        \ screen memory starts at &5800)
 
  LDX QQ22+1             \ Fetch into X the number that's shown on-screen during
                         \ the hyperspace countdown
@@ -15300,7 +15330,7 @@ NEXT
  LDX #0                 \ Set QQ17 = 0 to switch to ALL CAPS
  STX QQ17
 
-.L2838                  \ ???
+.BORDER
 
  LDX #0                 \ Set (X1, Y1) to (0, 0)
  STX X1
@@ -15360,12 +15390,13 @@ NEXT
 \       Name: DELAY
 \       Type: Subroutine
 \   Category: Utility routines
-\    Summary: Wait for a specified time, in 1/50s of a second
+\    Summary: Wait for a specified time
 \
 \ ------------------------------------------------------------------------------
 \
-\ Wait for the number of vertical syncs given in Y, so this effectively waits
-\ for Y/50 of a second (as the vertical sync occurs 50 times a second).
+\ The Electron doesn't have vertical sync, so we can't use that to measure the
+\ length of our delay, so instead we loop round a convoluted loop-within-loop
+\ structure to pass the correct amount of time.
 \
 \ Arguments:
 \
@@ -15373,48 +15404,53 @@ NEXT
 \
 \ Other entry points:
 \
-\   DEL8                Wait for 8/50 of a second (0.16 seconds)
+\   DEL8                Wait for 1 delay loop's worth of time
 \
-\   DELAY-5             Wait for 2/50 of a second (0.04 seconds).
+\   DELAY-5             Wait for 30 delay loops' worth of time
 \
 \ ******************************************************************************
 
-.L285F
-
- LDY #1                 \ Set Y to 1 ???
+ LDY #1                 \ Set Y to 1 so we run the delay loop once
 
  EQUB &2C               \ Skip the next instruction by turning it into
-                        \ &2C &A0 &08, or BIT &08A0, which does nothing apart
+                        \ &2C &A0 &1E, or BIT &1EA0, which does nothing apart
                         \ from affect the flags
 
 .DEL8
 
- LDY #30                \ Set Y to 30 ??? and fall through into DELAY
-                        \ to wait for this long
+ LDY #30                \ Set Y to 30 and fall through into DELAY so we run the
+                        \ delay loop 30 times
 
 .DELAY
 
- TXA                    \ ???
- LDX #0
+ TXA                    \ Store X in A so we can retrieve it later
 
-.L2867
+                        \ The following loop does 256 iterations of a convoluted
+                        \ loop-back and pass-through sequence, which purely
+                        \ exists to implement a delay (and to make us go
+                        \ cross-eyed trying to follow the logic)
 
- EQUB &2C
+ LDX #0                 \ Set X = 0 to act as a loop counter
 
-.L2868
+.DELY1
 
- BNE L2867
+ EQUB &2C               \ Skip the following instruction
 
- EQUB &2C
+.DELY2
 
-.L286B
+ BNE DELY1              \ Loop back up as part of the chain of delay loops
 
- BNE L2868
+ EQUB &2C               \ Skip the following instruction
 
- DEX
- BNE L286B
+.DELY3
 
- TAX
+ BNE DELY2              \ Loop back up as part of the chain of delay loops 
+
+ DEX                    \ Decrement the loop counter
+
+ BNE DELY3              \ Loop back up as part of the chain of delay loops
+
+ TAX                    \ retrieve X from A, so it gets preserved
 
  DEY                    \ Decrement the counter in Y
 
@@ -15487,12 +15523,14 @@ NEXT
 
 .CLYNS
 
- JSR L2838              \ ???
+ JSR BORDER             \ Redraw the space view's border, which removes it
+                        \ from the screen
 
- LDX #&71
- JSR LYN
+ LDX #&71               \ Call LYN with X = &71 to clear the screen from page
+ JSR LYN                \ &71 to page &75, which clears the bottom three lines
+                        \ of the screen
 
- JSR L2838
+ JSR BORDER             \ Redraw the space view's border
 
  LDA #20                \ Move the text cursor to row 20, near the bottom of
  STA YC                 \ the screen
@@ -15500,14 +15538,15 @@ NEXT
  JSR TT67               \ Print a newline, which will move the text cursor down
                         \ a line (to row 21) and back to column 1
 
- LDY #1                 \ ???
+ LDY #1                 \ Move the text cursor to column 1
  STY XC
- DEY
+
+ DEY                    \ Set Y = 0, so the subroutine returns with this value
  TYA
 
 .SC5
 
- RTS
+ RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
 \
@@ -15518,22 +15557,21 @@ NEXT
 \
 \ ------------------------------------------------------------------------------
 \
-\ Set pixels 0-233 to the value in A, starting at the pixel pointed to by SC.
+\ Zero memory from page X to page &75 (inclusive).
 \
 \ Arguments:
 \
-\   A                   The value to store in pixels 1-233 (the only value that
-\                       is actually used is A = 0, which clears those pixels)
-\
+\   X                   The page of screen memory from which to start clearing
 \ ******************************************************************************
 
 .LYN
 
- JSR ZES1               \ ???
+ JSR ZES1               \ Call ZES1 to zero-fill the page in X
 
- INX
- CPX #&76
- BNE LYN
+ INX                    \ Increment X to point to the next page in memory
+
+ CPX #&76               \ Loop back to zero the next page until we have reached
+ BNE LYN                \ page &76 (so page &75 is the last page to be zeroed)
 
  RTS                    \ Return from the subroutine
 
@@ -15760,9 +15798,11 @@ NEXT
                         \ We can use there as the starting point for drawing the
                         \ stick, if there is one
 
- LDA TWOS,X             \ ???
- STA X1
- PLA
+ LDA TWOS,X             \ Load the same mode 4 1-pixel byte that we just used
+ STA X1                 \ for the top-right pixel and store it in X1, so we can
+                        \ use it as the character row byte for the stick
+
+ PLA                    \ Restore the stick height from the stack into A
 
  PLP                    \ Restore the flags from above, so the C flag once again
                         \ reflects the sign of the stick height
@@ -18007,9 +18047,10 @@ LOAD_D% = LOAD% + P% - CODE%
 
 .ee1
 
- LDA XX12               \ ???
+ LDA XX12                \ Set X1 to the pixel x-coordinate of this system
  STA X1
- JSR CPIX4
+
+ JSR CPIX4               \ Draw a double-height mode 4 dot at (X1, Y1)
 
 .TT187
 
@@ -18401,8 +18442,10 @@ LOAD_D% = LOAD% + P% - CODE%
                         \ contains an RTS), as there is already a countdown in
                         \ progress
 
- LDX #1                 \ ???
- JSR DKS4
+ LDX #1                 \ Set X to the internal key number for CTRL
+
+ JSR DKS4               \ Scan the keyboard to see if the key in X (i.e. CTRL) is
+                        \ currently pressed
 
  BMI Ghy                \ If it is, then the galactic hyperdrive has been
                         \ activated, so jump to Ghy to process it
@@ -19349,7 +19392,7 @@ LOAD_D% = LOAD% + P% - CODE%
 
 .ee5
 
- JSR hyp1               \ ???
+ JSR hyp1               \ Jump straight to the system at (QQ9, QQ10)
 
  JSR GVL                \ Calculate the availability for each market item in the
                         \ new system
@@ -20092,8 +20135,8 @@ LOAD_D% = LOAD% + P% - CODE%
 
  JSR BEEP               \ Call the BEEP subroutine to make a short, high beep
 
- LDY #200               \ Delay for 50 vertical syncs (50/50 = 1 second) and
- JMP DELAY              \ return from the subroutine using a tail call ???
+ LDY #200               \ Delay for 200 delay loops and return from the
+ JMP DELAY              \ subroutine using a tail call
 
 \ ******************************************************************************
 \
@@ -22126,8 +22169,9 @@ LOAD_E% = LOAD% + P% - CODE%
  BPL P%+4               \ skip the following instruction
 
  LDA #&FF               \ The z-coordinate of XX15 is negative, so the planet or
-                        \ station is behind us and the compass dot should be in
-                        \ green/cyan, so set A to a ???
+                        \ station is behind us and the compass dot should be a
+                        \ single-height dash, so set A to &FF for the call to
+                        \ DOT below
 
  STA COMC               \ Store the compass colour in COMC
 
@@ -22148,13 +22192,13 @@ LOAD_E% = LOAD% + P% - CODE%
 \
 \   COMY                The screen pixel y-coordinate of the dot
 \
-\   COMC                The colour and thickness of the dot:
+\   COMC                The thickness of the dot:
 \
-\                         * &F0 = a double-height dot in yellow/white, for when
-\                           the object in the compass is in front of us
+\                         * &F0 = a double-height dot in white, for when the
+\                           object in the compass is in front of us
 \
-\                         * &FF = a single-height dot in green/cyan, for when
-\                           the object in the compass is behind us
+\                         * &FF = a single-height dot in white, for when the
+\                           object in the compass is behind us
 \
 \ ******************************************************************************
 
@@ -22258,9 +22302,9 @@ LOAD_E% = LOAD% + P% - CODE%
  BCC P%+4
  INC SCH
 
- LDA Y1                 \ ???
- AND #&07
- TAY
+ LDA Y1                 \ Set Y to just bits 0-2 of the y-coordinate, which will
+ AND #%00000111         \ be the number of the pixel row we need to draw into
+ TAY                    \ within the character block
 
  LDA X1                 \ ???
  AND #&07
@@ -22924,13 +22968,14 @@ LOAD_E% = LOAD% + P% - CODE%
 
 .ECBLB
 
- LDA #&98               \ The E.C.M. bulb is in character block number 7
-                        \ with each character taking 8 bytes, so this sets the
-                        \ low byte of the screen address of the character block
-                        \ we want to draw to ???
+ LDA #&98               \ Set A to the low byte of the screen address of the
+                        \ E.C.M. bulb (which is at &7C98)
 
- LDX #LO(ECBT)          \ Set (Y X) to point to the character definition in
- LDY #HI(ECBT)+&43      \ ECBT ???
+ LDX #LO(ECBT)          \ Set X to the low byte of the address of the character
+                        \ definition in ECBT
+
+ LDY #&7C               \ Set Y to the high byte of the screen address of the
+                        \ E.C.M. bulb (which is at &7C98)
 
  BNE BULB               \ Jump down to BULB (this BNE is effectively a JMP as
                         \ A will never be zero)
@@ -22952,13 +22997,14 @@ LOAD_E% = LOAD% + P% - CODE%
 
 .SPBLB
 
- LDA #&20               \ The space station bulb is in character block number 24
-                        \ with each character taking 8 bytes, so this sets the
-                        \ low byte of the screen address of the character block
-                        \ we want to draw to
+ LDA #&20               \ Set A to the low byte of the screen address of the
+                        \ space station bulb (which is at &7D20)
 
- LDX #LO(SPBT)          \ Set (Y X) to point to the character definition in SPBT
- LDY #HI(SPBT)+&44      \ ???
+ LDX #LO(SPBT)          \ Set X to the low byte of the address of the character
+                        \ definition in SPBT
+
+ LDY #&7D               \ Set Y to the high byte of the screen address of the
+                        \ space station bulb (which is at &7D20)
 
                         \ Fall through into BULB to draw the space station bulb
 
@@ -22973,13 +23019,13 @@ LOAD_E% = LOAD% + P% - CODE%
 \
 \ Arguments:
 \
-\   A                   The y-coordinate of the bulb as a low-byte screen
-\                       address offset within screen page &7D (as both bulbs
-\                       are on this character row in the dashboard)
+\   A                   The low byte of the screen address of the bulb to show
 \
-\   (Y X)               The address of the character definition of the bulb to
-\                       be drawn (i.e. ECBT for the E.C.M. bulb, or SPBT for the
-\                       space station bulb)
+\   X                   The low byte of the address of the character definition
+\                       of the bulb to be drawn, i.e. #LO(ECBT) for the E.C.M.
+\                       bulb, or #LO(SPBT) for the space station bulb
+\
+\   Y                   The high byte of the screen address of the bulb to show
 \
 \ ******************************************************************************
 
@@ -22987,10 +23033,13 @@ LOAD_E% = LOAD% + P% - CODE%
 
  STA SC                 \ Store the low byte of the screen address in SC
 
- STX P+1                \ ???
- LDX #&39
- STX P+2
- TYA
+ STX P+1                \ Set P(2 1) to the address of the character definition
+ LDX #HI(ECBT)          \ of the bulb to be drawn (this assumes that ECBT and
+ STX P+2                \ SPBT are in the same page and have the same high byte)
+
+ TYA                    \ Set A to Y, the high byte of the screen address we
+                        \ want to write to, so now (A SC) points to the specific
+                        \ bulb's screen address
 
  JMP RREN               \ Call RREN to print the character definition pointed to
                         \ by P(2 1) at the screen address pointed to by (A SC),
@@ -23017,7 +23066,14 @@ LOAD_E% = LOAD% + P% - CODE%
 
 .ECBT
 
- EQUB &FE, &FE, &E0     \ ???
+ EQUB %11111110         \ x x x x x x x x .
+ EQUB %11111110         \ x x x x x x x x .
+ EQUB %11100000         \ x x x . . . . . .
+                        \ x x x x x x x x .
+                        \ x x x x x x x x .
+                        \ x x x . . . . . .
+                        \ x x x x x x x x .
+                        \ x x x x x x x x .
 
 \ ******************************************************************************
 \
@@ -23037,7 +23093,14 @@ LOAD_E% = LOAD% + P% - CODE%
 
 .SPBT
 
- EQUB &FE, &FE, &E0, &FE, &FE, &0E, &FE, &FE    \ ???
+ EQUB %11111110         \ x x x x x x x x .
+ EQUB %11111110         \ x x x x x x x x .
+ EQUB %11100000         \ x x x . . . . . .
+ EQUB %11111110         \ x x x x x x x x .
+ EQUB %11111110         \ x x x x x x x x .
+ EQUB %00001110         \ . . . . . x x x .
+ EQUB %11111110         \ x x x x x x x x .
+ EQUB %11111110         \ x x x x x x x x .
 
 \ ******************************************************************************
 \
@@ -23335,9 +23398,9 @@ LOAD_E% = LOAD% + P% - CODE%
 
 .PLANET
 
- LDA TYPE               \ ???
- LSR A
- BCS PL2-1
+ LDA TYPE               \ If bit 0 of the ship type is set, then this is the
+ LSR A                  \ sun, so return from the subroutine (as PL2-1 contains
+ BCS PL2-1              \ an RTS)
 
  LDA INWK+8             \ Set A = z_sign (the highest byte in the planet/sun's
                         \ coordinates)
@@ -24029,21 +24092,23 @@ LOAD_E% = LOAD% + P% - CODE%
 
  LDA KL                 \ Set A to the value of KL (the key pressed)
 
- LDY #0                 \ ???
+ LDY #0                 \ Set the result, Y = 0 (and we know that X is 0 as well
+                        \ as we jumped to TJ1 from above following a LDX and a
+                        \ BEQ)
 
- CMP #&18
+ CMP #&18               \ If left arrow was pressed, set X = X - 1
  BNE P%+3
  DEX
 
- CMP #&78
+ CMP #&78               \ If right arrow was pressed, set X = X + 1
  BNE P%+3
  INX
 
- CMP #&39
+ CMP #&39               \ If up arrow was pressed, set Y = Y + 1
  BNE P%+3
  INY
 
- CMP #&28
+ CMP #&28               \ If down arrow was pressed, set Y = Y - 1
  BNE P%+3
  DEY
 
@@ -24632,14 +24697,30 @@ LOAD_F% = LOAD% + P% - CODE%
 \ and with pitch &60 (96) and duration &10 (16). The four sound envelopes (1-4)
 \ are set up by the loading process.
 \
+\ The Electron has an additional layer of sound data for each of the game's
+\ sounds - priority and minimum duration. Because the Electron only has one
+\ tone channel and one noise channel, it prioritises each sound. If a sound
+\ is already playing and a sound of a higher priority needs to be made, the new
+\ sound will take over; if, however, the new sound is of a lower priority, it
+\ gets discarded and doesn't get made.
+\
+\ This system works alongside the miniumum duration value; after the minimum
+\ duration, the priority system is ignored, so once a high priority sound has
+\ sounded for its minimum duration, then even if that high priority sound is
+\ still being made, a lower priority sound can come along and take precedence.
+\
+\ To put it another way, high priority sounds take control of the sound output
+\ and lower priority sounds don't get a look-in, but only for the minimum
+\ duration of the higher priority sound.
+\
 \ ******************************************************************************
 
 .SFX
 
  EQUB &11,&01,&00,&03   \ 0  - Lasers fired by us
  EQUB &11,&02,&2C,&04   \ 8  - We're being hit by lasers
- EQUB &11,&03,&F0,&06   \ 16 - We died 1 / We made a hit or kill 2
- EQUB &10,&F1,&04,&05   \ 24 - We died 2 / We made a hit or kill 1
+ EQUB &11,&03,&F0,&06   \ 16 - We made a hit or kill 2
+ EQUB &10,&F1,&04,&05   \ 24 - We died / We made a hit or kill 1
  EQUB &01,&F1,&BC,&01   \ 32 - Short, high beep
  EQUB &11,&F4,&0C,&08   \ 40 - Long, low beep
  EQUB &10,&F1,&04,&06   \ 48 - Missile launched / Ship launched from station
@@ -24647,9 +24728,18 @@ LOAD_F% = LOAD% + P% - CODE%
  EQUB &11,&04,&C2,&FF   \ 64 - E.C.M. on
  EQUB &11,&00,&00,&00   \ 72 - E.C.M. off
 
- EQUB &70,&24,&56,&56   \ ???
- EQUB &42,&28,&C8,&D0
- EQUB &F0,&E0
+.SFX2
+
+ EQUB &70               \ 0  - Priority 112, minimum duration 0
+ EQUB &24               \ 8  - Priority  36, minimum duration 4
+ EQUB &56               \ 16 - Priority  86, minimum duration 6
+ EQUB &56               \ 24 - Priority  86, minimum duration 6
+ EQUB &42               \ 32 - Priority  66, minimum duration 2
+ EQUB &28               \ 40 - Priority  40, minimum duration 8
+ EQUB &C8               \ 48 - Priority 200, minimum duration 8
+ EQUB &D0               \ 56 - Priority 208, minimum duration 0
+ EQUB &F0               \ 64 - Priority 240, minimum duration 0
+ EQUB &E0               \ 72 - Priority 224, minimum duration 0
 
 \ ******************************************************************************
 \
@@ -24882,7 +24972,7 @@ LOAD_F% = LOAD% + P% - CODE%
 \ ------------------------------------------------------------------------------
 \
 \ Display the dashboard's missile indicators, with all the missiles reset to
-\ green/cyan (i.e. not armed or locked). ???
+\ white squares (i.e. not armed or locked).
 \
 \ ******************************************************************************
 
@@ -24896,9 +24986,9 @@ LOAD_F% = LOAD% + P% - CODE%
  CPX NOMSL              \ If the counter is equal to the number of missiles,
  BEQ SAL8               \ jump down to SQL8 to draw remaining the missiles, as
                         \ the rest of them are present and should be drawn in
-                        \ green/cyan ???
+                        \ white
 
- LDY #4                 \ Draw the missile indicator at position X in black ???
+ LDY #&04               \ Draw the missile indicator at position X in black
  JSR MSBAR
 
  DEX                    \ Decrement the counter to point to the next missile
@@ -24909,8 +24999,8 @@ LOAD_F% = LOAD% + P% - CODE%
 
 .SAL8
 
- LDY #9                 \ Draw the missile indicator at position X in green/cyan ???
- JSR MSBAR
+ LDY #&09               \ Draw the missile indicator at position X as a white
+ JSR MSBAR              \ square
 
  DEX                    \ Decrement the counter to point to the next missile
 
@@ -26229,8 +26319,7 @@ ENDIF
                         \ current system coordinates (QQ0, QQ1) we just loaded
 
  JSR hyp1               \ Arrive in the system closest to (QQ9, QQ10) and then
-                        \ and then fall through into the docking bay routine
-                        \ below
+                        \ fall through into the docking bay routine below
 
 \ ******************************************************************************
 \
@@ -26612,11 +26701,11 @@ ENDIF
 
  LDX #&B                \ Point X to page &B
 
- JSR ZES1               \ Call ZES1 below to zero-fill the page in X
+ JSR ZES1               \ Call ZES1 to zero-fill the page in X
 
  DEX                    \ Decrement X to point to the next page (&A)
 
- JSR ZES1               \ Call ZES1 below to zero-fill the page in X
+ JSR ZES1               \ Call ZES1 to zero-fill the page in X
 
  DEX                    \ Decrement X to point to the next page
 
@@ -26640,10 +26729,13 @@ ENDIF
 
 .ZES1
 
- LDY #0                 \ ???
- STY SC
+ LDY #0                 \ If we set Y = SC = 0 and fall through into ZES2
+ STY SC                 \ below, then we will zero-fill 255 bytes starting from
+                        \ SC - in other words, we will zero-fill the whole of
+                        \ page X
 
- STX SC+1
+ STX SC+1               \ We want to zero-fill page X, so store this in the
+                        \ high byte of SC, so SC(1 0) is now pointing to page X
 
 \ ******************************************************************************
 \
@@ -26676,7 +26768,7 @@ ENDIF
 .ZES2
 
  LDA #0                 \ Load A with the byte we want to fill the memory block
-                        \ with - i.e. zero ???
+                        \ with - i.e. zero
 
 .ZEL1
 
@@ -27302,10 +27394,10 @@ ENDIF
 
 .EXNO3
 
- LDA #24                \ Call the NOISE routine with A = 24 to make the second
+ LDA #24                \ Call the NOISE routine with A = 24 to make the
  BNE NOISE              \ death sound and return from the subroutine using a
                         \ tail call (this BNE is effectively a JMP as A will
-                        \ never be zero) ???
+                        \ never be zero)
 
 \ ******************************************************************************
 \
@@ -27509,17 +27601,32 @@ ENDIF
                         \ return from the subroutine (as ECMOF-1 contains an
                         \ RTS)
 
- LDA XX16               \ ???
- AND #&01
- TAX
- LDY XX16+8
- LDA SFX+40,Y
- CMP L0BFB,X
- BCC ECMOF-1
+ LDA XX16               \ Set X = to bit 0 of the first SOUND parameter, so
+ AND #&01               \ that's the channel number (as the channel is either
+ TAX                    \ 0 or 1)
 
- STA L0BFB,X
- AND #&0F
- STA L0BFD,X
+ LDY XX16+8             \ We stored the sound number (0, 8, 16 etc.) in XX16+8
+                        \ back in NOS1, so fetch it into Y
+
+ LDA SFX2,Y             \ Fetch this sound's byte from SFX2 into A
+                        \
+                        \ (This seems wrong. Y is a multiple of 8 (0, 8 ... 72)
+                        \ rather than the actual sound number (0-9), and there
+                        \ are only 10 bytes at SFX2, so this doesn't feel
+                        \ correct - surely Y should be divided by 8 before
+                        \ fetching the relevant SFX2 byte?)
+
+ CMP SFXPR,X            \ If the new sound's SFX2 byte is less than the current
+ BCC ECMOF-1            \ channel's SFXPR value, return from the subroutine as
+                        \ the current sound has a higher priority than the new
+                        \ one (as ECMOF-1 contains an RTS)
+
+ STA SFXPR,X            \ Otherwise the new sound is a higher priority sound, so
+                        \ store the new sound's SFX2 byte as the channel's new
+                        \ SFXPR priority
+
+ AND #%00001111         \ And store the low nibble of the SFX2 byte in the
+ STA SFXDU,X            \ channel's new SFXDU duration
 
  LDX #LO(XX16)          \ Otherwise set (Y X) to point to the sound block in
  LDY #HI(XX16)          \ XX16
@@ -27562,7 +27669,8 @@ ENDIF
 
 .NOS1
 
- STA XX16+8             \ ???
+ STA XX16+8             \ Store the sound number in XX16+8, so we can retrieve
+                        \ it in the NO3 routine
 
  LSR A                  \ Divide A by 2, and also clear the C flag, as bit 0 of
                         \ A is always zero (as A is a multiple of 8)
@@ -27907,15 +28015,14 @@ ENDIF
 
 .DKL2
 
- LDX KYTB,Y             \ ???
- JSR DKS4
+ LDX KYTB,Y             \ Call DKS4 to see if the KYTB key at offset Y is being
+ JSR DKS4               \ pressed
 
- BPL L432F
+ BPL P%+6               \ If the key isn't being pressed, skip the following two
+                        \ instructions
 
- LDX #&FF
- STX KL,Y
-
-.L432F
+ LDX #&FF               \ Set the key logger for this key to indicate it's being
+ STX KL,Y               \ pressed
 
  DEY                    \ Decrement the loop counter
 
@@ -27996,7 +28103,7 @@ ENDIF
                         \ pauses the game when COPY is pressed, and unpauses
                         \ it when DELETE is pressed
 
- JSR DEL8               \ ???
+ JSR DEL8               \ Call DEL8 to wait for 1 delay loop
 
  JSR RDKEY              \ Scan the keyboard for a key press and return the
                         \ internal key number in X (or 0 for no key press)
