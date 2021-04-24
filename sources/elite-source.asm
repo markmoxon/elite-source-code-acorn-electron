@@ -3031,10 +3031,16 @@ LOAD_A% = LOAD%
  EQUB &40               \ This gets set to &40 by elite-loader.asm as part of
                         \ the copy protection
 
-.L0D01
+.KEYB
 
- EQUB 0                 \ ??? Gets decreased when we are asking for keyboard
-                        \ input
+ EQUB 0                 \ Flag to indicate that we are currently reading from
+                        \ the keyboard using OSRDCH or OSWORD
+                        \
+                        \   * 0 = we are not reading from the keyboard with an
+                        \         OS command
+                        \
+                        \   * &FF = we are currently reading from the keyboard
+                        \           with an OS command
 
  EQUW 0                 \ Gets set to the original value of IRQ1V by
                         \ elite-loader.asm
@@ -3210,16 +3216,19 @@ LOAD_A% = LOAD%
 
 .IRQ1
 
- LDA L0D06              \ ???
- EOR #&FF
+ LDA L0D06              \ Flip all the bits in L0D06???
+ EOR #%11111111
  STA L0D06
 
- ORA L0D01
- BMI jvec
+ ORA KEYB               \ If we are currently reading from the keyboard with an
+ BMI jvec               \ OS command (OSWORD or OSRDCH) then KEYB will be &FF
+                        \ rather than 0, so this jumps to jvec if we are already
+                        \ reading the keyboard with an OS command
 
- LDA VIA+&05
- ORA #&20
- STA VIA+&05
+ LDA VIA+&05            \ If we get here then we are not already reading the
+ ORA #%00100000         \ keyboard using an OS command, so set bit 5 of the 
+ STA VIA+&05            \ interrupt clear and paging register at SHEILA &05 to
+                        \ clear the RTC interrupt
 
  LDA &FC                \ Restore the value of A from before the call to the
                         \ interrupt handler (the MOS stores the value of A in
@@ -25543,8 +25552,8 @@ LOAD_F% = LOAD% + P% - CODE%
  TXS                    \ location for the 6502 stack, so this instruction
                         \ effectively resets the stack
 
- INX                    \ Set L0D01 = 0 ???
- STX L0D01
+ INX                    \ Set KEYB = 0 to indicate we are not currently reading
+ STX KEYB               \ the keyboard using an OS command
 
  LDX GNTMP              \ If the laser temperature in GNTMP is non-zero,
  BEQ EE20               \ decrement it (i.e. cool it down a bit)
@@ -26634,11 +26643,16 @@ ENDIF
  LDX #LO(RLINE)         \ Set (Y X) to point to the RLINE parameter block
  LDY #HI(RLINE)         \ configuration block below
 
- LDA #0                 \ Call OSWORD with A = 0 to read a line from the current
- DEC L0D01              \ ???
- JSR OSWORD             \ input stream (i.e. the keyboard)
+ LDA #0                 \ Set A = 0 for the following OSWORD call
 
- INC L0D01
+ DEC KEYB               \ Decrement KEYB, so it is now &FF, to indicate that we
+                        \ are reading from the keyboard using an OS command
+
+ JSR OSWORD             \ Call OSWORD with A = 0 to read a line from the current
+                        \ input stream (i.e. the keyboard)
+
+ INC KEYB               \ Increment KEYB back to 0 to indicate we are done
+                        \ reading the keyboard
 
  BCS TR1                \ The C flag will be set if we pressed ESCAPE when
                         \ entering the name, in which case jump to TR1 to copy
@@ -26919,11 +26933,17 @@ ENDIF
  STX &0A00              \ &0A00, storing #INWK in the low byte because INWK is
                         \ in zero page
 
- LDX #&FF               \ ???
- STX L0D01
- INX
- JSR OSFILE
- INC L0D01
+ LDX #&FF               \ Set KEYB = &FF to indicate that we are reading from
+ STX KEYB               \ the keyboard using an OS command
+
+ INX                    \ Set X = 0
+
+ JSR OSFILE             \ Call OSFILE to do the file operation specified in
+                        \ &0A00 (i.e. save or load a file depending on the value
+                        \ of A)
+
+ INC KEYB               \ Increment KEYB back to 0 to indicate we are done
+                        \ reading the keyboard
 
  RTS                    \ Return from the subroutine
 
@@ -28232,9 +28252,13 @@ ENDIF
 
 .t
 
- DEC L0D01              \ ???
- JSR OSRDCH
- INC L0D01
+ DEC KEYB               \ Decrement KEYB, so it is now &FF, to indicate that we
+                        \ are reading from the keyboard using an OS command
+
+ JSR OSRDCH             \ Call OSRDCH to read a character from the keyboard
+
+ INC KEYB               \ Increment KEYB back to 0 to indicate we are done
+                        \ reading the keyboard
 
  TAX                    \ Copy A into X
 

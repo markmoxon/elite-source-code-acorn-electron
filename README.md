@@ -1,8 +1,8 @@
-# Fully documented source code for Elite on the Acorn Electron
+# Fully documented source code for Elite on the Electron
 
-[BBC Micro (cassette)](https://github.com/markmoxon/elite-beebasm) | [BBC Micro (disc)](https://github.com/markmoxon/disc-elite-beebasm) | [6502 Second Processor](https://github.com/markmoxon/6502sp-elite-beebasm) | [BBC Master](https://github.com/markmoxon/master-elite-beebasm) | **Acorn Electron**
+[BBC Micro (cassette)](https://github.com/markmoxon/elite-beebasm) | [BBC Micro (disc)](https://github.com/markmoxon/disc-elite-beebasm) | [6502 Second Processor](https://github.com/markmoxon/6502sp-elite-beebasm) | [BBC Master](https://github.com/markmoxon/master-elite-beebasm) | **Electron**
 
-This repository will contain annotated source code for Elite on the Acorn Electron. It is a work in progress.
+This repository will contain annotated source code for Elite on the Electron. It is a work in progress.
 
 ## Acknowledgements
 
