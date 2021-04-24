@@ -3033,8 +3033,10 @@ LOAD_A% = LOAD%
 
 .KEYB
 
- EQUB 0                 \ Flag to indicate that we are currently reading from
-                        \ the keyboard using OSRDCH or OSWORD
+ EQUB 0                 \ This flag indicates whether we are currently reading
+                        \ from the keyboard using OSRDCH or OSWORD, so the
+                        \ keyboard interrupt handler at KEY1 knows whether to
+                        \ pass key presses on to the OS
                         \
                         \   * 0 = we are not reading from the keyboard with an
                         \         OS command
@@ -3048,9 +3050,9 @@ LOAD_A% = LOAD%
  EQUW 0                 \ Gets set to the original value of KEYV by
                         \ elite-loader.asm
 
-.L0D06
-
- EQUW 0                 \ ???
+ EQUW 0                 \ This flag is flipped between 0 and &FF every time the
+                        \ interrupt routine at IRQ1 is called, but it is never
+                        \ read anywhere, so presumably it isn't actually used
 
  EQUW TT170             \ The entry point for the main game; once the main code
                         \ has been loaded, decrypted and moved to the right
@@ -3075,19 +3077,24 @@ LOAD_A% = LOAD%
 
 .KEY1
 
- PHP                    \ ???
+ PHP                    \ Store the flags on the stack
 
- BIT &0D01
+ BIT KEYB               \ If bit 7 of KEYB is set then we are currently reading
+ BMI P%+4               \ from the keyboard with an OS command, so skip the
+                        \ following two instructions
 
- BMI P%+4
- PLP
+ PLP                    \ We aren't currently reading from the keyboard with an
+ RTS                    \ OS command, so retrieve the flags from the stack and
+                        \ return from the subroutine
 
- RTS
+ PLP                    \ If we get here then we are currently reading from the
+                        \ keyboard with an OS command, so retrieve the flags on
+                        \ the stack before passing the interrupt through for the
+                        \ OS to process the key press
 
- PLP
-
- JMP (S%+4)             \ Jump to the original value of KEYV to process the key
-                        \ press as normal
+ JMP (S%+4)             \ Jump to the original value of KEYV, which is stored in
+                        \ S%+4, so the OS can process the key press as normal,
+                        \ and return from the subroutine using a tail call
 
 \ ******************************************************************************
 \
@@ -3216,9 +3223,9 @@ LOAD_A% = LOAD%
 
 .IRQ1
 
- LDA L0D06              \ Flip all the bits in L0D06???
- EOR #%11111111
- STA L0D06
+ LDA S%+6               \ Flip all the bits in S%+6 so it toggled between 0 and
+ EOR #%11111111         \ &FF on each call to this routine (though S%+6 is
+ STA S%+6               \ never read, so this doesn't seem to have any effect)
 
  ORA KEYB               \ If we are currently reading from the keyboard with an
  BMI jvec               \ OS command (OSWORD or OSRDCH) then KEYB will be &FF
@@ -15403,13 +15410,12 @@ NEXT
 \
 \ ------------------------------------------------------------------------------
 \
-\ The Electron doesn't have vertical sync, so we can't use that to measure the
-\ length of our delay, so instead we loop round a convoluted loop-within-loop
-\ structure to pass the correct amount of time.
+\ Loop round a convoluted loop-within-loop structure to pass the required
+\ amount of time.
 \
 \ Arguments:
 \
-\   Y                   The number of vertical sync events to wait for
+\   Y                   The number of delay loops to run
 \
 \ Other entry points:
 \
@@ -15464,7 +15470,7 @@ NEXT
  DEY                    \ Decrement the counter in Y
 
  BNE DELAY              \ If Y isn't yet at zero, jump back to DELAY to wait
-                        \ for another vertical sync
+                        \ for another iteration of the delay loop
 
  RTS                    \ Return from the subroutine
 
@@ -25620,10 +25626,6 @@ LOAD_F% = LOAD% + P% - CODE%
  JMP TT100              \ Otherwise jump to TT100 to restart the main loop from
                         \ the start
 
-.L3E5D
-
- EQUB &B1, &91, &92
-
 \ ******************************************************************************
 \
 \       Name: TT102
@@ -25654,6 +25656,14 @@ LOAD_F% = LOAD% + P% - CODE%
 \   T95                 Print the distance to the selected system
 \
 \ ******************************************************************************
+
+.VKEYS
+
+ EQUB f1                \ The key to press for showing view 1 (back)
+
+ EQUB f2                \ The key to press for showing view 2 (left)
+
+ EQUB f3                \ The key to press for showing view 3 (right)
 
 .TT102
 
@@ -25713,22 +25723,29 @@ LOAD_F% = LOAD% + P% - CODE%
 
 .INSP
 
- STX T                  \ ???
- LDX #&03
+ STX T                  \ Store X in T so we can retrieve it after the following
 
-.L3EB8
+ LDX #3                 \ We are about to loop through the key presses for the
+                        \ four views, so set a counter in X, starting with a
+                        \ value of X = 3 (for the right view)
 
- CMP L3E5D-1,X
- BNE L3EC0
+.LOOKL
 
- JMP LOOK1
+ CMP VKEYS-1,X          \ If the key pressed does not match the value in VKEYS
+ BNE P%+5               \ for view X, skip the following instruction
 
-.L3EC0
+ JMP LOOK1              \ The key pressed matches the key in position X, so jump
+                        \ to LOOK1 to switch to view X (rear, left or right),
+                        \ returning from the subroutine using a tail call
 
- DEX
- BNE L3EB8
+ DEX                    \ Decrement the view number in X, so we start with view
+                        \ 3 (right), then work backwards through 2 (left) and
+                        \ 1 (rear)
 
- LDX T
+ BNE LOOKL              \ Loop back to check the next key until we have checked
+                        \ for f3, f2 and f1
+
+ LDX T                  \ Fetch the value of X that we stored in T above
 
 .LABEL_3
 
@@ -27347,19 +27364,25 @@ ENDIF
                         \ 0 if no key has been pressed, or the internal key
                         \ number if a key has been pressed
 
- TAY                    \ ???
- JSR L42D6
+ TAY                    \ Store A in Y so we can preserve it through the call to
+                        \ CAPSL below
 
- PHP
- TYA
+ JSR CAPSL              \ Call CAPSL to check whether CAPS LOCK is being pressed
+                        \ (if it is, the return value in A is the key number of
+                        \ CAPS LOCK, but with bit 7 set)
+
+ PHP                    \ Retrieve the value of A we stored in Y, but making
+ TYA                    \ sure the retrieval doesn't affect the flags
  PLP
- BPL L4236
 
- ORA #&80
+ BPL P%+4               \ If the result of the call to CAPSL was positive, then
+                        \ CAPS LOCK isn't being pressed, so skip the next
+                        \ instruction
 
-.L4236
+ ORA #%10000000         \ CAPS LOCK is being pressed, so set bit 7 of A
 
- TAX                    \ Copy A into X
+ TAX                    \ Copy A into X to return the key number of CAPS LOCK
+                        \ with bit 7 set
 
  RTS                    \ Return from the subroutine
 
@@ -27782,6 +27805,7 @@ ENDIF
 \   X                   The internal number of the key to check (see p.142 of
 \                       the Advanced User Guide for a list of internal key
 \                       numbers)
+\   X                   The internal number of the key to check
 \
 \ Returns:
 \
@@ -27796,45 +27820,77 @@ ENDIF
 \
 \   DKS2-1              Contains an RTS
 \
+\   CAPSL               Scan the keyboard to see if CAPS LOCK is being pressed
+\
 \ ******************************************************************************
 
-.L42D0
+.KSCAN
 
- SEC                    \ ???
- CLV
- SEI
- JMP (S%+4)
+                        \ This routine is called from below, and performs the
+                        \ actual keyboard scan
 
-.L42D6
+ SEC                    \ Set the C flag and clear the V flag, so when we call
+ CLV                    \ KEYV, it scans the keyboard just like OSBYTE 121
 
- LDX #&40
+ SEI                    \ Disable interrupts
+
+ JMP (S%+4)             \ Jump to the original value of KEYV, which is stored in
+                        \ S%+4. Because we set the C and V flags as above, this
+                        \ will scan the keyboard like OSBYTE 121, which expects
+                        \ X to be set to the internal key number to scan for,
+                        \ EOR'd with %10000000. Unlike OSBYTE 121, a direct call
+                        \ to KEYV will return negative value in both A and X if
+                        \ that key is being pressed
+
+.CAPSL
+
+ LDX #&40               \ Set X to the internal key number for CAPS LOCK, and
+                        \ fall through into DKS4 to check whether it is being
+                        \ pressed
 
 .DKS4
 
- TYA
- PHA
- TXA
- PHA
- ORA #&80
- TAX
- JSR L42D0
+ TYA                    \ Store Y on the stack so we can retrieve it when we
+ PHA                    \ return from the subroutine, thus preserving Y
 
- CLI
- TAX
- PLA
- AND #&7F
- CPX #&80
- BCC L42ED
+ TXA                    \ Store the key number to check in X on the stack so
+ PHA                    \ we can retrieve it below
 
- ORA #&80
+ ORA #%10000000         \ Set bit 7 of the key to check for and transfer the
+ TAX                    \ value to X
 
-.L42ED
+ JSR KSCAN              \ Call KSCAN to check whether the key in X is being
+                        \ pressed, which returns a negative value in A and X
+                        \ if it is
 
- TAX
- PLA
- TAY
- TXA
- RTS
+ CLI                    \ Enable interrupts again (as they are disabled in
+                        \ KSCAN)
+
+ TAX                    \ Set X to the result of the key press call above
+
+ PLA                    \ Fetch the original argument value of X from the stack
+ AND #%01111111         \ into A, and clear bit 7
+
+ CPX #%10000000         \ If bit 7 of the result of the key press check above is
+ BCC P%+4               \ set, then the key in X is being pressed, so skip the
+                        \ next instruction
+
+ ORA #%10000000         \ The key in X isn't being pressed, so set bit 7 of A
+
+ TAX                    \ By this point, A contains the key number we wanted to
+                        \ check for, with bit 7 set if the key is being pressed
+                        \ and clear otherwise, which is what we want to return
+                        \ from the subroutine, but first we need to restore the
+                        \ value of Y from the stack, so we store the result A in
+                        \ X while we do that
+                    
+ PLA                    \ Restore the value Y that we stored on the stack, so it
+ TAY                    \ gets preserved across calls to the subroutine
+
+ TXA                    \ And we now retrieve the result that we stored in X
+                        \ back into A, so we can return it
+
+ RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
 \
@@ -27947,8 +28003,7 @@ ENDIF
 
  JSR BELL               \ Make a beep sound so we know something has happened
 
- JSR DELAY              \ Wait for Y vertical syncs (Y is between 64 and 70, so
-                        \ this is always a bit longer than a second)
+ JSR DELAY              \ Wait for Y delay loops (Y is between 64 and 70)
 
  LDY T                  \ Restore the configuration key argument into Y
 
