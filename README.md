@@ -14,7 +14,6 @@ It is a companion to the [bbcelite.com website](https://www.bbcelite.com), which
 
 My hope is that this repository and the [accompanying website](https://www.bbcelite.com) will be useful for those who want to learn more about Elite and what makes it tick. It is provided on an educational and non-profit basis, with the aim of helping people appreciate one of the most iconic games of the 8-bit era.
 
-
 ## Contents
 
 * [Acknowledgements](#acknowledgements)
@@ -32,7 +31,6 @@ My hope is that this repository and the [accompanying website](https://www.bbcel
   * [Verifying the output](#verifying-the-output)
   * [Log files](#log-files)
 
-
 ## Acknowledgements
 
 Electron Elite was written by Ian Bell and David Braben and is copyright &copy; Acornsoft 1984.
@@ -46,7 +44,6 @@ Huge thanks are due to the original authors for not only creating such an import
 The following archive from Ian Bell's site forms the basis for this project:
 
 * [Elite, Electron version](http://www.elitehomepage.org/archive/a/a4090000.zip)
-
 
 ### A note on licences, copyright etc.
 
@@ -72,7 +69,7 @@ If you want to browse the source in an IDE, you might find the following useful.
 
 * It's probably worth skimming through the [notes on terminology and notations](https://www.bbcelite.com/about_site/terminology_used_in_this_commentary.html) on the accompanying website, as this explains a number of terms used in the commentary, without which it might be a bit tricky to follow at times (in particular, you should understand the terminology I use for multi-byte numbers).
 
-* The accompamying website contains [a number of "deep dive" articles](https://www.bbcelite.com/deep_dives/), each of which goes into an aspect of the game in detail. Routines that are explained further in these articles are tagged with the label `Deep dive:` and the relevant article name.
+* The accompanying website contains [a number of "deep dive" articles](https://www.bbcelite.com/deep_dives/), each of which goes into an aspect of the game in detail. Routines that are explained further in these articles are tagged with the label `Deep dive:` and the relevant article name.
 
 * There are loads of routines and variables in Elite - literally hundreds. You can find them in the source files by searching for the following: `Type: Subroutine`, `Type: Variable`, `Type: Workspace` and `Type: Macro`.
 
@@ -177,7 +174,7 @@ make encrypt verify
 
 The Python script `crc32.py` does the actual verification, and shows the checksums and file sizes of both sets of files, alongside each other, and with a Match column that flags any discrepancies. If you are building an unencrypted set of files then there will be lots of differences, while the encrypted files should mostly match (see the Differences section below for more on this).
 
-The binaries in the `extracted` folder were taken straight from the [cassette sources disc image](http://www.elitehomepage.org/archive/a/a4080602.zip) (though see the [notes on `ELTB`](#eltb) below), while those in the `output` folder are produced by the build process. For example, if you don't make any changes to the code and build the project with `make encrypt verify`, then this is the output of the verification process:
+The binaries in the `extracted` folder are those extracted from the released version of the game, while those in the `output` folder are produced by the build process. For example, if you don't make any changes to the code and build the project with `make encrypt verify`, then this is the output of the verification process:
 
 ```
 [--extracted--]  [---output----]
