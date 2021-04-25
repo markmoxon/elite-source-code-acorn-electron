@@ -10209,7 +10209,7 @@ NEXT
 
  ADC YC                 \ Set SC(1 0) = (A SC) + (YC 0) + &5800
  ADC #&58               \             = (char row * 64 + 32)
- STA SCH                \               + char row * 256
+ STA SC+1               \               + char row * 256
                         \               + &5800
                         \
                         \ which is what we want, so SC(1 0) contains the address
@@ -10239,27 +10239,21 @@ NEXT
                         \ we're just updating the cursor so it's in the right
                         \ position following the deletion
 
- DEC SC+1               \ Decrement the high byte of the screen address ???
-
-                        \ Because YC starts at 0 for the first text row, this
-                        \ means that X will be &5F for row 0, &60 for row 1 and
-                        \ so on. In other words, X is now set to the page number
-                        \ for the row before the one containing the text cursor,
-                        \ and given that we set SC above to point to the offset
-                        \ in memory of the text cursor within the row's page,
-                        \ this means that (X SC) now points to the character
-                        \ above the text cursor
+ DEC SC+1               \ Decrement the high byte of the screen address to point
+                        \ to the address of the current character, minus one
+                        \ page
 
  LDY #&F8               \ Set Y = &F8, so the following call to ZES2 will count
                         \ Y upwards from &F8 to &FF
 
- JSR ZES2               \ Call ZES2, which zero-fills from address (X SC) + Y to
-                        \ (X SC) + &FF. (X SC) points to the character above the
-                        \ text cursor, and adding &FF to this would point to the
-                        \ cursor, so adding &F8 points to the character before
-                        \ the cursor, which is the one we want to delete. So
-                        \ this call zero-fills the character to the left of the
-                        \ cursor, which erases it from the screen
+ JSR ZES2               \ Call ZES2, which zero-fills from address SC(1 0) + Y to
+                        \ SC(1 0) + &FF. SC(1 0) points to the address of the
+                        \ current character, minus one page, and adding &FF to
+                        \ this would point to the cursor, so adding &F8 points
+                        \ to the character before the cursor, which is the one
+                        \ we want to delete. So this call zero-fills the
+                        \ character to the left of the cursor, which erases it
+                        \ from the screen
 
  BEQ RR4                \ We are done deleting, so restore the registers and
                         \ return from the subroutine (this BNE is effectively
@@ -10569,8 +10563,8 @@ NEXT
  JSR DILX+2             \ and increment SC to point to the next indicator (the
                         \ cabin temperature)
 
- SEC                    \ ???
- JSR L293D
+ SEC                    \ Call NEXTR with the C flag set to move the screen
+ JSR NEXTR              \ address in SC(1 0) down by one character row
 
  LDA GNTMP              \ Draw the laser temperature indicator using a range of
  JSR DILX               \ 0-255, and increment SC to point to the next indicator
@@ -10745,8 +10739,9 @@ NEXT
 
 .DL6
 
- SEC                    \ ???
- JMP L293D
+ SEC                    \ Jump to NEXTR with the C flag set to move the screen
+ JMP NEXTR              \ address in SC(1 0) down by one character row,
+                        \ returning from the subroutine using a tail call
 
 \ ******************************************************************************
 \
@@ -10858,7 +10853,9 @@ NEXT
  BCC DLL10              \ blocks to draw, so loop back to DLL10 to display the
                         \ next one along
 
- JMP L293D
+ JMP NEXTR              \ Jump to NEXTR with the C flag set to move the screen
+                        \ address in SC(1 0) down by one character row,
+                        \ returning from the subroutine using a tail call
 
 \ ******************************************************************************
 \
@@ -16015,38 +16012,72 @@ NEXT
                         \ the dot, and we need to draw the stick downwards from
                         \ the dot)
 
- JSR L2936              \ ???
+ JSR VL2                \ Call VL2 below to increment Y, moving to the next row
+                        \ if necessary
 
-.L2929
+.VLL2
 
- JSR L2936
+ JSR VL2                \ Call VL2 below to increment Y, moving to the next row
+                        \ if necessary
 
- LDA XX15
- EOR (SC),Y
- STA (SC),Y
- INX
- BNE L2929
+ LDA X1                 \ Set A to the character row byte for the stick, which
+                        \ we stored in X1 above, and which has the same pixel
+                        \ pattern as the bottom-right pixel of the dot (so the
+                        \ stick comes out of the right side of the dot)
 
- RTS
+ EOR (SC),Y             \ Draw the stick on row Y of the character block using
+ STA (SC),Y             \ EOR logic
 
-.L2936
+ INX                    \ Increment the (negative) stick height in X
 
- INY
- CPY #&08
- BNE RTS
+ BNE VLL2               \ If we still have more stick to draw, jump up to VLL2
+                        \ to draw the next pixel
 
- LDY #&00
+ RTS                    \ Return from the subroutine
 
-.L293D
+.VL2
 
-                        \ We now need to move down into the character block
-                        \ below, and each character row in screen memory takes
-                        \ up &140 bytes (&100 for the visible part and &20 for
-                        \ each of the blank borders on the side of the screen),
-                        \ so that's what we need to add to SC(1 0)
+ INY                    \ We want to draw the stick itself, heading downwards,
+                        \ so increment the pixel row in Y
+
+ CPY #8                 \ If the row number in Y is less than 8, then it
+ BNE RTS                \ correctly points at the next line down, so return from
+                        \ the subroutine (as RTS contains an RTS)
+
+ LDY #0                 \ We just incremented Y down through the bottom of the
+                        \ character block, so we need to move it to the first
+                        \ row in the character below, so set Y to 0, the number
+                        \ of the first row
+
+                        \ Fall through into NEXTR to move the address in SC(1 0)
+                        \ to the next row and return from the subroutine using a
+                        \ tail call
+
+\ ******************************************************************************
+\
+\       Name: NEXTR
+\       Type: Subroutine
+\   Category: Screen mode
+\    Summary: Move to the next character row in the Electron mode 4 screen
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   C flag              Must be set on entry
+\
+\ ******************************************************************************
+
+.NEXTR
+
+                        \ Each character row in screen memory takes up &140
+                        \ bytes (&100 for the visible part and &20 for each of
+                        \ the blank borders on the side of the screen), so
+                        \ that's what we need to add to SC(1 0) to move down
+                        \ one row
                         \
-                        \ We also know the C flag is set, so we can add &13F
-                        \ in order to get the correct result
+                        \ We also know the C flag is set on entry, so we can
+                        \ add &13F in order to get the correct result
 
  LDA SC                 \ Set SC(1 0) = SC(1 0) + &140
  ADC #&3F               \
@@ -22295,13 +22326,12 @@ LOAD_E% = LOAD% + P% - CODE%
                         \ dot we want to draw. Returns with the C flag clear
 
  TXA                    \ Set COMX = 193 + X, as 184 is the pixel x-coordinate
- ADC #193               \ of the leftmost dot possible on the compass, and X can
- STA COMX               \ be -9, which would be 193 - 9 = 184. This also means
-                        \ that the highest value for COMX is 193 + 9 = 202,
-                        \ which is the pixel x-coordinate of the rightmost dot
-                        \ in the compass... but the compass dot is actually two
-                        \ pixels wide, so the compass dot can overlap the right
-                        \ edge of the compass, but not the left edge ???
+ ADC #193               \ of the leftmost edge of the compass, and X can be -9,
+ STA COMX               \ which would be 193 - 9 = 184. This also means that the
+                        \ highest value for COMX is 193 + 9 = 202, and given
+                        \ that the compass dot is two pixels wide, this means
+                        \ the compass dot can overlap the left edge of the
+                        \ compass, but not the right edge
 
  LDA XX15+1             \ Set A to the y-coordinate of the planet or station to
                         \ show on the compass, which will be in the range -96 to
@@ -26959,11 +26989,9 @@ ENDIF
 \ ------------------------------------------------------------------------------
 \
 \ Zero-fill from address (X SC) + Y to (X SC) + &FF.
+\ Zero-fill from address SC(1 0) + Y to SC(1 0) + &FF.
 \
 \ Arguments:
-\
-\   X                   The high byte (i.e. the page) of the starting point of
-\                       the zero-fill
 \
 \   Y                   The offset from (X SC) where we start zeroing, counting
 \                       up to to &FF
