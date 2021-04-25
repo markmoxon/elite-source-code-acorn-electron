@@ -1456,6 +1456,7 @@ ENDMACRO
 \       Type: Subroutine
 \   Category: Drawing pixels
 \    Summary: Draw a single pixel at a specific coordinate
+\  Deep dive: Drawing pixels in the Electron version
 \
 \ ------------------------------------------------------------------------------
 \
