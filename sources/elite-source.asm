@@ -6995,7 +6995,7 @@ NEXT
  LDA #128               \ Set S = 128, which is the starting point for the
  STA S                  \ slope error (representing half a pixel)
 
- STA SC                 \ ???
+ STA SC                 \ Set SC = 128 for use in the pixel calculations below
 
  ASL A                  \ Set SWAP = 0, as %10000000 << 1 = 0
  STA SWAP
@@ -7093,28 +7093,51 @@ NEXT
                         \ X1 < X2, so we're going from left to right as we go
                         \ from X1 to X2
 
+                        \ We now calculate the address of the character block
+                        \ containing the pixel (X1, Y1) and put it in SC(1 0),
+                        \ as follows:
+                        \
+                        \   SC = &5800 + (Y1 div 8 * 256) + (Y1 div 8 * 64) + 32
+                        \
+                        \ See the deep dive on "Drawing pixels in the Electron
+                        \ version" for details
+
  LDA Y1                 \ Set A = Y1 / 8, so A now contains the character row
  LSR A                  \ that will contain our horizontal line
  LSR A
  LSR A
 
- STA SCH                \ ???
- LSR A
- ROR SC
- LSR A
- ROR SC
- ADC SCH
- ADC #&58
- STA SCH
- TXA
- AND #&F8
- ADC SC
- STA SC
- BCC L1681
+ STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
+                        \                           = char row * 256
 
- INC SCH
+ LSR A                  \ Set (A SC) = (A SC) / 4
+ ROR SC                 \            = (4 * ((char row * 64) + 32)) / 4
+ LSR A                  \            = char row * 64 + 32
+ ROR SC
 
-.L1681
+ ADC SC+1               \ Set SC(1 0) = (A SC) + (SC+1 0) + &5800
+ ADC #&58               \             = (char row * 64 + 32)
+ STA SC+1               \               + char row * 256
+                        \               + &5800
+                        \
+                        \ which is what we want, so SC(1 0) contains the address
+                        \ of the first visible pixel on the character row
+                        \ containing the point (X1, Y1)
+
+ TXA                    \ Each character block contains 8 pixel rows, so to get
+ AND #%11111000         \ the address of the first byte in the character block
+                        \ that we need to draw into, as an offset from the start
+                        \ of the row, we clear bits 0-2
+
+ ADC SC                 \ And add the result to SC(1 0) to get the character
+ STA SC                 \ block on the row we want
+
+ BCC P%+4               \ If the addition of the low bytes overflowed, increment
+ INC SC+1               \ the high byte
+
+                        \ So SC(1 0) now contains the address of the first pixel
+                        \ in the character block containing the (X1, Y1), taking
+                        \ the screen borders into consideration
 
  LDA Y1                 \ Set Y = Y1 mod 8, which is the pixel row within the
  AND #7                 \ character block at which we want to draw the start of
@@ -7243,7 +7266,7 @@ NEXT
  STA SC
 
  BCC LI7                \ If the addition of the low bytes of SC overflowed,
- INC SCH                \ increment the high byte
+ INC SC+1               \ increment the high byte
 
 .LI7
 
@@ -7259,13 +7282,22 @@ NEXT
  BPL LIC2               \ If Y is positive we are still within the same
                         \ character block, so skip to LIC2
 
- LDA SC                 \ ???
- SBC #&40
- STA SC
- LDA SCH
+                        \ We now need to move up into the character block above,
+                        \ and each character row in screen memory takes up &140
+                        \ bytes (&100 for the visible part and &20 for each of
+                        \ the blank borders on the side of the screen), so
+                        \ that's what we need to subtract from SC(1 0)
+
+ LDA SC                 \ Set SC(1 0) = SC(1 0) - &140
+ SBC #&40               \
+ STA SC                 \ Starting with the low bytes
+
+ LDA SC+1               \ And then subtracting the high bytes
  SBC #&01
- STA SCH
- LDY #7
+ STA SC+1
+
+ LDY #7                 \ Set the pixel line to the last line in that character
+                        \ block
 
 .LIC2
 
@@ -7336,7 +7368,7 @@ NEXT
  STA SC
 
  BCC LI10               \ If the addition of the low bytes overflowed, increment
- INC SCH                \ the high byte of SC(1 0)
+ INC SC+1               \ the high byte of SC(1 0)
 
 .LI10
 
@@ -7352,13 +7384,26 @@ NEXT
  CPY #8                 \ If Y < 8 we are still within the same character block,
  BNE LIC3               \ so skip to LIC3
 
- LDA SC                 \ ???
- ADC #&3F
- STA SC
- LDA SCH
+                        \ We now need to move down into the character block
+                        \ below, and each character row in screen memory takes
+                        \ up &140 bytes (&100 for the visible part and &20 for
+                        \ each of the blank borders on the side of the screen),
+                        \ so that's what we need to add to SC(1 0)
+                        \
+                        \ We also know the C flag is set, as we didn't take the
+                        \ BCC above, so we can add &13F in order to get the
+                        \ correct result
+
+ LDA SC                 \ Set SC(1 0) = SC(1 0) + &140
+ ADC #&3F               \
+ STA SC                 \ Starting with the low bytes
+
+ LDA SC+1               \ And then adding the high bytes
  ADC #&01
- STA SCH
- LDY #&00
+ STA SC+1
+
+ LDY #0                 \ Set the pixel line to the first line in that character
+                        \ block
 
 .LIC3
 
@@ -7425,31 +7470,61 @@ NEXT
                         \ Y1 >= Y2, so we're going from top to bottom as we go
                         \ from Y1 to Y2
 
+                        \ We now calculate the address of the character block
+                        \ containing the pixel (X1, Y1) and put it in SC(1 0),
+                        \ as follows:
+                        \
+                        \   SC = &5800 + (Y1 div 8 * 256) + (Y1 div 8 * 64) + 32
+                        \
+                        \ See the deep dive on "Drawing pixels in the Electron
+                        \ version" for details
+
  LSR A                  \ Set A = Y1 / 8, so A now contains the character row
  LSR A                  \ that will contain our horizontal line
  LSR A
 
- STA SCH
- LSR A
- ROR SC
- LSR A
- ROR SC
- ADC SCH
- ADC #&58
- STA SCH
- TXA
- AND #&F8
- ADC SC
- STA SC
- BCC L1757
+ STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
+                        \                           = char row * 256
 
- INC SCH
+ LSR A                  \ Set (A SC) = (A SC) / 4
+ ROR SC                 \            = (4 * ((char row * 64) + 32)) / 4
+ LSR A                  \            = char row * 64 + 32
+ ROR SC
 
-.L1757
+ ADC SC+1               \ Set SC(1 0) = (A SC) + (SC+1 0) + &5800
+ ADC #&58               \             = (char row * 64 + 32)
+ STA SC+1               \               + char row * 256
+                        \               + &5800
+                        \
+                        \ which is what we want, so SC(1 0) contains the address
+                        \ of the first visible pixel on the character row
+                        \ containing the point (X1, Y1)
+
+ TXA                    \ Each character block contains 8 pixel rows, so to get
+ AND #%11111000         \ the address of the first byte in the character block
+                        \ that we need to draw into, as an offset from the start
+                        \ of the row, we clear bits 0-2
+
+ ADC SC                 \ And add the result to SC(1 0) to get the character
+ STA SC                 \ block on the row we want
+
+ BCC P%+4               \ If the addition of the low bytes overflowed, increment
+ INC SC+1               \ the high byte
+
+                        \ So SC(1 0) now contains the address of the first pixel
+                        \ in the character block containing the (X1, Y1), taking
+                        \ the screen borders into consideration
 
  LDA Y1                 \ Set Y = Y1 mod 8, which is the pixel row within the
  AND #7                 \ character block at which we want to draw the start of
  TAY                    \ our line (as each character block has 8 rows)
+
+ TXA                    \ Set X = X1 mod 8, which is the pixel column within the
+ AND #7                 \ character block at which we want to draw the start of
+ TAX                    \ our line (as each character block has 8 rows)
+
+ LDA TWOS,X             \ Fetch a mode 4 1-pixel byte with the pixel position
+ STA R                  \ at X and store it in R to act as a mask
 
                         \ The following calculates:
                         \
@@ -7458,13 +7533,6 @@ NEXT
                         \
                         \ using the same shift-and-subtract algorithm
                         \ documented in TIS2
-
- TXA                    \ ???
- AND #7
- TAX
-
- LDA TWOS,X
- STA R
 
  LDA P                  \ Set A = |delta_x|
 
@@ -7564,13 +7632,26 @@ NEXT
  BPL LI16               \ If Y is positive we are still within the same
                         \ character block, so skip to LI16
 
- LDA SC                 \ ???
- SBC #&3F
- STA SC
- LDA SCH
+                        \ We now need to move up into the character block above,
+                        \ and each character row in screen memory takes up &140
+                        \ bytes (&100 for the visible part and &20 for each of
+                        \ the blank borders on the side of the screen), so
+                        \ that's what we need to subtract from SC(1 0)
+                        \
+                        \ We also know the C flag is clear, as we cleared it
+                        \ above, so we can subtract &13F in order to get the
+                        \ correct result
+
+ LDA SC                 \ Set SC(1 0) = SC(1 0) - &140
+ SBC #&3F               \
+ STA SC                 \ Starting with the low bytes
+
+ LDA SC+1               \ And then subtracting the high bytes
  SBC #&01
- STA SCH
- LDY #7
+ STA SC+1
+
+ LDY #7                 \ Set the pixel line to the last line in that character
+                        \ block
 
 .LI16
 
@@ -7596,7 +7677,7 @@ NEXT
  STA SC
 
  BCC LIC5               \ If the addition of the low bytes of SC overflowed,
- INC SCH                \ increment the high byte
+ INC SC+1               \ increment the high byte
 
  CLC                    \ Clear the C flag
 
@@ -7654,13 +7735,26 @@ NEXT
  BPL LI19               \ If Y is positive we are still within the same
                         \ character block, so skip to LI19
 
- LDA SC                 \ ???
- SBC #&3F
- STA SC
- LDA SCH
+                        \ We now need to move up into the character block above,
+                        \ and each character row in screen memory takes up &140
+                        \ bytes (&100 for the visible part and &20 for each of
+                        \ the blank borders on the side of the screen), so
+                        \ that's what we need to subtract from SC(1 0)
+                        \
+                        \ We also know the C flag is clear, as we call LFT with
+                        \ a BCC, so we can subtract &13F in order to get the
+                        \ correct result
+
+ LDA SC                 \ Set SC(1 0) = SC(1 0) - &140
+ SBC #&3F               \
+ STA SC                 \ Starting with the low bytes
+
+ LDA SC+1               \ And then subtracting the high bytes
  SBC #&01
- STA SCH
- LDY #7
+ STA SC+1
+
+ LDY #7                 \ Set the pixel line to the last line in that character
+                        \ block
 
 .LI19
 
@@ -7686,7 +7780,7 @@ NEXT
  STA SC
 
  BCS P%+4               \ If the subtraction of the low bytes of SC underflowed,
- DEC SCH                \ decrement the high byte
+ DEC SC+1               \ decrement the high byte
 
  CLC                    \ Clear the C flag so it doesn't affect the additions
                         \ below
@@ -7990,30 +8084,57 @@ NEXT
 
 .PIXEL
 
- STY T1                 \ ???
- LDY #&80
+                        \ We now calculate the address of the character block
+                        \ containing the pixel (X1, Y1) and put it in SC(1 0),
+                        \ as follows:
+                        \
+                        \   SC = &5800 + (Y1 div 8 * 256) + (Y1 div 8 * 64) + 32
+                        \
+                        \ See the deep dive on "Drawing pixels in the Electron
+                        \ version" for details
+
+ STY T1                 \ Store Y in T1
+
+ LDY #128               \ Set SC = 128 for use in the calculation below
  STY SC
- TAY
- LSR A
- LSR A
- LSR A
- STA SCH
- LSR A
- ROR SC
- LSR A
- ROR SC
- ADC SCH
- ADC #&58
- STA SCH
- TXA
- AND #&F8
- ADC SC
- STA SC
- BCC L1869
 
- INC SCH
+ TAY                    \ Copy A into Y, for use later
 
-.L1869
+ LSR A                  \ Set A = A >> 3
+ LSR A                  \       = y div 8
+ LSR A                  \       = character row number
+
+ STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
+                        \                           = char row * 256
+
+ LSR A                  \ Set (A SC) = (A SC) / 4
+ ROR SC                 \            = (4 * ((char row * 64) + 32)) / 4
+ LSR A                  \            = char row * 64 + 32
+ ROR SC
+
+ ADC SC+1               \ Set SC(1 0) = (A SC) + (SC+1 0) + &5800
+ ADC #&58               \             = (char row * 64 + 32)
+ STA SC+1               \               + char row * 256
+                        \               + &5800
+                        \
+                        \ which is what we want, so SC(1 0) contains the address
+                        \ of the first visible pixel on the character row
+                        \ containing the point (x, y)
+
+ TXA                    \ Each character block contains 8 pixel rows, so to get
+ AND #%11111000         \ the address of the first byte in the character block
+                        \ that we need to draw into, as an offset from the start
+                        \ of the row, we clear bits 0-2
+
+ ADC SC                 \ And add the result to SC(1 0) to get the character
+ STA SC                 \ block on the row we want
+
+ BCC P%+4               \ If the addition of the low bytes overflowed, increment
+ INC SC+1               \ the high byte
+
+                        \ So SC(1 0) now contains the address of the first pixel
+                        \ in the character block containing the (x, y), taking
+                        \ the screen borders into consideration
 
  TYA                    \ Set Y = Y AND %111
  AND #%00000111
@@ -10059,50 +10180,53 @@ NEXT
  STA P+1                \ Store the address of this character's definition in
  STX P+2                \ P(2 1)
 
- LDA #&80               \ ???
+ LDA #128               \ Set SC = 128 for use in the calculation below
  STA SC
- LDA YC
- CMP #&18
- BCC L1D3B
 
- JSR TTX66
+ LDA YC                 \ If YC < 24 then we are in the top part of the screen,
+ CMP #24                \ so skip the following two instructions
+ BCC P%+8
 
- JMP RR4
+ JSR TTX66              \ We are off the bottom of the screen, so we don't want
+                        \ to print anything, so first clear the screen and draw
+                        \ a white border
 
-.L1D3B
+ JMP RR4                \ Jump to RR4 to restore the registers and return from
+                        \ the subroutine
 
- LSR A
+                        \ The text row is on-screen, so now to calculate the
+                        \ screen address we need to write to, as follows:
+                        \
+                        \   SC = &5800 + (char row * 256) + (char row * 64) + 32
+                        \
+                        \ See the deep dive on "Drawing pixels in the Electron
+                        \ version" for details
+
+ LSR A                  \ Set (A SC) = (A SC) / 4
+ ROR SC                 \            = (4 * ((char row * 64) + 32)) / 4
+ LSR A                  \            = char row * 64 + 32
  ROR SC
- LSR A
- ROR SC
- ADC YC
- ADC #&58
- STA SCH
+
+ ADC YC                 \ Set SC(1 0) = (A SC) + (YC 0) + &5800
+ ADC #&58               \             = (char row * 64 + 32)
+ STA SCH                \               + char row * 256
+                        \               + &5800
+                        \
+                        \ which is what we want, so SC(1 0) contains the address
+                        \ of the first visible pixel on the character row we
+                        \ want
 
  LDA XC                 \ Fetch XC, the x-coordinate (column) of the text cursor
                         \ into A
 
- ASL A                  \ Multiply A by 8, and store in SC. As each character is
- ASL A                  \ 8 pixels wide, and the special screen mode Elite uses
- ASL A                  \ for the top part of the screen is 256 pixels across
- ADC SC                 \ ???
- STA SC                 \ with one bit per pixel, this value is not only the
-                        \ screen address offset of the text cursor from the left
-                        \ side of the screen, it's also the least significant
-                        \ byte of the screen address where we want to print this
-                        \ character, as each row of on-screen pixels corresponds
-                        \ to one page. To put this more explicitly, the screen
-                        \ starts at &6000, so the text rows are stored in screen
-                        \ memory like this:
-                        \
-                        \   Row 1: &6000 - &60FF    YC = 1, XC = 0 to 31
-                        \   Row 2: &6100 - &61FF    YC = 2, XC = 0 to 31
-                        \   Row 3: &6200 - &62FF    YC = 3, XC = 0 to 31
-                        \
-                        \ and so on
+ ASL A                  \ Multiply A by 8, and add to SC. As each character is
+ ASL A                  \ 8 pixels wide, this gives us the screen address of the
+ ASL A                  \ character block where we want to print this character
+ ADC SC
+ STA SC
 
  BCC P%+4               \ If the addition of the low byte overflowed, increment
- INC SCH                \ the high byte
+ INC SC+1               \ the high byte
 
  CPY #127               \ If the character number (which is in Y) <> 127, then
  BNE RR2                \ skip to RR2 to print that character, otherwise this is
@@ -10115,7 +10239,7 @@ NEXT
                         \ we're just updating the cursor so it's in the right
                         \ position following the deletion
 
- DEC SCH                \ ???
+ DEC SC+1               \ Decrement the high byte of the screen address ???
 
                         \ Because YC starts at 0 for the first text row, this
                         \ means that X will be &5F for row 0, &60 for row 1 and
@@ -10152,7 +10276,10 @@ NEXT
                         \ the cursor so it's in the right position following
                         \ the print
 
- EQUB &2C               \ ???
+ EQUB &2C               \ Skip the next instruction by turning it into
+                        \ &2C &85 &08, or BIT &0885, which does nothing apart
+                        \ from affect the flags. We skip the instruction as we
+                        \ already set the value of SC+1 above
 
 .RR3
 
@@ -10561,7 +10688,7 @@ NEXT
                         \ screen memory)
 
  BCC P%+4               \ If the addition of the low bytes of SC overflowed,
- INC SCH                \ increment the high byte
+ INC SC+1               \ increment the high byte
 
  TAY                    \ Transfer the updated value (Y + 6) back into Y
 
@@ -15849,13 +15976,20 @@ NEXT
                         \ in the character above, so set Y to 7, the number of
                         \ the last row
 
- LDA SC                 \ ???
- SEC
- SBC #&40
+                        \ We now need to move up into the character block above,
+                        \ and each character row in screen memory takes up &140
+                        \ bytes (&100 for the visible part and &20 for each of
+                        \ the blank borders on the side of the screen), so
+                        \ that's what we need to subtract from SC(1 0)
+
+ LDA SC                 \ Set SC(1 0) = SC(1 0) - &140
+ SEC                    \
+ SBC #&40               \ Starting with the low bytes
  STA SC
- LDA SCH
+
+ LDA SC+1               \ And then subtracting the high bytes
  SBC #&01
- STA SCH
+ STA SC+1
 
 .VL1
 
@@ -15905,13 +16039,24 @@ NEXT
 
 .L293D
 
- LDA SC
- ADC #&3F
- STA SC
- LDA SCH
+                        \ We now need to move down into the character block
+                        \ below, and each character row in screen memory takes
+                        \ up &140 bytes (&100 for the visible part and &20 for
+                        \ each of the blank borders on the side of the screen),
+                        \ so that's what we need to add to SC(1 0)
+                        \
+                        \ We also know the C flag is set, so we can add &13F
+                        \ in order to get the correct result
+
+ LDA SC                 \ Set SC(1 0) = SC(1 0) + &140
+ ADC #&3F               \
+ STA SC                 \ Starting with the low bytes
+
+ LDA SC+1               \ And then adding the high bytes
  ADC #&01
- STA SCH
- RTS
+ STA SC+1
+
+ RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
 \
@@ -22273,7 +22418,7 @@ LOAD_E% = LOAD% + P% - CODE%
 \       Type: Subroutine
 \   Category: Drawing pixels
 \    Summary: Draw a single-height dot on the dashboard
-\  Deep dive: Drawing colour pixels in mode 5
+\  Deep dive: Drawing pixels in the Electron version
 \
 \ ------------------------------------------------------------------------------
 \
@@ -22291,49 +22436,85 @@ LOAD_E% = LOAD% + P% - CODE%
 
 .CPIX2
 
- LDY #&80               \ ???
+ LDY #128               \ Set SC = 128 for use in the calculation below
  STY SC
 
  LDA Y1                 \ Fetch the y-coordinate into A
 
- LSR A                  \ Set A = A / 8, so A now contains the character row we
- LSR A                  \ need to draw in (as each character row contains 8
- LSR A                  \ pixel rows)
+                        \ We now calculate the address of the character block
+                        \ containing the pixel (x, y) and put it in SC(1 0), as
+                        \ follows:
+                        \
+                        \   SC = &5800 + (y div 8 * 256) + (y div 8 * 64) + 32
+                        \
+                        \ See the deep dive on "Drawing pixels in the Electron
+                        \ version" for details
 
- STA SCH                \ Store the screen page in the high byte of SC(1 0)
+ LSR A                  \ Set A = A >> 3
+ LSR A                  \       = y div 8
+ LSR A                  \       = character row number
 
- LSR A                  \ ???
+                        \ Also, as SC = 128, we have:
+                        \
+                        \   (A SC) = (A 128)
+                        \          = (A * 256) + 128
+                        \          = 4 * ((A * 64) + 32)
+                        \          = 4 * ((char row * 64) + 32)
+
+ STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
+                        \                           = char row * 256
+
+ LSR A                  \ Set (A SC) = (A SC) / 4
+ ROR SC                 \            = (4 * ((char row * 64) + 32)) / 4
+ LSR A                  \            = char row * 64 + 32
  ROR SC
- LSR A
- ROR SC
- ADC SCH
- ADC #&58
- STA SCH
- LDA XX15
- AND #&F8
- ADC SC
- STA SC
 
- BCC P%+4
- INC SCH
+ ADC SC+1               \ Set SC(1 0) = (A SC) + (SC+1 0) + &5800
+ ADC #&58               \             = (char row * 64 + 32)
+ STA SC+1               \               + char row * 256
+                        \               + &5800
+                        \
+                        \ which is what we want, so SC(1 0) contains the address
+                        \ of the first visible pixel on the character row
+                        \ containing the point (x, y)
+
+ LDA X1                 \ Each character block contains 8 pixel rows, so to get
+ AND #%11111000         \ the address of the first byte in the character block
+                        \ that we need to draw into, as an offset from the start
+                        \ of the row, we clear bits 0-2
+
+ ADC SC                 \ And add the result to SC(1 0) to get the character
+ STA SC                 \ block on the row we want
+
+ BCC P%+4               \ If the addition of the low bytes overflowed, increment
+ INC SC+1               \ the high byte
+
+                        \ So SC(1 0) now contains the address of the first pixel
+                        \ in the character block containing the (x, y), taking
+                        \ the screen borders into consideration
 
  LDA Y1                 \ Set Y to just bits 0-2 of the y-coordinate, which will
  AND #%00000111         \ be the number of the pixel row we need to draw into
  TAY                    \ within the character block
 
- LDA X1                 \ ???
- AND #&07
- TAX
- LDA TWOS,X
+ LDA X1                 \ Set X to just bits 0-2 of the x-coordinate, which will
+ AND #%00000111         \ be the pixel number within the character row we need
+ TAX                    \ to draw
+
+ LDA TWOS,X             \ Fetch a mode 4 1-pixel byte with the pixel position
+                        \ at X
 
  EOR (SC),Y             \ Draw the pixel on-screen using EOR logic, so we can
  STA (SC),Y             \ remove it later without ruining the background that's
                         \ already on-screen
 
- JSR P%+3              \ ??? Run the following twice
+ JSR P%+3               \ Run the following code twice, incrementing X each
+                        \ time, so we draw a two-pixel dash
 
- INX
- LDA TWOS,X
+ INX                    \ Increment X to get the next pixel along
+
+ LDA TWOS,X             \ Fetch a mode 4 1-pixel byte with the pixel position
+                        \ at X
 
  BPL CP1                \ The CTWOS table has an extra row at the end of it that
                         \ repeats the first value, %10001000, so if we have not
@@ -22342,16 +22523,16 @@ LOAD_E% = LOAD% + P% - CODE%
                         \ jump to CP1 to draw it
 
  LDA SC                 \ Otherwise the left pixel we drew was at the last
- CLC                    \ ???
- ADC #8                 \ position of four in this character block, so we add
- STA SC                 \ 8 to the screen address to move onto the next block
-                        \ along (as there are 8 bytes in a character block)
+ CLC                    \ position of four in this character block, so we add
+ ADC #8                 \ 8 to the screen address to move onto the next block
+ STA SC                 \ along (as there are 8 bytes in a character block)
 
  BCC P%+4               \ If the addition we just did overflowed, then increment
  INC SC+1               \ the high byte of SC(1 0), as this means we just moved
                         \ into the right half of the screen row
 
- LDA TWOS,X             \ ???
+ LDA TWOS,X             \ Refetch the mode 4 1-pixel byte from before, as we
+                        \ just overwrote A
 
 .CP1
 

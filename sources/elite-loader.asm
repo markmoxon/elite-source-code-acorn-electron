@@ -1482,7 +1482,7 @@ ENDMACRO
 
 .PIX
 
- LDY #&80               \ Set ZP = 128 for use in the calculation below
+ LDY #128               \ Set ZP = 128 for use in the calculation below
  STY ZP
 
  TAY                    \ Copy A into Y, for use later
@@ -1495,35 +1495,13 @@ ENDMACRO
                         \ from the subroutine (as PIX-1 contains an RTS)
 
                         \ We now calculate the address of the character block
-                        \ containing the pixel (x, y) and put it in ZP(1 0)
+                        \ containing the pixel (x, y) and put it in ZP(1 0), as
+                        \ follows:
                         \
-                        \ Each character row on the mode 4 screen consists of a
-                        \ blank 32-byte border (32 pixels wide, 8 pixels high),
-                        \ then 256 bytes of visible screen (256 pixels wide, 8
-                        \ pixels high), and then another 32-byte border
+                        \   ZP = &5800 + (y div 8 * 256) + (y div 8 * 64) + 32
                         \
-                        \ This gives a total of 32 + 256 + 32 = 320 bytes per
-                        \ character row, so we can now calculate the address of
-                        \ the first visible pixel in the row containing (x, y)
-                        \
-                        \ First, we calculate the number of the character row
-                        \ containing this pixel, which is y div 8 as each row
-                        \ is 8 pixels high
-                        \
-                        \ We then take the start address of screen memory
-                        \ (&5800), and add 320 bytes for each of these character
-                        \ rows, to get the address of the first pixel on that
-                        \ row, but at the left edge of the left border
-                        \
-                        \ Finally, to indent by the correct margin to get to the
-                        \ first visible pixel, we add 32 bytes for the left
-                        \ margin, so in all we have:
-                        \
-                        \      &5800 + (char row * 320) + 32
-                        \      &5800 + (char row * (256 + 64)) + 32
-                        \    = &5800 + (char row * 256) + (char row * 64) + 32
-                        \
-                        \ so that's what we calculate here
+                        \ See the deep dive on "Drawing pixels in the Electron
+                        \ version" for details
 
  LSR A                  \ Set A = A >> 3
  LSR A                  \       = y div 8
@@ -1552,17 +1530,11 @@ ENDMACRO
                         \ which is what we want, so ZP(1 0) contains the address
                         \ of the first visible pixel on the character row
                         \ containing the point (x, y)
-                        \
-                        \ To get the address of the character block on this row
-                        \ that contains (x, y), we need to move right by the
-                        \ correct number of character blocks, which is x div 8,
-                        \ and there are 8 bytes per character block, so we need
-                        \ to add (x div 8) * 8, or (x >> 3) * 8
 
- TXA                    \ Set ZP(1 0) = ZP(1 0) + (X >> 3) * 8
- EOR #%10000000
- AND #%11111000
- ADC ZP
+ TXA                    \ To get the address of the character block on this row
+ EOR #%10000000         \ that contains (x, y):
+ AND #%11111000         \
+ ADC ZP                 \   ZP(1 0) = ZP(1 0) + (X >> 3) * 8
  STA ZP
 
  BCC P%+4               \ If the addition of the low bytes overflowed, increment
@@ -1967,11 +1939,11 @@ ORG LE%
  LDA S%+13
  STA IRQ1V+1
 
- LDA #%11111100         \ Clear all interrupts (bits 4-7) and select ROM 12
- JSR VIA05              \ (bits 0-3) by setting the interrupt clear and paging
-                        \ register at SHEILA &05
+ LDA #%11111100         \ Clear all interrupts (bits 4-7) and de-select the
+ JSR VIA05              \ BASIC ROM (bit 3) by setting the interrupt clear and
+                        \ paging register at SHEILA &05
 
- LDA #8                 \ Select ROM 8 (the keyboard) by setting the interrupt
+ LDA #%00001000         \ Select ROM 8 (the keyboard) by setting the interrupt
  JSR VIA05              \ clear and paging register at SHEILA &05
 
  LDA #&60               \ Set the screen start address registers at SHEILA &02
