@@ -107,8 +107,8 @@ ORG &0070
                         \ screen memory, and SC(1 0) is typically set to the
                         \ address of the character block containing the pixel
                         \ we want to draw (see the deep dives on "Drawing
-                        \ monochrome pixels in mode 4" and "Drawing colour
-                        \ pixels in mode 5" for more details)
+                        \ monochrome pixels in mode 4" and "Drawing pixels
+                        \ in the Electron version" for more details)
 
 .SCH
 
@@ -285,9 +285,9 @@ INCBIN "binaries/P.(C)ASFT.bin"
 \ ------------------------------------------------------------------------------
 \
 \ This table contains the sound envelope data, which is passed to OSWORD by the
-\ FNE macro to create the four sound envelopes used in-game. Refer to chapter 30
-\ of the BBC Micro User Guide for details of sound envelopes and what all the
-\ parameters mean.
+\ FNE macro to create the four sound envelopes used in-game. Refer to chapter 22
+\ of the Acorn Electron User Guide for details of sound envelopes and what all
+\ the parameters mean.
 \
 \ The envelopes are as follows:
 \
@@ -1862,9 +1862,10 @@ ORG LE%
  LDY #&FF               \ service call that asks the current user of the NMI
  JSR OSBYTE             \ space to clear it out
 
- LDA #&40               \ Set S%+0 to &40, though this gets overwritten in the
- STA S%                 \ following copy process, so I'm not entirely sure what
-                        \ this does
+ LDA #&40               \ Set S% to an RTI instruction (opcode &40), so we can
+ STA S%                 \ claim the NMI workspace at &0D00 (the RTI makes sure
+                        \ we return from any spurious NMIs that still call this
+                        \ workspace)
 
  LDX #&4A               \ Set X = &4A, as we want to copy the &4A pages of main
                         \ game code from where we just loaded it at &2000, down

@@ -74,16 +74,16 @@ VIA = &FE00             \ Memory-mapped space for accessing internal hardware,
 X = 128                 \ The centre x-coordinate of the 256 x 192 space view
 Y = 96                  \ The centre y-coordinate of the 256 x 192 space view
 
-f0 = &B0                \ Internal key number for red key f0 (Launch, Front)
-f1 = &B1                \ Internal key number for red key f1 (Buy Cargo, Rear)
-f2 = &91                \ Internal key number for red key f2 (Sell Cargo, Left)
-f3 = &92                \ Internal key number for red key f3 (Equip Ship, Right)
-f4 = &93                \ Internal key number for red key f4 (Long-range Chart)
-f5 = &B4                \ Internal key number for red key f5 (Short-range Chart)
-f6 = &A4                \ Internal key number for red key f6 (Data on System)
-f7 = &95                \ Internal key number for red key f7 (Market Price)
-f8 = &A6                \ Internal key number for red key f8 (Status Mode)
-f9 = &A7                \ Internal key number for red key f9 (Inventory)
+func1 = &B0             \ Internal key number for FUNC-1 (Launch, Front)
+func2 = &B1             \ Internal key number for FUNC-2 (Buy Cargo, Rear)
+func3 = &91             \ Internal key number for FUNC-3 (Sell Cargo, Left)
+func4 = &92             \ Internal key number for FUNC-4 (Equip Ship, Right)
+func5 = &93             \ Internal key number for FUNC-5 (Long-range Chart)
+func6 = &B4             \ Internal key number for FUNC-6 (Short-range Chart)
+func7 = &A4             \ Internal key number for FUNC-7 (Data on System)
+func8 = &95             \ Internal key number for FUNC-8 (Market Price)
+func9 = &A6             \ Internal key number for FUNC-9 (Status Mode)
+func0 = &A7             \ Internal key number for FUNC-0 (Inventory)
 
 \ ******************************************************************************
 \
@@ -125,8 +125,8 @@ ORG &0000
                         \ screen memory, and SC(1 0) is typically set to the
                         \ address of the character block containing the pixel
                         \ we want to draw (see the deep dives on "Drawing
-                        \ monochrome pixels in mode 4" and "Drawing colour
-                        \ pixels in mode 5" for more details)
+                        \ monochrome pixels in mode 4" and "Drawing pixels
+                        \ in the Electron version" for more details)
 
 .SCH
 
@@ -620,17 +620,17 @@ ORG &0000
                         \   1   = Title screen
                         \         Get commander name ("@", save/load commander)
                         \         In-system jump just arrived ("J")
-                        \         Data on System screen (red key f6)
-                        \         Buy Cargo screen (red key f1)
+                        \         Data on System screen (FUNC-7)
+                        \         Buy Cargo screen (FUNC-2)
                         \         Mis-jump just arrived (witchspace)
-                        \   4   = Sell Cargo screen (red key f2)
+                        \   4   = Sell Cargo screen (FUNC-3)
                         \   6   = Death screen
-                        \   8   = Status Mode screen (red key f8)
-                        \         Inventory screen (red key f9)
-                        \   16  = Market Price screen (red key f7)
-                        \   32  = Equip Ship screen (red key f3)
-                        \   64  = Long-range Chart (red key f4)
-                        \   128 = Short-range Chart (red key f5)
+                        \   8   = Status Mode screen (FUNC-9)
+                        \         Inventory screen (FUNC-0)
+                        \   16  = Market Price screen (FUNC-8)
+                        \   32  = Equip Ship screen (FUNC-4)
+                        \   64  = Long-range Chart (FUNC-5)
+                        \   128 = Short-range Chart (FUNC-6)
                         \
                         \ This value is typically set by calling routine TT66
 
@@ -656,11 +656,7 @@ ORG &0000
 
  SKIP 1                 \ Vertical sync flag
                         \
-                        \ DL gets set to 30 every time we reach vertical sync on
-                        \ the video system, which happens 50 times a second
-                        \ (50Hz). The WSCAN routine uses this to pause until the
-                        \ vertical sync, by setting DL to 0 and then monitoring
-                        \ its value until it changes to 30
+                        \ This is unused in the Electron version
 
 .TYPE
 
@@ -744,8 +740,10 @@ ORG &0000
 
 .COL
 
- SKIP 1                 \ Temporary storage, used to store colour information
-                        \ when drawing pixels in the dashboard
+ SKIP 1                 \ This byte is unused in the Electron version, as it
+                        \ is used to store colour information when drawing
+                        \ pixels in the dashboard, and the Electron's dashboard
+                        \ is monochrome
 
 .FLAG
 
@@ -855,7 +853,7 @@ ORG &0100
 \
 \       Name: T%
 \       Type: Workspace
-\    Address: &0300 to &035F
+\    Address: &0300 to &036C
 \   Category: Workspaces
 \    Summary: Current commander data and stardust data blocks
 \
@@ -945,10 +943,10 @@ ORG &0300
  SKIP 4                 \ The specifications of the lasers fitted to each of the
                         \ four space views:
                         \
-                        \   * Byte #0 = front view (red key f0)
-                        \   * Byte #1 = rear view (red key f1)
-                        \   * Byte #2 = left view (red key f2)
-                        \   * Byte #3 = right view (red key f3)
+                        \   * Byte #0 = front view (FUNC-1)
+                        \   * Byte #1 = rear view (FUNC-2)
+                        \   * Byte #2 = left view (FUNC-3)
+                        \   * Byte #3 = right view (FUNC-4)
                         \
                         \ For each of the views:
                         \
@@ -2683,11 +2681,12 @@ ORG &0BE0
  SKIP 1                 \ The targeting state of our leftmost missile
                         \
                         \   * 0 = missile is not looking for a target, or it
-                        \     already has a target lock (indicator is not
-                        \     yellow/white)
+                        \     already has a target lock (indicator is either a
+                        \     white square, or a white square containing a "T")
                         \
                         \   * Non-zero = missile is currently looking for a
-                        \     target (indicator is yellow/white)
+                        \     target (indicator is a black box in a white
+                        \     square)
 
 .VIEW
 
@@ -2709,14 +2708,14 @@ ORG &0BE0
                         \
                         \   * 10 for a pulse laser
                         \
-                        \ It gets decremented every vertical sync (in the LINSCN
-                        \ routine, which is called 50 times a second) and is set
-                        \ to a non-zero value for pulse lasers only
+                        \ It gets decremented by 4 on each iteration round the
+                        \ main game loop and is set to a non-zero value for
+                        \ pulse lasers only
                         \
                         \ The laser only fires when the value of LASCT hits
                         \ zero, so for pulse lasers with a value of 10, that
-                        \ means the laser fires once every 10 vertical syncs (or
-                        \ 5 times a second)
+                        \ means the laser fires once every four iterations
+                        \ round the main game loop (LASCT = 10, 6, 2, 0)
                         \
                         \ In comparison, beam lasers fire continuously as the
                         \ value of LASCT is always 0
@@ -3017,19 +3016,22 @@ LOAD_A% = LOAD%
 \       Type: Workspace
 \    Address: &0D00 to &0D0F
 \   Category: Workspaces
-\    Summary: Vector addresses, compass colour and configuration settings
+\    Summary: Vector addresses, compass shape and configuration settings
 \
 \ ------------------------------------------------------------------------------
 \
 \ Contains addresses that are used by the loader to set up vectors, the current
-\ compass colour, and the game's configuration settings.
+\ compass shape, and the game's configuration settings.
 \
 \ ******************************************************************************
 
 .S%
 
- EQUB &40               \ This gets set to &40 by elite-loader.asm as part of
-                        \ the copy protection
+ RTI                    \ The S% workspace lives at &0D00, which is the NMI
+                        \ workspace. We claimed the NMI workspace for our own
+                        \ use as part of the loading process, and the RTI makes
+                        \ sure we return from any spurious NMIs that still call
+                        \ this location
 
 .KEYB
 
@@ -3102,19 +3104,19 @@ LOAD_A% = LOAD%
 \       Type: Workspace
 \    Address: &0D1C to &0D24
 \   Category: Workspaces
-\    Summary: Compass colour and configuration settings
+\    Summary: Compass shape and configuration settings
 \
 \ ******************************************************************************
 
 .COMC
 
- SKIP 1                 \ The colour of the dot on the compass
+ SKIP 1                 \ The shape (i.e. thickness) of the dot on the compass
                         \
                         \   * &F0 = the object in the compass is in front of us,
-                        \     so the dot is yellow/white
+                        \     so the dot is two pixels high and white
                         \
                         \   * &FF = the object in the compass is behind us, so
-                        \     the dot is green/cyan
+                        \     the dot is one pixel high and white
 
 .DNOIZ
 
@@ -3958,10 +3960,10 @@ LOAD_A% = LOAD%
                         \ missile, and it has its own dedicated collision
                         \ checks in the TACTICS routine
 
- CPX #OIL               \ If ship type >= OIL (i.e. it's a cargo canister,
- BCS P%+5               \ Thargon or escape pod), skip the JMP instruction and
- JMP MA58               \ continue on, otherwise jump to MA58 to process a
-                        \ potential collision
+ CPX #OIL               \ If ship type >= OIL (i.e. it's a cargo canister or
+ BCS P%+5               \ escape pod), skip the JMP instruction and continue
+ JMP MA58               \ on, otherwise jump to MA58 to process a potential
+                        \ collision
 
  LDA BST                \ If we have fuel scoops fitted then BST will be &FF,
                         \ otherwise it will be 0
@@ -4014,13 +4016,12 @@ LOAD_A% = LOAD%
 
                         \ By the time we get here, we are scooping, and A
                         \ contains the type of item we are scooping (a random
-                        \ number 0-7 if we are scooping a cargo canister, 3 if
-                        \ we are scooping an escape pod, or 16 if we are
-                        \ scooping a Thargon). These numbers correspond to the
-                        \ relevant market items (see QQ23 for a list), so a
-                        \ cargo canister can contain anything from food to
-                        \ computers, while escape pods contain slaves, and
-                        \ Thargons become alien items when scooped
+                        \ number 0-7 if we are scooping a cargo canister, or 3
+                        \ if we are scooping an escape pod). These numbers
+                        \ correspond to the relevant market items (see QQ23
+                        \ for a list), so a cargo canister can contain
+                        \ anything from food to computers, while escape pods
+                        \ contain slaves
 
  STA QQ29               \ Call tnpr with the scooped cargo type stored in QQ29
  LDA #1                 \ and A set to 1, to work out whether we have room in
@@ -4273,8 +4274,8 @@ LOAD_A% = LOAD%
  LDX XSAV               \ Call ABORT2 to store the details of this missile
  LDY #&11               \ lock, with the targeted ship's slot number in X
  JSR ABORT2             \ (which we stored in XSAV at the start of this ship's
-                        \ loop at MAL1), and set the colour of the missile
-                        \ indicator to the colour in Y (black "T" in white
+                        \ loop at MAL1), and set the shape of the missile
+                        \ indicator to the value in Y (black "T" in white
                         \ square = &11)
 
 .MA47
@@ -4305,8 +4306,8 @@ LOAD_A% = LOAD%
  STA INWK+31
 
  BCS MA8                \ If the enemy ship type is >= SST (i.e. missile,
-                        \ asteroid, canister, Thargon or escape pod) then
-                        \ jump down to MA8
+                        \ asteroid, canister or escape pod) then jump down
+                        \ to MA8
 
  JSR DORND              \ Fetch a random number, and jump to oh if it is
  BPL oh                 \ positive (50% chance)
@@ -4764,10 +4765,10 @@ LOAD_A% = LOAD%
                         \ still being pressed)
                         \
                         \ For pulse lasers, LASCT gets set to 10 in ma1 above,
-                        \ and it decrements every vertical sync (50 times a
-                        \ second), so this means it pulses five times a second,
-                        \ with the laser being on for the first 3/10 of each
-                        \ pulse and off for the rest of the pulse
+                        \ and it decrements by 4 on every iteration of the main
+                        \ game loop, so this means it pulses every fourth
+                        \ iteration, with the laser being off for the first
+                        \ three iterations, and on for the fourth iteration
                         \
                         \ If this is a beam laser, LASCT is 0 so we always keep
                         \ going here. This means the laser doesn't pulse, but it
@@ -6871,7 +6872,7 @@ NEXT
 \       Type: Variable
 \   Category: Drawing pixels
 \    Summary: Ready-made single-pixel character row bytes for mode 4
-\  Deep dive: Drawing colour pixels in mode 4
+\  Deep dive: Drawing monochrome pixels in mode 4
 \
 \ ------------------------------------------------------------------------------
 \
@@ -6921,7 +6922,7 @@ NEXT
 \       Type: Variable
 \   Category: Drawing pixels
 \    Summary: Ready-made double-pixel character row bytes for mode 4
-\  Deep dive: Drawing colour pixels in mode 4
+\  Deep dive: Drawing monochrome pixels in mode 4
 \
 \ ------------------------------------------------------------------------------
 \
@@ -8453,13 +8454,6 @@ NEXT
 
 .STARS
 
-\LDA #&FF               \ These instructions are commented out in the original
-\STA COL                \ source, but they would set the stardust colour to
-                        \ white. That said, COL is only used when updating the
-                        \ dashboard, so this would have no effect - perhaps it's
-                        \ left over from experiments with a colour top part of
-                        \ the screen? Who knows...
-
  LDX VIEW               \ Load the current view into X:
                         \
                         \   0 = front
@@ -9215,7 +9209,7 @@ NEXT
 \       Name: STATUS
 \       Type: Subroutine
 \   Category: Status
-\    Summary: Show the Status Mode screen (red key f8)
+\    Summary: Show the Status Mode screen (FUNC-9)
 \  Deep dive: Combat rank
 \
 \ ******************************************************************************
@@ -10095,7 +10089,7 @@ NEXT
                         \ definition for the character we want to draw on the
                         \ screen (i.e. we need the pixel shape of this
                         \ character). The MOS ROM contains bitmap definitions
-                        \ of the BBC's ASCII characters, starting from &C000
+                        \ of the system's ASCII characters, starting from &C000
                         \ for space (ASCII 32) and ending with the £ symbol
                         \ (ASCII 126)
                         \
@@ -10570,16 +10564,15 @@ NEXT
  JSR DILX               \ 0-255, and increment SC to point to the next indicator
                         \ (the altitude)
 
- LDA #240               \ Set T1 to 240, the threshold at which we change the
- STA T1                 \ altitude indicator's colour. As the altitude has a
-                        \ range of 0-255, pixel 16 will not be filled in, and
-                        \ 240 would change the colour when moving between pixels
-                        \ 15 and 16, so this effectively switches off the colour
-                        \ change for the altitude indicator
+ LDA #240               \ Set T1 to 240, which would set the threshold at which
+ STA T1                 \ we change the altitude indicator's colour in the other
+                        \ versions, but it has no effect here, as the Electron
+                        \ version doesn't support indicator colour changes
 
- STA K+1                \ Set K+1 (the colour we should show for low values) to
-                        \ 240, or &F0 (dashboard colour 2, yellow/white), so the
-                        \ altitude indicator always shows in this colour
+ STA K+1                \ This sets K+1 to 240, which would set the colour to
+                        \ show for low values in the other versions, but it has
+                        \ no effect here, as the Electron version doesn't
+                        \ support indicator colour changes
 
  LDA ALTIT              \ Draw the altitude indicator using a range of 0-255
  JSR DILX
@@ -11118,7 +11111,7 @@ LOAD_C% = LOAD% +P% - CODE%
 \       Name: TACTICS (Part 2 of 7)
 \       Type: Subroutine
 \   Category: Tactics
-\    Summary: Apply tactics: Escape pod, station, lone Thargon, safe-zone pirate
+\    Summary: Apply tactics: Escape pod, station, safe-zone pirate
 \  Deep dive: Program flow of the tactics routine
 \
 \ ------------------------------------------------------------------------------
@@ -11134,9 +11127,6 @@ LOAD_C% = LOAD% +P% - CODE%
 \
 \   * If this is the space station and it is hostile, consider spawning a cop
 \     (45% chance, up to a maximum of four) and we're done
-\
-\   * If this is a lone Thargon without a mothership, set it adrift aimlessly
-\     and we're done
 \
 \   * If this is a pirate and we are within the space station safe zone, stop
 \     the pirate from attacking by removing all its aggression
@@ -11361,8 +11351,7 @@ LOAD_C% = LOAD% +P% - CODE%
 \
 \   * If an E.C.M. is firing, skip to the next part
 \
-\   * Randomly decide whether to fire a missile (or, in the case of Thargoids,
-\     release a Thargon), and if we do, we're done
+\   * Randomly decide whether to fire a missile, and if we do, we're done
 \
 \ ******************************************************************************
 
@@ -11999,9 +11988,8 @@ LOAD_C% = LOAD% +P% - CODE%
  BEQ AN2                \ space station hostile
 
  BCS HI1                \ If A >= #SST then this is a missile, asteroid, cargo
-                        \ canister, Thargon or escape pod, and they can't get
-                        \ hostile, so return from the subroutine (as HI1
-                        \ contains an RTS)
+                        \ canister or escape pod, and they can't get hostile,
+                        \ so return from the subroutine (as HI1 contains an RTS)
 
  CMP #CYL               \ If this is not a Cobra Mk III trader, skip the
  BNE P%+5               \ following instruction
@@ -15543,9 +15531,9 @@ NEXT
 \
 \ Other entry points:
 \
-\   DEL8                Wait for 1 delay loop's worth of time
+\   DEL8                Wait for 30 delay loops' worth of time
 \
-\   DELAY-5             Wait for 30 delay loops' worth of time
+\   DELAY-5             Wait for 1 delay loop's worth of time
 \
 \ ******************************************************************************
 
@@ -16481,7 +16469,7 @@ LOAD_D% = LOAD% + P% - CODE%
 \       Name: TT25
 \       Type: Subroutine
 \   Category: Universe
-\    Summary: Show the Data on System screen (red key f6)
+\    Summary: Show the Data on System screen (FUNC-7)
 \  Deep dive: Generating system data
 \             Galaxy and system seeds
 \
@@ -16896,7 +16884,7 @@ LOAD_D% = LOAD% + P% - CODE%
 \       Name: TT22
 \       Type: Subroutine
 \   Category: Charts
-\    Summary: Show the Long-range Chart (red key f4)
+\    Summary: Show the Long-range Chart (FUNC-5)
 \
 \ ******************************************************************************
 
@@ -17251,15 +17239,14 @@ LOAD_D% = LOAD% + P% - CODE%
 \       Name: TT219
 \       Type: Subroutine
 \   Category: Market
-\    Summary: Show the Buy Cargo screen (red key f1)
+\    Summary: Show the Buy Cargo screen (FUNC-2)
 \
 \ ------------------------------------------------------------------------------
 \
 \ Other entry points:
 \
 \   BAY2                Jump into the main loop at FRCE, setting the key
-\                       "pressed" to red key f9 (so we show the Inventory
-\                       screen)
+\                       "pressed" to FUNC-0 (so we show the Inventory screen)
 \
 \ ******************************************************************************
 
@@ -17443,9 +17430,8 @@ LOAD_D% = LOAD% + P% - CODE%
 
 .BAY2
 
- LDA #f9                \ Jump into the main loop at FRCE, setting the key
- JMP FRCE               \ "pressed" to red key f9 (so we show the Inventory
-                        \ screen)
+ LDA #func0             \ Jump into the main loop at FRCE, setting the key
+ JMP FRCE               \ "pressed" to FUNC-0 (so we show the Inventory screen)
 
 \ ******************************************************************************
 \
@@ -17551,7 +17537,7 @@ LOAD_D% = LOAD% + P% - CODE%
 \       Name: TT208
 \       Type: Subroutine
 \   Category: Market
-\    Summary: Show the Sell Cargo screen (red key f2)
+\    Summary: Show the Sell Cargo screen (FUNC-3)
 \
 \ ******************************************************************************
 
@@ -17724,7 +17710,7 @@ LOAD_D% = LOAD% + P% - CODE%
 \       Name: TT213
 \       Type: Subroutine
 \   Category: Inventory
-\    Summary: Show the Inventory screen (red key f9)
+\    Summary: Show the Inventory screen (FUNC-0)
 \
 \ ******************************************************************************
 
@@ -18047,7 +18033,7 @@ LOAD_D% = LOAD% + P% - CODE%
 \       Name: TT23
 \       Type: Subroutine
 \   Category: Charts
-\    Summary: Show the Short-range Chart (red key f5)
+\    Summary: Show the Short-range Chart (FUNC-6)
 \
 \ ******************************************************************************
 
@@ -19256,7 +19242,7 @@ LOAD_D% = LOAD% + P% - CODE%
 \       Name: TT167
 \       Type: Subroutine
 \   Category: Market
-\    Summary: Show the Market Price screen (red key f7)
+\    Summary: Show the Market Price screen (FUNC-8)
 \
 \ ******************************************************************************
 
@@ -19620,7 +19606,7 @@ LOAD_D% = LOAD% + P% - CODE%
 \ Launch the ship (if we are docked), or show the front space view (if we are
 \ already in space).
 \
-\ Called when red key f0 is pressed while docked (launch), after we arrive in a
+\ Called when FUNC-1 is pressed while docked (launch), after we arrive in a
 \ new galaxy, or after a hyperspace if the current view is a space view.
 \
 \ ******************************************************************************
@@ -19862,7 +19848,7 @@ LOAD_D% = LOAD% + P% - CODE%
 \       Name: EQSHP
 \       Type: Subroutine
 \   Category: Equipment
-\    Summary: Show the Equip Ship screen (red key f3)
+\    Summary: Show the Equip Ship screen (FUNC-4)
 \
 \ ------------------------------------------------------------------------------
 \
@@ -22351,9 +22337,9 @@ LOAD_E% = LOAD% + P% - CODE%
                         \
                         \   COMY = 204 - X - (1 - 0) = 203 - X
 
- LDA #&F0               \ Set A to a 4-pixel mode 5 byte row in colour 2
-                        \ (yellow/white), the colour for when the planet or
-                        \ station in the compass is in front of us
+ LDA #&F0               \ Set A to &F0, the value we pass to DOT for drawing a
+                        \ two-pixel high dot, for when the planet or station
+                        \ in the compass is in front of us
 
  LDX XX15+2             \ If the z-coordinate of the XX15 vector is positive,
  BPL P%+4               \ skip the following instruction
@@ -22363,7 +22349,7 @@ LOAD_E% = LOAD% + P% - CODE%
                         \ single-height dash, so set A to &FF for the call to
                         \ DOT below
 
- STA COMC               \ Store the compass colour in COMC
+ STA COMC               \ Store the compass shape in COMC
 
                         \ Fall through into DOT to draw the dot on the compass
 
@@ -22400,9 +22386,9 @@ LOAD_E% = LOAD% + P% - CODE%
  LDA COMX               \ Set X1 = COMX, the x-coordinate of the dot
  STA X1
 
- LDA COMC               \ Set A = COMC, the pixel byte for the dot
+ LDA COMC               \ Set A = COMC, the thickness of the dot
 
- CMP #&F0               \ If COL is &F0 then the dot is in front of us and we
+ CMP #&F0               \ If COMC is &F0 then the dot is in front of us and we
  BNE CPIX2              \ want to draw a double-height dot, so if it isn't &F0
                         \ jump to CPIX2 to draw a single-height dot
 
@@ -22428,7 +22414,6 @@ LOAD_E% = LOAD% + P% - CODE%
 \   Y1                  The screen pixel y-coordinate of the bottom-left corner
 \                       of the dot
 \
-\   COL                 The dash as a mode 4 character row byte
 \
 \ ******************************************************************************
 
@@ -22460,7 +22445,6 @@ LOAD_E% = LOAD% + P% - CODE%
 \
 \   Y1                  The screen pixel y-coordinate of the dash
 \
-\   COL                 The dash as a mode 4 character row byte
 \
 \ ******************************************************************************
 
@@ -22567,8 +22551,7 @@ LOAD_E% = LOAD% + P% - CODE%
 .CP1
 
  EOR (SC),Y             \ Draw the dash's right pixel according to the mask in
- STA (SC),Y             \ A, with the colour in COL, using EOR logic, just as
-                        \ above
+ STA (SC),Y             \ A, using EOR logic, just as above
 
  RTS                    \ Return from the subroutine
 
@@ -23135,15 +23118,15 @@ LOAD_E% = LOAD% + P% - CODE%
 \   X                   The slot number of the ship to lock our missile onto, or
 \                       &FF to remove missile lock
 \
-\   Y                   The new colour of the missile indicator:
+\   Y                   The new shape of the missile indicator:
 \
-\                         * &00 = black (no missile)
+\                         * &04 = black (no missile)
 \
-\                         * &0E = red (armed and locked)
+\                         * &11 = black "T" in white square (armed and locked)
 \
-\                         * &E0 = yellow/white (armed)
+\                         * &0D = black box in white square (armed)
 \
-\                         * &EE = green/cyan (disarmed)
+\                         * &09 = white square (disarmed)
 \
 \ ******************************************************************************
 
@@ -25193,7 +25176,7 @@ LOAD_F% = LOAD% + P% - CODE%
 \       Name: msblob
 \       Type: Subroutine
 \   Category: Dashboard
-\    Summary: Display the dashboard's missile indicators in green
+\    Summary: Display the dashboard's missile indicators as white squares
 \
 \ ------------------------------------------------------------------------------
 \
@@ -25211,8 +25194,8 @@ LOAD_F% = LOAD% + P% - CODE%
 
  CPX NOMSL              \ If the counter is equal to the number of missiles,
  BEQ SAL8               \ jump down to SQL8 to draw remaining the missiles, as
-                        \ the rest of them are present and should be drawn in
-                        \ white
+                        \ the rest of them are present and should be drawn as
+                        \ white squares
 
  LDY #&04               \ Draw the missile indicator at position X in black
  JSR MSBAR
@@ -25618,7 +25601,7 @@ LOAD_F% = LOAD% + P% - CODE%
 \       Name: Main game loop (Part 4 of 6)
 \       Type: Subroutine
 \   Category: Main loop
-\    Summary: Potentially spawn lone bounty hunter, Thargoid, or up to 4 pirates
+\    Summary: Potentially spawn a lone bounty hunter or up to four pirates
 \  Deep dive: Program flow of the main game loop
 \             Ship data blocks
 \
@@ -25659,8 +25642,8 @@ LOAD_F% = LOAD% + P% - CODE%
 
 .LABEL_2
 
-                        \ Now to spawn a lone bounty hunter, a Thargoid or a
-                        \ group of pirates
+                        \ Now to spawn a lone bounty hunter or a group of
+                        \ pirates
 
  JSR Ze                 \ Call Ze to initialise INWK to a potentially hostile
                         \ ship, and set A and X to random values
@@ -25787,8 +25770,8 @@ LOAD_F% = LOAD% + P% - CODE%
  LSR A                  \ and bit 0 of QQ11 is 1 (the current view is type 1),
  BCS P%+5               \ then skip the following instruction
 
- JSR DELAY-5            \ Delay for 8 vertical syncs (8/50 = 0.16 seconds), to
-                        \ slow the main loop down a bit
+ JSR DELAY-5            \ Delay for 1 delay loop, to slow the main loop down a
+                        \ bit
 
  JSR TT17               \ Scan the keyboard for the cursor keys or joystick,
                         \ returning the cursor's delta values in X and Y and
@@ -25799,7 +25782,7 @@ LOAD_F% = LOAD% + P% - CODE%
 \       Name: Main game loop (Part 6 of 6)
 \       Type: Subroutine
 \   Category: Main loop
-\    Summary: Process non-flight key presses (red function keys, docked keys)
+\    Summary: Process non-flight key presses (FUNC keys, docked keys)
 \  Deep dive: Program flow of the main game loop
 \
 \ ------------------------------------------------------------------------------
@@ -25807,13 +25790,13 @@ LOAD_F% = LOAD% + P% - CODE%
 \ This is the second half of the minimal game loop, which we iterate when we are
 \ docked. This section covers the following:
 \
-\   * Process more key presses (red function keys, docked keys etc.)
+\   * Process more key presses (FUNC keys, docked keys etc.)
 \
 \ It also support joining the main loop with a key already "pressed", so we can
 \ jump into the main game loop to perform a specific action. In practice, this
-\ is used when we enter the docking bay in BAY to display Status Mode (red key
-\ f8), and when we finish buying or selling cargo in BAY2 to jump to the
-\ Inventory (red key f9).
+\ is used when we enter the docking bay in BAY to display Status Mode (FUNC-9),
+\ and when we finish buying or selling cargo in BAY2 to jump to the Inventory
+\ (FUNC-0).
 \
 \ Other entry points:
 \
@@ -25854,9 +25837,9 @@ LOAD_F% = LOAD% + P% - CODE%
 \
 \ Arguments:
 \
-\   A                   The internal key number of the key pressed (see p.142 of
-\                       the Advanced User Guide for a list of internal key
-\                       numbers)
+\   A                   The internal key number of the key pressed (see p.40 of
+\                       the Electron Advanced User Guide for a list of internal
+\                       key numbers)
 \
 \   X                   The amount to move the crosshairs in the x-axis
 \
@@ -25870,27 +25853,27 @@ LOAD_F% = LOAD% + P% - CODE%
 
 .VKEYS
 
- EQUB f1                \ The key to press for showing view 1 (back)
+ EQUB func2             \ The key to press for showing view 1 (back)
 
- EQUB f2                \ The key to press for showing view 2 (left)
+ EQUB func3             \ The key to press for showing view 2 (left)
 
- EQUB f3                \ The key to press for showing view 3 (right)
+ EQUB func4             \ The key to press for showing view 3 (right)
 
 .TT102
 
- CMP #f8                \ If red key f8 was pressed, jump to STATUS to show the
+ CMP #func9             \ If FUNC-9 was pressed, jump to STATUS to show the
  BNE P%+5               \ Status Mode screen, returning from the subroutine
  JMP STATUS             \ using a tail call
 
- CMP #f4                \ If red key f4 was pressed, jump to TT22 to show the
+ CMP #func5             \ If FUNC-5 was pressed, jump to TT22 to show the
  BNE P%+5               \ Long-range Chart, returning from the subroutine using
  JMP TT22               \ a tail call
 
- CMP #f5                \ If red key f5 was pressed, jump to TT23 to show the
+ CMP #func6             \ If FUNC-6 was pressed, jump to TT23 to show the
  BNE P%+5               \ Short-range Chart, returning from the subroutine using
  JMP TT23               \ a tail call
 
- CMP #f6                \ If red key f6 was pressed, call TT111 to select the
+ CMP #func7             \ If FUNC-7 was pressed, call TT111 to select the
  BNE TT92               \ system nearest to galactic coordinates (QQ9, QQ10)
  JSR TT111              \ (the location of the chart crosshairs) and jump to
  JMP TT25               \ TT25 to show the Data on System screen, returning
@@ -25898,15 +25881,15 @@ LOAD_F% = LOAD% + P% - CODE%
 
 .TT92
 
- CMP #f9                \ If red key f9 was pressed, jump to TT213 to show the
+ CMP #func0             \ If FUNC-0 was pressed, jump to TT213 to show the
  BNE P%+5               \ Inventory screen, returning from the subroutine
  JMP TT213              \ using a tail call
 
- CMP #f7                \ If red key f7 was pressed, jump to TT167 to show the
+ CMP #func8             \ If FUNC-8 was pressed, jump to TT167 to show the
  BNE P%+5               \ Market Price screen, returning from the subroutine
  JMP TT167              \ using a tail call
 
- CMP #f0                \ If red key f0 was pressed, jump to TT110 to launch our
+ CMP #func1             \ If FUNC-1 was pressed, jump to TT110 to launch our
  BNE fvw                \ ship (if docked), returning from the subroutine using
  JMP TT110              \ a tail call
 
@@ -25914,13 +25897,14 @@ LOAD_F% = LOAD% + P% - CODE%
 
  BIT QQ12               \ If bit 7 of QQ12 is clear (i.e. we are not docked, but
  BPL INSP               \ in space), jump to INSP to skip the following checks
-                        \ for f1-f3 and "@" (save commander file) key presses
+                        \ for FUNC-2 to FUNC-4 and "@" (save commander file) key
+                        \ presses
 
- CMP #f3                \ If red key f3 was pressed, jump to EQSHP to show the
+ CMP #func4             \ If FUNC-4 was pressed, jump to EQSHP to show the
  BNE P%+5               \ Equip Ship screen, returning from the subroutine using
  JMP EQSHP              \ a tail call
 
- CMP #f1                \ If red key f1 was pressed, jump to TT219 to show the
+ CMP #func2             \ If FUNC-2 was pressed, jump to TT219 to show the
  BNE P%+5               \ Buy Cargo screen, returning from the subroutine using
  JMP TT219              \ a tail call
 
@@ -25928,9 +25912,9 @@ LOAD_F% = LOAD% + P% - CODE%
  BNE P%+5               \ file, returning from the subroutine using a tail call
  JMP SVE
 
- CMP #f2                \ If red key f2 was pressed, jump to TT208 to show the
- BNE LABEL_3            \ Sell Cargo screen, returning from the subroutine using
- JMP TT208              \ a tail call
+ CMP #func3             \ If FUNC-3 was pressed, jump to TT208 to show the Sell
+ BNE LABEL_3            \ Cargo screen, returning from the subroutine using a
+ JMP TT208              \ tail call
 
 .INSP
 
@@ -26580,8 +26564,8 @@ ENDIF
  LDA #&FF               \ Set QQ12 = &FF (the docked flag) to indicate that we
  STA QQ12               \ are docked
 
- LDA #f8                \ Jump into the main loop at FRCE, setting the key
- JMP FRCE               \ that's "pressed" to red key f8 (so we show the Status
+ LDA #func9             \ Jump into the main loop at FRCE, setting the key
+ JMP FRCE               \ that's "pressed" to FUNC-9 (so we show the Status
                         \ Mode screen)
 
 \ ******************************************************************************
@@ -26862,7 +26846,7 @@ ENDIF
  LDA #123               \ Print recursive token 123 ("{crlf}COMMANDER'S NAME? ")
  JSR TT27
 
- JSR DEL8               \ Wait for 8/50 of a second (0.16 seconds)
+ JSR DEL8               \ Call DEL8 to wait for 30 delay loops
 
  LDA #15                \ Call OSBYTE with A = 15 (flush all buffers)
  TAX
@@ -27530,8 +27514,8 @@ ENDIF
 \ ------------------------------------------------------------------------------
 \
 \ Scan the keyboard, starting with internal key number 16 ("Q") and working
-\ through the set of internal key numbers (see p.142 of the Advanced User Guide
-\ for a list of internal key numbers).
+\ through the set of internal key numbers (see p.40 of the Electron Advanced
+\ User Guide for a list of internal key numbers).
 \
 \ This routine is effectively the same as OSBYTE 122, though the OSBYTE call
 \ preserves A, unlike this routine.
@@ -27960,8 +27944,8 @@ ENDIF
 \ ------------------------------------------------------------------------------
 \
 \ Keyboard table for in-flight controls. This table contains the internal key
-\ codes for the flight keys (see p.142 of the Advanced User Guide for a list of
-\ internal key numbers).
+\ codes for the flight keys (see p.40 of the Electron Advanced User Guide for a
+\ list of internal key numbers).
 \
 \ The pitch, roll, speed and laser keys (i.e. the seven primary flight
 \ control keys) have bit 7 set, so they have 128 added to their internal
@@ -28011,10 +27995,9 @@ ENDIF
 \
 \ Arguments:
 \
-\   X                   The internal number of the key to check (see p.142 of
-\                       the Advanced User Guide for a list of internal key
+\   X                   The internal number of the key to check (see p.40 of the
+\                       Electron Advanced User Guide for a list of internal key
 \                       numbers)
-\   X                   The internal number of the key to check
 \
 \ Returns:
 \
@@ -28169,7 +28152,7 @@ ENDIF
 \   * J toggles reverse both joystick channels (&45)
 \   * K toggles keyboard and joystick (&46)
 \
-\ The numbers in brackets are the internal key numbers (see p.142 of the
+\ The numbers in brackets are the internal key numbers (see p.40 of the Electron
 \ Advanced User Guide for a list of internal key numbers). We pass the key that
 \ has been pressed in X, and the configuration option to check it against in Y,
 \ so this routine is typically called in a loop that loops through the various
@@ -28387,7 +28370,7 @@ ENDIF
                         \ pauses the game when COPY is pressed, and unpauses
                         \ it when DELETE is pressed
 
- JSR DEL8               \ Call DEL8 to wait for 1 delay loop
+ JSR DEL8               \ Call DEL8 to wait for 30 delay loops
 
  JSR RDKEY              \ Scan the keyboard for a key press and return the
                         \ internal key number in X (or 0 for no key press)
