@@ -13,7 +13,7 @@ build:
 	$(BEEBASM) -i sources/elite-bcfs.asm -v >> output/compile.txt
 	$(BEEBASM) -i sources/elite-loader.asm -v >> output/compile.txt
 	$(PYTHON) sources/elite-checksum.py -u -rel$(rel-electron)
-	$(BEEBASM) -i sources/elite-disc.asm -do elite-electron.ssd -opt 3
+	$(BEEBASM) -i sources/elite-disc.asm -do elite-electron-flicker-free.ssd -opt 3
 
 .PHONY:encrypt
 encrypt:
@@ -24,7 +24,7 @@ encrypt:
 	$(BEEBASM) -i sources/elite-bcfs.asm -v >> output/compile.txt
 	$(BEEBASM) -i sources/elite-loader.asm -v >> output/compile.txt
 	$(PYTHON) sources/elite-checksum.py -rel$(rel-electron)
-	$(BEEBASM) -i sources/elite-disc.asm -do elite-electron.ssd -opt 3
+	$(BEEBASM) -i sources/elite-disc.asm -do elite-electron-flicker-free.ssd -opt 3
 
 .PHONY:verify
 verify:
