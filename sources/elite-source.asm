@@ -370,9 +370,6 @@ ORG &0000
                         \   * 0 = no
                         \
                         \   * Non-zero = yes
-                        \
-                        \ This is also set when the joystick fire button has
-                        \ been pressed
 
 .KY12
 
@@ -679,12 +676,10 @@ ORG &0000
                         \ maximum rate, 128 means roll is not changing, and
                         \ 255 means roll is increasing at the maximum rate
                         \
-                        \ This value is updated by "<" and ">" key presses, or
-                        \ if joysticks are enabled, from the joystick. If
+                        \ This value is updated by "<" and ">" key presses. If
                         \ keyboard damping is enabled (which it is by default),
                         \ the value is slowly moved towards the centre value of
-                        \ 128 (no roll) if there are no key presses or joystick
-                        \ movement
+                        \ 128 (no roll) if there are no key presses
 
 .JSTY
 
@@ -698,12 +693,10 @@ ORG &0000
                         \ maximum rate, 128 means pitch is not changing, and
                         \ 255 means pitch is increasing at the maximum rate
                         \
-                        \ This value is updated by "S" and "X" key presses, or
-                        \ if joysticks are enabled, from the joystick. If
+                        \ This value is updated by "S" and "X" key presses. If
                         \ keyboard damping is enabled (which it is by default),
                         \ the value is slowly moved towards the centre value of
-                        \ 128 (no pitch) if there are no key presses or joystick
-                        \ movement
+                        \ 128 (no pitch) if there are no key presses
 
 .ALPHA
 
@@ -3154,21 +3147,14 @@ LOAD_A% = LOAD%
 .PATG
 
  SKIP 1                 \ Configuration setting to show the author names on the
-                        \ start-up screen and enable manual hyperspace mis-jumps
+                        \ start-up screen
                         \
-                        \   * 0 = no author names or manual mis-jumps (default)
+                        \   * 0 = no author names (default)
                         \
-                        \   * &FF = show author names and allow manual mis-jumps
+                        \   * &FF = show author names
                         \
                         \ Toggled by pressing "X" when paused, see the DKS3
                         \ routine for details
-                        \
-                        \ This needs to be turned on for manual mis-jumps to be
-                        \ possible. To do a manual mis-jump, first toggle the
-                        \ author display by pausing the game (COPY) and pressing
-                        \ "X", and during the next hyperspace, hold down CTRL to
-                        \ force a mis-jump. See routine ee5 for the "AND PATG"
-                        \ instruction that implements this logic
 
 .FLH
 
@@ -3180,6 +3166,10 @@ LOAD_A% = LOAD%
                         \
                         \ Toggled by pressing "F" when paused, see the DKS3
                         \ routine for details
+                        \
+                        \ Although this option is still configurable in the
+                        \ Electron version, it has no effect, as the code to
+                        \ flash the console bars is missing
 
 .JSTGY
 
@@ -3191,6 +3181,10 @@ LOAD_A% = LOAD%
                         \
                         \ Toggled by pressing "Y" when paused, see the DKS3
                         \ routine for details
+                        \
+                        \ Although this option is still configurable in the
+                        \ Electron version, joystick values are never actually
+                        \ read, so this option has no effect
 
 .JSTE
 
@@ -3202,6 +3196,10 @@ LOAD_A% = LOAD%
                         \
                         \ Toggled by pressing "J" when paused, see the DKS3
                         \ routine for details
+                        \
+                        \ Although this option is still configurable in the
+                        \ Electron version, joystick values are never actually
+                        \ read, so this option has no effect
 
 .JSTK
 
@@ -3213,6 +3211,13 @@ LOAD_A% = LOAD%
                         \
                         \ Toggled by pressing "K" when paused, see the DKS3
                         \ routine for details
+                        \
+                        \ Although this option is still configurable in the
+                        \ Electron version, joystick values are never actually
+                        \ read, so this option has no effect, though the chart
+                        \ views do still run the joystick code, so switching to
+                        \ joysticks moves the chart crosshairs in an
+                        \ uncontrollable way (which is presumably a bug)
 
 \ ******************************************************************************
 \
@@ -3313,8 +3318,8 @@ LOAD_A% = LOAD%
 
  DEX                    \ Decrement the sound channel
 
- BPL SFXL               \ Loop back to process the next sound channel until we have
-                        \ done both
+ BPL SFXL               \ Loop back to process the next sound channel until we
+                        \ have done both
 
 \ ******************************************************************************
 \
@@ -3333,8 +3338,8 @@ LOAD_A% = LOAD%
 \
 \   * Calculate the alpha and beta angles from the current pitch and roll
 \
-\ Here we take the current rate of pitch and roll, as set by the joystick or
-\ keyboard, and convert them into alpha and beta angles that we can use in the
+\ Here we take the current rate of pitch and roll, as set by the keyboard,
+\ and convert them into alpha and beta angles that we can use in the
 \ matrix functions to rotate space around our ship. The alpha angle covers
 \ roll, while the beta angle covers pitch (there is no yaw in this version of
 \ Elite). The angles are in radians, which allows us to use the small angle
@@ -4637,7 +4642,7 @@ LOAD_A% = LOAD%
 \       Name: Main flight loop (Part 15 of 16)
 \       Type: Subroutine
 \   Category: Main loop
-\    Summary: Perform altitude checks with planet and sun, process fuel scooping
+\    Summary: Perform altitude checks with the planet
 \  Deep dive: Program flow of the main game loop
 \             Scheduling tasks with the main loop counter
 \
@@ -4648,9 +4653,6 @@ LOAD_A% = LOAD%
 \
 \   * Perform an altitude check with the planet (every 32 iterations of the main
 \     loop, on iteration 10 of each 32)
-\
-\   * Perform an an altitude check with the sun and process fuel scooping (every
-\     32 iterations of the main loop, on iteration 20 of each 32)
 \
 \ ******************************************************************************
 
@@ -4799,7 +4801,7 @@ LOAD_A% = LOAD%
  BEQ MA66               \ keep going, otherwise skip to MA66
 
  DEC ECMA               \ Decrement the E.C.M. countdown timer twice, and if it
- DEC ECMA               \ has reached zero, keep going, otherwise skip to MA66               
+ DEC ECMA               \ has reached zero, keep going, otherwise skip to MA66
  BNE MA66
 
 .MA70
@@ -6905,7 +6907,11 @@ NEXT
 \ ------------------------------------------------------------------------------
 \
 \ Ready-made bytes for plotting two-pixel points in the mode 4 dashboard (the
-\ bottom part of the screen).
+\ bottom part of the screen). The layout of the pixels is similar to the layout
+\ of four-colour mode 5 pixels, so the byte at position X contains a 2-pixel
+\ mode 4 dot at position 2 * X (we do this so the same code can be used to
+\ create both the monochrome Electron dashboard and the four-colour mode 5
+\ dashboard in the other versions).
 \
 \ ******************************************************************************
 
@@ -10240,8 +10246,8 @@ NEXT
  LDY #&F8               \ Set Y = &F8, so the following call to ZES2 will count
                         \ Y upwards from &F8 to &FF
 
- JSR ZES2               \ Call ZES2, which zero-fills from address SC(1 0) + Y to
-                        \ SC(1 0) + &FF. SC(1 0) points to the address of the
+ JSR ZES2               \ Call ZES2, which zero-fills from address SC(1 0) + Y
+                        \ to SC(1 0) + &FF. SC(1 0) points to the address of the
                         \ current character, minus one page, and adding &FF to
                         \ this would point to the cursor, so adding &F8 points
                         \ to the character before the cursor, which is the one
@@ -10800,12 +10806,13 @@ NEXT
                         \ drawing blank characters after this one until we reach
                         \ the end of the indicator row
 
- LDA CTWOS,X            \ CTWOS is a table of ready-made 1-pixel mode 5 bytes,
-                        \ just like the TWOS and TWOS2 tables for mode 4 (see
-                        \ the PIXEL routine for details of how they work). This
-                        \ fetches a mode 5 1-pixel byte with the pixel position
-                        \ at X, so the pixel is at the offset that we want for
-                        \ our vertical bar
+ LDA CTWOS,X            \ CTWOS is a table of ready-made 2-pixel mode 4 bytes,
+                        \ similar to the TWOS and TWOS2 tables, but laid out in
+                        \ a similar way to the mode 5 pixel bytes in the other
+                        \ versions (see the PIXEL routine for details of how
+                        \ they work). This fetches a 2-pixel mode 4 byte with
+                        \ the pixel position at 2 * X, so the pixel is at the
+                        \ offset that we want for our vertical bar
 
  BNE DLL12              \ Jump to DLL12 to skip the code for drawing a blank,
                         \ and move on to drawing the indicator (this BNE is
@@ -11162,8 +11169,8 @@ LOAD_C% = LOAD% +P% - CODE%
 
  JSR DORND              \ Set A and X to random numbers
 
- CMP #140               \ If A < 140 (55% chance) then return from the subroutine
- BCC TA1                \ (as TA1 contains an RTS)
+ CMP #140               \ If A < 140 (55% chance) then return from the
+ BCC TA1                \ subroutine (as TA1 contains an RTS)
 
  LDA MANY+COPS          \ We only call the tactics routine for the space station
  CMP #3                 \ when it is hostile, so first check the number of cops
@@ -12379,10 +12386,6 @@ LOAD_C% = LOAD% +P% - CODE%
 \
 \ This has the effect of making the tunnel appear to be racing towards us as we
 \ hurtle out into hyperspace or through the space station's docking tunnel.
-\
-\ The hyperspace effect is done in a full mode 5 screen, which makes the rings
-\ all coloured and zig-zaggy, while the launch screen is in the normal
-\ monochrome mode 4 screen.
 \
 \ Arguments:
 \
@@ -15899,21 +15902,14 @@ NEXT
  PHP                    \ Store the flags (specifically the C flag) from the
                         \ above subtraction
 
-\BCS SC48               \ These instructions are commented out in the original
-\EOR #&FF               \ source. They would negate A if the C flag were set,
-\ADC #1                 \ which would reverse the direction of all the sticks,
-                        \ so you could turn your joystick around. Perhaps one of
-                        \ the authors' test sticks was easier to use upside
-                        \ down? Who knows...
-
 .SC48
 
  PHA                    \ Store the stick height in A on the stack
 
- JSR CPIX4              \ Draw a double-height mode 5 dot at (X1, Y1). This also
-                        \ leaves the following variables set up for the dot's
-                        \ top-right pixel, the last pixel to be drawn (as the
-                        \ dot gets drawn from the bottom up):
+ JSR CPIX4              \ Draw a double-height dot at (X1, Y1). This also leaves
+                        \ the following variables set up for the dot's top-right
+                        \ pixel, the last pixel to be drawn (as the dot gets
+                        \ drawn from the bottom up):
                         \
                         \   SC(1 0) = screen address of the pixel's character
                         \             block
@@ -18621,8 +18617,8 @@ LOAD_D% = LOAD% + P% - CODE%
 
  LDX #1                 \ Set X to the internal key number for CTRL
 
- JSR DKS4               \ Scan the keyboard to see if the key in X (i.e. CTRL) is
-                        \ currently pressed
+ JSR DKS4               \ Scan the keyboard to see if the key in X (i.e. CTRL)
+                        \ is currently pressed
 
  BMI Ghy                \ If it is, then the galactic hyperdrive has been
                         \ activated, so jump to Ghy to process it
@@ -22530,8 +22526,8 @@ LOAD_E% = LOAD% + P% - CODE%
  LDA TWOS,X             \ Fetch a mode 4 1-pixel byte with the pixel position
                         \ at X
 
- BPL CP1                \ The CTWOS table has an extra row at the end of it that
-                        \ repeats the first value, %10001000, so if we have not
+ BPL CP1                \ The CTWOS table is followed by the TWOS2 table, whose
+                        \ first entry is %11000000, so if we have not just
                         \ fetched that value, then the right pixel of the dash
                         \ is in the same character block as the left pixel, so
                         \ jump to CP1 to draw it
@@ -24209,41 +24205,39 @@ LOAD_E% = LOAD% + P% - CODE%
 \       Name: TT17
 \       Type: Subroutine
 \   Category: Keyboard
-\    Summary: Scan the keyboard for cursor key or joystick movement
+\    Summary: Scan the keyboard for cursor key movement
 \
 \ ------------------------------------------------------------------------------
 \
-\ Scan the keyboard and joystick for cursor key or stick movement, and return
-\ the result as deltas (changes) in x- and y-coordinates as follows:
+\ Scan the keyboard for cursor key movement, and return the result as deltas
+\ (changes) in x- and y-coordinates as follows:
 \
-\   * For joystick, X and Y are integers between -2 and +2 depending on how far
-\     the stick has moved
-\
-\   * For keyboard, X and Y are integers between -1 and +1 depending on which
-\     keys are pressed
+\   * X and Y are integers between -1 and +1 depending on which keys are pressed
 \
 \ Returns:
 \
 \   A                   The key pressed, if the arrow keys were used
 \
 \   X                   Change in the x-coordinate according to the cursor keys
-\                       being pressed or joystick movement, as an integer (see
-\                       above)
+\                       being pressed, as an integer (see above)
 \
 \   Y                   Change in the y-coordinate according to the cursor keys
-\                       being pressed or joystick movement, as an integer (see
-\                       above)
+\                       being pressed, as an integer (see above)
 \
 \ ******************************************************************************
 
 .TT17
 
  JSR DOKEY              \ Scan the keyboard for flight controls and pause keys,
-                        \ (or the equivalent on joystick) and update the key
-                        \ logger, setting KL to the key pressed
+                        \ and update the key logger, setting KL to the key
+                        \ pressed
 
- LDX JSTK               \ If the joystick was not used, jump down to TJ1,
- BEQ TJ1                \ otherwise we move the cursor with the joystick
+ LDX JSTK               \ If the joystick is not configured, jump down to TJ1,
+ BEQ TJ1                \ otherwise keep going... though as the DOKEY routine
+                        \ doesn't read the ADC channels in the Electron version,
+                        \ this doesn't actually work, but instead moves the
+                        \ crosshairs in an uncontrollable way, so this is
+                        \ presumably a bug
 
  LDA JSTX               \ Fetch the joystick roll, ranging from 1 to 255 with
                         \ 128 as the centre point
@@ -25773,9 +25767,9 @@ LOAD_F% = LOAD% + P% - CODE%
  JSR DELAY-5            \ Delay for 1 delay loop, to slow the main loop down a
                         \ bit
 
- JSR TT17               \ Scan the keyboard for the cursor keys or joystick,
-                        \ returning the cursor's delta values in X and Y and
-                        \ the key pressed in A
+ JSR TT17               \ Scan the keyboard for the cursor keys, returning the
+                        \ cursor's delta values in X and Y and the key pressed
+                        \ in A
 
 \ ******************************************************************************
 \
@@ -25832,8 +25826,8 @@ LOAD_F% = LOAD% + P% - CODE%
 \ Process function key presses, plus "@" (save commander), "H" (hyperspace),
 \ "D" (show distance to system) and "O" (move chart cursor back to current
 \ system). We can also pass cursor position deltas in X and Y to indicate that
-\ the cursor keys or joystick have been used (i.e. the values that are returned
-\ by routine TT17).
+\ the cursor keys have been used (i.e. the values that are returned by routine
+\ TT17).
 \
 \ Arguments:
 \
@@ -28093,6 +28087,11 @@ ENDIF
 \
 \ ------------------------------------------------------------------------------
 \
+\ This routine is never called in the Electron version, as the Electron doesn't
+\ have ADC channels as standard and doesn't support joysticks (though a lot of
+\ the joystick code from the other versions is still present, it just isn't
+\ called).
+\
 \ Return the value of ADC channel in X (used to read the joystick). The value
 \ will be inverted if the game has been configured to reverse both joystick
 \ channels (which can be done by pausing the game and pressing J).
@@ -28157,6 +28156,10 @@ ENDIF
 \ has been pressed in X, and the configuration option to check it against in Y,
 \ so this routine is typically called in a loop that loops through the various
 \ configuration options.
+\
+\ Note that the Electron version doesn't support joysticks, but you can still
+\ configure them (though this does break the chart views, as they still call the
+\ joystick routines that are still present in the Electron's codebase).
 \
 \ Arguments:
 \
@@ -28255,20 +28258,15 @@ ENDIF
 \
 \ ------------------------------------------------------------------------------
 \
-\ Scan for the seven primary flight controls (or the equivalent on joystick),
-\ pause and configuration keys, and secondary flight controls, and update the
-\ key logger accordingly. Specifically:
+\ Scan for the seven primary flight controls, pause and configuration keys, and
+\ secondary flight controls, and update the key logger and pitch and roll rates
+\ accordingly.
 \
-\   * If we are on keyboard configuration, clear the key logger and update it
-\     for the seven primary flight controls, and update the pitch and roll
-\     rates accordingly.
-\
-\   * If we are on joystick configuration, clear the key logger and jump to
-\     DKJ1, which reads the joystick equivalents of the primary flight
-\     controls.
-\
-\ Both options end up at DK4 to scan for other keys, beyond the seven primary
-\ flight controls.
+\ Unlike the other versions of Elite, the Electron version doesn't actually read
+\ the joystick values from the ADC channels, so although you can configure
+\ joysticks using the "K" option when paused, they won't have any effect. All
+\ the other joystick code is present, though, so perhaps the intention was to
+\ support joysticks at some point?
 \
 \ ******************************************************************************
 
