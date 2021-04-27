@@ -171,10 +171,9 @@ ORG &0000
  SKIP 2                 \ Temporary storage, typically used for storing a 16-bit
                         \ y-coordinate
 
-.SUNX
-
- SKIP 2                 \ The 16-bit x-coordinate of the vertical centre axis
-                        \ of the sun (which might be off-screen)
+ SKIP 2                 \ These bytes are unused in this version of Elite (they
+                        \ are used to store the centre axis of the sun in the
+                        \ other versions)
 
 .BETA
 
@@ -649,11 +648,9 @@ ORG &0000
                         \ "Scheduling tasks with the main loop counter" for more
                         \ details
 
-.DL
-
- SKIP 1                 \ Vertical sync flag
-                        \
-                        \ This is unused in the Electron version
+ SKIP 1                 \ This byte is unused in this version of Elite (it
+                        \ is used to store the delay counter in the other
+                        \ versions)
 
 .TYPE
 
@@ -731,12 +728,10 @@ ORG &0000
                         \ LL145 (the flag is used in places like BLINE to swap
                         \ them back)
 
-.COL
-
- SKIP 1                 \ This byte is unused in the Electron version, as it
+ SKIP 1                 \ This byte is unused in this version of Elite (it
                         \ is used to store colour information when drawing
                         \ pixels in the dashboard, and the Electron's dashboard
-                        \ is monochrome
+                        \ is monochrome)
 
 .FLAG
 
@@ -2557,8 +2552,8 @@ SAVE "output/WORDS9.bin", CODE_WORDS%, P%, LOAD_WORDS%
 \
 \ ------------------------------------------------------------------------------
 \
-\ Contains ship data for all the ships, planets, suns and space stations in our
-\ local bubble of universe, along with their corresponding ship line heaps.
+\ Contains ship data for all the ships, planets and space stations in our local
+\ bubble of universe, along with their corresponding ship line heaps.
 \
 \ The blocks are pointed to by the lookup table at location UNIV. The first 432
 \ bytes of the K% workspace hold ship data on up to 12 ships, with 36 (NI%)
@@ -2640,7 +2635,7 @@ ORG &0BE0
                         \   * Non-zero if we are inside the space station's safe
                         \     zone
                         \
-                        \   * 0 if we aren't (in which case we can show the sun)
+                        \   * 0 if we aren't
                         \
                         \ This flag is at MANY+SST, which is no coincidence, as
                         \ MANY+SST is a count of how many space stations there
@@ -2903,7 +2898,7 @@ ORG &0BE0
 
 .ALTIT
 
- SKIP 1                 \ Our altitude above the surface of the planet or sun
+ SKIP 1                 \ Our altitude above the surface of the planet
                         \
                         \   * 255 = we are a long way above the surface
                         \
@@ -2912,8 +2907,8 @@ ORG &0BE0
                         \       x_hi^2 + y_hi^2 + z_hi^2 - 6^2
                         \
                         \     where our ship is at the origin, the centre of the
-                        \     planet/sun is at (x_hi, y_hi, z_hi), and the
-                        \     radius of the planet is 6
+                        \     planet is at (x_hi, y_hi, z_hi), and the radius
+                        \     of the planet is 6
                         \
                         \   * 0 = we have crashed into the surface
 
@@ -3649,12 +3644,11 @@ LOAD_A% = LOAD%
 
  LDA K%+NI%+32          \ Fetch the AI counter (byte #32) of the second ship
  BMI MA68               \ from the ship data workspace at K%, which is reserved
-                        \ for the sun or the space station (in this case it's
-                        \ the latter as we are in the safe zone). If byte #32 is
-                        \ negative, meaning the station is hostile, then jump
-                        \ down to MA68 to skip the following (so we can't use
-                        \ the docking computer to dock at a station that has
-                        \ turned against us)
+                        \ for the space station. If byte #32 is negative,
+                        \ meaning the station is hostile, then jump down to
+                        \ MA68 to skip the following (so we can't use the
+                        \ docking computer to dock at a station that has turned
+                        \ against us)
 
  JMP GOIN               \ The "docking computer" button has been pressed and
                         \ we are allowed to dock at the station, so jump to
@@ -3800,10 +3794,10 @@ LOAD_A% = LOAD%
                         \ last byte from INF to INWK
 
  LDA TYPE               \ If the ship type is negative then this indicates a
- BMI MA21               \ planet or sun, so jump down to MA21, as the next bit
-                        \ sets up a pointer to the ship blueprint, and then
-                        \ checks for energy bomb damage, and neither of these
-                        \ apply to planets and suns
+ BMI MA21               \ planet, so jump down to MA21, as the next bit sets
+                        \ up a pointer to the ship blueprint, and then checks
+                        \ for energy bomb damage, and neither of these apply
+                        \ to planets
 
  ASL A                  \ Set Y = ship type * 2
  TAY
@@ -3947,9 +3941,9 @@ LOAD_A% = LOAD%
  BMI MA65               \ to MA65 to skip the following, as it's too far away to
                         \ dock, scoop or collide with
 
- LDX TYPE               \ If the current ship type is negative then it's either
- BMI MA65               \ a planet or a sun, so jump down to MA65 to skip the
-                        \ following, as we can't dock with it or scoop it
+ LDX TYPE               \ If the current ship type is negative then it's the
+ BMI MA65               \ planet, so jump down to MA65 to skip the following,
+                        \ as we can't dock with it or scoop it
 
  CPX #SST               \ If this ship is the space station, jump to ISDK to
  BEQ ISDK               \ check whether we are docking with it
@@ -4094,11 +4088,10 @@ LOAD_A% = LOAD%
 
  LDA K%+NI%+32          \ 1. Fetch the AI counter (byte #32) of the second ship
  BMI MA62               \ in the ship data workspace at K%, which is reserved
-                        \ for the sun or the space station (in this case it's
-                        \ the latter), and if it's negative, i.e. bit 7 is set,
-                        \ meaning the station is hostile, jump down to MA62 to
-                        \ fail docking (so trying to dock at a station that we
-                        \ have annoyed does not end well)
+                        \ for the space station, and if it's negative, i.e. bit
+                        \ 7 is set, meaning the station is hostile, jump down
+                        \ to MA62 to fail docking (so trying to dock at a
+                        \ station that we have annoyed does not end well)
 
  LDA INWK+14            \ 2. If nosev_z_hi < 214, jump down to MA62 to fail
  CMP #214               \ docking, as the angle of approach is greater than 26
@@ -4438,8 +4431,8 @@ LOAD_A% = LOAD%
 
 .MAC1
 
- LDA TYPE               \ If the ship we are processing is a planet or sun,
- BMI MA27               \ jump to MA27 to skip the following two instructions
+ LDA TYPE               \ If the ship we are processing is the planet, jump to
+ BMI MA27               \ MA27 to skip the following two instructions
 
  JSR FAROF              \ If the ship we are processing is a long way away (its
  BCC KS1S               \ distance in any one direction is > 224, jump to KS1S
@@ -4634,8 +4627,8 @@ LOAD_A% = LOAD%
 
 .MA23S
 
- JMP MA23               \ Jump to MA23 to skip the following planet and sun
-                        \ altitude checks
+ JMP MA23               \ Jump to MA23 to skip the following planet altitude
+                        \ checks
 
 \ ******************************************************************************
 \
@@ -4666,8 +4659,7 @@ LOAD_A% = LOAD%
 
  CMP #10                \ If this is the tenth iteration in this block of 32,
  BNE MA29               \ do the following, otherwise jump to MA29 to skip the
-                        \ planet altitude check and move on to the sun distance
-                        \ check
+                        \ planet altitude check
 
  LDA #50                \ If our energy bank status in ENERGY is >= 50, skip
  CMP ENERGY             \ printing the following message (so the message is
@@ -4725,9 +4717,9 @@ LOAD_A% = LOAD%
 
 .MA28
 
- JMP DEATH              \ If we get here then we just crashed into the planet
-                        \ or got too close to the sun, so call DEATH to start
-                        \ the funeral preparations
+ JMP DEATH              \ If we get here then we just crashed into the planet,
+                        \ so jump to DEATH to start the funeral preparations
+                        \ and return from the main flight loop using a tail call
 
 .MA29
 
@@ -4900,7 +4892,7 @@ LOAD_A% = LOAD%
 \       Name: MAS2
 \       Type: Subroutine
 \   Category: Maths (Geometry)
-\    Summary: Calculate a cap on the maximum distance to the planet or sun
+\    Summary: Calculate a cap on the maximum distance to the planet
 \
 \ ------------------------------------------------------------------------------
 \
@@ -5031,11 +5023,11 @@ LOAD_A% = LOAD%
 \
 \ Arguments:
 \
-\   INWK                The current ship/planet/sun's data block
+\   INWK                The current ship/planet's data block
 \
-\   XSAV                The slot number of the current ship/planet/sun
+\   XSAV                The slot number of the current ship/planet
 \
-\   TYPE                The type of the current ship/planet/sun
+\   TYPE                The type of the current ship/planet
 \
 \ ******************************************************************************
 
@@ -5094,13 +5086,13 @@ LOAD_A% = LOAD%
 .MV3
 
  LDX TYPE               \ If the type of the ship we are moving is positive,
- BPL P%+5               \ i.e. it is not a planet (types 128 and 130) or sun
-                        \ (type 129), then skip the following instruction
+ BPL P%+5               \ i.e. it is not a planet (types 128 and 130), then
+                        \ skip the following instruction
 
- JMP MV40               \ This item is the planet or sun, so jump to MV40 to
-                        \ move it, which ends by jumping back into this routine
-                        \ at MV45 (after all the rotation, tactics and scanner
-                        \ code, which we don't need to apply to planets or suns)
+ JMP MV40               \ This item is the planet, so jump to MV40 to move it,
+                        \ which ends by jumping back into this routine at MV45 
+                        \ (after all the rotation, tactics and scanner code,
+                        \ which we don't need to apply to planets)
 
  LDA INWK+32            \ Fetch the ship's byte #32 (AI flag) into A
 
@@ -6381,7 +6373,7 @@ LOAD_A% = LOAD%
 \
 \ Arguments:
 \
-\   X                   The type of the planet or sun
+\   X                   The type of the planet
 \
 \ Other entry points:
 \
@@ -6391,9 +6383,10 @@ LOAD_A% = LOAD%
 
 .MV40
 
- TXA                    \ If bit 0 of X is set, then this is the sun, so return
- LSR A                  \ from the subroutine (as MV40-1 contains an RTS)
- BCS MV40-1
+ TXA                    \ If bit 0 of X is set, then this is 129, which is the
+ LSR A                  \ placeholder used to denote the there is no space
+ BCS MV40-1             \ station, so return from the subroutine (as MV40-1
+                        \ contains an RTS)
 
  LDA ALPHA              \ Set Q = -ALPHA, so Q contains the angle we want to
  EOR #%10000000         \ roll the planet through (i.e. in the opposite
@@ -6619,9 +6612,9 @@ LOAD_A% = LOAD%
                         \
                         \   x = x + y * alpha
 
- JMP MV45               \ We have now finished rotating the planet or sun by
-                        \ our pitch and roll, so jump back into the MVEIT
-                        \ routine at MV45 to apply all the other movements
+ JMP MV45               \ We have now finished rotating the planet by our pitch
+                        \ and roll, so jump back into the MVEIT routine at MV45
+                        \ to apply all the other movements
 
 \ ******************************************************************************
 \
@@ -9298,8 +9291,8 @@ NEXT
                         \ of universe
 
  LDX FRIN+2,Y           \ The ship slots at FRIN are ordered with the first two
-                        \ slots reserved for the planet and sun/space station,
-                        \ and then any ships, so if the slot at FRIN+2+Y is not
+                        \ slots reserved for the planet and space station, and
+                        \ then any ships, so if the slot at FRIN+2+Y is not
                         \ empty (i.e is non-zero), then that means the number of
                         \ non-asteroids in the vicinity is at least 1
 
@@ -11771,10 +11764,10 @@ LOAD_C% = LOAD% +P% - CODE%
                         \ be in our crosshairs, so return from the subroutine
                         \ with the C flag clear (as HI1 contains an RTS)
 
- LDA TYPE               \ If the ship type has bit 7 set then it is the planet
- BMI HI1                \ or sun, which we can't target or hit with lasers, so
-                        \ return from the subroutine with the C flag clear (as
-                        \ HI1 contains an RTS)
+ LDA TYPE               \ If the ship type has bit 7 set then it is the planet,
+ BMI HI1                \ which we can't target or hit with lasers, so return
+                        \ from the subroutine with the C flag clear (as HI1
+                        \ contains an RTS)
 
  LDA INWK+31            \ Fetch bit 5 of byte #31 (the exploding flag) and OR
  AND #%00100000         \ with x_hi and y_hi
@@ -12027,8 +12020,8 @@ LOAD_C% = LOAD% +P% - CODE%
 
  ASL K%+NI%+32          \ Fetch the AI counter (byte #32) of the second ship
  SEC                    \ in the ship data workspace at K%, which is reserved
- ROR K%+NI%+32          \ for the sun or the space station (in this case it's
-                        \ the latter), and set bit 7 to make it hostile
+ ROR K%+NI%+32          \ for the space station, and set bit 7 to make it
+                        \ hostile
 
  CLC                    \ Clear the C flag, which isn't used by calls to this
                         \ routine, but it does set up the entry point FR1-2
@@ -14816,11 +14809,9 @@ NEXT
 \
 \   * If we are facing the planet, make sure we aren't too close
 \
-\   * If we are facing the sun, make sure we aren't too close
-\
 \ If the above checks are passed, then we perform an in-system jump by moving
-\ the sun and planet in the opposite direction to travel, so we appear to jump
-\ in space. This means that any asteroids, cargo canisters or escape pods get
+\ the planet in the opposite direction to travel, so we appear to jump in
+\ space. This means that any asteroids, cargo canisters or escape pods get
 \ dragged along for the ride.
 \
 \ ******************************************************************************
@@ -14829,13 +14820,10 @@ NEXT
 
  LDA MANY+AST           \ Set X to the total number of asteroids, escape pods
  CLC                    \ and cargo canisters in the vicinity
- ADC MANY+ESC           \
- CLC                    \ The second CLC instruction appears in the BASIC
- ADC MANY+OIL           \ source file (ELITEC), but not in the text source file
- TAX                    \ (ELITEC.TXT). The second CLC has no effect, as there
-                        \ is no way that adding the number of asteroids and the
-                        \ number escape pods will cause a carry, so presumably
-                        \ it got removed at some point
+ ADC MANY+ESC
+ CLC                    \ The second CLC instruction has no effect, as there is
+ ADC MANY+OIL           \ is no way that adding the number of asteroids and the
+ TAX                    \ number escape pods will cause a carry
 
  LDA FRIN+2,X           \ If the slot at FRIN+2+X is non-zero, then we have
                         \ something else in the vicinity besides asteroids,
@@ -14865,17 +14853,6 @@ NEXT
                         \ planet in any of the three axes (we could also call
                         \ routine m to do the same thing, as A = 0)
 
-                        \ The following two instructions appear in the BASIC
-                        \ source file (ELITEC), but in the text source file
-                        \ (ELITEC.TXT) they are replaced by:
-                        \
-                        \   LSR A
-                        \   BEQ WA1
-                        \
-                        \ which does the same thing, but saves one byte of
-                        \ memory (as LSR A is a one-byte opcode, while CMP #2
-                        \ takes up two bytes)
-
  CMP #2                 \ If A < 2 then jump to WA1 to abort the in-system jump
  BCC WA1                \ with a low beep, as we are facing the planet and are
                         \ too close to jump in that direction
@@ -14884,45 +14861,32 @@ NEXT
 
  LDY K%+NI%+8           \ Fetch the z_sign (byte #8) of the second ship in the
                         \ ship data workspace at K%, which is reserved for the
-                        \ sun or the space station (in this case it's the
-                        \ former, as we already confirmed there isn't a space
-                        \ station in the vicinity)
+                        \ space station
 
- BMI WA2                \ If the sun's z_sign is negative, then the sun is
+ BMI WA2                \ If the station's z_sign is negative, then it is
                         \ behind us, so jump to WA2 to skip the following
 
  LDY #NI%               \ Set Y to point to the offset of the ship data block
-                        \ for the sun, which is NI% (as each block is NI% bytes
-                        \ long, and the sun is the second block)
+                        \ for the station, which is NI% (as each block is NI%
+                        \ bytes long, and the station is the second block)
 
- JSR m                  \ Call m to set A to the largest distance to the sun
+ JSR m                  \ Call m to set A to the largest distance to the station
                         \ in any of the three axes
 
-                        \ The following two instructions appear in the BASIC
-                        \ source file (ELITEC), but in the text source file
-                        \ (ELITEC.TXT) they are replaced by:
-                        \
-                        \   LSR A
-                        \   BEQ WA1
-                        \
-                        \ which does the same thing, but saves one byte of
-                        \ memory (as LSR A is a one-byte opcode, while CMP #2
-                        \ takes up two bytes)
-
  CMP #2                 \ If A < 2 then jump to WA1 to abort the in-system jump
- BCC WA1                \ with a low beep, as we are facing the sun and are too
-                        \ close to jump in that direction
+ BCC WA1                \ with a low beep, as we are facing the station and are
+                        \ too close to jump in that direction
 
 .WA2
 
                         \ If we get here, then we can do an in-system jump, as
                         \ we don't have any ships or space stations in the
                         \ vicinity, we are not in witchspace, and if we are
-                        \ facing the planet or the sun, we aren't too close to
-                        \ jump towards it
+                        \ facing the planet, we aren't too close to jump
+                        \ towards it
                         \
-                        \ We do an in-system jump by moving the sun and planet,
-                        \ rather than moving our own local bubble (this is why
+                        \ We do an in-system jump by moving the planet, rather
+                        \ than moving our own local bubble (this is why
                         \ in-system jumps drag asteroids, cargo canisters and
                         \ escape pods along for the ride). Specifically, we move
                         \ them in the z-axis by a fixed amount in the opposite
@@ -14958,14 +14922,14 @@ NEXT
 
  STA K%+8               \ Set the planet's z_sign to the high byte of the result
 
- LDA K%+NI%+8           \ Set A = z_sign for the sun
+ LDA K%+NI%+8           \ Set A = z_sign for the station
 
  JSR ADD                \ Set (A X) = (A P) + (S R)
                         \           = (z_sign &81) + &8181
                         \           = (z_sign &81) - &0181
                         \
-                        \ which moves the sun against the direction of travel
-                        \ by reducing z_sign by 1
+                        \ which moves the station against the direction of
+                        \ travel by reducing z_sign by 1
 
  STA K%+NI%+8           \ Set the planet's z_sign to the high byte of the result
 
@@ -15733,10 +15697,9 @@ NEXT
 
  LDA TYPE               \ Fetch the ship's type from TYPE into A
 
- BMI SC5                \ If this is the planet or the sun, then the type will
-                        \ have bit 7 set and we don't want to display it on the
-                        \ scanner, so return from the subroutine (as SC5
-                        \ contains an RTS)
+ BMI SC5                \ If this is the planet, then the type will have bit 7
+                        \ set and we don't want to display it on the scanner, 
+                        \ so return from the subroutine (as SC5 contains an RTS)
 
  LDA INWK+1             \ If any of x_hi, y_hi and z_hi have a 1 in bit 6 or 7,
  ORA INWK+4             \ then the ship is too far away to be shown on the
@@ -19573,8 +19536,7 @@ LOAD_D% = LOAD% + P% - CODE%
  JSR RES2               \ Reset a number of flight variables and workspaces
 
  JSR SOLAR              \ Halve our legal status, update the missile indicators,
-                        \ and set up data blocks and slots for the planet and
-                        \ sun
+                        \ and set up the data block and slot for the planet
 
  LDA QQ11               \ If the current view in QQ11 is not a space view (0) or
  AND #%00111111         \ one of the charts (64 or 128), return from the
@@ -21881,8 +21843,8 @@ LOAD_E% = LOAD% + P% - CODE%
 \
 \ ------------------------------------------------------------------------------
 \
-\ Halve our legal status, update the missile indicators, and set up data blocks
-\ and slots for the planet and sun.
+\ Halve our legal status, update the missile indicators, and set up the data
+\ block and slot for the planet.
 \
 \ ******************************************************************************
 
@@ -21917,12 +21879,14 @@ LOAD_E% = LOAD% + P% - CODE%
                         \ it's the first one to be added to our local bubble of
                         \ this new system's universe
 
- LDA #129               \ Set A = 129, the "ship" type for the sun
+ LDA #129               \ Set A = 129, the ship type for the placeholder, so
+                        \ there isn't a space station, but there is a non-zero
+                        \ ship type to indicate this
 
- JSR NWSHP              \ Call NWSHP to set up the sun's data block and add it
+ JSR NWSHP              \ Call NWSHP to set up the new data block and add it
                         \ to FRIN, where it will get put in the second slot as
-                        \ it's the second one to be added to our local bubble
-                        \ of this new system's universe
+                        \ we just cleared out the second slot, and the first
+                        \ slot is already taken by the planet
 
 \ ******************************************************************************
 \
@@ -22008,12 +21972,12 @@ LOAD_E% = LOAD% + P% - CODE%
 \       Name: WPSHPS
 \       Type: Subroutine
 \   Category: Dashboard
-\    Summary: Clear the scanner, reset the ball line and sun line heaps
+\    Summary: Clear the scanner and reset the ball line heap
 \
 \ ------------------------------------------------------------------------------
 \
-\ Remove all ships from the scanner, reset the sun line heap at LSO, and reset
-\ the ball line heap at LSX2 and LSY2.
+\ Remove all ships from the scanner and reset the ball line heap at LSX2 and
+\ LSY2.
 \
 \ ******************************************************************************
 
@@ -22032,9 +21996,8 @@ LOAD_E% = LOAD% + P% - CODE%
                         \ to WS2 as we are done
 
  BMI WS1                \ If the slot contains a ship type with bit 7 set, then
-                        \ it contains the planet or the sun, so jump down to WS1
-                        \ to skip this slot, as the planet and sun don't appear
-                        \ on the scanner
+                        \ it contains the planet, so jump down to WS1 to skip
+                        \ this slot, as the planet don't appear on the scanner
 
  STA TYPE               \ Store the ship type in TYPE
 
@@ -22757,9 +22720,8 @@ LOAD_E% = LOAD% + P% - CODE%
                         \ source. It would set the exploding state and missile
                         \ count to 0
 
- STX FRIN+1             \ Set the sun/space station slot at FRIN+1 to 0, to
-                        \ indicate we should show the space station rather than
-                        \ the sun
+ STX FRIN+1             \ Set the space station slot at FRIN+1 to 0, to indicate
+                        \ we should show the space station
 
  DEX                    \ Set roll counter to 255 (maximum roll with no
  STX INWK+29            \ damping)
@@ -22859,11 +22821,11 @@ LOAD_E% = LOAD% + P% - CODE%
                         \ (which is in workspace K%) and store it in INF
 
  LDA T                  \ If the type of ship that we want to create is
- BMI NW2                \ negative, then this indicates a planet or sun, so
+ BMI NW2                \ negative, then this indicates the planet, so
                         \ jump down to NW2, as the next section sets up a ship
-                        \ data block, which doesn't apply to planets and suns,
-                        \ as they don't have things like shields, missiles,
-                        \ vertices and edges
+                        \ data block, which doesn't apply to planets, as they
+                        \ don't have things like shields, missiles, vertices
+                        \ and edges
 
                         \ This is a ship, so first we need to set up various
                         \ pointers to the ship blueprint we will need. The
@@ -22886,8 +22848,7 @@ LOAD_E% = LOAD% + P% - CODE%
 
  CPY #2*SST             \ If the ship type is a space station (SST), then jump
  BEQ NW6                \ to NW6, skipping the heap space steps below, as the
-                        \ space station has its own line heap at LSO (which it
-                        \ shares with the sun)
+                        \ space station has its own line heap at LSO
 
                         \ We now want to allocate space for a heap that we can
                         \ use to store the lines we draw for our new ship (so it
@@ -23011,7 +22972,7 @@ LOAD_E% = LOAD% + P% - CODE%
 
  TAX                    \ Copy the ship type into X
 
- BMI P%+5               \ If the ship type is negative (planet or sun), then
+ BMI P%+5               \ If the ship type is negative (i.e. the planet), then
                         \ skip the following instruction
 
  INC MANY,X             \ Increment the total number of ships of type X
@@ -23470,8 +23431,8 @@ LOAD_E% = LOAD% + P% - CODE%
 \   centre of screen - 1024 < x < centre of screen + 1024
 \   centre of screen - 1024 < y < centre of screen + 1024
 \
-\ This is to cater for ships (and, more likely, planets and suns) whose centres
-\ are off-screen but whose edges may still be visible.
+\ This is to cater for ships (and, more likely, planets) whose centres are
+\ off-screen but whose edges may still be visible.
 \
 \ The projection calculation is:
 \
@@ -23570,7 +23531,7 @@ LOAD_E% = LOAD% + P% - CODE%
 \       Name: PL2
 \       Type: Subroutine
 \   Category: Drawing planets
-\    Summary: Remove the planet or sun from the screen
+\    Summary: Remove the planet from the screen
 \
 \ ------------------------------------------------------------------------------
 \
@@ -23603,39 +23564,40 @@ LOAD_E% = LOAD% + P% - CODE%
 
 .PLANET
 
- LDA TYPE               \ If bit 0 of the ship type is set, then this is the
- LSR A                  \ sun, so return from the subroutine (as PL2-1 contains
- BCS PL2-1              \ an RTS)
+ LDA TYPE               \ If bit 0 of the ship type is set, then this is 129,
+ LSR A                  \ which is the placeholder used to denote there is no
+ BCS PL2-1              \ space station, so return from the subroutine (as PL2-1
+                        \ contains an RTS)
 
- LDA INWK+8             \ Set A = z_sign (the highest byte in the planet/sun's
+ LDA INWK+8             \ Set A = z_sign (the highest byte in the planet's
                         \ coordinates)
 
- BMI PL2                \ If A is negative then the planet/sun is behind us, so
+ BMI PL2                \ If A is negative then the planet is behind us, so
                         \ jump to PL2 to remove it from the screen, returning
                         \ from the subroutine using a tail call
 
- CMP #48                \ If A >= 48 then the planet/sun is too far away to be
+ CMP #48                \ If A >= 48 then the planet is too far away to be
  BCS PL2                \ seen, so jump to PL2 to remove it from the screen,
                         \ returning from the subroutine using a tail call
 
  ORA INWK+7             \ Set A to z_sign OR z_hi to get the maximum of the two
 
- BEQ PL2                \ If the maximum is 0, then the planet/sun is too close
+ BEQ PL2                \ If the maximum is 0, then the planet is too close
                         \ to be shown, so jump to PL2 to remove it from the
                         \ screen, returning from the subroutine using a tail
                         \ call
 
- JSR PROJ               \ Project the planet/sun onto the screen, returning the
+ JSR PROJ               \ Project the planet onto the screen, returning the
                         \ centre's coordinates in K3(1 0) and K4(1 0)
 
- BCS PL2                \ If the C flag is set by PROJ then the planet/sun is
+ BCS PL2                \ If the C flag is set by PROJ then the planet is
                         \ not visible on-screen, so jump to PL2 to remove it
                         \ from the screen, returning from the subroutine using
                         \ a tail call
 
  LDA #96                \ Set (A P+1 P) = (0 96 0) = 24576
  STA P+1                \
- LDA #0                 \ This represents the planet/sun's radius at a distance
+ LDA #0                 \ This represents the planet's radius at a distance
  STA P                  \ of z = 1
 
  JSR DVID3B2            \ Call DVID3B2 to calculate:
@@ -23644,8 +23606,8 @@ LOAD_E% = LOAD% + P% - CODE%
                         \              = (0 96 0) / z
                         \              = 24576 / z
                         \
-                        \ so K now contains the planet/sun's radius, reduced by
-                        \ the actual distance to the planet/sun. We know that
+                        \ so K now contains the planet's radius, reduced by
+                        \ the actual distance to the planet. We know that
                         \ K+3 and K+2 will be 0, as the number we are dividing,
                         \ (0 96 0), fits into the two bottom bytes, so the
                         \ result is actually in K(1 0)
@@ -24100,12 +24062,12 @@ LOAD_E% = LOAD% + P% - CODE%
 \       Name: PL21
 \       Type: Subroutine
 \   Category: Drawing planets
-\    Summary: Return from a planet/sun-drawing routine with a failure flag
+\    Summary: Return from a planet-drawing routine with a failure flag
 \
 \ ------------------------------------------------------------------------------
 \
 \ Set the C flag and return from the subroutine. This is used to return from a
-\ planet- or sun-drawing routine with the C flag indicating an overflow in the
+\ planet-drawing routine with the C flag indicating an overflow in the
 \ calculation.
 \
 \ ******************************************************************************
@@ -24133,7 +24095,7 @@ LOAD_E% = LOAD% + P% - CODE%
 \
 \ Arguments:
 \
-\   INWK                The planet or sun's ship data block
+\   INWK                The planet's ship data block
 \
 \ Returns:
 \
@@ -24443,12 +24405,7 @@ LOAD_F% = LOAD% + P% - CODE%
 \       Name: KS4
 \       Type: Subroutine
 \   Category: Universe
-\    Summary: Remove the space station and replace it with the sun
-\
-\ ------------------------------------------------------------------------------
-\
-\ Remove the space station from our local bubble of universe, and replace it
-\ with the sun.
+\    Summary: Remove the space station and replace with a placeholder
 \
 \ ******************************************************************************
 
@@ -24460,7 +24417,7 @@ LOAD_F% = LOAD% + P% - CODE%
 
  STA FRIN+1             \ Set the second slot in the FRIN table to 0, which
                         \ sets this slot to empty, so when we call NWSHP below
-                        \ the new sun that gets created will go into FRIN+1
+                        \ the placeholder that gets created will go into FRIN+1
 
  STA SSPR               \ Set the "space station present" flag to 0, as we are
                         \ no longer in the space station's safe zone
@@ -24468,12 +24425,14 @@ LOAD_F% = LOAD% + P% - CODE%
  JSR SPBLB              \ Call SPBLB to redraw the space station bulb, which
                         \ will erase it from the dashboard
 
- LDA #6                 \ Set the sun's y_sign to 6
+ LDA #6                 \ Set the placeholder's y_sign to 6
  STA INWK+5
 
- LDA #129               \ Set A = 129, the "ship" type for the sun
+ LDA #129               \ Set A = 129, the ship type for the placeholder, so
+                        \ there isn't a space station, but there is a non-zero
+                        \ ship type to indicate this
 
- JMP NWSHP              \ Call NWSHP to set up the sun's data block and add it
+ JMP NWSHP              \ Call NWSHP to set up the new data block and add it
                         \ to FRIN, where it will get put in the second slot as
                         \ we just cleared out the second slot, and the first
                         \ slot is already taken by the planet
@@ -24589,7 +24548,7 @@ LOAD_F% = LOAD% + P% - CODE%
 \ outside our local bubble.
 \
 \ We also use this routine when we move out of range of the space station, in
-\ which case we replace it with the sun.
+\ which case we replace it with the placeholder, type 129.
 \
 \ When removing a ship, this creates a gap in the ship slots at FRIN, so we
 \ shuffle all the later slots down to close the gap. We also shuffle the ship
@@ -24641,7 +24600,7 @@ LOAD_F% = LOAD% + P% - CODE%
                         \ ship type
 
  CPX #SST               \ If this is the space station, then jump to KS4 to
- BEQ KS4                \ replace the space station with the sun
+ BEQ KS4                \ remove the space station
 
  DEC MANY,X             \ Decrease the number of this type of ship in our little
                         \ bubble, which is stored in MANY+X (where X is the ship
@@ -29855,8 +29814,8 @@ LOAD_G% = LOAD% + P% - CODE%
 
 .LL9
 
- LDA TYPE               \ If the ship type is negative then this indicates a
- BMI LL25               \ planet or sun, so jump to PLANET via LL25 above
+ LDA TYPE               \ If the ship type is negative then this indicates the
+ BMI LL25               \ planet, so jump to PLANET via LL25 above
 
  LDA #31                \ Set XX4 = 31 to store the ship's distance for later
  STA XX4                \ comparison with the visibility distance. We will
