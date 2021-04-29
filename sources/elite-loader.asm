@@ -43,12 +43,12 @@ L% = &2000              \ L% is the load address of the main game code file
 
 S% = C%                 \ S% points to the entry point for the main game code
 
-USERV = &0200           \ The address for the user vector
-BRKV = &0202            \ The address for the break vector
-IRQ1V = &0204           \ The address for the interrupt vector
-WRCHV = &020E           \ The address for the write character vector
-RDCHV = &0210           \ The address for the read character vector
-KEYV = &0228            \ The address for the keyboard vector
+USERV = &0200           \ The address of the user vector
+BRKV = &0202            \ The address of the break vector
+IRQ1V = &0204           \ The address of the interrupt vector
+WRCHV = &020E           \ The address of the write character vector
+RDCHV = &0210           \ The address of the read character vector
+KEYV = &0228            \ The address of the keyboard vector
 
 OSWRCH = &FFEE          \ The address for the OSWRCH routine
 OSBYTE = &FFF4          \ The address for the OSBYTE routine
@@ -787,13 +787,13 @@ ENDMACRO
 \
 \   * WORDS9: move 4 pages (1024 bytes) from &4400 (CODE%) to &0400
 \
-\   * P.ELITE: move 1 page (256 bytes) from &4F00 (CODE% + &B00) to &5BE0
+\   * P.ELITE: move 1 page (256 bytes) from &4F00 (CODE% + &0B00) to &5BE0
 \
-\   * P.A-SOFT: move 1 page (256 bytes) from &5000 (CODE% + &C00) to &5960
+\   * P.A-SOFT: move 1 page (256 bytes) from &5000 (CODE% + &0C00) to &5960
 \
-\   * P.(C)ASFT: move 1 page (256 bytes) from &5100 (CODE% + &D00) to &73A0
+\   * P.(C)ASFT: move 1 page (256 bytes) from &5100 (CODE% + &0D00) to &73A0
 \
-\   * P.DIALS: move 7 pages (1792 bytes) from &4800 (CODE% + &400) to &7620
+\   * P.DIALS: move 7 pages (1792 bytes) from &4800 (CODE% + &0400) to &7620
 \
 \   * Move 1 page (256 bytes) from &5615 (UU%) to &0B00-&0BFF
 \
@@ -1004,45 +1004,7 @@ ENDMACRO
 \       Type: Subroutine
 \   Category: Drawing planets
 \    Summary: Draw Saturn on the loading screen
-\
-\ ------------------------------------------------------------------------------
-\
-\ Part 1 (PLL1) x 1280 - planet
-\
-\   * Draw pixels at (x, y) where:
-\
-\     r1 = random number from 0 to 255
-\     r2 = random number from 0 to 255
-\     (r1^2 + r1^2) < 128^2
-\
-\     y = r2, squished into 64 to 191 by negation
-\
-\     x = SQRT(128^2 - (r1^2 + r1^2)) / 2
-\
-\ Part 2 (PLL2) x 477 - stars
-\
-\   * Draw pixels at (x, y) where:
-\
-\     y = random number from 0 to 255
-\     y = random number from 0 to 255
-\     (x^2 + y^2) div 256 > 17
-\
-\ Part 3 (PLL3) x 1280 - rings
-\
-\   * Draw pixels at (x, y) where:
-\
-\     r5 = random number from 0 to 255
-\     r6 = random number from 0 to 255
-\     r7 = r5, squashed into -32 to 31
-\
-\     32 <= (r5^2 + r6^2 + r7^2) / 256 <= 79
-\     Draw 50% fewer pixels when (r6^2 + r7^2) / 256 <= 16
-\
-\     x = r5 + r7
-\     y = r5
-\
-\ Draws pixels within the diagonal band of horizontal width 64, from top-left to
-\ bottom-right of the screen.
+\  Deep dive: Drawing Saturn on the loading screen
 \
 \ ******************************************************************************
 
