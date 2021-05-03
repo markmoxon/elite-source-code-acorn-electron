@@ -21,7 +21,7 @@
 \
 \ This source file produces the following SSD disc image:
 \
-\   * elite-electron.ssd
+\   * elite-electron-sth.ssd
 \
 \ This can be loaded into an emulator or a real Electron.
 \
