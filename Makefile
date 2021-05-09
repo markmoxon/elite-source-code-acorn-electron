@@ -2,8 +2,8 @@ BEEBASM?=beebasm
 PYTHON?=python
 
 rel-electron=1
-folder-electron=''
-suffix-electron='-sth'
+folder-electron=
+suffix-electron=-sth
 
 .PHONY:build
 build:
