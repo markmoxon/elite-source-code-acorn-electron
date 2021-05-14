@@ -14,6 +14,9 @@
 \ The terminology and notations used in this commentary are explained at
 \ https://www.bbcelite.com/about_site/terminology_used_in_this_commentary.html
 \
+\ The deep dive articles referred to in this commentary can be found at
+\ https://www.bbcelite.com/deep_dives
+\
 \ ------------------------------------------------------------------------------
 \
 \ This source file produces the following binary files:
@@ -27045,7 +27048,7 @@ ENDIF
  EOR #&A9               \ Store the checksum EOR &A9 in CHK2, the penultimate
  STA CHK2               \ byte of the last saved commander block
 
- STA &8FF+NT%           \ Store the checksum EOR &A9 in the penultimate byte of
+ STA &08FF+NT%          \ Store the checksum EOR &A9 in the penultimate byte of
                         \ the save file at &0900 (the equivalent of CHK2 in the
                         \ last saved block)
 
@@ -27087,7 +27090,7 @@ ENDIF
 \
 \   Y                   Points to the page number containing the OSFILE block,
 \                       which must be &C because that's where the pointer to the
-\                       filename in INWK is stored below (by the STX &C00
+\                       filename in INWK is stored below (by the STX &0C00
 \                       instruction)
 \
 \ ******************************************************************************
@@ -27163,7 +27166,7 @@ ENDIF
 
 .LOL1
 
- LDA &900,X             \ Copy the X-th byte of &0900 to the X-th byte of NA%+8
+ LDA &0900,X            \ Copy the X-th byte of &0900 to the X-th byte of NA%+8
  STA NA%+8,X
 
  DEX                    \ Decrement the loop counter
