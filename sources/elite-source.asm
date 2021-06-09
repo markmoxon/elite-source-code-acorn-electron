@@ -1180,7 +1180,7 @@ ORG CODE_WORDS%
 \
 \   CHAR 'x'            Insert ASCII character "x"
 \
-\ To include an apostrophe, use a backtick character, as in i.e. CHAR '`'.
+\ To include an apostrophe, use a backtick character, as in CHAR '`'.
 \
 \ See the deep dive on "Printing text tokens" for details on how characters are
 \ stored in the recursive token table.
@@ -17243,11 +17243,6 @@ LOAD_D% = LOAD% + P% - CODE%
  LDA #%10000000         \ Set bit 7 of QQ17 to switch to Sentence Case, with the
  STA QQ17               \ next letter in capitals
 
-\JSR FLKB               \ This instruction is commented out in the original
-                        \ source. It calls a routine to flush the keyboard
-                        \ buffer (FLKB) that isn't present in the cassette
-                        \ version but is in other versions
-
  LDA #0                 \ We're going to loop through all the available market
  STA QQ29               \ items, so we set up a counter in QQ29 to denote the
                         \ current item and start it at 0
@@ -17312,11 +17307,6 @@ LOAD_D% = LOAD% + P% - CODE%
  STX R                  \ repeated at the start of gnum, which we call next.
  LDX #12                \ Perhaps they were left behind when code was moved from
  STX T1                 \ here into gnum, and weren't deleted?
-
-\.TT223                 \ This label is commented out in the original source,
-                        \ and is a duplicate of a label in gnum, so this could
-                        \ also be a remnant if the code in gnum was originally
-                        \ here, but got moved into the gnum subroutine
 
  JSR gnum               \ Call gnum to get a number from the keyboard, which
                         \ will be the quantity of this item we want to purchase,
@@ -17800,7 +17790,7 @@ LOAD_D% = LOAD% + P% - CODE%
 
  DEY                    \ Negate the change in Y and push it onto the stack
  TYA                    \ (let's call this the y-delta)
- EOR #255
+ EOR #&FF
  PHA
 
  JSR TT103              \ Draw small crosshairs at coordinates (QQ9, QQ10),
@@ -21922,10 +21912,7 @@ LOAD_E% = LOAD% + P% - CODE%
 .NWSTARS
 
  LDA QQ11               \ If this is not a space view, jump to WPSHPS to skip
-\ORA MJ                 \ the initialisation of the SX, SY and SZ tables. The OR
- BNE WPSHPS             \ instruction is commented out in the original source,
-                        \ but it would have the effect of also skipping the
-                        \ initialisation if we had mis-jumped into witchspace
+ BNE WPSHPS             \ the initialisation of the SX, SY and SZ tables
 
 \ ******************************************************************************
 \
@@ -22578,9 +22565,6 @@ LOAD_E% = LOAD% + P% - CODE%
 
 .OO2
 
-\LDX #0                 \ This instruction is commented out in the original
-                        \ source, and isn't required as X is set to 0 above
-
  STX FSH                \ Set the forward shield to 0
 
  BCC OO3                \ Jump to OO3 to start taking damage directly from the
@@ -22602,9 +22586,6 @@ LOAD_E% = LOAD% + P% - CODE%
  RTS                    \ Return from the subroutine
 
 .OO5
-
-\LDX #0                 \ This instruction is commented out in the original
-                        \ source, and isn't required as X is set to 0 above
 
  STX ASH                \ Set the aft shield to 0
 
@@ -22650,7 +22631,7 @@ LOAD_E% = LOAD% + P% - CODE%
 \ copied into the first two K3 bytes, and the sign of the sign byte is copied
 \ into the highest K3 byte.
 \
-\ The comments below are written for the x-coordinate.
+\ The comments below are written for the x-coordinate into K3(2 1 0).
 \
 \ Arguments:
 \
@@ -23823,7 +23804,7 @@ LOAD_E% = LOAD% + P% - CODE%
  JSR BLINE              \ Call BLINE to draw this segment, which also increases
                         \ CNT by STP, the step size
 
- CMP #65                \ If CNT >=65 then skip the next instruction
+ CMP #65                \ If CNT >= 65 then skip the next instruction
  BCS P%+5
 
  JMP PLL3               \ Jump back for the next segment
@@ -23844,10 +23825,6 @@ LOAD_E% = LOAD% + P% - CODE%
 \
 \ We do this by redrawing it using the lines stored in the ball line heap when
 \ the planet was originally drawn by the BLINE routine.
-\
-\ Other entry points:
-\
-\   WPLS-1              Contains an RTS
 \
 \ ******************************************************************************
 
@@ -26585,10 +26562,6 @@ ENDIF
  LDA #96                \ Set nosev_z hi = 96 (96 is the value of unity in the
  STA INWK+14            \ rotation vector)
 
-\LSR A                  \ This instruction is commented out in the original
-                        \ source. It would halve the value of z_hi to 48, so the
-                        \ ship would start off closer to the viewer
-
  STA INWK+7             \ Set z_hi, the high byte of the ship's z-coordinate,
                         \ to 96, which is the distance at which the rotating
                         \ ship starts out before coming towards us
@@ -27924,6 +27897,10 @@ ENDIF
 \
 \ Note that KYTB actually points to the byte before the start of the table, so
 \ the offset of the first key value is 1 (i.e. KYTB+1), not 0.
+\
+\ Other entry points:
+\
+\   KYTB                Contains an RTS
 \
 \ ******************************************************************************
 
