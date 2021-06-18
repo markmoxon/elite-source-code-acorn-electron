@@ -26916,7 +26916,6 @@ ENDIF
 \
 \ ------------------------------------------------------------------------------
 \
-\ Zero-fill from address (X SC) + Y to (X SC) + &FF.
 \ Zero-fill from address SC(1 0) + Y to SC(1 0) + &FF.
 \
 \ Arguments:

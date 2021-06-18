@@ -1429,7 +1429,6 @@ ENDMACRO
 \ before drawing, and then the routine uses the same approach as the PIXEL
 \ routine in the main game code, except it plots a single pixel from TWOS
 \ instead of a two pixel dash from TWOS2. This applies to the top part of the
-\ screen (the monochrome mode 4 space view).
 \ screen (the space view).
 \
 \ See the PIXEL routine in the main game code for more details.
