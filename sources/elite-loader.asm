@@ -706,7 +706,7 @@ ENDMACRO
                         \ effectively resets the stack
 
  INX                    \ Set X = 0, to use as a counter in the following loop
- 
+
                         \ The following loop copies the crunchit routine into
                         \ zero page, though this unprotected version of the
                         \ loader doesn't call it there, so this has no effect

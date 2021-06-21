@@ -28022,7 +28022,7 @@ ENDIF
                         \ from the subroutine, but first we need to restore the
                         \ value of Y from the stack, so we store the result A in
                         \ X while we do that
-                    
+
  PLA                    \ Restore the value Y that we stored on the stack, so it
  TAY                    \ gets preserved across calls to the subroutine
 
