@@ -4183,7 +4183,7 @@ LOAD_A% = LOAD%
  SEC                    \ that it has been killed and should be removed from
  ROR INWK+31            \ the local bubble
 
-.MA61                   \ This label is not used but is in the original source
+.MA61
 
  BNE MA26               \ Jump to MA26 to skip over the collision routines and
                         \ to move on to missile targeting (this BNE is
@@ -6490,15 +6490,12 @@ LOAD_A% = LOAD%
                         \ then set the sign afterwards
 
  LDA K                  \ We now do the following sum:
-\CLC                    \
- ADC K2                 \   (A y_hi y_lo -) = K(3 2 1 0) + K2(3 2 1 0)
+ ADC K2                 \
+                        \   (A y_hi y_lo -) = K(3 2 1 0) + K2(3 2 1 0)
                         \
                         \ starting with the low bytes (which we don't keep)
                         \
-                        \ The CLC instruction is commented out in the original
-                        \ source. It isn't needed because MULT3 clears the C
-                        \ flag, so this is an example of the authors finding
-                        \ one more precious byte to save
+                        \ The addition works because MULT3 clears the C flag
 
  LDA K+1                \ We then do the middle bytes, which go into y_lo
  ADC K2+1
@@ -8408,10 +8405,6 @@ NEXT
 
 .FLIP
 
-\LDA MJ                 \ These instructions are commented out in the original
-\BNE FLIP-1             \ source. They would have the effect of not swapping the
-                        \ stardust if we had mis-jumped into witchspace
-
  LDY #NOST              \ Set Y to the number of stardust particles, so we can
                         \ use it as a counter through all the stardust
 
@@ -8717,9 +8710,6 @@ NEXT
  LDA YY                 \ Set (S R) = YY(1 0) = y
  STA R
  LDA YY+1
-\JSR MAD                \ These instructions are commented out in the original
-\STA S                  \ source
-\STX R
  STA S
 
  LDA #0                 \ Set P = 0
@@ -9062,11 +9052,6 @@ NEXT
  STA R
  LDA YY+1
  STA S
-
-\EOR #128               \ These instructions are commented out in the original
-\JSR MAD                \ source
-\STA S
-\STX R
 
  LDA #0                 \ Set P = 0
  STA P
@@ -14738,8 +14723,7 @@ NEXT
 
  STA T                  \ Set A = 128 - A
  LDA #128               \
-\SEC                    \ The SEC instruction is commented out in the original
- SBC T                  \ source, and isn't required as we did a SEC before
+ SBC T                  \ The subtraction will work because we did a SEC before
                         \ calling AR3
 
  RTS                    \ Return from the subroutine
@@ -17229,12 +17213,6 @@ LOAD_D% = LOAD% + P% - CODE%
 
 .TT219
 
-\LDA #2                 \ This instruction is commented out in the original
-                        \ source. Perhaps this view originally had a QQ11 value
-                        \ of 2, but it turned out not to need its own unique ID,
-                        \ so the authors found they could just use a view value
-                        \ of 1 and save an instruction at the same time?
-
  JSR TT66-2             \ Clear the top part of the screen, draw a white border,
                         \ and set the current view type in QQ11 to 1
 
@@ -17517,11 +17495,6 @@ LOAD_D% = LOAD% + P% - CODE%
  LDA #4                 \ Move the text cursor to row 4, column 4
  STA YC
  STA XC
-
-\JSR FLKB               \ This instruction is commented out in the original
-                        \ source. It calls a routine to flush the keyboard
-                        \ buffer (FLKB) that isn't present in the cassette
-                        \ version but is in other versions
 
  LDA #205               \ Print recursive token 45 ("SELL")
  JSR TT27
@@ -18668,13 +18641,6 @@ LOAD_D% = LOAD% + P% - CODE%
                         \ left corner of the screen, and return from the
                         \ subroutine using a tail call
 
-\hy5                    \ This instruction and the hy5 label are commented out
-\RTS                    \ in the original - they can actually be found at the
-                        \ end of the jmp routine below, so perhaps this is where
-                        \ they were originally, but the authors realised they
-                        \ could save a byte by using a tail call instead of an
-                        \ RTS?
-
 \ ******************************************************************************
 \
 \       Name: Ghy
@@ -18746,11 +18712,6 @@ LOAD_D% = LOAD% + P% - CODE%
 
  BPL G1                 \ Loop back for the next seed byte, until we have
                         \ rotated them all
-
-\JSR DORND              \ This instruction is commented out in the original
-                        \ source, and would set A and X to random numbers, so
-                        \ perhaps the original plan was to arrive in each new
-                        \ galaxy in a random place?
 
 .zZ
 
@@ -20077,11 +20038,6 @@ LOAD_D% = LOAD% + P% - CODE%
  BEQ ed5                \ LASER+X, which contains the laser power for view X,
                         \ is zero), jump to ed5 to buy a beam laser
 
-\BPL P%+4               \ This instruction is commented out in the original
-                        \ source, though it would have no effect (it would
-                        \ simply skip the BMI if A is positive, which is what
-                        \ BMI does anyway)
-
  BMI ed7                \ If there is a beam laser already mounted in the chosen
                         \ view (i.e. LASER+X has bit 7 set, which indicates a
                         \ beam laser rather than a pulse laser), skip back to
@@ -20740,7 +20696,7 @@ LOAD_E% = LOAD% + P% - CODE%
  LDA #195               \ Print recursive token 35 ("LIGHT YEARS") followed by
  JSR plf                \ a newline
 
-.PCASH                  \ This label is not used but is in the original source
+.PCASH
 
  LDA #119               \ Print recursive token 119 ("CASH:" then control code
  BNE TT27               \ 0, which prints cash levels, then " CR" and newline)
@@ -22715,10 +22671,6 @@ LOAD_E% = LOAD% + P% - CODE%
  DEX                    \ Set pitch counter to 0 (no pitch, roll only)
  STX INWK+30
 
-\STX INWK+31            \ This instruction is commented out in the original
-                        \ source. It would set the exploding state and missile
-                        \ count to 0
-
  STX FRIN+1             \ Set the space station slot at FRIN+1 to 0, to indicate
                         \ we should show the space station
 
@@ -22920,11 +22872,10 @@ LOAD_E% = LOAD% + P% - CODE%
                         \ because INWK is in zero page, so INWK+34 = 0
 
  LDA INWK+33            \ Calculate INWK+33 - INF, again using 16-bit
-\SEC                    \ arithmetic, and put the result in (A Y), so the high
- SBC INF                \ byte is in A and the low byte in Y. The SEC
- TAY                    \ instruction is commented out in the original source;
- LDA INWK+34            \ as the previous subtraction will never underflow, it
- SBC INF+1              \ is superfluous
+ SBC INF                \ arithmetic, and put the result in (A Y), so the high
+ TAY                    \ byte is in A and the low byte in Y. The subtraction
+ LDA INWK+34            \ works because the previous subtraction will never
+ SBC INF+1              \ underflow, so we know the C flag is set
 
  BCC NW3+1              \ If we have an underflow from the subtraction, then
                         \ INF > INWK+33 and we definitely don't have enough
@@ -24130,10 +24081,6 @@ LOAD_E% = LOAD% + P% - CODE%
  LDA K+3                \ Fetch the sign of the result from K+3 (which we know
                         \ has zeroes in bits 0-6, so this just fetches the sign)
 
-\CLC                    \ This instruction is commented out in the original
-                        \ source. It would have no effect as we know the C flag
-                        \ is already clear, as we skipped past the BCS above
-
  BPL PL6                \ If the sign bit is clear and the result is positive,
                         \ then the result is already correct, so return from
                         \ the subroutine with the C flag clear to indicate
@@ -24225,10 +24172,6 @@ LOAD_E% = LOAD% + P% - CODE%
  CPY #16                \ If Y >= 16 set the C flag, so A = A - 1
  SBC #0
 
-\CPY #&20               \ These instructions are commented out in the original
-\SBC #0                 \ source, but they would make the joystick move the
-                        \ cursor faster by increasing the range of Y by -1 to +1
-
  CPY #64                \ If Y >= 64 set the C flag, so A = A - 1
  SBC #0
 
@@ -24237,10 +24180,6 @@ LOAD_E% = LOAD% + P% - CODE%
 
  CPY #224               \ If Y >= 224 set the C flag, so A = A + 1
  ADC #0
-
-\CPY #&F0               \ These instructions are commented out in the original
-\ADC #0                 \ source, but they would make the joystick move the
-                        \ cursor faster by increasing the range of Y by -1 to +1
 
  TAY                    \ Copy the value of A into Y
 
@@ -25254,7 +25193,10 @@ LOAD_F% = LOAD% + P% - CODE%
 \
 \ ------------------------------------------------------------------------------
 \
-\ Set A and X to random numbers. The C and V flags are also set randomly.
+\ Set A and X to random numbers (though note that X is set to the random number
+\ that was returned in A the last time DORND was called).
+\
+\ The C and V flags are also set randomly.
 \
 \ Other entry points:
 \
@@ -26338,19 +26280,6 @@ LOAD_F% = LOAD% + P% - CODE%
  CMP #&44               \ Did we press "Y"? If not, jump to QU5, otherwise
  BNE QU5                \ continue on to load a new commander
 
-\BR1                    \ These instructions are commented out in the original
-\LDX #3                 \ source. This block starts with the same *FX call as
-\STX XC                 \ above, then clears the screen, calls a routine to
-\JSR FX200              \ flush the keyboard buffer (FLKB) that isn't present
-\LDA #1                 \ in the cassette version but is in other versions,
-\JSR TT66               \ and then it displays "LOAD NEW COMMANDER (Y/N)?" and
-\JSR FLKB               \ lists the current cargo, before falling straight into
-\LDA #14                \ the load routine below, whether or not we have
-\JSR TT214              \ pressed "Y". This may be a bit of testing code, as the
-\BCC QU5                \ first line is a commented label, BR1, which is where
-                        \ BRKV points, so when this is uncommented, pressing
-                        \ the BREAK key should jump straight to the load screen
-
  JSR GTNME              \ We want to load a new commander, so we need to get
                         \ the commander name to load
 
@@ -26391,9 +26320,6 @@ LOAD_F% = LOAD% + P% - CODE%
                         \     name, and NA%+8 the last saved commander data. If
                         \     the game has never been saved, this will still be
                         \     the default commander
-
-\JSR TTX66              \ This instruction is commented out in the original
-                        \ source; it clears the screen and draws a border
 
  LDX #NT%               \ The size of the commander data block is NT% bytes,
                         \ and it starts at NA%+8, so we need to copy the data
@@ -29621,7 +29547,7 @@ LOAD_G% = LOAD% + P% - CODE%
 \
 \ ------------------------------------------------------------------------------
 \
-\ Calculate following dot products:
+\ Calculate the following dot products:
 \
 \   XX12(1 0) = XX15(5 0) . XX16(5 0)
 \   XX12(3 2) = XX15(5 0) . XX16(11 6)
@@ -29857,9 +29783,6 @@ LOAD_G% = LOAD% + P% - CODE%
  LDY #2                 \ vertices used as origins for explosion clouds), and
  STA (XX19),Y           \ store it in byte #2 of the ship line heap
 
-\LDA XX1+32             \ These instructions are commented out in the original
-\AND #&7F               \ source
-
                         \ The following loop sets bytes 3-6 of the of the ship
                         \ line heap to random numbers
 
@@ -29916,10 +29839,6 @@ LOAD_G% = LOAD% + P% - CODE%
  JMP LL155              \ Jump to LL155 to draw the ship, which removes it from
                         \ the screen, returning from the subroutine using a
                         \ tail call
-
-\LL24                   \ This label is commented out in the original source,
-                        \ and was presumably used to label the RTS which is
-                        \ actually called by LL10-1 above, not LL24
 
  RTS                    \ Return from the subroutine
 
@@ -32008,8 +31927,6 @@ LOAD_G% = LOAD% + P% - CODE%
  CPY XX20               \ If the heap counter is less than the size of the heap,
  BCC LL27               \ loop back to LL27 to draw the next line from the heap
 
-\LL82                   \ This label is commented out in the original source
-
  RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
@@ -32169,9 +32086,6 @@ LOAD_G% = LOAD% + P% - CODE%
 
 .LL135
 
-\BNE LL139              \ This instruction is commented out in the original
-                        \ source
-
  LDA XX15+2             \ Set (S R) = (y1_hi y1_lo) - 192
  SEC                    \
  SBC #Y*2               \ starting with the low bytes
@@ -32247,8 +32161,6 @@ LOAD_G% = LOAD% + P% - CODE%
 
  LDA XX15               \ Set R = x1_lo
  STA R
-
-\.LL120                 \ This label is commented out in the original source
 
  JSR LL129              \ Call LL129 to do the following:
                         \
@@ -32457,10 +32369,9 @@ LOAD_G% = LOAD% + P% - CODE%
 
  TXA                    \ Otherwise negate (Y X) using two's complement by first
  EOR #%11111111         \ setting the low byte to ~X + 1
-\CLC                    \
- ADC #1                 \ The CLC instruction is commented out in the original
- TAX                    \ source. It would have no effect as we know the C flag
-                        \ is clear from when we passed through the BCS above
+ ADC #1                 \
+ TAX                    \ The addition works as we know the C flag is clear from
+                        \ when we passed through the BCS above
 
  TYA                    \ Then set the high byte to ~Y + C
  EOR #%11111111
