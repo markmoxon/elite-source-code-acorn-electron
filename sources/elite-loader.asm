@@ -36,6 +36,13 @@ INCLUDE "sources/elite-header.h.asm"
 N% = 17                 \ N% is set to the number of bytes in the VDU table, so
                         \ we can loop through them in part 2 below
 
+USERV = &0200           \ The address of the user vector
+BRKV = &0202            \ The address of the break vector
+IRQ1V = &0204           \ The address of the interrupt vector
+WRCHV = &020E           \ The address of the write character vector
+RDCHV = &0210           \ The address of the read character vector
+KEYV = &0228            \ The address of the keyboard vector
+
 LE% = &0B00             \ LE% is the address to which the code from UU% onwards
                         \ is copied in part 3
 
@@ -46,21 +53,14 @@ L% = &2000              \ L% is the load address of the main game code file
 
 S% = C%                 \ S% points to the entry point for the main game code
 
-USERV = &0200           \ The address of the user vector
-BRKV = &0202            \ The address of the break vector
-IRQ1V = &0204           \ The address of the interrupt vector
-WRCHV = &020E           \ The address of the write character vector
-RDCHV = &0210           \ The address of the read character vector
-KEYV = &0228            \ The address of the keyboard vector
+VIA = &FE00             \ Memory-mapped space for accessing internal hardware,
+                        \ such as the video ULA, 6845 CRTC and 6522 VIAs (also
+                        \ known as SHEILA)
 
 OSWRCH = &FFEE          \ The address for the OSWRCH routine
 OSBYTE = &FFF4          \ The address for the OSBYTE routine
 OSWORD = &FFF1          \ The address for the OSWORD routine
 OSCLI = &FFF7           \ The address for the OSCLI routine
-
-VIA = &FE00             \ Memory-mapped space for accessing internal hardware,
-                        \ such as the video ULA, 6845 CRTC and 6522 VIAs (also
-                        \ known as SHEILA)
 
 \ ******************************************************************************
 \
