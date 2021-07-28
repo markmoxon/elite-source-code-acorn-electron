@@ -76,9 +76,9 @@ ORG &0004
 
 .TRTB%
 
- SKIP 2                 \ TRTB%(1 0) points to the keyboard translation table,
-                        \ which is used to translate internal key numbers to
-                        \ ASCII
+ SKIP 2                 \ Contains the address of the keyboard translation
+                        \ table, which is used to translate internal key
+                        \ numbers to ASCII
 
 ORG &0070
 
@@ -394,9 +394,9 @@ INCBIN "binaries/P.(C)ASFT.bin"
 
 .David9
 
-EQUW David5            \ The address of David5
+ EQUW David5            \ The address of David5
 
-CLD                    \ This instruction is not used
+ CLD                    \ This instruction is not used
 
 \ ******************************************************************************
 \
@@ -450,9 +450,8 @@ CLD                    \ This instruction is not used
                         \ crackers, by changing an STA to a CMP (as this is an
                         \ unprotected version)
 
- LDY #&18
- STY V219+1,X           \ Set the low byte of V219(1 0) to &18 (as X = 255), so
-                        \ V219(1 0) now contains &0218
+ LDY #&18               \ Set the low byte of V219(1 0) to &18 (as X = 255), so
+ STY V219+1,X           \ V219(1 0) now contains &0218
 
  RTS                    \ Return from the subroutine
 
@@ -1949,7 +1948,6 @@ ORG LE%
 .MESS1
 
  EQUS "LOAD EliteCo FFFF2000"
-
  EQUB 13
 
  SKIP 13                \ These bytes appear to be unused
