@@ -17758,7 +17758,7 @@ LOAD_D% = LOAD% + P% - CODE%
 
  SEC                    \ Set the C flag to indicate a "yes" response
 
- RTS
+ RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
 \
