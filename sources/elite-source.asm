@@ -6698,7 +6698,7 @@ LOAD_B% = LOAD% + P% - CODE%
  EQUS "JAMESON"         \ The current commander name, which defaults to JAMESON
  EQUB 13                \
                         \ The commander name can be up to 7 characters (the DFS
-                        \ limit for file names), and is terminated by a carriage
+                        \ limit for filenames), and is terminated by a carriage
                         \ return
 
                         \ NA%+8 is the start of the commander data block
@@ -6994,8 +6994,6 @@ NEXT
 \
 \   LL30                LL30 is a synonym for LOIN and draws a line from
 \                       (X1, Y1) to (X2, Y2)
-\
-\   HL6                 Contains an RTS
 \
 \ ******************************************************************************
 
@@ -7732,6 +7730,10 @@ NEXT
 \   * X1 >= X2 and Y1 >= Y2
 \
 \   * Draw from (X1, Y1) at bottom left to (X2, Y2) at top right
+\
+\ Other entry points:
+\
+\   HL6                 Contains an RTS
 \
 \ ******************************************************************************
 
@@ -12076,11 +12078,6 @@ LOAD_C% = LOAD% +P% - CODE%
 \ This is called when an enemy ship has run out of both energy and luck, so it's
 \ time to bail.
 \
-\ Other entry points:
-\
-\   SFS1-2              Add a missile to the local bubble that has AI enabled,
-\                       is hostile, but has no E.C.M.
-\
 \ ******************************************************************************
 
 .SESCP
@@ -12127,6 +12124,11 @@ LOAD_C% = LOAD% +P% - CODE%
 \   XX0                 XX0 is preserved
 \
 \   INWK                The whole INWK workspace is preserved
+\
+\ Other entry points:
+\
+\   SFS1-2              Add a missile to the local bubble that has AI enabled,
+\                       is hostile, but has no E.C.M.
 \
 \ ******************************************************************************
 
@@ -15090,8 +15092,6 @@ NEXT
 \ view we are looking through (front, rear, left, right).
 \
 \ Other entry points:
-\
-\   LO2                 Contains an RTS
 \
 \   PU1-1               Contains an RTS
 \
@@ -20510,10 +20510,6 @@ LOAD_E% = LOAD% + P% - CODE%
 \ Print control code 3 (the selected system name, i.e. the one in the crosshairs
 \ in the Short-range Chart).
 \
-\ Other entry points:
-\
-\   cmn-1               Contains an RTS
-\
 \ ******************************************************************************
 
 .cpl
@@ -20596,7 +20592,7 @@ LOAD_E% = LOAD% + P% - CODE%
 \
 \ Other entry points:
 \
-\   ypl-1               Contains an RTS
+\   cmn-1               Contains an RTS
 \
 \ ******************************************************************************
 
@@ -20630,6 +20626,10 @@ LOAD_E% = LOAD% + P% - CODE%
 \ ------------------------------------------------------------------------------
 \
 \ Print control code 2 (the current system name).
+\
+\ Other entry points:
+\
+\   ypl-1               Contains an RTS
 \
 \ ******************************************************************************
 
@@ -23138,9 +23138,6 @@ LOAD_E% = LOAD% + P% - CODE%
 \
 \ ------------------------------------------------------------------------------
 \
-\ Other entry points:
-\
-\   BULB-2              Set the Y screen address
 \
 \ ******************************************************************************
 
@@ -23175,6 +23172,10 @@ LOAD_E% = LOAD% + P% - CODE%
 \                       bulb, or #LO(SPBT) for the space station bulb
 \
 \   Y                   The high byte of the screen address of the bulb to show
+\
+\ Other entry points:
+\
+\   BULB-2              Set the Y screen address
 \
 \ ******************************************************************************
 
@@ -27585,10 +27586,6 @@ ENDIF
 \ message of encouragement if the kill total is a multiple of 256, and then
 \ make a nearby explosion sound.
 \
-\ Other entry points:
-\
-\   EXNO-2              Set X = 7 and fall through into EXNO to make the sound
-\                       of a ship exploding
 \
 \ ******************************************************************************
 
@@ -27635,6 +27632,11 @@ ENDIF
 \
 \                         * 15 = explosion is quieter (i.e. this is just a laser
 \                                strike)
+\
+\ Other entry points:
+\
+\   EXNO-2              Set X = 7 and fall through into EXNO to make the sound
+\                       of a ship exploding
 \
 \ ******************************************************************************
 
@@ -27918,8 +27920,6 @@ ENDIF
 \
 \ Other entry points:
 \
-\   DKS2-1              Contains an RTS
-\
 \   CAPSL               Scan the keyboard to see if CAPS LOCK is being pressed
 \
 \ ******************************************************************************
@@ -28023,6 +28023,10 @@ ENDIF
 \   (A X)               The 16-bit value read from channel X, with the value
 \                       inverted if the game has been configured to reverse the
 \                       joystick
+\
+\ Other entry points:
+\
+\   DKS2-1              Contains an RTS
 \
 \ ******************************************************************************
 
