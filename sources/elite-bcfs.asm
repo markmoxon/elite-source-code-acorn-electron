@@ -39,6 +39,8 @@
 
 INCLUDE "sources/elite-header.h.asm"
 
+GUARD &5800             \ Guard against assembling over screen memory
+
 \ ******************************************************************************
 \
 \ Configuration variables
