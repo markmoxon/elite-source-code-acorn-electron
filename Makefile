@@ -1,8 +1,20 @@
 BEEBASM?=beebasm
 PYTHON?=python
 
+# You can set the release that gets built by adding 'release=<rel>' to
+# the make command, where <rel> is one of:
+#
+#   sth
+#
+# So, for example:
+#
+#   make encrypt verify release=sth
+#
+# will build the version from the Stairway to Hell archive. If you omit
+# the release parameter, it will build the Stairway to Hell version.
+
 rel-electron=1
-folder-electron=
+folder-electron=/sth
 suffix-electron=-sth
 
 .PHONY:build

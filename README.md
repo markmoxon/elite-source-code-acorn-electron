@@ -2,6 +2,8 @@
 
 [BBC Micro (cassette)](https://github.com/markmoxon/cassette-elite-beebasm) | [BBC Micro (disc)](https://github.com/markmoxon/disc-elite-beebasm) | [6502 Second Processor](https://github.com/markmoxon/6502sp-elite-beebasm) | [BBC Master](https://github.com/markmoxon/master-elite-beebasm) | **Acorn Electron** | [Elite-A](https://github.com/markmoxon/elite-a-beebasm)
 
+![Screenshot of Elite on the Acorn Electron](https://www.bbcelite.com/images/github/Elite-Electron.png)
+
 This repository contains source code for Elite on the Acorn Electron, with every single line documented and (for the most part) explained.
 
 It is a companion to the [bbcelite.com website](https://www.bbcelite.com).
@@ -33,7 +35,7 @@ This repository contains source code for Elite on the Acorn Electron, with every
 
 You can build the fully functioning game from this source. One release is currently supported: the Stairway to Hell release.
 
-It is a companion to the [bbcelite.com website](https://www.bbcelite.com), which contains all the code from this repository, but laid out in a much more human-friendly fashion. The links above will take you to repositories for the other versions of Elite that are covered by this project.
+It is a companion to the [bbcelite.com website](https://www.bbcelite.com), which contains all the code from this repository, but laid out in a much more human-friendly fashion. The links at the top of this page will take you to repositories for the other versions of Elite that are covered by this project.
 
 * If you want to browse the source and read about how Elite works under the hood, you will probably find [the website](https://www.bbcelite.com) is a better place to start than this repository.
 

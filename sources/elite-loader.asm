@@ -36,6 +36,13 @@ INCLUDE "sources/elite-header.h.asm"
 N% = 17                 \ N% is set to the number of bytes in the VDU table, so
                         \ we can loop through them in part 2 below
 
+USERV = &0200           \ The address of the user vector
+BRKV = &0202            \ The address of the break vector
+IRQ1V = &0204           \ The address of the interrupt vector
+WRCHV = &020E           \ The address of the write character vector
+RDCHV = &0210           \ The address of the read character vector
+KEYV = &0228            \ The address of the keyboard vector
+
 LE% = &0B00             \ LE% is the address to which the code from UU% onwards
                         \ is copied in part 3
 
@@ -46,21 +53,14 @@ L% = &2000              \ L% is the load address of the main game code file
 
 S% = C%                 \ S% points to the entry point for the main game code
 
-USERV = &0200           \ The address of the user vector
-BRKV = &0202            \ The address of the break vector
-IRQ1V = &0204           \ The address of the interrupt vector
-WRCHV = &020E           \ The address of the write character vector
-RDCHV = &0210           \ The address of the read character vector
-KEYV = &0228            \ The address of the keyboard vector
+VIA = &FE00             \ Memory-mapped space for accessing internal hardware,
+                        \ such as the video ULA, 6845 CRTC and 6522 VIAs (also
+                        \ known as SHEILA)
 
 OSWRCH = &FFEE          \ The address for the OSWRCH routine
 OSBYTE = &FFF4          \ The address for the OSBYTE routine
 OSWORD = &FFF1          \ The address for the OSWORD routine
 OSCLI = &FFF7           \ The address for the OSCLI routine
-
-VIA = &FE00             \ Memory-mapped space for accessing internal hardware,
-                        \ such as the video ULA, 6845 CRTC and 6522 VIAs (also
-                        \ known as SHEILA)
 
 \ ******************************************************************************
 \
@@ -76,9 +76,9 @@ ORG &0004
 
 .TRTB%
 
- SKIP 2                 \ TRTB%(1 0) points to the keyboard translation table,
-                        \ which is used to translate internal key numbers to
-                        \ ASCII
+ SKIP 2                 \ Contains the address of the keyboard translation
+                        \ table, which is used to translate internal key
+                        \ numbers to ASCII
 
 ORG &0070
 
@@ -394,9 +394,9 @@ INCBIN "binaries/P.(C)ASFT.bin"
 
 .David9
 
-EQUW David5            \ The address of David5
+ EQUW David5            \ The address of David5
 
-CLD                    \ This instruction is not used
+ CLD                    \ This instruction is not used
 
 \ ******************************************************************************
 \
@@ -450,9 +450,8 @@ CLD                    \ This instruction is not used
                         \ crackers, by changing an STA to a CMP (as this is an
                         \ unprotected version)
 
- LDY #&18
- STY V219+1,X           \ Set the low byte of V219(1 0) to &18 (as X = 255), so
-                        \ V219(1 0) now contains &0218
+ LDY #&18               \ Set the low byte of V219(1 0) to &18 (as X = 255), so
+ STY V219+1,X           \ V219(1 0) now contains &0218
 
  RTS                    \ Return from the subroutine
 
@@ -706,7 +705,7 @@ ENDMACRO
                         \ effectively resets the stack
 
  INX                    \ Set X = 0, to use as a counter in the following loop
- 
+
                         \ The following loop copies the crunchit routine into
                         \ zero page, though this unprotected version of the
                         \ loader doesn't call it there, so this has no effect
@@ -1326,7 +1325,10 @@ ENDMACRO
 \
 \ ------------------------------------------------------------------------------
 \
-\ Set A and X to random numbers. The C and V flags are also set randomly.
+\ Set A and X to random numbers (though note that X is set to the random number
+\ that was returned in A the last time DORND was called).
+\
+\ The C and V flags are also set randomly.
 \
 \ This is a simplified version of the DORND routine in the main game code. It
 \ swaps the two calculations around and omits the ROL A instruction, but is
@@ -1429,7 +1431,6 @@ ENDMACRO
 \ before drawing, and then the routine uses the same approach as the PIXEL
 \ routine in the main game code, except it plots a single pixel from TWOS
 \ instead of a two pixel dash from TWOS2. This applies to the top part of the
-\ screen (the monochrome mode 4 space view).
 \ screen (the space view).
 \
 \ See the PIXEL routine in the main game code for more details.
@@ -1947,7 +1948,6 @@ ORG LE%
 .MESS1
 
  EQUS "LOAD EliteCo FFFF2000"
-
  EQUB 13
 
  SKIP 13                \ These bytes appear to be unused
