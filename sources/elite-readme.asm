@@ -1,6 +1,6 @@
 \ ******************************************************************************
 \
-\ ELECTRON ELITE DISC IMAGE SCRIPT
+\ ELECTRON ELITE README
 \
 \ Electron Elite was written by Ian Bell and David Braben and is copyright
 \ Acornsoft 1984
@@ -19,16 +19,33 @@
 \
 \ ------------------------------------------------------------------------------
 \
-\ This source file produces the following SSD disc image:
+\ This source file produces the following binary file:
 \
-\   * elite-electron-sth.ssd
-\
-\ This can be loaded into an emulator or a real Electron.
+\   * output/README.txt
 \
 \ ******************************************************************************
 
-PUTFILE "binaries/$.!BOOT.bin", "!BOOT", &FFFFFF, &FFFFFF
-PUTFILE "binaries/$.ELITE.bin", "ELITE", &FF0E00, &FF8023
-PUTFILE "output/ELITECO.bin", "ELITECO", &000000, &FFFFFF
-PUTFILE "output/ELITEDA.bin", "ELITEDA", &FF4400, &FF5200
-PUTFILE "output/README.txt", "README", &FFFFFF, &FFFFFF
+INCLUDE "sources/elite-header.h.asm"
+
+.readme
+
+ EQUB 10, 13
+ EQUS "---------------------------------------"
+ EQUB 10, 13
+ EQUS "Acornsoft Elite"
+ EQUB 10, 13
+ EQUB 10, 13
+ EQUS "Version: Acorn Electron cassette"
+ EQUB 10, 13
+ EQUS "Release: Stairway to Hell archive"
+ EQUB 10, 13
+ EQUS "Code no: Acornsoft SLG38 v1.1"
+ EQUB 10, 13
+ EQUB 10, 13
+ EQUS "See www.bbcelite.com for details"
+ EQUB 10, 13
+ EQUS "---------------------------------------"
+ EQUB 10, 13
+
+SAVE "output/README.txt", readme, P%
+

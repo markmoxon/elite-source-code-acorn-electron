@@ -25,8 +25,9 @@ build:
 	$(BEEBASM) -i sources/elite-source.asm -v > output/compile.txt
 	$(BEEBASM) -i sources/elite-bcfs.asm -v >> output/compile.txt
 	$(BEEBASM) -i sources/elite-loader.asm -v >> output/compile.txt
+	$(BEEBASM) -i sources/elite-readme.asm -v >> output/compile.txt
 	$(PYTHON) sources/elite-checksum.py -u -rel$(rel-electron)
-	$(BEEBASM) -i sources/elite-disc.asm -do elite-electron$(suffix-electron).ssd -opt 3
+	$(BEEBASM) -i sources/elite-disc.asm -do elite-electron$(suffix-electron).ssd -opt 3 -title "E L I T E"
 
 .PHONY:encrypt
 encrypt:
@@ -36,8 +37,9 @@ encrypt:
 	$(BEEBASM) -i sources/elite-source.asm -v > output/compile.txt
 	$(BEEBASM) -i sources/elite-bcfs.asm -v >> output/compile.txt
 	$(BEEBASM) -i sources/elite-loader.asm -v >> output/compile.txt
+	$(BEEBASM) -i sources/elite-readme.asm -v >> output/compile.txt
 	$(PYTHON) sources/elite-checksum.py -rel$(rel-electron)
-	$(BEEBASM) -i sources/elite-disc.asm -do elite-electron$(suffix-electron).ssd -opt 3
+	$(BEEBASM) -i sources/elite-disc.asm -do elite-electron$(suffix-electron).ssd -opt 3 -title "E L I T E"
 
 .PHONY:verify
 verify:
