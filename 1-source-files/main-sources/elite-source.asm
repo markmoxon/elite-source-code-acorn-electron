@@ -21,19 +21,19 @@
 \
 \ This source file produces the following binary files:
 \
-\   * output/ELTA.bin
-\   * output/ELTB.bin
-\   * output/ELTC.bin
-\   * output/ELTD.bin
-\   * output/ELTE.bin
-\   * output/ELTF.bin
-\   * output/ELTG.bin
-\   * output/SHIPS.bin
-\   * output/WORDS9.bin
+\   * ELTA.bin
+\   * ELTB.bin
+\   * ELTC.bin
+\   * ELTD.bin
+\   * ELTE.bin
+\   * ELTF.bin
+\   * ELTG.bin
+\   * SHIPS.bin
+\   * WORDS9.bin
 \
 \ ******************************************************************************
 
-INCLUDE "sources/elite-header.h.asm"
+INCLUDE "1-source-files/main-sources/elite-header.h.asm"
 
 GUARD &5800             \ Guard against assembling over screen memory
 
@@ -2541,7 +2541,7 @@ ENDMACRO
 
 \ ******************************************************************************
 \
-\ Save output/WORDS9.bin
+\ Save WORDS9.bin
 \
 \ ******************************************************************************
 
@@ -2553,7 +2553,7 @@ PRINT "Execute at ", ~LOAD_WORDS%
 PRINT "Reload at ", ~LOAD_WORDS%
 
 PRINT "S.WORDS9 ",~CODE_WORDS%," ",~P%," ",~LOAD_WORDS%," ",~LOAD_WORDS%
-SAVE "output/WORDS9.bin", CODE_WORDS%, P%, LOAD_WORDS%
+SAVE "3-assembled-output/WORDS9.bin", CODE_WORDS%, P%, LOAD_WORDS%
 
 \ ******************************************************************************
 \
@@ -6652,7 +6652,7 @@ LOAD_A% = LOAD%
 
 \ ******************************************************************************
 \
-\ Save output/ELTA.bin
+\ Save ELTA.bin
 \
 \ ******************************************************************************
 
@@ -6664,7 +6664,7 @@ PRINT "Execute at ", ~LOAD%
 PRINT "Reload at ", ~LOAD_A%
 
 PRINT "S.ELTA ", ~CODE%, " ", ~P%, " ", ~LOAD%, " ", ~LOAD_A%
-SAVE "output/ELTA.bin", CODE%, P%, LOAD%
+SAVE "3-assembled-output/ELTA.bin", CODE%, P%, LOAD%
 
 \ ******************************************************************************
 \
@@ -10931,7 +10931,7 @@ NEXT
 
 \ ******************************************************************************
 \
-\ Save output/ELTB.bin
+\ Save ELTB.bin
 \
 \ ******************************************************************************
 
@@ -10943,7 +10943,7 @@ PRINT "Execute at ", ~LOAD%
 PRINT "Reload at ", ~LOAD_B%
 
 PRINT "S.ELTB ", ~CODE_B%, " ", ~P%, " ", ~LOAD%, " ", ~LOAD_B%
-SAVE "output/ELTB.bin", CODE_B%, P%, LOAD%
+SAVE "3-assembled-output/ELTB.bin", CODE_B%, P%, LOAD%
 
 \ ******************************************************************************
 \
@@ -13494,10 +13494,8 @@ NEXT
 \
 \ This is a duplicate of the MULTU routine, but with no entry label, so it can't
 \ be called by name. It is unused, and could have been culled to save a few
-\ bytes (24 to be precise), but it's still here.
-\
-\ In the disc version it has the label MULTU6, but here in the cassette version
-\ it's unnamed, unloved and unvisited, through no fault of its own.
+\ bytes (24 to be precise), but it's still here, unnamed, unloved and unvisited,
+\ through no fault of its own.
 \
 \ ******************************************************************************
 
@@ -16077,7 +16075,7 @@ NEXT
 
 \ ******************************************************************************
 \
-\ Save output/ELTC.bin
+\ Save ELTC.bin
 \
 \ ******************************************************************************
 
@@ -16089,7 +16087,7 @@ PRINT "Execute at ", ~LOAD%
 PRINT "Reload at ", ~LOAD_C%
 
 PRINT "S.ELTC ", ~CODE_C%, " ", ~P%, " ", ~LOAD%, " ", ~LOAD_C%
-SAVE "output/ELTC.bin", CODE_C%, P%, LOAD%
+SAVE "3-assembled-output/ELTC.bin", CODE_C%, P%, LOAD%
 
 \ ******************************************************************************
 \
@@ -20448,7 +20446,7 @@ LOAD_D% = LOAD% + P% - CODE%
 
 \ ******************************************************************************
 \
-\ Save output/ELTD.bin
+\ Save ELTD.bin
 \
 \ ******************************************************************************
 
@@ -20460,7 +20458,7 @@ PRINT "Execute at ", ~LOAD%
 PRINT "Reload at ", ~LOAD_D%
 
 PRINT "S.ELTD ", ~CODE_D%, " ", ~P%, " ", ~LOAD%, " ", ~LOAD_D%
-SAVE "output/ELTD.bin", CODE_D%, P%, LOAD%
+SAVE "3-assembled-output/ELTD.bin", CODE_D%, P%, LOAD%
 
 \ ******************************************************************************
 \
@@ -24288,7 +24286,7 @@ LOAD_E% = LOAD% + P% - CODE%
 
 \ ******************************************************************************
 \
-\ Save output/ELTE.bin
+\ Save ELTE.bin
 \
 \ ******************************************************************************
 
@@ -24300,7 +24298,7 @@ PRINT "Execute at ", ~LOAD%
 PRINT "Reload at ", ~LOAD_E%
 
 PRINT "S.ELTE ", ~CODE_E%, " ", ~P%, " ", ~LOAD%, " ", ~LOAD_E%
-SAVE "output/ELTE.bin", CODE_E%, P%, LOAD%
+SAVE "3-assembled-output/ELTE.bin", CODE_E%, P%, LOAD%
 
 \ ******************************************************************************
 \
@@ -29187,7 +29185,7 @@ ENDMACRO
 
 \ ******************************************************************************
 \
-\ Save output/ELTF.bin
+\ Save ELTF.bin
 \
 \ ******************************************************************************
 
@@ -29199,7 +29197,7 @@ PRINT "Execute at ", ~LOAD%
 PRINT "Reload at ", ~LOAD_F%
 
 PRINT "S.ELTF ", ~CODE_F%, " ", ~P%, " ", ~LOAD%, " ", ~LOAD_F%
-SAVE "output/ELTF.bin", CODE_F%, P%, LOAD%
+SAVE "3-assembled-output/ELTF.bin", CODE_F%, P%, LOAD%
 
 \ ******************************************************************************
 \
@@ -33021,7 +33019,7 @@ LOAD_G% = LOAD% + P% - CODE%
 
 \ ******************************************************************************
 \
-\ Save output/ELTG.bin
+\ Save ELTG.bin
 \
 \ ******************************************************************************
 
@@ -33033,7 +33031,7 @@ PRINT "Execute at ", ~LOAD%
 PRINT "Reload at ", ~LOAD_G%
 
 PRINT "S.ELTG ", ~CODE_G%, " ", ~P%, " ", ~LOAD%, " ", ~LOAD_G%
-SAVE "output/ELTG.bin", CODE_G%, P%, LOAD%
+SAVE "3-assembled-output/ELTG.bin", CODE_G%, P%, LOAD%
 
 \ ******************************************************************************
 \
@@ -34106,7 +34104,7 @@ ENDMACRO
 
 \ ******************************************************************************
 \
-\ Save output/SHIPS.bin
+\ Save SHIPS.bin
 \
 \ ******************************************************************************
 
@@ -34118,4 +34116,4 @@ PRINT "Execute at ", ~LOAD%
 PRINT "Reload at ", ~LOAD_SHIPS%
 
 PRINT "S.SHIPS ", ~CODE_SHIPS%, " ", ~P%, " ", ~LOAD%, " ", ~LOAD_SHIPS%
-SAVE "output/SHIPS.bin", CODE_SHIPS%, P%, LOAD%
+SAVE "3-assembled-output/SHIPS.bin", CODE_SHIPS%, P%, LOAD%

@@ -1,6 +1,6 @@
 \ ******************************************************************************
 \
-\ ELECTRON ELITE DISC IMAGE SCRIPT
+\ ELECTRON ELITE README
 \
 \ Electron Elite was written by Ian Bell and David Braben and is copyright
 \ Acornsoft 1984
@@ -19,16 +19,40 @@
 \
 \ ------------------------------------------------------------------------------
 \
-\ This source file produces the following SSD disc image:
+\ This source file produces the following binary file:
 \
-\   * elite-electron-sth.ssd
-\
-\ This can be loaded into an emulator or a real Electron.
+\   * README.txt
 \
 \ ******************************************************************************
 
-PUTFILE "binaries/$.!BOOT.bin", "!BOOT", &FFFFFF, &FFFFFF
-PUTFILE "binaries/$.ELITE.bin", "ELITE", &FF0E00, &FF8023
-PUTFILE "output/ELITECO.bin", "ELITECO", &000000, &FFFFFF
-PUTFILE "output/ELITEDA.bin", "ELITEDA", &FF4400, &FF5200
-PUTFILE "output/README.txt", "README", &FFFFFF, &FFFFFF
+INCLUDE "1-source-files/main-sources/elite-header.h.asm"
+
+.readme
+
+ EQUB 10, 13
+ EQUS "---------------------------------------"
+ EQUB 10, 13
+ EQUS "Acornsoft Elite (flicker-free version)"
+ EQUB 10, 13
+ EQUB 10, 13
+ EQUS "Version: Acorn Electron cassette"
+ EQUB 10, 13
+ EQUS "Release: Stairway to Hell archive"
+ EQUB 10, 13
+ EQUS "         Acornsoft SLG38 v1.1"
+ EQUB 10, 13
+ EQUB 10, 13
+ EQUS "Contains the flicker-free ship drawing"
+ EQUB 10, 13
+ EQUS "routines from the BBC Master version,"
+ EQUB 10, 13
+ EQUS "backported by Mark Moxon"
+ EQUB 10, 13
+ EQUB 10, 13
+ EQUS "See www.bbcelite.com for details"
+ EQUB 10, 13
+ EQUS "---------------------------------------"
+ EQUB 10, 13
+
+SAVE "3-assembled-output/README.txt", readme, P%
+
