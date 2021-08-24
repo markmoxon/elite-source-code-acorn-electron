@@ -21,23 +21,23 @@
 \
 \ This source file produces the following binary files:
 \
-\   * output/ELITECO.bin
+\   * ELITECO.bin
 \
 \ after reading in the following files:
 \
-\   * output/ELTA.bin
-\   * output/ELTB.bin
-\   * output/ELTC.bin
-\   * output/ELTD.bin
-\   * output/ELTE.bin
-\   * output/ELTF.bin
-\   * output/ELTG.bin
-\   * output/SHIPS.bin
-\   * output/WORDS9.bin
+\   * ELTA.bin
+\   * ELTB.bin
+\   * ELTC.bin
+\   * ELTD.bin
+\   * ELTE.bin
+\   * ELTF.bin
+\   * ELTG.bin
+\   * SHIPS.bin
+\   * WORDS9.bin
 \
 \ ******************************************************************************
 
-INCLUDE "sources/elite-header.h.asm"
+INCLUDE "1-source-files/main-sources/elite-header.h.asm"
 
 GUARD &5800             \ Guard against assembling over screen memory
 
@@ -63,37 +63,37 @@ ORG CODE%
 .elitea
 
 PRINT "elitea = ", ~P%
-INCBIN "output/ELTA.bin"
+INCBIN "3-assembled-output/ELTA.bin"
 
 .eliteb
 
 PRINT "eliteb = ", ~P%
-INCBIN "output/ELTB.bin"
+INCBIN "3-assembled-output/ELTB.bin"
 
 .elitec
 
 PRINT "elitec = ", ~P%
-INCBIN "output/ELTC.bin"
+INCBIN "3-assembled-output/ELTC.bin"
 
 .elited
 
 PRINT "elited = ", ~P%
-INCBIN "output/ELTD.bin"
+INCBIN "3-assembled-output/ELTD.bin"
 
 .elitee
 
 PRINT "elitee = ", ~P%
-INCBIN "output/ELTE.bin"
+INCBIN "3-assembled-output/ELTE.bin"
 
 .elitef
 
 PRINT "elitef = ", ~P%
-INCBIN "output/ELTF.bin"
+INCBIN "3-assembled-output/ELTF.bin"
 
 .eliteg
 
 PRINT "eliteg = ", ~P%
-INCBIN "output/ELTG.bin"
+INCBIN "3-assembled-output/ELTG.bin"
 
 .checksum0
 
@@ -105,16 +105,16 @@ PRINT "checksum0 = ", ~P%
 .ships
 
 PRINT "ships = ", ~P%
-INCBIN "output/SHIPS.bin"
+INCBIN "3-assembled-output/SHIPS.bin"
 
 .end
 
 \ ******************************************************************************
 \
-\ Save output/ELITECO.unprot.bin
+\ Save ELITECO.unprot.bin
 \
 \ ******************************************************************************
 
 PRINT "P% = ", ~P%
 PRINT "S.ELITECO ", ~CODE%, " ", ~P%, " ", ~LOAD%, " ", ~LOAD%
-SAVE "output/ELITECO.unprot.bin", CODE%, P%, LOAD%
+SAVE "3-assembled-output/ELITECO.unprot.bin", CODE%, P%, LOAD%

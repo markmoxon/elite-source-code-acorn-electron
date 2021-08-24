@@ -19,28 +19,28 @@ suffix-electron=-sth
 
 .PHONY:build
 build:
-	echo _VERSION=1 > sources/elite-header.h.asm
-	echo _RELEASE=$(rel-electron) >> sources/elite-header.h.asm
-	echo _REMOVE_CHECKSUMS=TRUE >> sources/elite-header.h.asm
-	$(BEEBASM) -i sources/elite-source.asm -v > output/compile.txt
-	$(BEEBASM) -i sources/elite-bcfs.asm -v >> output/compile.txt
-	$(BEEBASM) -i sources/elite-loader.asm -v >> output/compile.txt
-	$(BEEBASM) -i sources/elite-readme.asm -v >> output/compile.txt
-	$(PYTHON) sources/elite-checksum.py -u -rel$(rel-electron)
-	$(BEEBASM) -i sources/elite-disc.asm -do elite-electron$(suffix-electron).ssd -opt 3 -title "E L I T E"
+	echo _VERSION=1 > 1-source-files/main-sources/elite-header.h.asm
+	echo _RELEASE=$(rel-electron) >> 1-source-files/main-sources/elite-header.h.asm
+	echo _REMOVE_CHECKSUMS=TRUE >> 1-source-files/main-sources/elite-header.h.asm
+	$(BEEBASM) -i 1-source-files/main-sources/elite-source.asm -v > 3-assembled-output/compile.txt
+	$(BEEBASM) -i 1-source-files/main-sources/elite-bcfs.asm -v >> 3-assembled-output/compile.txt
+	$(BEEBASM) -i 1-source-files/main-sources/elite-loader.asm -v >> 3-assembled-output/compile.txt
+	$(BEEBASM) -i 1-source-files/main-sources/elite-readme.asm -v >> 3-assembled-output/compile.txt
+	$(PYTHON) 2-build-files/elite-checksum.py -u -rel$(rel-electron)
+	$(BEEBASM) -i 1-source-files/main-sources/elite-disc.asm -do 5-compiled-game-discs/elite-electron$(suffix-electron).ssd -opt 3 -title "E L I T E"
 
 .PHONY:encrypt
 encrypt:
-	echo _VERSION=1 > sources/elite-header.h.asm
-	echo _RELEASE=$(rel-electron) >> sources/elite-header.h.asm
-	echo _REMOVE_CHECKSUMS=FALSE >> sources/elite-header.h.asm
-	$(BEEBASM) -i sources/elite-source.asm -v > output/compile.txt
-	$(BEEBASM) -i sources/elite-bcfs.asm -v >> output/compile.txt
-	$(BEEBASM) -i sources/elite-loader.asm -v >> output/compile.txt
-	$(BEEBASM) -i sources/elite-readme.asm -v >> output/compile.txt
-	$(PYTHON) sources/elite-checksum.py -rel$(rel-electron)
-	$(BEEBASM) -i sources/elite-disc.asm -do elite-electron$(suffix-electron).ssd -opt 3 -title "E L I T E"
+	echo _VERSION=1 > 1-source-files/main-sources/elite-header.h.asm
+	echo _RELEASE=$(rel-electron) >> 1-source-files/main-sources/elite-header.h.asm
+	echo _REMOVE_CHECKSUMS=FALSE >> 1-source-files/main-sources/elite-header.h.asm
+	$(BEEBASM) -i 1-source-files/main-sources/elite-source.asm -v > 3-assembled-output/compile.txt
+	$(BEEBASM) -i 1-source-files/main-sources/elite-bcfs.asm -v >> 3-assembled-output/compile.txt
+	$(BEEBASM) -i 1-source-files/main-sources/elite-loader.asm -v >> 3-assembled-output/compile.txt
+	$(BEEBASM) -i 1-source-files/main-sources/elite-readme.asm -v >> 3-assembled-output/compile.txt
+	$(PYTHON) 2-build-files/elite-checksum.py -rel$(rel-electron)
+	$(BEEBASM) -i 1-source-files/main-sources/elite-disc.asm -do 5-compiled-game-discs/elite-electron$(suffix-electron).ssd -opt 3 -title "E L I T E"
 
 .PHONY:verify
 verify:
-	@$(PYTHON) sources/crc32.py extracted$(folder-electron) output
+	@$(PYTHON) 2-build-files/crc32.py 4-reference-binaries$(folder-electron) 3-assembled-output

@@ -21,11 +21,11 @@
 \
 \ This source file produces the following binary file:
 \
-\   * output/ELITEDA.bin
+\   * ELITEDA.bin
 \
 \ ******************************************************************************
 
-INCLUDE "sources/elite-header.h.asm"
+INCLUDE "1-source-files/main-sources/elite-header.h.asm"
 
 GUARD &5800             \ Guard against assembling over screen memory
 
@@ -198,21 +198,21 @@ ORG CODE%
 \ ******************************************************************************
 
 PRINT "WORDS9 = ",~P%
-INCBIN "output/WORDS9.bin"
+INCBIN "3-assembled-output/WORDS9.bin"
 
 ALIGN 256
 
 PRINT "P.DIALS = ",~P%
-INCBIN "binaries/P.DIALS.bin"
+INCBIN "1-source-files/images/P.DIALS.bin"
 
 PRINT "P.ELITE = ",~P%
-INCBIN "binaries/P.ELITE.bin"
+INCBIN "1-source-files/images/P.ELITE.bin"
 
 PRINT "P.A-SOFT = ",~P%
-INCBIN "binaries/P.A-SOFT.bin"
+INCBIN "1-source-files/images/P.A-SOFT.bin"
 
 PRINT "P.(C)ASFT = ",~P%
-INCBIN "binaries/P.(C)ASFT.bin"
+INCBIN "1-source-files/images/P.(C)ASFT.bin"
 
 .run
 
@@ -1956,7 +1956,7 @@ ORG LE%
 
 \ ******************************************************************************
 \
-\ Save output/ELITE.unprot.bin
+\ Save ELITE.unprot.bin
 \
 \ ******************************************************************************
 
@@ -1964,4 +1964,4 @@ COPYBLOCK LE%, P%, UU%  \ Copy the block that we assembled at LE% to UU%, which
                         \ is where it will actually run
 
 PRINT "S.ELITEDA ", ~CODE%, " ", ~UU% + (P% - LE%), " ", ~run, " ", ~CODE%
-SAVE "output/ELITEDA.bin", CODE%, UU% + (P% - LE%), run, CODE%
+SAVE "3-assembled-output/ELITEDA.bin", CODE%, UU% + (P% - LE%), run, CODE%

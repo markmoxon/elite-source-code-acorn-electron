@@ -41,7 +41,7 @@ for file_name in elite_names:
     print(str(len(data_block)), file_name)
     if file_name == "ELTB":
         eliteb_offset = len(data_block)
-    elite_file = open("output/" + file_name + ".bin", "rb")
+    elite_file = open("3-assembled-output/" + file_name + ".bin", "rb")
     data_block.extend(elite_file.read())
     elite_file.close()
 
@@ -71,11 +71,11 @@ data_block.append(0)
 
 # Append SHIPS file
 
-ships_file = open("output/SHIPS.bin", "rb")
+ships_file = open("3-assembled-output/SHIPS.bin", "rb")
 data_block.extend(ships_file.read())
 ships_file.close()
 
-print("output/SHIPS.bin file read")
+print("3-assembled-output/SHIPS.bin file read")
 
 # Calculate checksum0
 
@@ -94,8 +94,8 @@ if Encrypt:
 
 # Write output file for ELTcode
 
-output_file = open("output/ELITECO.bin", "wb")
+output_file = open("3-assembled-output/ELITECO.bin", "wb")
 output_file.write(data_block)
 output_file.close()
 
-print("output/ELITECO.bin file saved")
+print("3-assembled-output/ELITECO.bin file saved")
