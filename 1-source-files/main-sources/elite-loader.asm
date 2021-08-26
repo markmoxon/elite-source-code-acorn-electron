@@ -39,10 +39,15 @@ N% = 17                 \ N% is set to the number of bytes in the VDU table, so
                         \ we can loop through them in part 2 below
 
 USERV = &0200           \ The address of the user vector
+
 BRKV = &0202            \ The address of the break vector
+
 IRQ1V = &0204           \ The address of the interrupt vector
+
 WRCHV = &020E           \ The address of the write character vector
+
 RDCHV = &0210           \ The address of the read character vector
+
 KEYV = &0228            \ The address of the keyboard vector
 
 LE% = &0B00             \ LE% is the address to which the code from UU% onwards

@@ -6892,7 +6892,9 @@ ENDIF
 .UNIV
 
 FOR I%, 0, NOSH
-  EQUW K% + I% * NI%    \ Address of block no. I%, of size NI%, in workspace K%
+
+ EQUW K% + I% * NI%     \ Address of block no. I%, of size NI%, in workspace K%
+
 NEXT
 
 \ ******************************************************************************
@@ -12840,12 +12842,15 @@ LOAD_C% = LOAD% +P% - CODE%
 .SNE
 
 FOR I%, 0, 31
-  N = ABS(SIN((I% / 64) * 2 * PI))
-  IF N >= 1
-    EQUB 255
-  ELSE
-    EQUB INT(256 * N + 0.5)
-  ENDIF
+
+ N = ABS(SIN((I% / 64) * 2 * PI))
+
+ IF N >= 1
+  EQUB 255
+ ELSE
+  EQUB INT(256 * N + 0.5)
+ ENDIF
+
 NEXT
 
 \ ******************************************************************************
@@ -14821,7 +14826,9 @@ NEXT
 .ACT
 
 FOR I%, 0, 31
-  EQUB INT((128 / PI) * ATN(I% / 32) + 0.5)
+
+ EQUB INT((128 / PI) * ATN(I% / 32) + 0.5)
+
 NEXT
 
 \ ******************************************************************************
