@@ -2,7 +2,7 @@
 
 This folder contains the BASIC programs from the original game disc for the Electron version of Elite on Ian Bell's personal website.
 
-* $.ELITE.bin is the mode 7 loader program
+* [$.ELITE.bin]($.ELITE.bin) is the mode 7 loader program
 
 ---
 

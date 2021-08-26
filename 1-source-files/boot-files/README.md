@@ -2,7 +2,7 @@
 
 This folder contains the boot file original game disc for the Electron version of Elite on Ian Bell's personal website.
 
-* $.!BOOT.bin is the original boot file from the game disc
+* [$.!BOOT.bin]($.!BOOT.bin) is the original boot file from the game disc
 
 ---
 
