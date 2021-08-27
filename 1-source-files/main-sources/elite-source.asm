@@ -67,15 +67,6 @@ POW = 15                \ Pulse laser power
 NI% = 36                \ The number of bytes in each ship's data block (as
                         \ stored in INWK and K%)
 
-OSBYTE = &FFF4          \ The address for the OSBYTE routine
-OSWORD = &FFF1          \ The address for the OSWORD routine
-OSRDCH = &FFE0          \ The address for the OSRDCH routine
-OSFILE = &FFDD          \ The address for the OSFILE routine
-
-VIA = &FE00             \ Memory-mapped space for accessing internal hardware,
-                        \ such as the video ULA, 6845 CRTC and 6522 VIAs (also
-                        \ known as SHEILA)
-
 X = 128                 \ The centre x-coordinate of the 256 x 192 space view
 Y = 96                  \ The centre y-coordinate of the 256 x 192 space view
 
@@ -89,6 +80,15 @@ func7 = &A4             \ Internal key number for FUNC-7 (Data on System)
 func8 = &95             \ Internal key number for FUNC-8 (Market Price)
 func9 = &A6             \ Internal key number for FUNC-9 (Status Mode)
 func0 = &A7             \ Internal key number for FUNC-0 (Inventory)
+
+VIA = &FE00             \ Memory-mapped space for accessing internal hardware,
+                        \ such as the video ULA, 6845 CRTC and 6522 VIAs (also
+                        \ known as SHEILA)
+
+OSFILE = &FFDD          \ The address for the OSFILE routine
+OSRDCH = &FFE0          \ The address for the OSRDCH routine
+OSWORD = &FFF1          \ The address for the OSWORD routine
+OSBYTE = &FFF4          \ The address for the OSBYTE routine
 
 \ ******************************************************************************
 \
