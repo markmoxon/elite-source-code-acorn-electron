@@ -27504,7 +27504,7 @@ ENDIF
 \
 \ Other entry points:
 \
-\   ECMOF-1             \ Contains an RTS
+\   ECMOF-1             Contains an RTS
 \
 \ ******************************************************************************
 
