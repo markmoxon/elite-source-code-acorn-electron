@@ -15588,13 +15588,17 @@ NEXT
 
 .DELY1
 
- EQUB &2C               \ Skip the following instruction
+ EQUB &2C               \ Skip the following instruction by turning it into
+                        \ &2C &D0 &FD, or BIT &FDD0, which does nothing apart
+                        \ from affect the flags
 
 .DELY2
 
  BNE DELY1              \ Loop back up as part of the chain of delay loops
 
- EQUB &2C               \ Skip the following instruction
+ EQUB &2C               \ Skip the following instruction by turning it into
+                        \ &2C &D0 &FB, or BIT &FBD0, which does nothing apart
+                        \ from affect the flags
 
 .DELY3
 
