@@ -39,7 +39,7 @@ INCLUDE "1-source-files/main-sources/elite-header.h.asm"
  EQUB 10, 13
  EQUS "Variant: Stairway to Hell archive"
  EQUB 10, 13
- EQUS "Release: Acornsoft SLG38 (TBC)"
+ EQUS "Product: Acornsoft SLG38 (TBC)"
  EQUB 10, 13
  EQUB 10, 13
  EQUS "See www.bbcelite.com for details"
