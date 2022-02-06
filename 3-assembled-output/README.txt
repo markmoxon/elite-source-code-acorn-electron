@@ -2,9 +2,9 @@
 ---------------------------------------
 Acornsoft Elite
 
-Version: Acorn Electron cassette
-Release: Stairway to Hell archive
-         Acornsoft SLG38 v1.1
+Version: Acorn Electron
+Variant: Stairway to Hell archive
+Release: Acornsoft SLG38 (TBC)
 
 See www.bbcelite.com for details
 ---------------------------------------

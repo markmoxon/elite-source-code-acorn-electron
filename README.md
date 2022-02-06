@@ -37,7 +37,7 @@ See the [introduction](#introduction) for more information.
 
 This repository contains source code for Elite on the Acorn Electron, with every single line documented and (for the most part) explained.
 
-You can build the fully functioning game from this source. One release is currently supported: the Stairway to Hell release.
+You can build the fully functioning game from this source. One variant is currently supported: the Stairway to Hell variant.
 
 It is a companion to the [bbcelite.com website](https://www.bbcelite.com), which contains all the code from this repository, but laid out in a much more human-friendly fashion. The links at the top of this page will take you to repositories for the other versions of Elite that are covered by this project.
 
@@ -109,7 +109,7 @@ There are five main folders in this repository, which reflect the order of the b
 
 * [3-assembled-output](3-assembled-output) contains the output from the assembly process, when the source files are assembled and the results processed by the build files.
 
-* [4-reference-binaries](4-reference-binaries) contains the correct binaries for each release, so we can verify that our assembled output matches the reference.
+* [4-reference-binaries](4-reference-binaries) contains the correct binaries for each variant, so we can verify that our assembled output matches the reference.
 
 * [5-compiled-game-discs](5-compiled-game-discs) contains the final output of the build process: an SSD disc image that contains the compiled game and which can be run on real hardware or in an emulator.
 
@@ -140,11 +140,11 @@ Let's look at how to build Elite from the source.
 There are two main build targets available. They are:
 
 * `build` - An unencrypted version
-* `encrypt` - An encrypted version that exactly matches the released version of the game
+* `encrypt` - An encrypted version that includes the same obfuscation as the released version of the game
 
 The unencrypted version should be more useful for anyone who wants to make modifications to the game code. It includes a default commander with lots of cash and equipment, which makes it easier to test the game. As this target produces unencrypted files, the binaries produced will be quite different to the binaries on the original source disc, which are encrypted.
 
-The encrypted version produces the released version of Elite, along with the standard default commander.
+The encrypted version contains an obfuscated version of the game binary, along with the standard default commander.
 
 Builds are supported for both Windows and Mac/Linux systems. In all cases the build process is defined in the `Makefile` provided.
 
@@ -164,7 +164,7 @@ make.bat build
 make.bat encrypt
 ```
 
-will produce a file called `elite-electron-sth.ssd` in the `5-compiled-game-discs` folder that contains the Stairway to Hell release, which you can then load into an emulator, or into a real Electron using a device like a Gotek.
+will produce a file called `elite-electron-sth.ssd` in the `5-compiled-game-discs` folder that contains the Stairway to Hell variant, which you can then load into an emulator, or into a real Electron using a device like a Gotek.
 
 ### Mac and Linux
 
@@ -180,7 +180,7 @@ make build
 make encrypt
 ```
 
-will produce a file called `elite-electron-sth.ssd` in the `5-compiled-game-discs` folder that contains the Stairway to Hell release, which you can then load into an emulator, or into a real Electron using a device like a Gotek.
+will produce a file called `elite-electron-sth.ssd` in the `5-compiled-game-discs` folder that contains the Stairway to Hell variant, which you can then load into an emulator, or into a real Electron using a device like a Gotek.
 
 ### Verifying the output
 
@@ -215,7 +215,7 @@ The Python script `crc32.py` in the `2-build-files` folder does the actual verif
 The binaries in the `4-reference-binaries` folder are those extracted from the released version of the game, while those in the `3-assembled-output` folder are produced by the build process. For example, if you don't make any changes to the code and build the project with `make encrypt verify`, then this is the output of the verification process:
 
 ```
-Results for release: sth
+Results for variant: sth
 [--originals--]  [---output----]
 Checksum   Size  Checksum   Size  Match  Filename
 -----------------------------------------------------------
@@ -233,7 +233,7 @@ f23f7ef2   2348  f23f7ef2   2348   Yes   SHIPS.bin
 a6ee7213   1024  a6ee7213   1024   Yes   WORDS9.bin
 ```
 
-All the compiled binaries match the originals, so we know we are producing the same final game as the release version.
+All the compiled binaries match the originals, so we know we are producing the same final game as the Stairway to Hell variant.
 
 ### Log files
 
