@@ -83,7 +83,7 @@ checksum0 = 0
 for n in range(0x0, 0x4600):
     checksum0 += data_block[n + 0x28]
 
-# This is an unprotected version, so let's just hardcode the checksum
+# This is an unprotected version, so let's just hard-code the checksum
 # to the the value from the extracted binary
 checksum0 = 0x67
 

@@ -2,9 +2,9 @@
 ---------------------------------------
 Acornsoft Elite (flicker-free version)
 
-Version: Acorn Electron cassette
-Release: Stairway to Hell archive
-         Acornsoft SLG38 v1.1
+Version: Acorn Electron
+Variant: Stairway to Hell archive
+Product: Acornsoft SLG38 (TBC)
 
 Contains the flicker-free ship drawing
 routines from the BBC Master version,

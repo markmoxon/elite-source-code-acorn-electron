@@ -35,11 +35,11 @@ INCLUDE "1-source-files/main-sources/elite-header.h.asm"
  EQUS "Acornsoft Elite (flicker-free version)"
  EQUB 10, 13
  EQUB 10, 13
- EQUS "Version: Acorn Electron cassette"
+ EQUS "Version: Acorn Electron"
  EQUB 10, 13
- EQUS "Release: Stairway to Hell archive"
+ EQUS "Variant: Stairway to Hell archive"
  EQUB 10, 13
- EQUS "         Acornsoft SLG38 v1.1"
+ EQUS "Product: Acornsoft SLG38 (TBC)"
  EQUB 10, 13
  EQUB 10, 13
  EQUS "Contains the flicker-free ship drawing"

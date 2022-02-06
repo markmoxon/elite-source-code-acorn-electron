@@ -35,14 +35,22 @@ GUARD &5800             \ Guard against assembling over screen memory
 \
 \ ******************************************************************************
 
+DISC = TRUE             \ Set to TRUE to load the code above DFS and relocate
+                        \ down, so we can load the cassette version from disc
+
 N% = 17                 \ N% is set to the number of bytes in the VDU table, so
                         \ we can loop through them in part 2 below
 
 USERV = &0200           \ The address of the user vector
+
 BRKV = &0202            \ The address of the break vector
+
 IRQ1V = &0204           \ The address of the interrupt vector
+
 WRCHV = &020E           \ The address of the write character vector
+
 RDCHV = &0210           \ The address of the read character vector
+
 KEYV = &0228            \ The address of the keyboard vector
 
 LE% = &0B00             \ LE% is the address to which the code from UU% onwards
@@ -267,6 +275,8 @@ INCBIN "1-source-files/images/P.(C)ASFT.bin"
 
  EQUB 22, 4             \ Switch to screen mode 4
 
+IF DISC
+
  EQUB 28                \ Define a text window as follows:
  EQUB 8, 19, 23, 10     \
                         \   * Left = 8
@@ -275,6 +285,23 @@ INCBIN "1-source-files/images/P.(C)ASFT.bin"
                         \   * Bottom = 19
                         \
                         \ i.e. 9 rows high, 15 columns wide at (8, 10)
+
+ELSE
+
+ EQUB 28                \ Define a text window as follows:
+ EQUB 8, 23, 23, 14     \
+                        \   * Left = 8
+                        \   * Right = 23
+                        \   * Top = 14
+                        \   * Bottom = 23
+                        \
+                        \ i.e. 9 rows high, 15 columns wide at (8, 14)
+                        \
+                        \ This is slightly lower than the default window, as
+                        \ otherwise the cassette's loading message overwrites
+                        \ the main code file as it loads into screen memory
+
+ENDIF
 
  EQUB 23, 1, 0, 0       \ Disable the cursor
  EQUB 0, 0, 0
@@ -1324,6 +1351,7 @@ ENDMACRO
 \   Category: Utility routines
 \    Summary: Generate random numbers
 \  Deep dive: Generating random numbers
+\             Fixing ship positions
 \
 \ ------------------------------------------------------------------------------
 \

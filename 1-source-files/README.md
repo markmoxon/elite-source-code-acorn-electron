@@ -1,4 +1,4 @@
-# Source file for the Electron version of Elite
+# Source files for the Electron version of Elite
 
 This folder contains the source files for the Electron version of Elite.
 
