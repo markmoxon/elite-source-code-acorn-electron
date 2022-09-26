@@ -22756,8 +22756,10 @@ LOAD_E% = LOAD% + P% - CODE%
  DEX                    \ Set pitch counter to 0 (no pitch, roll only)
  STX INWK+30
 
- STX FRIN+1             \ Set the space station slot at FRIN+1 to 0, to indicate
-                        \ we should show the space station
+ STX FRIN+1             \ Set the second slot in the FRIN table to 0, so when we
+                        \ fall through into NWSHP below, the new station that
+                        \ gets created will go into slot FRIN+1, as this will be
+                        \ the first empty slot that the routine finds
 
  DEX                    \ Set roll counter to 255 (maximum roll with no
  STX INWK+29            \ damping)
