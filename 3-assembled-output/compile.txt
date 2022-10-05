@@ -3028,7 +3028,7 @@ Code size is &400
 Execute at &4400 
 Reload at &4400 
 S.WORDS9 &400  &800  &4400  &4400 
-Saving file 'versions/electron/3-assembled-output/WORDS9.bin'
+Saving file '3-assembled-output/WORDS9.bin'
 .K%
      0900
 .WP
@@ -4298,7 +4298,7 @@ Code size is &89D
 Execute at &2000 
 Reload at &2000 
 S.ELTA &D00  &159D  &2000  &2000 
-Saving file 'versions/electron/3-assembled-output/ELTA.bin'
+Saving file '3-assembled-output/ELTA.bin'
 .NA%
      159D   4A 41 4D ...
      15A4   0D
@@ -5643,7 +5643,7 @@ Code size is &922
 Execute at &2000 
 Reload at &289D 
 S.ELTB &159D  &1EBF  &2000  &289D 
-Saving file 'versions/electron/3-assembled-output/ELTB.bin'
+Saving file '3-assembled-output/ELTB.bin'
 .TA34
      1EBF   A9 00      LDA #&00
      1EC1   20 41 3F   JSR &3F41
@@ -7217,7 +7217,7 @@ Code size is &A8B
 Execute at &2000 
 Reload at &31BF 
 S.ELTC &1EBF  &294A  &2000  &31BF 
-Saving file 'versions/electron/3-assembled-output/ELTC.bin'
+Saving file '3-assembled-output/ELTC.bin'
 .tnpr
      294A   48         PHA
      294B   A2 0C      LDX #&0C
@@ -8671,7 +8671,7 @@ Code size is &AE2
 Execute at &2000 
 Reload at &3C4A 
 S.ELTD &294A  &342C  &2000  &3C4A 
-Saving file 'versions/electron/3-assembled-output/ELTD.bin'
+Saving file '3-assembled-output/ELTD.bin'
      342C   8C
      342D   E7
      342E   8D
@@ -9755,7 +9755,7 @@ Code size is &714
 Execute at &2000 
 Reload at &472C 
 S.ELTE &342C  &3B40  &2000  &472C 
-Saving file 'versions/electron/3-assembled-output/ELTE.bin'
+Saving file '3-assembled-output/ELTE.bin'
 .KS3
      3B40   A5 1B      LDA &1B
      3B42   8D DF 0C   STA &0CDF
@@ -11291,7 +11291,7 @@ Code size is &A6F
 Execute at &2000 
 Reload at &4E40 
 S.ELTF &3B40  &45AF  &2000  &4E40 
-Saving file 'versions/electron/3-assembled-output/ELTF.bin'
+Saving file '3-assembled-output/ELTF.bin'
 .SHPPT
      45AF   20 17 47   JSR &4717
      45B2   20 73 39   JSR &3973
@@ -12657,7 +12657,7 @@ Code size is &924
 Execute at &2000 
 Reload at &58AF 
 S.ELTG &45AF  &4ED3  &2000  &58AF 
-Saving file 'versions/electron/3-assembled-output/ELTG.bin'
+Saving file '3-assembled-output/ELTG.bin'
 .checksum0
      4ED3
 .XX21
@@ -15933,7 +15933,7 @@ Code size is &92C
 Execute at &2000 
 Reload at &61D4 
 S.SHIPS &4ED4  &5800  &2000  &61D4 
-Saving file 'versions/electron/3-assembled-output/SHIPS.bin'
+Saving file '3-assembled-output/SHIPS.bin'
 .elitea
 elitea = &D00 
 .eliteb
@@ -15956,7 +15956,7 @@ ships = &4ED4
 .end
 P% = &5800 
 S.ELITECO &D00  &5800  &2000  &2000 
-Saving file 'versions/electron/3-assembled-output/ELITECO.unprot.bin'
+Saving file '3-assembled-output/ELITECO.unprot.bin'
 .TRTB%
      0004
 .ZP
@@ -16755,7 +16755,7 @@ End macro FNE
      0BDD   0D
      0BDE
 S.ELITEDA &4400  &5700  &5200  &4400 
-Saving file 'versions/electron/3-assembled-output/ELITEDA.bin'
+Saving file '3-assembled-output/ELITEDA.bin'
 .readme
      0000   0A
      0001   0D
@@ -16784,4 +16784,4 @@ Saving file 'versions/electron/3-assembled-output/ELITEDA.bin'
      00BE   2D 2D 2D ...
      00E5   0A
      00E6   0D
-Saving file 'versions/electron/3-assembled-output/README.txt'
+Saving file '3-assembled-output/README.txt'
