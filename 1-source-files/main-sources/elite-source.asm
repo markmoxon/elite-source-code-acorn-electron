@@ -623,7 +623,6 @@ ORG &0000
                         \         In-system jump just arrived ("J")
                         \         Data on System screen (FUNC-7)
                         \         Buy Cargo screen (FUNC-2)
-                        \         Mis-jump just arrived (witchspace)
                         \   4   = Sell Cargo screen (FUNC-3)
                         \   6   = Death screen
                         \   8   = Status Mode screen (FUNC-9)
