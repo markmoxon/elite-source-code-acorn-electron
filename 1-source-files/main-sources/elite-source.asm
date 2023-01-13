@@ -33,7 +33,7 @@
 \
 \ ******************************************************************************
 
-INCLUDE "1-source-files/main-sources/elite-header.h.asm"
+INCLUDE "1-source-files/main-sources/elite-build-options.asm"
 
 GUARD &5800             \ Guard against assembling over screen memory
 
@@ -623,7 +623,6 @@ ORG &0000
                         \         In-system jump just arrived ("J")
                         \         Data on System screen (FUNC-7)
                         \         Buy Cargo screen (FUNC-2)
-                        \         Mis-jump just arrived (witchspace)
                         \   4   = Sell Cargo screen (FUNC-3)
                         \   6   = Death screen
                         \   8   = Status Mode screen (FUNC-9)
@@ -10068,8 +10067,6 @@ NEXT
 \
 \ Other entry points:
 \
-\   RR3+1               Contains an RTS
-\
 \   RREN                Prints the character definition pointed to by P(2 1) at
 \                       the screen address pointed to by (A SC). Used by the
 \                       BULB routine
@@ -19258,7 +19255,7 @@ LOAD_D% = LOAD% + P% - CODE%
  JSR TT66               \ and set the current view type in QQ11 to 16 (Market
                         \ Price screen)
 
- LDA #5                 \ Move the text cursor to column 4
+ LDA #5                 \ Move the text cursor to column 5
  STA XC
 
  LDA #167               \ Print recursive token 7 ("{current system name} MARKET
@@ -20981,7 +20978,7 @@ LOAD_E% = LOAD% + P% - CODE%
 
  LDX QQ17               \ Fetch QQ17, which controls letter case, into X
 
- BEQ TT74               \ If QQ17 = 0, then ALL CAPS is set, so jump to TT27
+ BEQ TT74               \ If QQ17 = 0, then ALL CAPS is set, so jump to TT74
                         \ to print this character as is (i.e. as a capital)
 
  BMI TT41               \ If QQ17 has bit 7 set, then we are using Sentence
@@ -26372,7 +26369,7 @@ LOAD_F% = LOAD% + P% - CODE%
 \       Name: BR1 (Part 1 of 2)
 \       Type: Subroutine
 \   Category: Start and end
-\    Summary: Start or restart the game
+\    Summary: Show the "Load New Commander (Y/N)?" screen and start the game
 \
 \ ------------------------------------------------------------------------------
 \
@@ -26510,7 +26507,8 @@ ENDIF
 \       Name: BR1 (Part 2 of 2)
 \       Type: Subroutine
 \   Category: Start and end
-\    Summary: Show the "Load New Commander (Y/N)?" screen and start the game
+\    Summary: Show the "Press Fire or Space, Commander" screen and start the
+\             game
 \
 \ ------------------------------------------------------------------------------
 \
@@ -27585,7 +27583,7 @@ ENDIF
 
 .ECMOF
 
- LDA #0                 \ Set ECMA and ECMB to 0 to indicate that no E.C.M. is
+ LDA #0                 \ Set ECMA and ECMP to 0 to indicate that no E.C.M. is
  STA ECMA               \ currently running
  STA ECMP
 
