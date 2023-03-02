@@ -12878,11 +12878,20 @@ LOAD_C% = LOAD% +P% - CODE%
 \
 \ ------------------------------------------------------------------------------
 \
-\ To calculate the following:
+\ This lookup table contains sine values for the first half of a circle, from 0
+\ to 180 degrees (0 to PI radians). In terms of circle or ellipse line segments,
+\ there are 64 segments in a circle, so this contains sine values for segments
+\ 0 to 31.
+\
+\ In terms of segments, to calculate the sine of the angle at segment x, we look
+\ up the value in SNE + x, and to calculate the cosine of the angle we look up
+\ the value in SNE + ((x + 16) mod 32).
+\
+\ In terms of radians, to calculate the following:
 \
 \   sin(theta) * 256
 \
-\ where theta is in radians, look up the value in:
+\ where theta is in radians, we look up the value in:
 \
 \   SNE + (theta * 10)
 \
@@ -13494,6 +13503,10 @@ NEXT
 \
 \   A = A * Q / 256
 \
+\ Returns:
+\
+\   C flag              The C flag is set
+\
 \ ******************************************************************************
 
 .FMLTU
@@ -13530,6 +13543,9 @@ NEXT
                         \ (so we loop through the bits of P until we get to the
                         \ 1 we inserted before the loop, and then we stop)
 
+                        \ If we get here then the C flag is set as we just
+                        \ rotated a 1 out of the right end of P
+
  RTS                    \ Return from the subroutine
 
 .MU7
@@ -13544,6 +13560,9 @@ NEXT
  BNE MUL3               \ Loop back to MUL3 if P still contains some set bits
                         \ (so we loop through the bits of P until we get to the
                         \ 1 we inserted before the loop, and then we stop)
+
+                        \ If we get here then the C flag is set as we just
+                        \ rotated a 1 out of the right end of P
 
  RTS                    \ Return from the subroutine
 
