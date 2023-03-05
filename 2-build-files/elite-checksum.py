@@ -27,8 +27,10 @@ Encrypt = True
 if argc > 1 and argv[1] == "-u":
     Encrypt = False
 
-print("Elite Big Code File")
+print("Electron Elite Checksum")
 print("Encryption = ", Encrypt)
+
+# Load assembled code files that make up big code file
 
 data_block = bytearray()
 eliteb_offset = 0
@@ -56,7 +58,7 @@ for i in range(CH, 0, -1):
     CH = CH % 256
     CH = CH ^ data_block[eliteb_offset + i + 8]
 
-print("Commander checksum = ", CH)
+print("Commander checksum = ", hex(CH))
 
 # Must have Commander checksum otherwise game will lock:
 
@@ -87,12 +89,12 @@ for n in range(0x0, 0x4600):
 # to the the value from the extracted binary
 checksum0 = 0x67
 
-print("checksum 0 = ", checksum0)
+print("checksum 0 = ", hex(checksum0))
 
 if Encrypt:
     data_block[checksum0_offset] = checksum0 % 256
 
-# Write output file for ELTcode
+# Write output file for ELITECO
 
 output_file = open("3-assembled-output/ELITECO.bin", "wb")
 output_file.write(data_block)

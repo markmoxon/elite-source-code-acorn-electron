@@ -1020,8 +1020,8 @@ ORG &0300
                         \
                         \ The enhanced versions of Elite set ENGY to 2 as the
                         \ reward for completing mission 2, where we receive a
-                        \ naval energy unit that recharges 50% faster than a
-                        \ standard energy unit, i.e. by 3 each time
+                        \ special naval energy unit that recharges at a fast
+                        \ rate than a standard energy unit, i.e. by 3 each time
 
 .DKCMP
 
@@ -3387,7 +3387,7 @@ LOAD_A% = LOAD%
                         \ the RL indicator on the dashboard goes to the right).
                         \ This rolls our ship to the right (clockwise), but we
                         \ actually implement this by rolling everything else
-                        \ to the left (anticlockwise), so a positive roll rate
+                        \ to the left (anti-clockwise), so a positive roll rate
                         \ in JSTX translates to a negative roll angle alpha
 
  TXA                    \ Set A and Y to the roll rate but with the sign bit
@@ -12878,11 +12878,20 @@ LOAD_C% = LOAD% +P% - CODE%
 \
 \ ------------------------------------------------------------------------------
 \
-\ To calculate the following:
+\ This lookup table contains sine values for the first half of a circle, from 0
+\ to 180 degrees (0 to PI radians). In terms of circle or ellipse line segments,
+\ there are 64 segments in a circle, so this contains sine values for segments
+\ 0 to 31.
+\
+\ In terms of segments, to calculate the sine of the angle at segment x, we look
+\ up the value in SNE + x, and to calculate the cosine of the angle we look up
+\ the value in SNE + ((x + 16) mod 32).
+\
+\ In terms of radians, to calculate the following:
 \
 \   sin(theta) * 256
 \
-\ where theta is in radians, look up the value in:
+\ where theta is in radians, we look up the value in:
 \
 \   SNE + (theta * 10)
 \
@@ -13494,6 +13503,10 @@ NEXT
 \
 \   A = A * Q / 256
 \
+\ Returns:
+\
+\   C flag              The C flag is set
+\
 \ ******************************************************************************
 
 .FMLTU
@@ -13530,6 +13543,9 @@ NEXT
                         \ (so we loop through the bits of P until we get to the
                         \ 1 we inserted before the loop, and then we stop)
 
+                        \ If we get here then the C flag is set as we just
+                        \ rotated a 1 out of the right end of P
+
  RTS                    \ Return from the subroutine
 
 .MU7
@@ -13544,6 +13560,9 @@ NEXT
  BNE MUL3               \ Loop back to MUL3 if P still contains some set bits
                         \ (so we loop through the bits of P until we get to the
                         \ 1 we inserted before the loop, and then we stop)
+
+                        \ If we get here then the C flag is set as we just
+                        \ rotated a 1 out of the right end of P
 
  RTS                    \ Return from the subroutine
 
@@ -14720,9 +14739,11 @@ NEXT
  LDA DJD                \ If keyboard auto-recentre is disabled, then
  BNE RE2+2              \ jump to RE2+2 to restore A and return
 
- LDX #128               \ If keyboard auto-recentre is enabled, set X to 128
- BMI RE2+2              \ (the middle of our range) and jump to RE2+2 to
-                        \ restore A and return
+ LDX #128               \ If we get here then keyboard auto-recentre is enabled,
+ BMI RE2+2              \ so set X to 128 (the middle of our range) and jump to
+                        \ RE2+2 to restore A and return from the subroutine
+                        \ (this BMI is effectively a JMP as bit 7 of X is always
+                        \ set)
 
 \ ******************************************************************************
 \
@@ -14743,6 +14764,10 @@ NEXT
 \ length Q, so:
 \
 \   tan(A) = P / Q
+\
+\ The result in A is an integer representing the angle in radians. The routine
+\ returns values in the range 0 to 128, which covers 0 to 180 degrees (or 0 to
+\ PI radians).
 \
 \ ******************************************************************************
 
@@ -14835,7 +14860,10 @@ NEXT
 
 .ARS1
 
-                        \ This routine fetches arctan(A / Q) from the ACT table
+                        \ This routine fetches arctan(A / Q) from the ACT table,
+                        \ so A will be set to an integer in the range 0 to 31
+                        \ that represents an angle from 0 to 45 degrees (or 0 to
+                        \ PI / 4 radians)
 
  JSR LL28               \ Call LL28 to calculate:
                         \
@@ -14865,26 +14893,35 @@ NEXT
 \
 \ ------------------------------------------------------------------------------
 \
-\ To calculate the following:
+\ This table contains lookup values for arctangent calculations involving angles
+\ in the range 0 to 45 degrees (or 0 to PI / 4 radians).
+\
+\ To calculate the value of theta in the following:
 \
 \   theta = arctan(t)
 \
-\ where 0 <= t < 1, look up the value in:
+\ where 0 <= t < 1, we look up the value in:
 \
 \   ACT + (t * 32)
 \
-\ The result will be an integer representing the angle in radians, with 256
-\ representing a full circle of 2 * PI radians.
+\ The result will be an integer representing the angle in radians, where 256
+\ represents a full circle of 360 degrees (2 * PI radians). The result of the
+\ lookup will therefore be an integer in the range 0 to 31, as this represents
+\ 0 to 45 degrees (0 to PI / 4 radians).
 \
-\ The table does not support values of t >= 1 or t < 0 directly, but we can use
-\ the following calculations instead:
+\ The table does not support values of t >= 1 or t < 0 directly, so if we need
+\ to calculate the arctangent for an angle greater than 45 degrees, we can apply
+\ the following calculation to the result from the table:
 \
 \   * For t > 1, arctan(t) = 64 - arctan(1 / t)
 \
+\ For negative values of t where -1 < t < 0, we can apply the following
+\ calculation to the result from the table:
+\
 \   * For t < 0, arctan(-t) = 128 - arctan(t)
 \
-\ If t < -1, we can do the first one to get arctan(|t|), then the second to get
-\ arctan(-|t|).
+\ Finally, if t < -1, we can do the first calculation to get arctan(|t|), and
+\ the second to get arctan(-|t|).
 \
 \ ******************************************************************************
 
@@ -19044,7 +19081,7 @@ LOAD_D% = LOAD% + P% - CODE%
 
 .TT151
 
- PHA                    \ Store the item number on the stack and in QQ14+4
+ PHA                    \ Store the item number on the stack and in QQ19+4
  STA QQ19+4
 
  ASL A                  \ Store the item number * 4 in QQ19, so this will act as
@@ -23665,12 +23702,12 @@ LOAD_E% = LOAD% + P% - CODE%
  BCS PL2                \ seen, so jump to PL2 to remove it from the screen,
                         \ returning from the subroutine using a tail call
 
- ORA INWK+7             \ Set A to z_sign OR z_hi to get the maximum of the two
+ ORA INWK+7             \ Set A to 0 if both z_sign and z_hi are 0
 
- BEQ PL2                \ If the maximum is 0, then the planet is too close
-                        \ to be shown, so jump to PL2 to remove it from the
-                        \ screen, returning from the subroutine using a tail
-                        \ call
+ BEQ PL2                \ If both z_sign and z_hi are 0, then the planet/sun is
+                        \ too close to be shown, so jump to PL2 to remove it
+                        \ from the screen, returning from the subroutine using a
+                        \ tail call
 
  JSR PROJ               \ Project the planet onto the screen, returning the
                         \ centre's coordinates in K3(1 0) and K4(1 0)
@@ -23700,8 +23737,9 @@ LOAD_E% = LOAD% + P% - CODE%
  LDA K+1                \ If the high byte of the reduced radius is zero, jump
  BEQ PL82               \ to PL82, as K contains the radius on its own
 
- LDA #248               \ Otherwise set K = 248, to use as our one-byte radius
- STA K
+ LDA #248               \ Otherwise set K = 248, to round up the radius in
+ STA K                  \ K(1 0) to the nearest integer (if we consider the low
+                        \ byte to be the fractional part)
 
 .PL82
 
@@ -27441,7 +27479,7 @@ ENDIF
 \ ------------------------------------------------------------------------------
 \
 \ We do this by dividing each of the three coordinates by the length of the
-\ vector, which we can calculate using Pythagoras. Once normalised, 96 (&E0) is
+\ vector, which we can calculate using Pythagoras. Once normalised, 96 (&60) is
 \ used to represent a value of 1, and 96 with bit 7 set (&E0) is used to
 \ represent -1. This enables us to represent fractional values of less than 1
 \ using integers.
@@ -32498,11 +32536,11 @@ LOAD_G% = LOAD% + P% - CODE%
 \
 \                         * Negative (bit 7 set) = top right to bottom left
 \
-\   T                   The type of slope:
+\   T                   The gradient of slope:
 \
-\                         * 0 if it's more vertical than horizontal
+\                         * 0 if it's a shallow slope
 \
-\                         * &FF if it's more horizontal than vertical
+\                         * &FF if it's a steep slope
 \
 \ Returns:
 \
@@ -32683,11 +32721,19 @@ LOAD_G% = LOAD% + P% - CODE%
 \
 \ Calculate the following:
 \
-\   * If T = 0  (more vertical than horizontal), (Y X) = (S x1_lo) * XX12+2
+\   * If T = 0, this is a shallow slope, so calculate (Y X) = (S x1_lo) * XX12+2
 \
-\   * If T <> 0 (more horizontal than vertical), (Y X) = (S x1_lo) / XX12+2
+\   * If T <> 0, this is a steep slope, so calculate (Y X) = (S x1_lo) / XX12+2
 \
 \ giving (Y X) the opposite sign to the slope direction in XX12+3.
+\
+\ Arguments:
+\
+\   T                   The gradient of slope:
+\
+\                         * 0 if it's a shallow slope
+\
+\                         * &FF if it's a steep slope
 \
 \ Other entry points:
 \
@@ -32715,9 +32761,8 @@ LOAD_G% = LOAD% + P% - CODE%
 
  PHA                    \ Store A on the stack so we can use it later
 
- LDX T                  \ If T is non-zero, so it's more horizontal than
- BNE LL121              \ vertical, jump down to LL121 to calculate this
-                        \ instead:
+ LDX T                  \ If T is non-zero, then it's a steep slope, so jump
+ BNE LL121              \ down to LL121 to calculate this instead:
                         \
                         \   (Y X) = (S R) / Q
 
@@ -32788,9 +32833,9 @@ LOAD_G% = LOAD% + P% - CODE%
 \
 \ Calculate the following:
 \
-\   * If T = 0,  calculate (Y X) = (S R) / XX12+2
+\   * If T = 0, this is a shallow slope, so calculate (Y X) = (S R) / XX12+2
 \
-\   * If T <> 0, calculate (Y X) = (S R) * XX12+2
+\   * If T <> 0, this is a steep slope, so calculate (Y X) = (S R) * XX12+2
 \
 \ giving (Y X) the opposite sign to the slope direction in XX12+3.
 \
@@ -32803,6 +32848,12 @@ LOAD_G% = LOAD% + P% - CODE%
 \                         * Bit 7 clear means top left to bottom right
 \
 \                         * Bit 7 set means top right to bottom left
+\
+\   T                   The gradient of slope:
+\
+\                         * 0 if it's a shallow slope
+\
+\                         * &FF if it's a steep slope
 \
 \ Other entry points:
 \
@@ -32831,8 +32882,8 @@ LOAD_G% = LOAD% + P% - CODE%
 
  PHA                    \ Store A on the stack so we can use it later
 
- LDX T                  \ If T is non-zero, so it's more horizontal than
- BNE LL122              \ vertical, jump up to LL122 to calculate this instead:
+ LDX T                  \ If T is non-zero, then it's a steep slope, so jump up
+ BNE LL122              \ to LL122 to calculate this instead:
                         \
                         \   (Y X) = (S R) * Q
 
@@ -33293,7 +33344,7 @@ LOAD_G% = LOAD% + P% - CODE%
                         \ We now keep halving |delta_x| and |delta_y| until
                         \ both of them have zero in their high bytes
 
- TAX                    \ IF |delta_x_hi| is non-zero, skip the following
+ TAX                    \ If |delta_x_hi| is non-zero, skip the following
  BNE LL112
 
  LDX XX12+5             \ If |delta_y_hi| = 0, jump down to LL113 (as both
@@ -33321,6 +33372,9 @@ LOAD_G% = LOAD% + P% - CODE%
  CMP XX12+4             \ vertical than horizontal, jump to LL114
  BCC LL114
 
+                        \ If we get here then our line is more horizontal than
+                        \ vertical, so it is a shallow slope
+
  STA Q                  \ Set Q = delta_x_lo
 
  LDA XX12+4             \ Set A = delta_y_lo
@@ -33334,6 +33388,9 @@ LOAD_G% = LOAD% + P% - CODE%
 
 .LL114
 
+                        \ If we get here then our line is more vertical than
+                        \ horizontal, so it is a steep slope
+
  LDA XX12+4             \ Set Q = delta_y_lo
  STA Q
  LDA XX12+2             \ Set A = delta_x_lo
@@ -33343,7 +33400,8 @@ LOAD_G% = LOAD% + P% - CODE%
                         \   R = 256 * A / Q
                         \     = 256 * delta_x_lo / delta_y_lo
 
- DEC T                  \ T was set to 0 above, so this sets T = &FF
+ DEC T                  \ T was set to 0 above, so this sets T = &FF when our
+                        \ line is steep
 
 \ ******************************************************************************
 \
@@ -33360,11 +33418,11 @@ LOAD_G% = LOAD% + P% - CODE%
 \ clipping.
 \
 \ If we get here, then R has been set to the gradient of the line (x1, y1) to
-\ (x2, y2), with T indicating the type of slope:
+\ (x2, y2), with T indicating the gradient of slope:
 \
-\   * 0   = it's more vertical than horizontal
+\   * 0   = shallow slope (more horizontal than vertical)
 \
-\   * &FF = it's more horizontal than vertical
+\   * &FF = steep slope (more vertical than horizontal)
 \
 \ and XX13 has been set as follows:
 \
