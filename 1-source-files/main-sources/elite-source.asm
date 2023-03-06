@@ -176,9 +176,35 @@ ORG &0000
  SKIP 2                 \ Temporary storage, typically used for storing a 16-bit
                         \ y-coordinate
 
- SKIP 2                 \ These bytes are unused in this version of Elite (they
-                        \ are used to store the centre axis of the sun in the
-                        \ other versions)
+                        \ --- Mod: Code removed for flicker-free planets: ----->
+
+\SKIP 2                 \ These bytes are unused in this version of Elite (they
+\                       \ are used to store the centre axis of the sun in the
+\                       \ other versions)
+
+                        \ --- And replaced by: -------------------------------->
+
+.QQ29
+
+ SKIP 1                 \ Temporary storage, used in a number of places
+
+.QQ3
+
+ SKIP 1                 \ The selected system's economy (0-7)
+                        \
+                        \   * 0 = Rich Industrial
+                        \   * 1 = Average Industrial
+                        \   * 2 = Poor Industrial
+                        \   * 3 = Mainly Industrial
+                        \   * 4 = Mainly Agricultural
+                        \   * 5 = Rich Agricultural
+                        \   * 6 = Average Agricultural
+                        \   * 7 = Poor Agricultural
+                        \
+                        \ See the deep dive on "Generating system data" for more
+                        \ information on economies
+
+                        \ --- End of replacement ------------------------------>
 
 .BETA
 
@@ -2888,9 +2914,13 @@ ORG &0BE0
                         \ See the deep dive on "Generating system data" for more
                         \ information on economies
 
-.QQ29
+                        \ --- Mod: Code moved for flicker-free planets: ------->
 
- SKIP 1                 \ Temporary storage, used in a number of places
+\.QQ29
+\
+\SKIP 1                 \ Temporary storage, used in a number of places
+
+                        \ --- End of moved code ------------------------------->
 
 .gov
 
@@ -2945,21 +2975,25 @@ ORG &0BE0
                         \ See the deep dives on "Galaxy and system seeds" and
                         \ "Twisting the system seeds" for more details
 
-.QQ3
+                        \ --- Mod: Code moved for flicker-free planets: ------->
 
- SKIP 1                 \ The selected system's economy (0-7)
-                        \
-                        \   * 0 = Rich Industrial
-                        \   * 1 = Average Industrial
-                        \   * 2 = Poor Industrial
-                        \   * 3 = Mainly Industrial
-                        \   * 4 = Mainly Agricultural
-                        \   * 5 = Rich Agricultural
-                        \   * 6 = Average Agricultural
-                        \   * 7 = Poor Agricultural
-                        \
-                        \ See the deep dive on "Generating system data" for more
-                        \ information on economies
+\.QQ3
+\
+\SKIP 1                 \ The selected system's economy (0-7)
+\                       \
+\                       \   * 0 = Rich Industrial
+\                       \   * 1 = Average Industrial
+\                       \   * 2 = Poor Industrial
+\                       \   * 3 = Mainly Industrial
+\                       \   * 4 = Mainly Agricultural
+\                       \   * 5 = Rich Agricultural
+\                       \   * 6 = Average Agricultural
+\                       \   * 7 = Poor Agricultural
+\                       \
+\                       \ See the deep dive on "Generating system data" for more
+\                       \ information on economies
+
+                        \ --- End of moved code ------------------------------->
 
 .QQ4
 
@@ -3396,13 +3430,17 @@ LOAD_A% = LOAD%
 
  AND #%10000000         \ Extract the flipped sign of the roll rate
 
- JMP P%+11              \ This skips over the following block of bytes, which
-                        \ appear to be unused; it isn't clear what they do
+                        \ --- Mod: Code removed for flicker-free planets: ----->
 
- EQUB &A1, &BB          \ These bytes appear to be unused
- EQUB &80, &00
- EQUB &90, &01
- EQUB &D6, &F1
+\JMP P%+11              \ This skips over the following block of bytes, which
+\                       \ appear to be unused; it isn't clear what they do
+\
+\EQUB &A1, &BB          \ These bytes appear to be unused
+\EQUB &80, &00
+\EQUB &90, &01
+\EQUB &D6, &F1
+
+                        \ --- End of removed code ----------------------------->
 
  STA ALP2               \ Store the flipped sign of the roll rate in ALP2 (so
                         \ ALP2 contains the sign of the roll angle alpha)
@@ -7862,12 +7900,16 @@ NEXT
 \
 \ ******************************************************************************
 
-.FLKB
+                        \ --- Mod: Code removed for flicker-free planets: ----->
 
- LDA #15                \ Call OSBYTE with A = 15 and Y <> 0 to flush the input
- TAX                    \ buffers (i.e. flush the operating system's keyboard
- JMP OSBYTE             \ buffer) and return from the subroutine using a tail
-                        \ call
+\.FLKB
+\
+\LDA #15                \ Call OSBYTE with A = 15 and Y <> 0 to flush the input
+\TAX                    \ buffers (i.e. flush the operating system's keyboard
+\JMP OSBYTE             \ buffer) and return from the subroutine using a tail
+\                       \ call
+
+                        \ --- End of removed code ----------------------------->
 
 \ ******************************************************************************
 \
@@ -8316,6 +8358,12 @@ NEXT
 
 .BL5
 
+                        \ --- Mod: Code added for flicker-free planets: ------->
+
+ JSR DrawPlanetLine     \ Draw the current line from the old planet
+
+                        \ --- End of added code ------------------------------->
+
                         \ The following inserts a &FF marker into the LSY2 line
                         \ heap to indicate that the next call to BLINE should
                         \ store both the (X1, Y1) and (X2, Y2) points. We do
@@ -8400,6 +8448,12 @@ NEXT
                         \ Byte LSP-1 of LSY2 is &FF, which indicates that we
                         \ need to store (X1, Y1) in the heap
 
+                        \ --- Mod: Code added for flicker-free planets: ------->
+
+ JSR DrawPlanetLine     \ Draw the current line from the old planet
+
+                        \ --- End of added code ------------------------------->
+
  LDA X1                 \ Store X1 in the LSP-th byte of LSX2
  STA LSX2,Y
 
@@ -8409,6 +8463,18 @@ NEXT
  INY                    \ Increment Y to point to the next byte in LSX2/LSY2
 
 .BL8
+
+                        \ --- Mod: Code added for flicker-free planets: ------->
+
+ LDA #&FF               \ Set bit 7 of K3+8 so we do not draw the current line
+ STA K3+8               \ in the call to DrawPlanetLine, but store the
+                        \ coordinates so we we can check them below
+
+ JSR DrawPlanetLine+4   \ Calculate the current line from the old heap, but do
+                        \ not draw it, but store the coordinates (X1, Y1) and
+                        \ (X2, Y2) in K3+4 to K3+7
+
+                        \ --- End of added code ------------------------------->
 
  LDA X2                 \ Store X2 in the LSP-th byte of LSX2
  STA LSX2,Y
@@ -8420,7 +8486,16 @@ NEXT
 
  STY LSP                \ Update LSP to point to the same as Y
 
- JSR LOIN               \ Draw a line from (X1, Y1) to (X2, Y2)
+                        \ --- Mod: Code removed for flicker-free planets: ----->
+
+\JSR LOIN               \ Draw a line from (X1, Y1) to (X2, Y2)
+
+                        \ --- And replaced by: -------------------------------->
+
+ JSR DrawNewPlanetLine  \ Draw a line from (X1, Y1) to (X2, Y2), but only if it
+                        \ is different to the old line in K3+4 to K3+7
+
+                        \ --- End of replacement ------------------------------>
 
  LDA XX13               \ If XX13 is non-zero, jump up to BL5 to add a &FF
  BNE BL5                \ marker to the end of the line heap. XX13 is non-zero
@@ -8447,6 +8522,230 @@ NEXT
  STA CNT
 
  RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: EraseRestOfPlanet
+\       Type: Subroutine
+\   Category: Drawing lines
+\    Summary: Draw all remaining lines in the ball line heap to erase the rest
+\             of the old planet
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for flicker-free planets: ------->
+
+.EraseRestOfPlanet
+
+ LDY XX14               \ Set Y to the offset in XX14, which points to the part
+                        \ of the heap that we are overwriting with new points
+
+ CPY XX14+1             \ If XX14 >= XX14+1, then we have already redrawn all of
+ BCS eras1              \ the lines from the old circle's ball line heap, so
+                        \ skip the following
+
+ JSR DrawPlanetLine     \ Erase the next planet line from the ball line heap
+
+ JMP EraseRestOfPlanet  \ Loop back for the next line in the ball line heap
+
+.eras1
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: DrawPlanetLine
+\       Type: Subroutine
+\   Category: Drawing lines
+\    Summary: Draw a segment of the old planet from the ball line heap
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   DrawPlanetLine+4    If bit 7 of K3+8 is set, store the line coordinates in
+\                       K3+4 to K3+7 (X1, Y1, X2, Y2) and do not draw the line
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for flicker-free planets: ------->
+
+.DrawPlanetLine
+
+ LDA #0                 \ Clear bit 7 of K3+8 so we draw the current line below
+ STA K3+8
+
+ LDA #0                 \ Clear bit 7 of K3+9 to indicate that there is no line
+ STA K3+9               \ to draw (we may change this below)
+
+ LDA XX14               \ If XX14 = 1, then this is the first point from the
+ CMP #2                 \ heap, so jump to plin3 to set the previous coordinate
+ BCC plin3              \ and return from the subroutine
+
+ LDA X1                 \ Save X1, X2, Y1, Y2 and Y on the stack
+ PHA
+ LDA Y1
+ PHA
+ LDA X2
+ PHA
+ LDA Y2
+ PHA
+ TYA
+ PHA
+
+ LDY XX14               \ Set Y to the offset in XX14, which points to the part
+                        \ of the heap that we are overwriting with new points
+
+ CPY XX14+1             \ If XX14 >= XX14+1, then we have already redrawn all of
+ BCS plin1              \ the lines from the old circle's ball line heap, so
+                        \ jump to plin1 to return from the subroutine
+
+                        \ Otherwise we need to draw the line from the heap, to
+                        \ erase it from the screen
+
+ LDA K3+2               \ Set X1 = K3+2 = screen x-coordinate of previous point
+ STA X1                 \ from the old heap
+
+ LDA K3+3               \ Set Y1 = K3+3 = screen y-coordinate of previous point
+ STA Y1                 \ from the old heap
+
+ LDA LSX2,Y             \ Set X2 to the y-coordinate from the XX14-th point in
+ STA X2                 \ the heap
+
+ STA K3+2               \ Store the x-coordinate of the point we are overwriting
+                        \ in K3+2, so we can use it on the next iteration
+
+ LDA LSY2,Y             \ Set Y2 to the y-coordinate from the XX14-th point in
+ STA Y2                 \ the heap
+
+ STA K3+3               \ Store the y-coordinate of the point we are overwriting
+                        \ in K3+3, so we can use it on the next iteration
+
+ INC XX14               \ Increment XX14 to point to the next coordinate, so we
+                        \ work our way through the current heap
+
+ LDA Y1                 \ If Y1 or Y2 = &FF then this indicates a break in the
+ CMP #&FF               \ circle, so jump to plin1 to skip the following and
+ BEQ plin1              \ return from the subroutine, asthere is no line to
+ LDA Y2                 \ erase
+ CMP #&FF
+ BEQ plin1
+
+ DEC K3+9               \ Decrement K3+9 to &FF to indicate that there is a line
+                        \ to draw
+
+ BIT K3+8               \ If bit 7 of K3+8 is set, jump to plin2 to store the
+ BMI plin2              \ line coordinates rather than drawing the line
+
+ JSR LL30               \ The coordinates in (X1, Y1) and (X2, Y2) that we just
+                        \ pulled from the ball line heap point to a line that is
+                        \ still on-screen, so call LL30 to draw this line and
+                        \ erase it from the screen
+
+.plin1
+
+ PLA                    \ Restore Y, X1, X2, Y1 and Y2 from the stack
+ TAY
+ PLA
+ STA Y2
+ PLA
+ STA X2
+ PLA
+ STA Y1
+ PLA
+ STA X1
+
+ RTS                    \ Return from the subroutine
+
+.plin2
+
+ LDA X1                 \ Store X1, Y1, X2, Y2 in K3+4 to K3+7
+ STA K3+4
+ LDA Y1
+ STA K3+5
+ LDA X2
+ STA K3+6
+ LDA Y2
+ STA K3+7
+
+ JMP plin1              \ Jump to plin1 to return from the subroutine
+
+.plin3
+
+ LDA LSX2+1             \ Store the heap's first coordinate in K3+2 and K3+3
+ STA K3+2
+ LDA LSY2+1
+ STA K3+3
+
+ INC XX14               \ Increment XX14 to point to the next coordinate, so we
+                        \ work our way through the current heap
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: DrawNewPlanetLine
+\       Type: Subroutine
+\   Category: Drawing lines
+\    Summary: Draw a ball line, but only if it is different to the old line
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   K3+4 to K3+7        The (X1, Y1) and (X2, Y2) coordinates of the old line
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for flicker-free planets: ------->
+
+.DrawNewPlanetLine
+
+ BIT K3+9               \ If bit 7 of K3+9 is clear, then there is no old line
+ BPL nlin2              \ to draw, so jump to nlin2 to draw the new line only
+
+ LDA K3+4               \ If the old line equals the new line, jump to nlin3
+ CMP X1                 \ to skip drawing both lines
+ BNE nlin1
+ LDA K3+5
+ CMP Y1
+ BNE nlin1
+ LDA K3+6
+ CMP X2
+ BNE nlin1
+ LDA K3+7
+ CMP Y2
+ BEQ nlin3
+
+.nlin1
+
+                        \ If we get here then the old line is differnt to the new
+                        \ line, so we draw them both
+
+ JSR LL30               \ Draw the new line from (X1, Y1) to (X2, Y2)
+
+ LDA K3+4               \ Set up the old line's coordinates
+ STA X1
+ LDA K3+5
+ STA Y1
+ LDA K3+6
+ STA X2
+ LDA K3+7
+ STA Y2
+
+.nlin2
+
+ JSR LL30               \ Draw the old line to erase it
+
+.nlin3
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -13583,17 +13882,22 @@ NEXT
 \ ******************************************************************************
 
 {
- LDX Q
- BEQ MU1
- DEX
- STX T
- LDA #0
- LDX #8
- LSR P
 
-.MUL6
+                        \ --- Mod: Code removed for flicker-free planets: ----->
 
- BCC P%+4
+\LDX Q
+\BEQ MU1
+\DEX
+\STX T
+\LDA #0
+\LDX #8
+\LSR P
+\
+\.MUL6
+\
+\BCC P%+4
+
+                        \ --- End of removed code ----------------------------->
 
                         \ --- Mod: Code removed for flicker-free ships: ------->
 
@@ -13713,15 +14017,19 @@ NEXT
 \
 \ ******************************************************************************
 
-.MUT3
+                        \ --- Mod: Code removed for flicker-free planets: ----->
 
- LDX ALP1               \ Set P = ALP1, though this gets overwritten by the
- STX P                  \ following, so this has no effect
+\.MUT3
+\
+\LDX ALP1               \ Set P = ALP1, though this gets overwritten by the
+\STX P                  \ following, so this has no effect
+\
+\                       \ Fall through into MUT2 to do the following:
+\                       \
+\                       \   (S R) = XX(1 0)
+\                       \   (A P) = Q * A
 
-                        \ Fall through into MUT2 to do the following:
-                        \
-                        \   (S R) = XX(1 0)
-                        \   (A P) = Q * A
+                        \ --- End of removed code ----------------------------->
 
 \ ******************************************************************************
 \
@@ -14771,117 +15079,121 @@ NEXT
 \
 \ ******************************************************************************
 
-.ARCTAN
+                        \ --- Mod: Code removed for flicker-free planets: ----->
 
- LDA P                  \ Set T1 = P EOR Q, which will have the sign of P * Q
- EOR Q
- STA T1
+\.ARCTAN
+\
+\LDA P                  \ Set T1 = P EOR Q, which will have the sign of P * Q
+\EOR Q
+\STA T1
+\
+\LDA Q                  \ If Q = 0, jump to AR2 to return a right angle
+\BEQ AR2
+\
+\ASL A                  \ Set Q = |Q| * 2 (this is a quick way of clearing the
+\STA Q                  \ sign bit, and we don't need to shift right again as we
+\                       \ only ever use this value in the division with |P| * 2,
+\                       \ which we set next)
+\
+\LDA P                  \ Set A = |P| * 2
+\ASL A
+\
+\CMP Q                  \ If A >= Q, i.e. |P| > |Q|, jump to AR1 to swap P
+\BCS AR1                \ and Q around, so we can still use the lookup table
+\
+\JSR ARS1               \ Call ARS1 to set the following from the lookup table:
+\                       \
+\                       \   A = arctan(A / Q)
+\                       \     = arctan(|P / Q|)
+\
+\SEC                    \ Set the C flag so the SBC instruction in AR3 will be
+\                       \ correct, should we jump there
+\
+\.AR4
+\
+\LDX T1                 \ If T1 is negative, i.e. P and Q have different signs,
+\BMI AR3                \ jump down to AR3 to return arctan(-|P / Q|)
+\
+\RTS                    \ Otherwise P and Q have the same sign, so our result is
+\                       \ correct and we can return from the subroutine
+\
+\.AR1
+\
+\                       \ We want to calculate arctan(t) where |t| > 1, so we
+\                       \ can use the calculation described in the documentation
+\                       \ for the ACT table, i.e. 64 - arctan(1 / t)
+\
+\LDX Q                  \ Swap the values in Q and P, using the fact that we
+\STA Q                  \ called AR1 with A = P
+\STX P                  \
+\TXA                    \ This also sets A = P (which now contains the original
+\                       \ argument |Q|)
+\
+\JSR ARS1               \ Call ARS1 to set the following from the lookup table:
+\                       \
+\                       \   A = arctan(A / Q)
+\                       \     = arctan(|Q / P|)
+\                       \     = arctan(1 / |P / Q|)
+\
+\STA T                  \ Set T = 64 - T
+\LDA #64
+\SBC T
+\
+\BCS AR4                \ Jump to AR4 to continue the calculation (this BCS is
+\                       \ effectively a JMP as the subtraction will never
+\                       \ underflow, as ARS1 returns values in the range 0-31)
+\
+\.AR2
+\
+\                       \ If we get here then Q = 0, so tan(A) = infinity and
+\                       \ A is a right angle, or 0.25 of a circle. We allocate
+\                       \ 255 to a full circle, so we should return 63 for a
+\                       \ right angle
+\
+\LDA #63                \ Set A to 63, to represent a right angle
+\
+\RTS                    \ Return from the subroutine
+\
+\.AR3
+\
+\                       \ A contains arctan(|P / Q|) but P and Q have different
+\                       \ signs, so we need to return arctan(-|P / Q|), using
+\                       \ the calculation described in the documentation for the
+\                       \ ACT table, i.e. 128 - A
+\
+\STA T                  \ Set A = 128 - A
+\LDA #128               \
+\SBC T                  \ The subtraction will work because we did a SEC before
+\                       \ calling AR3
+\
+\RTS                    \ Return from the subroutine
+\
+\.ARS1
+\
+\                       \ This routine fetches arctan(A / Q) from the ACT table,
+\                       \ so A will be set to an integer in the range 0 to 31
+\                       \ that represents an angle from 0 to 45 degrees (or 0 to
+\                       \ PI / 4 radians)
+\
+\JSR LL28               \ Call LL28 to calculate:
+\                       \
+\                       \   R = 256 * A / Q
+\
+\LDA R                  \ Set X = R / 8
+\LSR A                  \       = 32 * A / Q
+\LSR A                  \
+\LSR A                  \ so X has the value t * 32 where t = A / Q, which is
+\TAX                    \ what we need to look up values in the ACT table
+\
+\LDA ACT,X              \ Fetch ACT+X from the ACT table into A, so now:
+\                       \
+\                       \   A = value in ACT + X
+\                       \     = value in ACT + (32 * A / Q)
+\                       \     = arctan(A / Q)
+\
+\RTS                    \ Return from the subroutine
 
- LDA Q                  \ If Q = 0, jump to AR2 to return a right angle
- BEQ AR2
-
- ASL A                  \ Set Q = |Q| * 2 (this is a quick way of clearing the
- STA Q                  \ sign bit, and we don't need to shift right again as we
-                        \ only ever use this value in the division with |P| * 2,
-                        \ which we set next)
-
- LDA P                  \ Set A = |P| * 2
- ASL A
-
- CMP Q                  \ If A >= Q, i.e. |P| > |Q|, jump to AR1 to swap P
- BCS AR1                \ and Q around, so we can still use the lookup table
-
- JSR ARS1               \ Call ARS1 to set the following from the lookup table:
-                        \
-                        \   A = arctan(A / Q)
-                        \     = arctan(|P / Q|)
-
- SEC                    \ Set the C flag so the SBC instruction in AR3 will be
-                        \ correct, should we jump there
-
-.AR4
-
- LDX T1                 \ If T1 is negative, i.e. P and Q have different signs,
- BMI AR3                \ jump down to AR3 to return arctan(-|P / Q|)
-
- RTS                    \ Otherwise P and Q have the same sign, so our result is
-                        \ correct and we can return from the subroutine
-
-.AR1
-
-                        \ We want to calculate arctan(t) where |t| > 1, so we
-                        \ can use the calculation described in the documentation
-                        \ for the ACT table, i.e. 64 - arctan(1 / t)
-
- LDX Q                  \ Swap the values in Q and P, using the fact that we
- STA Q                  \ called AR1 with A = P
- STX P                  \
- TXA                    \ This also sets A = P (which now contains the original
-                        \ argument |Q|)
-
- JSR ARS1               \ Call ARS1 to set the following from the lookup table:
-                        \
-                        \   A = arctan(A / Q)
-                        \     = arctan(|Q / P|)
-                        \     = arctan(1 / |P / Q|)
-
- STA T                  \ Set T = 64 - T
- LDA #64
- SBC T
-
- BCS AR4                \ Jump to AR4 to continue the calculation (this BCS is
-                        \ effectively a JMP as the subtraction will never
-                        \ underflow, as ARS1 returns values in the range 0-31)
-
-.AR2
-
-                        \ If we get here then Q = 0, so tan(A) = infinity and
-                        \ A is a right angle, or 0.25 of a circle. We allocate
-                        \ 255 to a full circle, so we should return 63 for a
-                        \ right angle
-
- LDA #63                \ Set A to 63, to represent a right angle
-
- RTS                    \ Return from the subroutine
-
-.AR3
-
-                        \ A contains arctan(|P / Q|) but P and Q have different
-                        \ signs, so we need to return arctan(-|P / Q|), using
-                        \ the calculation described in the documentation for the
-                        \ ACT table, i.e. 128 - A
-
- STA T                  \ Set A = 128 - A
- LDA #128               \
- SBC T                  \ The subtraction will work because we did a SEC before
-                        \ calling AR3
-
- RTS                    \ Return from the subroutine
-
-.ARS1
-
-                        \ This routine fetches arctan(A / Q) from the ACT table,
-                        \ so A will be set to an integer in the range 0 to 31
-                        \ that represents an angle from 0 to 45 degrees (or 0 to
-                        \ PI / 4 radians)
-
- JSR LL28               \ Call LL28 to calculate:
-                        \
-                        \   R = 256 * A / Q
-
- LDA R                  \ Set X = R / 8
- LSR A                  \       = 32 * A / Q
- LSR A                  \
- LSR A                  \ so X has the value t * 32 where t = A / Q, which is
- TAX                    \ what we need to look up values in the ACT table
-
- LDA ACT,X              \ Fetch ACT+X from the ACT table into A, so now:
-                        \
-                        \   A = value in ACT + X
-                        \     = value in ACT + (32 * A / Q)
-                        \     = arctan(A / Q)
-
- RTS                    \ Return from the subroutine
+                        \ --- End of removed code ----------------------------->
 
 \ ******************************************************************************
 \
@@ -14925,13 +15237,17 @@ NEXT
 \
 \ ******************************************************************************
 
-.ACT
+                        \ --- Mod: Code removed for flicker-free planets: ----->
 
-FOR I%, 0, 31
+\.ACT
+\
+\FOR I%, 0, 31
+\
+\ EQUB INT((128 / PI) * ATN(I% / 32) + 0.5)
+\
+\NEXT
 
- EQUB INT((128 / PI) * ATN(I% / 32) + 0.5)
-
-NEXT
+                        \ --- End of removed code ----------------------------->
 
 \ ******************************************************************************
 \
@@ -15514,6 +15830,12 @@ NEXT
 
  ASL A                  \ Set LAS2 to 0, as 128 << 1 = %10000000 << 1 = 0. This
  STA LAS2               \ stops any laser pulsing
+
+                        \ --- Mod: Code added for flicker-free planets: ------->
+
+ STA LSP                \ Reset the ball line heap pointer at LSP
+
+                        \ --- End of added code ------------------------------->
 
  STA DLY                \ Set the delay in DLY to 0, to indicate that we are
                         \ no longer showing an in-flight message, so any new
@@ -23743,11 +24065,28 @@ LOAD_E% = LOAD% + P% - CODE%
 
 .PL82
 
- JSR WPLS2              \ Call WPLS2 to remove the planet from the screen
+                        \ --- Mod: Code removed for flicker-free planets: ----->
 
- JMP CIRCLE             \ Jump to CIRCLE to draw the planet (which is just a
-                        \ simple circle) and return from the subroutine using
-                        \ a tail call
+\JSR WPLS2              \ Call WPLS2 to remove the planet from the screen
+\
+\JMP CIRCLE             \ Jump to CIRCLE to draw the planet (which is just a
+\                       \ simple circle) and return from the subroutine using
+\                       \ a tail call
+
+                        \ --- And replaced by: -------------------------------->
+
+ JSR CIRCLE             \ Call CIRCLE to draw the planet's new circle
+
+ BCS PL2                \ If the call to CIRCLE returned with the C flag set,
+                        \ then the circle does not fit on-screen, so jump to
+                        \ PL2 to remove the planet from the screen and return
+                        \ from the subroutine
+
+ JMP EraseRestOfPlanet  \ We have drawn the new circle, so now we need to erase
+                        \ any lines that are left in the ball line heap, before
+                        \ returning from the subroutine using a tail call
+
+                        \ --- End of replacement ------------------------------>
 
 \ ******************************************************************************
 \
@@ -23830,6 +24169,29 @@ LOAD_E% = LOAD% + P% - CODE%
 \ ******************************************************************************
 
 .CIRCLE2
+
+                        \ --- Mod: Code added for flicker-free planets: ------->
+
+                        \ We now set things up for flicker-free circle plotting,
+                        \ by setting the following:
+                        \
+                        \   XX14 = offset to the first coordinate in the ball
+                        \          line heap
+                        \
+                        \   XX14+1 = the number of bytes in the heap for the
+                        \            circle that's currently on-screen (or 0 if
+                        \            there is no ship currently on-screen)
+
+ LDX #0                 \ Set XX14 = 0, to point to the offset before the first
+ STX XX14               \ set of circle coordinates in the ball line heap
+
+ LDX LSP                \ Set XX14+1 to the last byte of the ball line heap
+ STX XX14+1
+
+ LDX #1                 \ Set LSP = 1 to reset the ball line heap pointer
+ STX LSP
+
+                        \ --- End of added code ------------------------------->
 
  LDX #&FF               \ Set FLAG = &FF to reset the ball line heap in the call
  STX FLAG               \ to the BLINE routine below
@@ -23958,56 +24320,72 @@ LOAD_E% = LOAD% + P% - CODE%
  BNE WP1                \ heap is empty), jump to WP1 to reset the line heap
                         \ without redrawing the planet
 
-                        \ Otherwise Y is now 0, so we can use it as a counter to
-                        \ loop through the lines in the line heap, redrawing
-                        \ each one to remove the planet from the screen, before
-                        \ resetting the line heap once we are done
+                        \ --- Mod: Code removed for flicker-free planets: ----->
 
-.WPL1
+\                       \ Otherwise Y is now 0, so we can use it as a counter to
+\                       \ loop through the lines in the line heap, redrawing
+\                       \ each one to remove the planet from the screen, before
+\                       \ resetting the line heap once we are done
+\
+\.WPL1
+\
+\CPY LSP                \ If Y >= LSP then we have reached the end of the line
+\BCS WP1                \ heap and have finished redrawing the planet (as LSP
+\                       \ points to the end of the heap), so jump to WP1 to
+\                       \ reset the line heap, returning from the subroutine
+\                       \ using a tail call
+\
+\LDA LSY2,Y             \ Set A to the y-coordinate of the current heap entry
+\
+\CMP #&FF               \ If the y-coordinate is &FF, this indicates that the
+\BEQ WP2                \ next point in the heap denotes the start of a line
+\                       \ segment, so jump to WP2 to put it into (X1, Y1)
+\
+\STA Y2                 \ Set (X2, Y2) to the x- and y-coordinates from the
+\LDA LSX2,Y             \ heap
+\STA X2
+\
+\JSR LOIN               \ Draw a line from (X1, Y1) to (X2, Y2)
+\
+\INY                    \ Increment the loop counter to point to the next point
+\
+\LDA SWAP               \ If SWAP is non-zero then we swapped the coordinates
+\BNE WPL1               \ when filling the heap in BLINE, so loop back WPL1
+\                       \ for the next point in the heap
+\
+\LDA X2                 \ Swap (X1, Y1) and (X2, Y2), so the next segment will
+\STA X1                 \ be drawn from the current (X2, Y2) to the next point
+\LDA Y2                 \ in the heap
+\STA Y1
+\
+\JMP WPL1               \ Loop back to WPL1 for the next point in the heap
+\
+\.WP2
+\
+\INY                    \ Increment the loop counter to point to the next point
+\
+\LDA LSX2,Y             \ Set (X1, Y1) to the x- and y-coordinates from the
+\STA X1                 \ heap
+\LDA LSY2,Y
+\STA Y1
+\
+\INY                    \ Increment the loop counter to point to the next point
+\
+\JMP WPL1               \ Loop back to WPL1 for the next point in the heap
 
- CPY LSP                \ If Y >= LSP then we have reached the end of the line
- BCS WP1                \ heap and have finished redrawing the planet (as LSP
-                        \ points to the end of the heap), so jump to WP1 to
-                        \ reset the line heap, returning from the subroutine
-                        \ using a tail call
+                        \ --- And replaced by: -------------------------------->
 
- LDA LSY2,Y             \ Set A to the y-coordinate of the current heap entry
+ STY XX14               \ Reset XX14 to the start of the ball line heap (we can
+                        \ set this to 0 rather than 1 to take advantage of the
+                        \ fact that Y is 0 - the effect is the same)
 
- CMP #&FF               \ If the y-coordinate is &FF, this indicates that the
- BEQ WP2                \ next point in the heap denotes the start of a line
-                        \ segment, so jump to WP2 to put it into (X1, Y1)
+ LDA LSP                \ Set XX14+1 to the end of the ball line heap
+ STA XX14+1
 
- STA Y2                 \ Set (X2, Y2) to the x- and y-coordinates from the
- LDA LSX2,Y             \ heap
- STA X2
+ JSR EraseRestOfPlanet  \ Draw the contents of the ball line heap to erase the
+                        \ old planet
 
- JSR LOIN               \ Draw a line from (X1, Y1) to (X2, Y2)
-
- INY                    \ Increment the loop counter to point to the next point
-
- LDA SWAP               \ If SWAP is non-zero then we swapped the coordinates
- BNE WPL1               \ when filling the heap in BLINE, so loop back WPL1
-                        \ for the next point in the heap
-
- LDA X2                 \ Swap (X1, Y1) and (X2, Y2), so the next segment will
- STA X1                 \ be drawn from the current (X2, Y2) to the next point
- LDA Y2                 \ in the heap
- STA Y1
-
- JMP WPL1               \ Loop back to WPL1 for the next point in the heap
-
-.WP2
-
- INY                    \ Increment the loop counter to point to the next point
-
- LDA LSX2,Y             \ Set (X1, Y1) to the x- and y-coordinates from the
- STA X1                 \ heap
- LDA LSY2,Y
- STA Y1
-
- INY                    \ Increment the loop counter to point to the next point
-
- JMP WPL1               \ Loop back to WPL1 for the next point in the heap
+                        \ --- End of replacement ------------------------------>
 
 \ ******************************************************************************
 \
@@ -28196,21 +28574,24 @@ ENDIF
 \
 \ ******************************************************************************
 
-.DKS2
 
- LDA #128               \ Call OSBYTE with A = 128 to fetch the 16-bit value
- JSR OSBYTE             \ from ADC channel X, returning (Y X), i.e. the high
-                        \ byte in Y and the low byte in X
+                        \ --- Mod: Code removed for flicker-free planets: ----->
 
- TYA                    \ Copy Y to A, so the result is now in (A X)
-
- EOR JSTE               \ The high byte A is now EOR'd with the value in
-                        \ location JSTE, which contains &FF if both joystick
-                        \ channels are reversed and 0 otherwise (so A now
-                        \ contains the high byte but inverted, if that's what
-                        \ the current settings say)
-
- RTS                    \ Return from the subroutine
+\.DKS2
+\
+\LDA #128               \ Call OSBYTE with A = 128 to fetch the 16-bit value
+\JSR OSBYTE             \ from ADC channel X, returning (Y X), i.e. the high
+\                       \ byte in Y and the low byte in X
+\
+\TYA                    \ Copy Y to A, so the result is now in (A X)
+\
+\EOR JSTE               \ The high byte A is now EOR'd with the value in
+\                       \ location JSTE, which contains &FF if both joystick
+\                       \ channels are reversed and 0 otherwise (so A now
+\                       \ contains the high byte but inverted, if that's what
+\                       \ the current settings say)
+\
+\RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
 \
