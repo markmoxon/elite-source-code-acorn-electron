@@ -11238,9 +11238,48 @@ NEXT
 
  JSR RES2               \ Reset a number of flight variables and workspaces
 
+                        \ --- Mod: Code removed for flicker-free planets: ----->
+
+\.ESL1
+\
+\JSR RESET              \ Call RESET to reset our ship and various controls
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDX #CYL               \ Set the current ship type to a Cobra Mk III, so we
+ STX TYPE               \ can show our ship disappear into the distance when we
+                        \ eject in our pod
+
+ JSR FRS1               \ Call FRS1 to launch the Cobra Mk III straight ahead,
+                        \ like a missile launch, but with our ship instead
+
+.ES1
+
+ LDA #8                 \ Set the Cobra's byte #27 (speed) to 8
+ STA INWK+27
+
+ LDA #194               \ Set the Cobra's byte #30 (pitch counter) to 194, so it
+ STA INWK+30            \ pitches as we pull away
+
+ LSR A                  \ Set the Cobra's byte #32 (AI flag) to %01100001, so it
+ STA INWK+32            \ has no AI, and we can use this value as a counter to
+                        \ do the following loop 97 times
+
 .ESL1
 
- JSR RESET              \ Call RESET to reset our ship and various controls
+ JSR MVEIT              \ Call MVEIT to move the Cobra in space
+
+ JSR LL9                \ Call LL9 to draw the Cobra on-screen
+
+ DEC INWK+32            \ Decrement the counter in byte #32
+
+ BNE ESL1               \ Loop back to keep moving the Cobra until the AI flag
+                        \ is 0, which gives it time to drift away from our pod
+
+ JSR SCAN               \ Call SCAN to remove the Cobra from the scanner (by
+                        \ redrawing it)
+
+                        \ --- End of replacement ------------------------------>
 
  LDA #0                 \ Set A = 0 so we can use it to zero the contents of
                         \ the cargo hold
@@ -24687,58 +24726,62 @@ LOAD_E% = LOAD% + P% - CODE%
                         \ and update the key logger, setting KL to the key
                         \ pressed
 
- LDX JSTK               \ If the joystick is not configured, jump down to TJ1,
- BEQ TJ1                \ otherwise keep going... though as the DOKEY routine
-                        \ doesn't read the ADC channels in the Electron version,
-                        \ this doesn't actually work, but instead moves the
-                        \ crosshairs in an uncontrollable way, so this is
-                        \ presumably a bug
+                        \ --- Mod: Code removed for flicker-free planets: ----->
 
- LDA JSTX               \ Fetch the joystick roll, ranging from 1 to 255 with
-                        \ 128 as the centre point
+\LDX JSTK               \ If the joystick is not configured, jump down to TJ1,
+\BEQ TJ1                \ otherwise keep going... though as the DOKEY routine
+\                       \ doesn't read the ADC channels in the Electron version,
+\                       \ this doesn't actually work, but instead moves the
+\                       \ crosshairs in an uncontrollable way, so this is
+\                       \ presumably a bug
+\
+\LDA JSTX               \ Fetch the joystick roll, ranging from 1 to 255 with
+\                       \ 128 as the centre point
+\
+\EOR #&FF               \ Flip the sign so A = -JSTX, because the joystick roll
+\                       \ works in the opposite way to moving a cursor on-screen
+\                       \ in terms of left and right
+\
+\JSR TJS1               \ Call TJS1 just below to set A to a value between -2
+\                       \ and +2 depending on the joystick roll value (moving
+\                       \ the stick sideways)
+\
+\TYA                    \ Copy Y to A
+\
+\TAX                    \ Copy A to X, so X contains the joystick roll value
+\
+\LDA JSTY               \ Fetch the joystick pitch, ranging from 1 to 255 with
+\                       \ 128 as the centre point, and fall through into TJS1 to
+\                       \ set Y to the joystick pitch value (moving the stick up
+\                       \ and down)
+\
+\.TJS1
+\
+\TAY                    \ Store A in Y
+\
+\LDA #0                 \ Set the result, A = 0
+\
+\CPY #16                \ If Y >= 16 set the C flag, so A = A - 1
+\SBC #0
+\
+\CPY #64                \ If Y >= 64 set the C flag, so A = A - 1
+\SBC #0
+\
+\CPY #192               \ If Y >= 192 set the C flag, so A = A + 1
+\ADC #0
+\
+\CPY #224               \ If Y >= 224 set the C flag, so A = A + 1
+\ADC #0
+\
+\TAY                    \ Copy the value of A into Y
+\
+\LDA KL                 \ Set A to the value of KL (the key pressed)
+\
+\RTS                    \ Return from the subroutine
+\
+\.TJ1
 
- EOR #&FF               \ Flip the sign so A = -JSTX, because the joystick roll
-                        \ works in the opposite way to moving a cursor on-screen
-                        \ in terms of left and right
-
- JSR TJS1               \ Call TJS1 just below to set A to a value between -2
-                        \ and +2 depending on the joystick roll value (moving
-                        \ the stick sideways)
-
- TYA                    \ Copy Y to A
-
- TAX                    \ Copy A to X, so X contains the joystick roll value
-
- LDA JSTY               \ Fetch the joystick pitch, ranging from 1 to 255 with
-                        \ 128 as the centre point, and fall through into TJS1 to
-                        \ set Y to the joystick pitch value (moving the stick up
-                        \ and down)
-
-.TJS1
-
- TAY                    \ Store A in Y
-
- LDA #0                 \ Set the result, A = 0
-
- CPY #16                \ If Y >= 16 set the C flag, so A = A - 1
- SBC #0
-
- CPY #64                \ If Y >= 64 set the C flag, so A = A - 1
- SBC #0
-
- CPY #192               \ If Y >= 192 set the C flag, so A = A + 1
- ADC #0
-
- CPY #224               \ If Y >= 224 set the C flag, so A = A + 1
- ADC #0
-
- TAY                    \ Copy the value of A into Y
-
- LDA KL                 \ Set A to the value of KL (the key pressed)
-
- RTS                    \ Return from the subroutine
-
-.TJ1
+                        \ --- End of removed code ----------------------------->
 
  LDA KL                 \ Set A to the value of KL (the key pressed)
 
