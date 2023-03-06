@@ -8041,6 +8041,46 @@ NEXT
 
 \ ******************************************************************************
 \
+\       Name: PX3
+\       Type: Subroutine
+\   Category: Drawing pixels
+\    Summary: Plot a single pixel at (X, Y) within a character block
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine is called from PIXEL to set 1 pixel within a character block for
+\ a distant point (i.e. where the distance ZZ >= &90). See the PIXEL routine for
+\ details, as this routine is effectively part of PIXEL.
+\
+\ Arguments:
+\
+\   X                   The x-coordinate of the pixel within the character block
+\
+\   Y                   The y-coordinate of the pixel within the character block
+\
+\   SC(1 0)             The screen address of the character block
+\
+\   T1                  The value of Y to restore on exit, so Y is preserved by
+\                       the call to PIXEL
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for flicker-free planets: ------->
+
+.PX3
+
+ LDA TWOS,X             \ Fetch a 1-pixel byte from TWOS and EOR it into SC+Y
+ EOR (SC),Y
+ STA (SC),Y
+
+ LDY T1                 \ Restore Y from T1, so Y is preserved by the routine
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
 \       Name: PIX1
 \       Type: Subroutine
 \   Category: Maths (Arithmetic)
@@ -8241,9 +8281,19 @@ NEXT
  AND #%00000111
  TAX
 
+                        \ --- Mod: Code removed for flicker-free planets: ----->
+
+\LDA ZZ                 \ If distance in ZZ >= 144, then this point is a very
+\CMP #144               \ long way away, so jump to PX14 to fetch a 2-pixel dash
+\BCS PX14               \ from TWOS2 and EOR it into SC+Y
+
+                        \ --- And replaced by: -------------------------------->
+
  LDA ZZ                 \ If distance in ZZ >= 144, then this point is a very
- CMP #144               \ long way away, so jump to PX14 to fetch a 2-pixel dash
- BCS PX14               \ from TWOS2 and EOR it into SC+Y
+ CMP #144               \ long way away, so jump to PX3 to fetch a 1-pixel point
+ BCS PX3                \ from TWOS and EOR it into SC+Y
+
+                        \ --- End of replacement ------------------------------>
 
  LDA TWOS2,X            \ Otherwise fetch a 2-pixel dash from TWOS2 and EOR it
  EOR (SC),Y             \ into SC+Y
