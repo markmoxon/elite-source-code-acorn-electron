@@ -24831,7 +24831,11 @@ LOAD_E% = LOAD% + P% - CODE%
 \
 \.TJ1
 
-                        \ --- End of removed code ----------------------------->
+                        \ --- And replaced by: -------------------------------->
+
+ LDX #0                 \ Set X = 0
+
+                        \ --- End of replacement ------------------------------>
 
  LDA KL                 \ Set A to the value of KL (the key pressed)
 
