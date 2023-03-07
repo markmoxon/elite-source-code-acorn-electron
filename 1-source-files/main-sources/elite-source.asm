@@ -12779,9 +12779,13 @@ LOAD_C% = LOAD% +P% - CODE%
  LDA #56                \ Call the NOISE routine with A = 56 to make the sound
  JSR NOISE              \ of the hyperspace drive being engaged
 
- LDA #1                 \ Set HFX to 1. In the other versions, this makes the
- STA HFX                \ hyperspace rings multi-coloured, but the Electron
-                        \ version is monochrome, so this has no effect
+                        \ --- Mod: Code removed for flicker-free planets: ----->
+
+\LDA #1                 \ Set HFX to 1. In the other versions, this makes the
+\STA HFX                \ hyperspace rings multi-coloured, but the Electron
+\                       \ version is monochrome, so this has no effect
+
+                        \ --- End of removed code ----------------------------->
 
  LDA #4                 \ Set the step size for the hyperspace rings to 4, so
                         \ there are more sections in the rings and they are
@@ -12790,8 +12794,12 @@ LOAD_C% = LOAD% +P% - CODE%
 
  JSR HFS2               \ Call HFS2 to draw the hyperspace tunnel rings
 
- DEC HFX                \ Set HFX back to 0, which has no effect in the Electron
-                        \ version
+                        \ --- Mod: Code removed for flicker-free planets: ----->
+
+\DEC HFX                \ Set HFX back to 0, which has no effect in the Electron
+\                       \ version
+
+                        \ --- End of removed code ----------------------------->
 
  RTS                    \ Return from the subroutine
 
