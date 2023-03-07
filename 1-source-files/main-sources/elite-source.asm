@@ -24223,10 +24223,26 @@ LOAD_E% = LOAD% + P% - CODE%
 
  LDA #8                 \ Set A = 8
 
- CPX #9                 \ If the radius < 9, skip to PL89
+                        \ --- Mod: Code removed for flicker-free planets: ----->
+
+\CPX #9                 \ If the radius < 9, skip to PL89
+\BCC PL89
+\
+\LSR A                  \ Halve A so A = 4
+
+                        \ --- And replaced by: -------------------------------->
+
+ CPX #8                 \ If the radius < 8, skip to PL89
  BCC PL89
 
  LSR A                  \ Halve A so A = 4
+
+ CPX #60                \ If the radius < 60, skip to PL89
+ BCC PL89
+
+ LSR A                  \ Halve A so A = 2
+
+                        \ --- End of replacement ------------------------------>
 
 .PL89
 
