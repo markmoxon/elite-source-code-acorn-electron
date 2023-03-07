@@ -118,6 +118,20 @@ There are five main folders in this repository, which reflect the order of the b
 
 This repository also includes a flicker-free version, which incorporates the backported flicker-free ship-drawing routines from the BBC Master. The flicker-free code is in a separate branch called `flicker-free`, and apart from the code differences for reducing flicker, this branch is identical to the main branch and the same build process applies.
 
+The flicker-free Electron version also includes a number of extra features, all of which are backported from the BBC Micro version. The complete feature list is as follows:
+
+* Flicker-free ships
+
+* Flicker-free planets
+
+* The escape capsule animation from the BBC Micro has been added, which is not present in the original Electron version
+
+* There are now three sizes of stardust (like the BBC Micro) rather then two, with the addition of one-pixel stardust
+
+* Planets are more high-fidelity, so the planet's circle looks more like the BBC Micro, and less like a 50p; this does slow things down a little, but overall the faster algorithm for flicker-free planets compensates for this
+
+* For the SSD disc version, the black box that shows loading progress has been removed from the Acornsoft loading screen (it is still used to show loading progress in the UEF cassette version)
+
 The annotated source files in the `flicker-free` branch contain both the original Acornsoft code and all of the modifications for flicker-free Elite, so you can look through the source to see exactly what's changed. Any code that I've removed from the original version is commented out in the source files, so when they are assembled they produce the flicker-free binaries, while still containing details of all the modifications. You can find all the diffs by searching the sources for `Mod:`.
 
 For more information on flicker-free Elite, see the [hacks section of the accompanying website](https://www.bbcelite.com/hacks/flicker-free_elite.html).
