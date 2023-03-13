@@ -37,7 +37,7 @@ See the [introduction](#introduction) for more information.
 
 This repository contains source code for Elite on the Acorn Electron, with every single line documented and (for the most part) explained.
 
-You can build the fully functioning game from this source. One variant is currently supported: the Stairway to Hell variant.
+You can build the fully functioning game from this source. One variant is currently supported: the Every Game Going variant.
 
 It is a companion to the [bbcelite.com website](https://www.bbcelite.com), which contains all the code from this repository, but laid out in a much more human-friendly fashion. The links at the top of this page will take you to repositories for the other versions of Elite that are covered by this project.
 
@@ -178,7 +178,7 @@ make.bat build
 make.bat encrypt
 ```
 
-will produce a file called `elite-electron-sth.ssd` in the `5-compiled-game-discs` folder that contains the Stairway to Hell variant, which you can then load into an emulator, or into a real Electron using a device like a Gotek.
+will produce a file called `elite-electron-egg.ssd` in the `5-compiled-game-discs` folder that contains the Every Game Going variant, which you can then load into an emulator, or into a real Electron using a device like a Gotek.
 
 ### Mac and Linux
 
@@ -194,7 +194,7 @@ make build
 make encrypt
 ```
 
-will produce a file called `elite-electron-sth.ssd` in the `5-compiled-game-discs` folder that contains the Stairway to Hell variant, which you can then load into an emulator, or into a real Electron using a device like a Gotek.
+will produce a file called `elite-electron-egg.ssd` in the `5-compiled-game-discs` folder that contains the Every Game Going variant, which you can then load into an emulator, or into a real Electron using a device like a Gotek.
 
 ### Verifying the output
 
@@ -247,7 +247,7 @@ f23f7ef2   2348  f23f7ef2   2348   Yes   SHIPS.bin
 a6ee7213   1024  a6ee7213   1024   Yes   WORDS9.bin
 ```
 
-All the compiled binaries match the originals, so we know we are producing the same final game as the Stairway to Hell variant.
+All the compiled binaries match the originals, so we know we are producing the same final game as the Every Game Going variant.
 
 ### Log files
 
