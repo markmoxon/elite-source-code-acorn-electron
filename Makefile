@@ -8,14 +8,14 @@ PYTHON?=python
 #
 # So, for example:
 #
-#   make encrypt verify variant=sth
+#   make encrypt verify variant=egg
 #
-# will build the variant from the Stairway to Hell archive. If you omit
-# the variant parameter, it will build the Stairway to Hell variant.
+# will build the variant from the Every Game Going archive. If you omit
+# the variant parameter, it will build the Every Game Going variant.
 
 variant-electron=1
-folder-electron=/sth
-suffix-electron=-sth
+folder-electron=/egg
+suffix-electron=-egg
 
 .PHONY:build
 build:
