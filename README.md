@@ -115,7 +115,7 @@ There are five main folders in this repository, which reflect the order of the b
 
 ## Flicker-free Elite
 
-This repository also includes a flicker-free version, which incorporates the backported flicker-free ship-drawing routines from the BBC Master. The flicker-free code is in a separate branch called `flicker-free`, and apart from the code differences for reducing flicker, this branch is identical to the main branch and the same build process applies.
+This repository also includes a flicker-free version, which incorporates the backported flicker-free ship-drawing routines from the BBC Master, as well as a fix for planets so they no longer flicker. The flicker-free code is in a separate branch called `flicker-free`, and apart from the code differences for reducing flicker, this branch is identical to the main branch and the same build process applies.
 
 The flicker-free Electron version also includes a number of extra features, all of which are backported from the BBC Micro version. The complete feature list is as follows:
 
