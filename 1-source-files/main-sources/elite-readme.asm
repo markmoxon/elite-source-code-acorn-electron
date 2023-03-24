@@ -25,7 +25,7 @@
 \
 \ ******************************************************************************
 
-INCLUDE "1-source-files/main-sources/elite-build-options.asm"
+ INCLUDE "1-source-files/main-sources/elite-build-options.asm"
 
 .readme
 
@@ -62,5 +62,5 @@ INCLUDE "1-source-files/main-sources/elite-build-options.asm"
  EQUS "---------------------------------------"
  EQUB 10, 13
 
-SAVE "3-assembled-output/README.txt", readme, P%
+ SAVE "3-assembled-output/README.txt", readme, P%
 
