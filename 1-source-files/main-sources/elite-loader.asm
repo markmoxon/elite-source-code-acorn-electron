@@ -25,9 +25,9 @@
 \
 \ ******************************************************************************
 
-INCLUDE "1-source-files/main-sources/elite-build-options.asm"
+ INCLUDE "1-source-files/main-sources/elite-build-options.asm"
 
-GUARD &5800             \ Guard against assembling over screen memory
+ GUARD &5800            \ Guard against assembling over screen memory
 
 \ ******************************************************************************
 \
@@ -35,42 +35,42 @@ GUARD &5800             \ Guard against assembling over screen memory
 \
 \ ******************************************************************************
 
-DISC = TRUE             \ Set to TRUE to load the code above DFS and relocate
+ DISC = TRUE            \ Set to TRUE to load the code above DFS and relocate
                         \ down, so we can load the cassette version from disc
 
-N% = 17                 \ N% is set to the number of bytes in the VDU table, so
+ N% = 17                \ N% is set to the number of bytes in the VDU table, so
                         \ we can loop through them in part 2 below
 
-USERV = &0200           \ The address of the user vector
+ USERV = &0200          \ The address of the user vector
 
-BRKV = &0202            \ The address of the break vector
+ BRKV = &0202           \ The address of the break vector
 
-IRQ1V = &0204           \ The address of the interrupt vector
+ IRQ1V = &0204          \ The address of the interrupt vector
 
-WRCHV = &020E           \ The address of the write character vector
+ WRCHV = &020E          \ The address of the write character vector
 
-RDCHV = &0210           \ The address of the read character vector
+ RDCHV = &0210          \ The address of the read character vector
 
-KEYV = &0228            \ The address of the keyboard vector
+ KEYV = &0228           \ The address of the keyboard vector
 
-LE% = &0B00             \ LE% is the address to which the code from UU% onwards
+ LE% = &0B00            \ LE% is the address to which the code from UU% onwards
                         \ is copied in part 3
 
-C% = &0D00              \ C% is set to the location that the main game code gets
+ C% = &0D00             \ C% is set to the location that the main game code gets
                         \ moved to after it is loaded
 
-L% = &2000              \ L% is the load address of the main game code file
+ L% = &2000             \ L% is the load address of the main game code file
 
-S% = C%                 \ S% points to the entry point for the main game code
+ S% = C%                \ S% points to the entry point for the main game code
 
-VIA = &FE00             \ Memory-mapped space for accessing internal hardware,
+ VIA = &FE00            \ Memory-mapped space for accessing internal hardware,
                         \ such as the video ULA, 6845 CRTC and 6522 VIAs (also
                         \ known as SHEILA)
 
-OSWRCH = &FFEE          \ The address for the OSWRCH routine
-OSBYTE = &FFF4          \ The address for the OSBYTE routine
-OSWORD = &FFF1          \ The address for the OSWORD routine
-OSCLI = &FFF7           \ The address for the OSCLI routine
+ OSWRCH = &FFEE         \ The address for the OSWRCH routine
+ OSBYTE = &FFF4         \ The address for the OSBYTE routine
+ OSWORD = &FFF1         \ The address for the OSWORD routine
+ OSCLI = &FFF7          \ The address for the OSCLI routine
 
 \ ******************************************************************************
 \
@@ -82,7 +82,7 @@ OSCLI = &FFF7           \ The address for the OSCLI routine
 \
 \ ******************************************************************************
 
-ORG &0004
+ ORG &0004
 
 .TRTB%
 
@@ -90,7 +90,7 @@ ORG &0004
                         \ table, which is used to translate internal key
                         \ numbers to ASCII
 
-ORG &0070
+ ORG &0070
 
 .ZP
 
@@ -160,10 +160,10 @@ ORG &0070
 \
 \ ******************************************************************************
 
-CODE% = &4400
-LOAD% = &4400
+ CODE% = &4400
+ LOAD% = &4400
 
-ORG CODE%
+ ORG CODE%
 
 \ ******************************************************************************
 \
@@ -205,22 +205,22 @@ ORG CODE%
 \
 \ ******************************************************************************
 
-PRINT "WORDS9 = ",~P%
-INCBIN "3-assembled-output/WORDS9.bin"
+ PRINT "WORDS9 = ",~P%
+ INCBIN "3-assembled-output/WORDS9.bin"
 
-ALIGN 256
+ ALIGN 256
 
-PRINT "P.DIALS = ",~P%
-INCBIN "1-source-files/images/P.DIALS.bin"
+ PRINT "P.DIALS = ",~P%
+ INCBIN "1-source-files/images/P.DIALS.bin"
 
-PRINT "P.ELITE = ",~P%
-INCBIN "1-source-files/images/P.ELITE.bin"
+ PRINT "P.ELITE = ",~P%
+ INCBIN "1-source-files/images/P.ELITE.bin"
 
-PRINT "P.A-SOFT = ",~P%
-INCBIN "1-source-files/images/P.A-SOFT.bin"
+ PRINT "P.A-SOFT = ",~P%
+ INCBIN "1-source-files/images/P.A-SOFT.bin"
 
-PRINT "P.(C)ASFT = ",~P%
-INCBIN "1-source-files/images/P.(C)ASFT.bin"
+ PRINT "P.(C)ASFT = ",~P%
+ INCBIN "1-source-files/images/P.(C)ASFT.bin"
 
 .run
 
@@ -543,11 +543,11 @@ ENDIF
 
 MACRO FNE I%
 
-  LDX #LO(E%+I%*14)     \ Set (Y X) to point to the I%-th set of envelope data
-  LDY #HI(E%+I%*14)     \ in E%
+ LDX #LO(E%+I%*14)      \ Set (Y X) to point to the I%-th set of envelope data
+ LDY #HI(E%+I%*14)      \ in E%
 
-  LDA #8                \ Call OSWORD with A = 8 to set up sound envelope I%
-  JSR OSWORD
+ LDA #8                 \ Call OSWORD with A = 8 to set up sound envelope I%
+ JSR OSWORD
 
 ENDMACRO
 
@@ -1832,9 +1832,9 @@ ENDMACRO
 
 .UU%
 
-Q% = P% - LE%
+ Q% = P% - LE%
 
-ORG LE%
+ ORG LE%
 
 \ ******************************************************************************
 \
@@ -2010,8 +2010,8 @@ ORG LE%
 \
 \ ******************************************************************************
 
-COPYBLOCK LE%, P%, UU%  \ Copy the block that we assembled at LE% to UU%, which
-                        \ is where it will actually run
+ COPYBLOCK LE%, P%, UU%         \ Copy the block that we assembled at LE% to
+                                \ UU%, which is where it will actually run
 
-PRINT "S.ELITEDA ", ~CODE%, " ", ~UU% + (P% - LE%), " ", ~run, " ", ~CODE%
-SAVE "3-assembled-output/ELITEDA.bin", CODE%, UU% + (P% - LE%), run, CODE%
+ PRINT "S.ELITEDA ", ~CODE%, " ", ~UU% + (P% - LE%), " ", ~run, " ", ~CODE%
+ SAVE "3-assembled-output/ELITEDA.bin", CODE%, UU% + (P% - LE%), run, CODE%
