@@ -172,8 +172,10 @@
      00B7
 .XX20
      00B8
-.XX14
+.LSNUM
      00B9
+.LSNUM2
+     00BA
 .RAT
      00BA
 .RAT2
@@ -12257,7 +12259,7 @@ Saving file '3-assembled-output/ELTF.bin'
      4C68   91 74      STA (&74),Y
 .LL82
      4C6A   60         RTS
-.LLX30
+.LSPUT
      4C6B   A4 B9      LDY &B9
      4C6D   C4 BA      CPY &BA
      4C6F   08         PHP
