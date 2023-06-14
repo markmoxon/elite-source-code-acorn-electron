@@ -672,10 +672,10 @@
                         \ This value is shown in the dashboard's RL indicator,
                         \ and determines the rate at which we are rolling
                         \
-                        \ The value ranges from from 1 to 255 with 128 as the
-                        \ centre point, so 1 means roll is decreasing at the
-                        \ maximum rate, 128 means roll is not changing, and
-                        \ 255 means roll is increasing at the maximum rate
+                        \ The value ranges from 1 to 255 with 128 as the centre
+                        \ point, so 1 means roll is decreasing at the maximum
+                        \ rate, 128 means roll is not changing, and 255 means
+                        \ roll is increasing at the maximum rate
                         \
                         \ This value is updated by "<" and ">" key presses. If
                         \ keyboard damping is enabled (which it is by default),
@@ -689,10 +689,10 @@
                         \ This value is shown in the dashboard's DC indicator,
                         \ and determines the rate at which we are pitching
                         \
-                        \ The value ranges from from 1 to 255 with 128 as the
-                        \ centre point, so 1 means pitch is decreasing at the
-                        \ maximum rate, 128 means pitch is not changing, and
-                        \ 255 means pitch is increasing at the maximum rate
+                        \ The value ranges from 1 to 255 with 128 as the centre
+                        \ point, so 1 means pitch is decreasing at the maximum
+                        \ rate, 128 means pitch is not changing, and 255 means
+                        \ pitch is increasing at the maximum rate
                         \
                         \ This value is updated by "S" and "X" key presses. If
                         \ keyboard damping is enabled (which it is by default),
@@ -2778,7 +2778,7 @@ ENDMACRO
 
 .LSO
 
- SKIP 86                \ Thhis is the ship line heap for the space station
+ SKIP 86                \ This is the ship line heap for the space station
                         \ (see NWSPS for details)
 
 .LSX2
@@ -2995,7 +2995,7 @@ ENDMACRO
  SKIP 2                 \ The distance from the current system to the selected
                         \ system in light years * 10, stored as a 16-bit number
                         \
-                        \ The distance will be 0 if the selected sysyem is the
+                        \ The distance will be 0 if the selected system is the
                         \ current system
                         \
                         \ The galaxy chart is 102.4 light years wide and 51.2
@@ -3340,7 +3340,7 @@ ENDMACRO
                         \ two instructions
 
  STA SFXDU,X            \ The duration just reached zero, so the sound on this
- STA SFXPR,X            \ channel has reached the end of its mimumum duration,
+ STA SFXPR,X            \ channel has reached the end of its minimum duration,
                         \ so we zero the channel's SFXDU duration and SFXPR
                         \ priority values so any new sounds that need to be made
                         \ will be made regardless of priority
@@ -3625,7 +3625,7 @@ ENDMACRO
 .MA24
 
  LDA KY12               \ If "-" is being pressed, keep going, otherwise jump
- BEQ MA76               \ jump down to MA76 to skip the following
+ BEQ MA76               \ down to MA76 to skip the following
 
  ASL BOMB               \ The "energy bomb" key is being pressed, so double
                         \ the value in BOMB. If we have an energy bomb fitted,
@@ -4194,7 +4194,7 @@ ENDMACRO
 \   * Continue looping through all the ships in the local bubble, and for each
 \     one:
 \
-\     * Remove scooped item after both successful and failed scoopings
+\     * Remove scooped item after both successful and failed scooping attempts
 \
 \     * Process collisions
 \
@@ -4253,7 +4253,7 @@ ENDMACRO
 
  JSR OOPS               \ The amount of damage is in A, so call OOPS to reduce
                         \ our shields, and if the shields are gone, there's a
-                        \ a chance of cargo loss or even death
+                        \ chance of cargo loss or even death
 
  JSR EXNO3              \ Make the sound of colliding with the other ship and
                         \ fall through into MA26 to try targeting a missile
@@ -4806,10 +4806,10 @@ ENDMACRO
 
  LDA LASCT              \ If LASCT >= 8, jump to MA16 to skip the following, so
  CMP #8                 \ for a pulse laser with a LASCT between 8 and 10, the
- BCS MA16               \ the laser stays on, but for a LASCT of 7 or less it
-                        \ gets turned off and stays off until LASCT reaches zero
-                        \ and the next pulse can start (if the fire button is
-                        \ still being pressed)
+ BCS MA16               \ laser stays on, but for a LASCT of 7 or less it gets
+                        \ turned off and stays off until LASCT reaches zero and
+                        \ the next pulse can start (if the fire button is still
+                        \ being pressed)
                         \
                         \ For pulse lasers, LASCT gets set to 10 in ma1 above,
                         \ and it decrements by 4 on every iteration of the main
@@ -4842,7 +4842,7 @@ ENDMACRO
 
 .MA69
 
- LDA ECMA               \ If an E.C.M is going off (our's or an opponent's) then
+ LDA ECMA               \ If an E.C.M is going off (ours or an opponent's) then
  BEQ MA66               \ keep going, otherwise skip to MA66
 
  DEC ECMA               \ Decrement the E.C.M. countdown timer twice, and if it
@@ -6439,7 +6439,7 @@ ENDMACRO
 .MV40
 
  TXA                    \ If bit 0 of X is set, then this is 129, which is the
- LSR A                  \ placeholder used to denote the there is no space
+ LSR A                  \ placeholder used to denote that there is no space
  BCS MV40-1             \ station, so return from the subroutine (as MV40-1
                         \ contains an RTS)
 
@@ -7031,7 +7031,7 @@ ENDIF
 
 .LL30
 
- SKIP 0                 \ LL30 is a synomym for LOIN
+ SKIP 0                 \ LL30 is a synonym for LOIN
                         \
                         \ In the cassette and disc versions of Elite, LL30 and
                         \ LOIN are synonyms for the same routine, presumably
@@ -7297,7 +7297,7 @@ ENDIF
                         \ line that goes right and up or left and down joins a
                         \ line with any of the other three types of slope
                         \
-                        \ This bug was fixed in the advanced versions of ELite,
+                        \ This bug was fixed in the advanced versions of Elite,
                         \ where the BNE is replaced by a BEQ to bring it in line
                         \ with the other three slopes
 
@@ -9385,8 +9385,8 @@ ENDIF
  LDX FRIN+2,Y           \ The ship slots at FRIN are ordered with the first two
                         \ slots reserved for the planet and space station, and
                         \ then any ships, so if the slot at FRIN+2+Y is not
-                        \ empty (i.e is non-zero), then that means the number of
-                        \ non-asteroids in the vicinity is at least 1
+                        \ empty (i.e. is non-zero), then that means the number
+                        \ of non-asteroids in the vicinity is at least 1
 
  BEQ st6                \ So if X = 0, there are no ships in the vicinity, so
                         \ jump to st6 to print "Green" for our ship's condition
@@ -9509,7 +9509,7 @@ ENDIF
  LDA BST                \ If we don't have fuel scoops fitted, skip the
  BEQ P%+7               \ following two instructions
 
- LDA #111               \ We do have a fuel scoops fitted, so print recursive
+ LDA #111               \ We do have fuel scoops fitted, so print recursive
  JSR plf2               \ token 111 ("FUEL SCOOPS"), followed by a newline and
                         \ an indent of 6 characters
 
@@ -10386,7 +10386,7 @@ ENDIF
                         \ contents, then it's reversible (so reprinting the
                         \ same character in the same place will revert the
                         \ screen to what it looked like before we printed
-                        \ anything); this means that printing a white pixel on
+                        \ anything); this means that printing a white pixel
                         \ onto a white background results in a black pixel, but
                         \ that's a small price to pay for easily erasable text
 
@@ -11082,7 +11082,7 @@ ENDIF
                         \ This is the entry point for missile tactics and is
                         \ called from the main TACTICS routine below
 
- LDA ECMA               \ If an E.C.M. is currently active (either our's or an
+ LDA ECMA               \ If an E.C.M. is currently active (either ours or an
  BNE TA35               \ opponent's), jump to TA35 to destroy this missile
 
  LDA INWK+32            \ Fetch the AI flag from byte #32 and if bit 6 is set
@@ -11466,7 +11466,7 @@ ENDIF
  BCS TA3                \ with higher numbers of missiles, jump to TA3 to skip
                         \ firing a missile
 
- LDA ECMA               \ If an E.C.M. is currently active (either our's or an
+ LDA ECMA               \ If an E.C.M. is currently active (either ours or an
  BNE TA3                \ opponent's), jump to TA3 to skip firing a missile
 
  DEC INWK+31            \ We're done with the checks, so it's time to fire off a
@@ -11565,7 +11565,7 @@ ENDIF
 
  DEC INWK+28            \ Halve the attacking ship's acceleration in byte #28
 
- LDA ECMA               \ If an E.C.M. is currently active (either our's or an
+ LDA ECMA               \ If an E.C.M. is currently active (either ours or an
  BNE TA10               \ opponent's), return from the subroutine without making
                         \ the laser-strike sound (as TA10 contains an RTS)
 
@@ -12948,7 +12948,7 @@ ENDIF
 \       Name: MU5
 \       Type: Subroutine
 \   Category: Maths (Arithmetic)
-\    Summary: Set K(3 2 1 0) = (A A A A) and clear the C flGag
+\    Summary: Set K(3 2 1 0) = (A A A A) and clear the C flag
 \
 \ ------------------------------------------------------------------------------
 \
@@ -14039,7 +14039,7 @@ ENDIF
 
  ORA T                  \ If argument A was negative (and therefore S was also
                         \ negative) then make sure result A is negative by
-                        \ OR-ing the result with the sign bit from argument A
+                        \ OR'ing the result with the sign bit from argument A
                         \ (which we stored in T)
 
  RTS                    \ Return from the subroutine
@@ -14066,9 +14066,8 @@ ENDIF
 
                         \ At this point we have |A P| - |S R| in (A X), so we
                         \ need to check whether the subtraction above was the
-                        \ the right way round (i.e. that we subtracted the
-                        \ smaller absolute value from the larger absolute
-                        \ value)
+                        \ right way round (i.e. that we subtracted the smaller
+                        \ absolute value from the larger absolute value)
 
  BCS MU9                \ If |A| >= |S|, our subtraction was the right way
                         \ round, so jump to MU9 to set the sign
@@ -14089,7 +14088,7 @@ ENDIF
                         \ the correct addition)
 
  LDA #0                 \ Set A = 0 - A, which we can do this time using a
- SBC U                  \ a subtraction with the C flag clear
+ SBC U                  \ subtraction with the C flag clear
 
  ORA #%10000000         \ We now set the sign bit of A, so that the EOR on the
                         \ next line will give the result the opposite sign to
@@ -14980,7 +14979,7 @@ ENDIF
  CLC                    \ and cargo canisters in the vicinity
  ADC MANY+ESC
  CLC                    \ The second CLC instruction has no effect, as there is
- ADC MANY+OIL           \ is no way that adding the number of asteroids and the
+ ADC MANY+OIL           \ no way that adding the number of asteroids and the
  TAX                    \ number escape pods will cause a carry
 
  LDA FRIN+2,X           \ If the slot at FRIN+2+X is non-zero, then we have
@@ -14990,7 +14989,7 @@ ENDIF
 
  ORA SSPR               \ If there is a space station nearby, then SSPR will
                         \ be non-zero, so OR'ing with SSPR will produce a
-                        \ a non-zero result if either A or SSPR are non-zero
+                        \ non-zero result if either A or SSPR are non-zero
 
  BNE WA1                \ A is non-zero if we have either a ship or a space
                         \ station in the vicinity, in which case jump to WA1 to
@@ -17456,7 +17455,7 @@ ENDIF
                         \ returning the number entered in A and R
 
  BCS TQ4                \ If gnum set the C flag, the number entered is greater
-                        \ then the quantity available, so jump up to TQ4 to
+                        \ than the quantity available, so jump up to TQ4 to
                         \ display a "Quantity?" error, beep, clear the number
                         \ and try again
 
@@ -18662,7 +18661,8 @@ ENDIF
 \       Name: hy6
 \       Type: Subroutine
 \   Category: Flight
-\    Summary: Print a message to say no hyperspacing inside the station
+\    Summary: Print a message to say there is no hyperspacing allowed inside the
+\             station
 \
 \ ------------------------------------------------------------------------------
 \
@@ -18789,7 +18789,7 @@ ENDIF
 .wW
 
  LDA #15                \ The hyperspace countdown starts from 15, so set A to
-                        \ to 15 so we can set the two hyperspace counters
+                        \ 15 so we can set the two hyperspace counters
 
  STA QQ22+1             \ Set the number in QQ22+1 to 15, which is the number
                         \ that's shown on-screen during the hyperspace countdown
@@ -20668,7 +20668,7 @@ ENDIF
 
 .cpl
 
- LDX #5                 \ First we need to backup the seeds in QQ15, so set up
+ LDX #5                 \ First we need to back up the seeds in QQ15, so set up
                         \ a counter in X to cover three 16-bit seeds (i.e.
                         \ 6 bytes)
 
@@ -20679,7 +20679,7 @@ ENDIF
 
  DEX                    \ Decrement the loop counter
 
- BPL TT53               \ Loop back for the next byte to backup
+ BPL TT53               \ Loop back for the next byte to back up
 
  LDY #3                 \ Step 1: Now that the seeds are backed up, we can
                         \ start the name-generation process. We will either
@@ -21145,7 +21145,7 @@ ENDIF
                         \ character's case
 
  ADC #32                \ Add 32 to the character, to convert it from upper to
-                        \ to lower case
+                        \ lower case
 
 .TT44
 
@@ -21164,7 +21164,7 @@ ENDIF
 \
 \   * If QQ17 bit 6 is set, print lower case (via TT45)
 \
-\   * If QQ17 bit 6 clear, then:
+\   * If QQ17 bit 6 is clear, then:
 \
 \       * If character is punctuation, just print it
 \
@@ -22650,7 +22650,7 @@ ENDIF
  INC SC+1               \ the high byte of SC(1 0), as this means we just moved
                         \ into the right half of the screen row
 
- LDA TWOS,X             \ Refetch the mode 4 1-pixel byte from before, as we
+ LDA TWOS,X             \ Re-fetch the mode 4 1-pixel byte from before, as we
                         \ just overwrote A
 
 .CP1
@@ -24978,7 +24978,7 @@ ENDIF
 \ sound will take over; if, however, the new sound is of a lower priority, it
 \ gets discarded and doesn't get made.
 \
-\ This system works alongside the miniumum duration value; after the minimum
+\ This system works alongside the minimum duration value; after the minimum
 \ duration, the priority system is ignored, so once a high priority sound has
 \ sounded for its minimum duration, then even if that high priority sound is
 \ still being made, a lower priority sound can come along and take precedence.
@@ -25091,7 +25091,7 @@ ENDIF
  STA FSH,X              \ Set the X-th byte of FSH to &FF to charge up that
                         \ shield/bank
 
- DEX                    \ Decrement the lopp counter
+ DEX                    \ Decrement the loop counter
 
  BPL REL5               \ Loop back to REL5 until we have recharged both shields
                         \ and the energy bank
@@ -25445,7 +25445,7 @@ ENDIF
 .MTT4
 
  LSR A                  \ Clear bit 7 of our random number in A and set the C
-                        \ flag to bit 0 of A, which os random
+                        \ flag to bit 0 of A, which is random
 
  STA INWK+32            \ Store this in the ship's AI flag, so this ship does
                         \ not have AI
@@ -25454,7 +25454,7 @@ ENDIF
                         \ clockwise roll (as bit 7 is clear), and a 1 in 127
                         \ chance of it having no damping
 
- ROL INWK+31            \ Set bit 0 of the ship's missile count ramdomly (as the
+ ROL INWK+31            \ Set bit 0 of the ship's missile count randomly (as the
                         \ C flag was set), giving the ship either no missiles or
                         \ one missile
 
@@ -27063,7 +27063,7 @@ ENDIF
 \ Arguments:
 \
 \   Y                   The offset from (X SC) where we start zeroing, counting
-\                       up to to &FF
+\                       up to &FF
 \
 \   SC                  The low byte (i.e. the offset into the page) of the
 \                       starting point of the zero-fill
@@ -32753,7 +32753,7 @@ ENDMACRO
                         \ otherwise it is 0
 
  LDA XX15+1             \ If one or both of x1_hi and y1_hi are non-zero, jump
- ORA XX15+3             \ jump to LL83
+ ORA XX15+3             \ to LL83
  BNE LL83
 
  LDA #Y*2-1             \ If y1_lo > the y-coordinate of the bottom of screen
@@ -33251,7 +33251,7 @@ ENDMACRO
 \
 \ See the deep dive on "Ship blueprints" for details of how vertices are stored
 \ in the ship blueprints, and the deep dive on "Drawing ships" for information
-\ on how vertices are used to draw 3D wiremesh ships.
+\ on how vertices are used to draw 3D wireframe ships.
 \
 \ Arguments:
 \
@@ -33321,7 +33321,7 @@ ENDMACRO
 \
 \ See the deep dive on "Ship blueprints" for details of how edges are stored
 \ in the ship blueprints, and the deep dive on "Drawing ships" for information
-\ on how edges are used to draw 3D wiremesh ships.
+\ on how edges are used to draw 3D wireframe ships.
 \
 \ Arguments:
 \
@@ -33361,7 +33361,7 @@ ENDMACRO
 \
 \ See the deep dive on "Ship blueprints" for details of how faces are stored
 \ in the ship blueprints, and the deep dive on "Drawing ships" for information
-\ on how faces are used to draw 3D wiremesh ships.
+\ on how faces are used to draw 3D wireframe ships.
 \
 \ Arguments:
 \

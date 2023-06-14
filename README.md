@@ -125,7 +125,7 @@ The flicker-free Electron version also includes a number of extra features, all 
 
 * The escape capsule animation from the BBC Micro has been added, which is not present in the original Electron version
 
-* There are now three sizes of stardust (like the BBC Micro) rather then two, with the addition of one-pixel stardust
+* There are now three sizes of stardust (like the BBC Micro) rather than two, with the addition of one-pixel stardust
 
 * Planets are more high-fidelity, so the planet's circle looks more like the BBC Micro, and less like a 50p; this does slow things down a little, but overall the faster algorithm for flicker-free planets compensates for this
 

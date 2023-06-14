@@ -534,8 +534,8 @@ ENDIF
 \
 \ The following macro is used to define the four sound envelopes used in the
 \ game. It uses OSWORD 8 to create an envelope using the 14 parameters in the
-\ the I%-th block of 14 bytes at location E%. This OSWORD call is the same as
-\ BBC BASIC's ENVELOPE command.
+\ I%-th block of 14 bytes at location E%. This OSWORD call is the same as BBC
+\ BASIC's ENVELOPE command.
 \
 \ See variable E% for more details of the envelopes themselves.
 \
@@ -1773,7 +1773,7 @@ ENDMACRO
 \ ------------------------------------------------------------------------------
 \
 \ In the unprotected version of the loader on this site, this routine just moves
-\ data frommone location to another. In the protected version, it also decrypts
+\ data from one location to another. In the protected version, it also decrypts
 \ the data as it is moved, but that part is disabled in the following.
 \
 \ Arguments:
@@ -1883,7 +1883,7 @@ ENDMACRO
  LDY #HI(MESS1)
 
  JSR OSCLI              \ Call OSCLI to run the OS command in MESS1, which loads
-                        \ the maon game code at location &2000
+                        \ the main game code at location &2000
 
  LDA #3                 \ Directly update &0258, the memory location associated
  STA &0258              \ with OSBYTE 200, so this is the same as calling OSBYTE
