@@ -17484,7 +17484,7 @@ ENDIF
                         \ price / 4, which was returned in QQ24 by the call
                         \ to TT151 above and store it in Q
 
- JSR GCASH              \ Call GCASH to calculate
+ JSR GCASH              \ Call GCASH to calculate:
                         \
                         \   (Y X) = P * Q * 4
                         \
@@ -25195,7 +25195,7 @@ ENDIF
 \
 \       Name: ZINF
 \       Type: Subroutine
-\   Category: Utility routines
+\   Category: Universe
 \    Summary: Reset the INWK workspace and orientation vectors
 \  Deep dive: Orientation vectors
 \
