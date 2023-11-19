@@ -10759,7 +10759,6 @@ ENDIF
 \   A                   The value to be shown on the indicator (so the larger
 \                       the value, the longer the bar)
 \
-\
 \   SC(1 0)             The screen address of the first character block in the
 \                       indicator
 \
@@ -22597,7 +22596,6 @@ ENDIF
 \   Y1                  The screen pixel y-coordinate of the bottom-left corner
 \                       of the dot
 \
-\
 \ ******************************************************************************
 
 .CPIX4
@@ -22627,7 +22625,6 @@ ENDIF
 \   X1                  The screen pixel x-coordinate of the dash
 \
 \   Y1                  The screen pixel y-coordinate of the dash
-\
 \
 \ ******************************************************************************
 
@@ -27840,7 +27837,6 @@ ENDIF
 \ We have killed a ship, so increase the kill tally, displaying an iconic
 \ message of encouragement if the kill total is a multiple of 256, and then
 \ make a nearby explosion sound.
-\
 \
 \ ******************************************************************************
 
