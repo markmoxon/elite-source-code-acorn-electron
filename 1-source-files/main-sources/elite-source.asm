@@ -10764,6 +10764,9 @@ ENDIF
 \
 \ Other entry points:
 \
+\   DILX+2              The range of the indicator is 0-64 (for the fuel
+\                       indicator)
+\
 \   DIL-1               The range of the indicator is 0-32 (for the speed
 \                       indicator)
 \
