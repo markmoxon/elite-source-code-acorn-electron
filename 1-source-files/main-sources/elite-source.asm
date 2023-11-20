@@ -15854,6 +15854,10 @@ ENDIF
 \
 \   Y                   Y is set to 0
 \
+\ Other entry points:
+\
+\   SC5                 Contains an RTS
+\
 \ ******************************************************************************
 
 .CLYNS
@@ -15897,6 +15901,7 @@ ENDIF
 \ Arguments:
 \
 \   X                   The page of screen memory from which to start clearing
+\
 \ ******************************************************************************
 
 .LYN
@@ -31535,6 +31540,9 @@ ENDMACRO
 \
 \   LL70+1              Contains an RTS (as the first byte of an LDA
 \                       instruction)
+\
+\   LL66                A re-entry point into the ship-drawing routine, used by
+\                       the LL62 routine to store 128 - (U R) on the XX3 heap
 \
 \ ******************************************************************************
 
