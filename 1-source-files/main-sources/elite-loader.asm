@@ -1985,8 +1985,8 @@ ENDMACRO
  STA IRQ1V+1
 
  LDA #%11111100         \ Clear all interrupts (bits 4-7) and de-select the
- JSR VIA05              \ BASIC ROM (bit 3) by setting the interrupt clear and
-                        \ paging register at SHEILA &05
+ JSR VIA05              \ BASIC ROM (bits 0-3) by setting the interrupt clear
+                        \ and paging register at SHEILA &05
 
  LDA #%00001000         \ Select ROM 8 (the keyboard) by setting the interrupt
  JSR VIA05              \ clear and paging register at SHEILA &05
