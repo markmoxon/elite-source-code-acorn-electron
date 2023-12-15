@@ -534,8 +534,8 @@ ENDIF
 \
 \ The following macro is used to define the four sound envelopes used in the
 \ game. It uses OSWORD 8 to create an envelope using the 14 parameters in the
-\ the I%-th block of 14 bytes at location E%. This OSWORD call is the same as
-\ BBC BASIC's ENVELOPE command.
+\ I%-th block of 14 bytes at location E%. This OSWORD call is the same as BBC
+\ BASIC's ENVELOPE command.
 \
 \ See variable E% for more details of the envelopes themselves.
 \
@@ -566,6 +566,11 @@ ENDMACRO
 \ picture of the protection that's missing, see the source code for the BBC
 \ Micro cassette version, which contains almost exactly the same protection code
 \ as the original Electron version.
+\
+\ Other entry points:
+\
+\   Ian1                Re-entry point following the wild goose chase
+\                       obfuscation
 \
 \ ******************************************************************************
 
@@ -1031,10 +1036,10 @@ ENDMACRO
 
 \ ******************************************************************************
 \
-\       Name: PLL1
+\       Name: PLL1 (Part 1 of 3)
 \       Type: Subroutine
 \   Category: Drawing planets
-\    Summary: Draw Saturn on the loading screen
+\    Summary: Draw Saturn on the loading screen (draw the planet)
 \  Deep dive: Drawing Saturn on the loading screen
 \
 \ ******************************************************************************
@@ -1163,6 +1168,16 @@ ENDMACRO
                         \ no effect (though the crackers presumably thought they
                         \ might as well still set the value just in case)
 
+\ ******************************************************************************
+\
+\       Name: PLL1 (Part 2 of 3)
+\       Type: Subroutine
+\   Category: Drawing planets
+\    Summary: Draw Saturn on the loading screen (draw the stars)
+\  Deep dive: Drawing Saturn on the loading screen
+\
+\ ******************************************************************************
+
                         \ The following loop iterates CNT2(1 0) times, i.e. &1DD
                         \ or 477 times, and draws the background stars on the
                         \ loading screen
@@ -1224,6 +1239,16 @@ ENDMACRO
  STX BLPTR              \ no effect (though the crackers presumably thought they
  LDX #&C6               \ might as well still set the values just in case)
  STX BLN
+
+\ ******************************************************************************
+\
+\       Name: PLL1 (Part 3 of 3)
+\       Type: Subroutine
+\   Category: Drawing planets
+\    Summary: Draw Saturn on the loading screen (draw the rings)
+\  Deep dive: Drawing Saturn on the loading screen
+\
+\ ******************************************************************************
 
                         \ The following loop iterates CNT3(1 0) times, i.e. &500
                         \ or 1280 times, and draws the rings around the loading
@@ -1309,8 +1334,8 @@ ENDMACRO
  CMP #16                \ If A >= 16, skip to PL1 to plot the pixel
  BCS PL1
 
- LDA ZP                 \ If ZP is positive (i.e. r5 < 128), jump down to PLC3 to
- BPL PLC3               \ skip to the next pixel
+ LDA ZP                 \ If ZP is positive (i.e. r5 < 128), jump down to PLC3
+ BPL PLC3               \ to skip to the next pixel
 
 .PL1
 
@@ -1343,8 +1368,8 @@ ENDMACRO
                         \   r6 = random number from 0 to 255
                         \   r7 = r5, squashed into -32 to 31
                         \
-                        \   x = r5 + r7
-                        \   y = r5
+                        \   x = r6 + r7
+                        \   y = r6
                         \
                         \   32 <= ((r6 + r7)^2 + r5^2 + r6^2) / 256 < 80
                         \
@@ -1369,7 +1394,7 @@ ENDMACRO
 \
 \       Name: DORND
 \       Type: Subroutine
-\   Category: Utility routines
+\   Category: Maths (Arithmetic)
 \    Summary: Generate random numbers
 \  Deep dive: Generating random numbers
 \             Fixing ship positions
@@ -1753,7 +1778,7 @@ ENDMACRO
 \ ------------------------------------------------------------------------------
 \
 \ In the unprotected version of the loader on this site, this routine just moves
-\ data frommone location to another. In the protected version, it also decrypts
+\ data from one location to another. In the protected version, it also decrypts
 \ the data as it is moved, but that part is disabled in the following.
 \
 \ Arguments:
@@ -1863,7 +1888,7 @@ ENDMACRO
  LDY #HI(MESS1)
 
  JSR OSCLI              \ Call OSCLI to run the OS command in MESS1, which loads
-                        \ the maon game code at location &2000
+                        \ the main game code at location &2000
 
  LDA #3                 \ Directly update &0258, the memory location associated
  STA &0258              \ with OSBYTE 200, so this is the same as calling OSBYTE
@@ -1960,8 +1985,8 @@ ENDMACRO
  STA IRQ1V+1
 
  LDA #%11111100         \ Clear all interrupts (bits 4-7) and de-select the
- JSR VIA05              \ BASIC ROM (bit 3) by setting the interrupt clear and
-                        \ paging register at SHEILA &05
+ JSR VIA05              \ BASIC ROM (bits 0-3) by setting the interrupt clear
+                        \ and paging register at SHEILA &05
 
  LDA #%00001000         \ Select ROM 8 (the keyboard) by setting the interrupt
  JSR VIA05              \ clear and paging register at SHEILA &05

@@ -1,14 +1,14 @@
 # Fully documented source code for Elite on the Acorn Electron
 
-[BBC Micro (cassette)](https://github.com/markmoxon/cassette-elite-beebasm) | [BBC Micro (disc)](https://github.com/markmoxon/disc-elite-beebasm) | [6502 Second Processor](https://github.com/markmoxon/6502sp-elite-beebasm) | [BBC Master](https://github.com/markmoxon/master-elite-beebasm) | **Acorn Electron** | [Elite-A](https://github.com/markmoxon/elite-a-beebasm)
+[BBC Micro (cassette)](https://github.com/markmoxon/cassette-elite-beebasm) | [BBC Micro (disc)](https://github.com/markmoxon/disc-elite-beebasm) | [6502 Second Processor](https://github.com/markmoxon/6502sp-elite-beebasm) | [BBC Master](https://github.com/markmoxon/master-elite-beebasm) | **Acorn Electron** | [Elite-A](https://github.com/markmoxon/elite-a-beebasm) | [NES](https://github.com/markmoxon/nes-elite-beebasm)
 
 ![Screenshot of Elite on the Acorn Electron](https://www.bbcelite.com/images/github/Elite-Electron.png)
 
-This repository contains source code for Elite on the Acorn Electron, with every single line documented and (for the most part) explained.
+This repository contains source code for Elite on the Acorn Electron, with every single line documented and (for the most part) explained. It has been reconstructed by hand from a disassembly of the original game binaries.
 
 It is a companion to the [bbcelite.com website](https://www.bbcelite.com).
 
-See the [introduction](#introduction) for more information.
+See the [introduction](#introduction) for more information, or jump straight into the [documented source code](1-source-files/main-sources).
 
 ## Contents
 
@@ -125,7 +125,7 @@ The flicker-free Electron version also includes a number of extra features, all 
 
 * The escape capsule animation from the BBC Micro has been added, which is not present in the original Electron version
 
-* There are now three sizes of stardust (like the BBC Micro) rather then two, with the addition of one-pixel stardust
+* There are now three sizes of stardust (like the BBC Micro) rather than two, with the addition of one-pixel stardust
 
 * Planets are more high-fidelity, so the planet's circle looks more like the BBC Micro, and less like a 50p; this does slow things down a little, but overall the faster algorithm for flicker-free planets compensates for this
 
@@ -229,7 +229,7 @@ The Python script `crc32.py` in the `2-build-files` folder does the actual verif
 The binaries in the `4-reference-binaries` folder are those extracted from the released version of the game, while those in the `3-assembled-output` folder are produced by the build process. For example, if you don't make any changes to the code and build the project with `make encrypt verify`, then this is the output of the verification process:
 
 ```
-Results for variant: sth
+Results for variant: egg
 [--originals--]  [---output----]
 Checksum   Size  Checksum   Size  Match  Filename
 -----------------------------------------------------------
