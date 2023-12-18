@@ -27,9 +27,9 @@ See the [introduction](#introduction) for more information, or jump straight int
 * [Building Elite from the source](#building-elite-from-the-source)
 
   * [Requirements](#requirements)
-  * [Build targets](#build-targets)
   * [Windows](#windows)
   * [Mac and Linux](#mac-and-linux)
+  * [Build options](#build-options)
   * [Verifying the output](#verifying-the-output)
   * [Log files](#log-files)
 
@@ -137,6 +137,8 @@ For more information on flicker-free Elite, see the [hacks section of the accomp
 
 ## Building Elite from the source
 
+Builds are supported for both Windows and Mac/Linux systems. In all cases the build process is defined in the `Makefile` provided.
+
 ### Requirements
 
 You will need the following to build Elite from the source:
@@ -151,31 +153,14 @@ For details of how the build process works, see the [build documentation on bbce
 
 Let's look at how to build Elite from the source.
 
-### Build targets
-
-There are two main build targets available. They are:
-
-* `build` - An unencrypted version
-* `encrypt` - An encrypted version that includes the same obfuscation as the released version of the game
-
-The unencrypted version should be more useful for anyone who wants to make modifications to the game code. It includes a default commander with lots of cash and equipment, which makes it easier to test the game. As this target produces unencrypted files, the binaries produced will be quite different to the binaries on the original source disc, which are encrypted.
-
-The encrypted version contains an obfuscated version of the game binary, along with the standard default commander.
-
-Builds are supported for both Windows and Mac/Linux systems. In all cases the build process is defined in the `Makefile` provided.
-
 ### Windows
 
-For Windows users, there is a batch file called `make.bat` to which you can pass one of the build targets above. Before this will work, you should edit the batch file and change the values of the `BEEBASM` and `PYTHON` variables to point to the locations of your `beebasm.exe` and `python.exe` executables. You also need to change directory to the repository folder (i.e. the same folder as `make.bat`).
+For Windows users, there is a batch file called `make.bat` which you can use to build the game. Before this will work, you should edit the batch file and change the values of the `BEEBASM` and `PYTHON` variables to point to the locations of your `beebasm.exe` and `python.exe` executables. You also need to change directory to the repository folder (i.e. the same folder as `make.bat`).
 
-All being well, doing one of the following:
-
-```
-make.bat build
-```
+All being well, entering the following into a command window:
 
 ```
-make.bat encrypt
+make.bat
 ```
 
 will produce a file called `elite-electron-egg.ssd` in the `5-compiled-game-discs` folder that contains the Every Game Going variant, which you can then load into an emulator, or into a real Electron using a device like a Gotek.
@@ -184,49 +169,37 @@ will produce a file called `elite-electron-egg.ssd` in the `5-compiled-game-disc
 
 The build process uses a standard GNU `Makefile`, so you just need to install `make` if your system doesn't already have it. If BeebAsm or Python are not on your path, then you can either fix this, or you can edit the `Makefile` and change the `BEEBASM` and `PYTHON` variables in the first two lines to point to their locations. You also need to change directory to the repository folder (i.e. the same folder as `Makefile`).
 
-All being well, doing one of the following:
+All being well, entering the following into a terminal window:
 
 ```
-make build
-```
-
-```
-make encrypt
+make
 ```
 
 will produce a file called `elite-electron-egg.ssd` in the `5-compiled-game-discs` folder that contains the Every Game Going variant, which you can then load into an emulator, or into a real Electron using a device like a Gotek.
 
+### Build options
+
+By default the build process will create a typical Elite game disc with a standard commander and verified binaries. There are various arguments you can pass to the build to change how it works. They are:
+
+* `commander=max` - Start with a maxed-out commander
+
+* `verify=no` - Disable crc32 verification of the game binaries
+
+So, for example:
+
+`make commander=max verify=no`
+
+will build the Every Game Going variant with a maxed-out commander and no crc32 verification.
+
+See below for more on the verification process.
+
 ### Verifying the output
 
-The build process also supports a verification target that prints out checksums of all the generated files, along with the checksums of the files from the original sources.
-
-You can run this verification step on its own, or you can run it once a build has finished. To run it on its own, use the following command on Windows:
-
-```
-make.bat verify
-```
-
-or on Mac/Linux:
-
-```
-make verify
-```
-
-To run a build and then verify the results, you can add two targets, like this on Windows:
-
-```
-make.bat encrypt verify
-```
-
-or this on Mac/Linux:
-
-```
-make encrypt verify
-```
+The default build process prints out checksums of all the generated files, along with the checksums of the files from the original sources. You can disable verification by passing `verify=no` to the build.
 
 The Python script `crc32.py` in the `2-build-files` folder does the actual verification, and shows the checksums and file sizes of both sets of files, alongside each other, and with a Match column that flags any discrepancies. If you are building an unencrypted set of files then there will be lots of differences, while the encrypted files should mostly match (see the Differences section below for more on this).
 
-The binaries in the `4-reference-binaries` folder are those extracted from the released version of the game, while those in the `3-assembled-output` folder are produced by the build process. For example, if you don't make any changes to the code and build the project with `make encrypt verify`, then this is the output of the verification process:
+The binaries in the `4-reference-binaries` folder are those extracted from the released version of the game, while those in the `3-assembled-output` folder are produced by the build process. For example, if you don't make any changes to the code and build the project with `make`, then this is the output of the verification process:
 
 ```
 Results for variant: egg

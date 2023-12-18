@@ -1,46 +1,52 @@
 BEEBASM?=beebasm
 PYTHON?=python
 
-# You can set the variant that gets built by adding 'variant=<rel>' to
-# the make command, where <rel> is one of:
+# A make command with no arguments will build the Every Game Going variant
+# with the standard commander and crc32 verification of the game binaries
 #
-#   sth
+# Optional arguments for the make command are:
+#
+#   commander=max       Start with a maxed-out commander
+#
+#   verify=no           Disable crc32 verification of the game binaries
 #
 # So, for example:
 #
-#   make encrypt verify variant=egg
+#   make commander=max verify=no
 #
-# will build the variant from the Every Game Going archive. If you omit
-# the variant parameter, it will build the Every Game Going variant.
+# will build the Every Game Going variant with a maxed-out commander and
+# no crc32 verification
 
-variant-electron=1
-folder-electron=/egg
-suffix-electron=-egg
+ifeq ($(commander), max)
+  max-commander=TRUE
+else
+  max-commander=FALSE
+endif
 
-.PHONY:build
-build:
+ifeq ($(encrypt), no)
+  unencrypt=-u
+  remove-checksums=TRUE
+else
+  unencrypt=
+  remove-checksums=FALSE
+endif
+
+variant-number=1
+folder=/egg
+suffix=-egg
+
+.PHONY:all
+all:
 	echo _VERSION=5 > 1-source-files/main-sources/elite-build-options.asm
-	echo _VARIANT=$(variant-electron) >> 1-source-files/main-sources/elite-build-options.asm
-	echo _REMOVE_CHECKSUMS=TRUE >> 1-source-files/main-sources/elite-build-options.asm
+	echo _VARIANT=$(variant-number) >> 1-source-files/main-sources/elite-build-options.asm
+	echo _REMOVE_CHECKSUMS=$(remove-checksums) >> 1-source-files/main-sources/elite-build-options.asm
+	echo _MAX_COMMANDER=$(max-commander) >> 1-source-files/main-sources/elite-build-options.asm
 	$(BEEBASM) -i 1-source-files/main-sources/elite-source.asm -v > 3-assembled-output/compile.txt
 	$(BEEBASM) -i 1-source-files/main-sources/elite-bcfs.asm -v >> 3-assembled-output/compile.txt
 	$(BEEBASM) -i 1-source-files/main-sources/elite-loader.asm -v >> 3-assembled-output/compile.txt
 	$(BEEBASM) -i 1-source-files/main-sources/elite-readme.asm -v >> 3-assembled-output/compile.txt
-	$(PYTHON) 2-build-files/elite-checksum.py -u -rel$(variant-electron)
-	$(BEEBASM) -i 1-source-files/main-sources/elite-disc.asm -do 5-compiled-game-discs/elite-electron$(suffix-electron).ssd -opt 3 -title "E L I T E"
-
-.PHONY:encrypt
-encrypt:
-	echo _VERSION=5 > 1-source-files/main-sources/elite-build-options.asm
-	echo _VARIANT=$(variant-electron) >> 1-source-files/main-sources/elite-build-options.asm
-	echo _REMOVE_CHECKSUMS=FALSE >> 1-source-files/main-sources/elite-build-options.asm
-	$(BEEBASM) -i 1-source-files/main-sources/elite-source.asm -v > 3-assembled-output/compile.txt
-	$(BEEBASM) -i 1-source-files/main-sources/elite-bcfs.asm -v >> 3-assembled-output/compile.txt
-	$(BEEBASM) -i 1-source-files/main-sources/elite-loader.asm -v >> 3-assembled-output/compile.txt
-	$(BEEBASM) -i 1-source-files/main-sources/elite-readme.asm -v >> 3-assembled-output/compile.txt
-	$(PYTHON) 2-build-files/elite-checksum.py -rel$(variant-electron)
-	$(BEEBASM) -i 1-source-files/main-sources/elite-disc.asm -do 5-compiled-game-discs/elite-electron$(suffix-electron).ssd -opt 3 -title "E L I T E"
-
-.PHONY:verify
-verify:
-	@$(PYTHON) 2-build-files/crc32.py 4-reference-binaries$(folder-electron) 3-assembled-output
+	$(PYTHON) 2-build-files/elite-checksum.py $(unencrypt) -rel$(variant-number)
+	$(BEEBASM) -i 1-source-files/main-sources/elite-disc.asm -do 5-compiled-game-discs/elite-electron$(suffix).ssd -opt 3 -title "E L I T E"
+ifneq ($(verify), no)
+	@$(PYTHON) 2-build-files/crc32.py 4-reference-binaries$(folder) 3-assembled-output
+endif
