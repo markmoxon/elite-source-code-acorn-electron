@@ -230,7 +230,7 @@
 \
 \       Name: B%
 \       Type: Variable
-\   Category: Screen mode
+\   Category: Drawing the screen
 \    Summary: VDU commands for changing to a standard mode 4 screen
 \
 \ ------------------------------------------------------------------------------
