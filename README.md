@@ -181,7 +181,7 @@ will produce a file called `elite-electron-egg.ssd` in the `5-compiled-game-disc
 
 By default the build process will create a typical Elite game disc with a standard commander and verified binaries. There are various arguments you can pass to the build to change how it works. They are:
 
-* `commander=max` - Start with a maxed-out commander
+* `commander=max` - Start with a maxed-out commander (specifically, this is the test commander file from the original source, which is almost but not quite maxed-out)
 
 * `verify=no` - Disable crc32 verification of the game binaries
 
