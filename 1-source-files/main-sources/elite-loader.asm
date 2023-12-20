@@ -567,6 +567,8 @@ ENDMACRO
 \ Micro cassette version, which contains almost exactly the same protection code
 \ as the original Electron version.
 \
+\ ------------------------------------------------------------------------------
+\
 \ Other entry points:
 \
 \   Ian1                Re-entry point following the wild goose chase
@@ -1512,11 +1514,15 @@ ENDMACRO
 \
 \ See the PIXEL routine in the main game code for more details.
 \
+\ ------------------------------------------------------------------------------
+\
 \ Arguments:
 \
 \   X                   The screen x-coordinate of the pixel to draw
 \
 \   A                   The screen y-coordinate of the pixel to draw, negated
+\
+\ ------------------------------------------------------------------------------
 \
 \ Other entry points:
 \
@@ -1780,6 +1786,8 @@ ENDMACRO
 \ In the unprotected version of the loader on this site, this routine just moves
 \ data from one location to another. In the protected version, it also decrypts
 \ the data as it is moved, but that part is disabled in the following.
+\
+\ ------------------------------------------------------------------------------
 \
 \ Arguments:
 \
