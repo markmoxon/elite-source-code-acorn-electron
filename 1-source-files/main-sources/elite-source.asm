@@ -27835,8 +27835,6 @@ ENDIF
 \
 \ ------------------------------------------------------------------------------
 \
-\ ------------------------------------------------------------------------------
-\
 \ Other entry points:
 \
 \   SPS1+1              A BRK instruction
@@ -32556,8 +32554,6 @@ ENDMACRO
 \
 \ This part adds all the visible edges to the ship line heap, so we can draw
 \ them in part 12.
-\
-\ ------------------------------------------------------------------------------
 \
 \ Other entry points:
 \
