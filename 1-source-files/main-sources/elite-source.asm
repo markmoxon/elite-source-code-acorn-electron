@@ -54,11 +54,17 @@
  NTY = 11               \ The number of different ship types
 
  COPS = 2               \ Ship type for a Viper
+
  CYL = 6                \ Ship type for a Cobra Mk III (trader)
+
  SST = 7                \ Ship type for the space station
+
  MSL = 8                \ Ship type for a missile
+
  AST = 9                \ Ship type for an asteroid
+
  OIL = 10               \ Ship type for a cargo canister
+
  ESC = 11               \ Ship type for an escape pod
 
  POW = 15               \ Pulse laser power
@@ -67,17 +73,27 @@
                         \ stored in INWK and K%)
 
  X = 128                \ The centre x-coordinate of the 256 x 192 space view
+
  Y = 96                 \ The centre y-coordinate of the 256 x 192 space view
 
  func1 = &B0            \ Internal key number for FUNC-1 (Launch, Front)
+
  func2 = &B1            \ Internal key number for FUNC-2 (Buy Cargo, Rear)
+
  func3 = &91            \ Internal key number for FUNC-3 (Sell Cargo, Left)
+
  func4 = &92            \ Internal key number for FUNC-4 (Equip Ship, Right)
+
  func5 = &93            \ Internal key number for FUNC-5 (Long-range Chart)
+
  func6 = &B4            \ Internal key number for FUNC-6 (Short-range Chart)
+
  func7 = &A4            \ Internal key number for FUNC-7 (Data on System)
+
  func8 = &95            \ Internal key number for FUNC-8 (Market Price)
+
  func9 = &A6            \ Internal key number for FUNC-9 (Status Mode)
+
  func0 = &A7            \ Internal key number for FUNC-0 (Inventory)
 
  RE = &23               \ The obfuscation byte used to hide the recursive tokens
@@ -88,8 +104,11 @@
                         \ known as SHEILA)
 
  OSFILE = &FFDD         \ The address for the OSFILE routine
+
  OSRDCH = &FFE0         \ The address for the OSRDCH routine
+
  OSWORD = &FFF1         \ The address for the OSWORD routine
+
  OSBYTE = &FFF4         \ The address for the OSBYTE routine
 
 \ ******************************************************************************
