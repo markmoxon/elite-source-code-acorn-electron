@@ -12,7 +12,7 @@
 \ in the documentation are entirely my fault
 \
 \ The terminology and notations used in this commentary are explained at
-\ https://www.bbcelite.com/about_site/terminology_used_in_this_commentary.html
+\ https://www.bbcelite.com/terminology
 \
 \ The deep dive articles referred to in this commentary can be found at
 \ https://www.bbcelite.com/deep_dives
@@ -43,6 +43,14 @@
 \
 \ ******************************************************************************
 
+ CODE% = &0D00          \ The address where the code will be run
+
+ LOAD% = &2000          \ The address where the code will be loaded
+
+ CODE_WORDS% = &0400    \ The address where the text data will be run
+
+ LOAD_WORDS% = &4400    \ The address where the text data will be loaded
+
  Q% = _MAX_COMMANDER    \ Set Q% to TRUE to max out the default commander, FALSE
                         \ for the standard default commander
 
@@ -54,11 +62,17 @@
  NTY = 11               \ The number of different ship types
 
  COPS = 2               \ Ship type for a Viper
+
  CYL = 6                \ Ship type for a Cobra Mk III (trader)
+
  SST = 7                \ Ship type for the space station
+
  MSL = 8                \ Ship type for a missile
+
  AST = 9                \ Ship type for an asteroid
+
  OIL = 10               \ Ship type for a cargo canister
+
  ESC = 11               \ Ship type for an escape pod
 
  POW = 15               \ Pulse laser power
@@ -67,17 +81,27 @@
                         \ stored in INWK and K%)
 
  X = 128                \ The centre x-coordinate of the 256 x 192 space view
+
  Y = 96                 \ The centre y-coordinate of the 256 x 192 space view
 
  func1 = &B0            \ Internal key number for FUNC-1 (Launch, Front)
+
  func2 = &B1            \ Internal key number for FUNC-2 (Buy Cargo, Rear)
+
  func3 = &91            \ Internal key number for FUNC-3 (Sell Cargo, Left)
+
  func4 = &92            \ Internal key number for FUNC-4 (Equip Ship, Right)
+
  func5 = &93            \ Internal key number for FUNC-5 (Long-range Chart)
+
  func6 = &B4            \ Internal key number for FUNC-6 (Short-range Chart)
+
  func7 = &A4            \ Internal key number for FUNC-7 (Data on System)
+
  func8 = &95            \ Internal key number for FUNC-8 (Market Price)
+
  func9 = &A6            \ Internal key number for FUNC-9 (Status Mode)
+
  func0 = &A7            \ Internal key number for FUNC-0 (Inventory)
 
  RE = &23               \ The obfuscation byte used to hide the recursive tokens
@@ -88,8 +112,11 @@
                         \ known as SHEILA)
 
  OSFILE = &FFDD         \ The address for the OSFILE routine
+
  OSRDCH = &FFE0         \ The address for the OSRDCH routine
+
  OSWORD = &FFF1         \ The address for the OSWORD routine
+
  OSBYTE = &FFF4         \ The address for the OSBYTE routine
 
 \ ******************************************************************************
@@ -1221,9 +1248,6 @@
 \ part of elite-loader.asm, so it ends up at &0400 to &07FF.
 \
 \ ******************************************************************************
-
- CODE_WORDS% = &0400
- LOAD_WORDS% = &4400
 
  ORG CODE_WORDS%
 
@@ -3090,9 +3114,6 @@ ENDMACRO
 \
 \ ******************************************************************************
 
- CODE% = &0D00
- LOAD% = &2000
-
  ORG CODE%
 
  LOAD_A% = LOAD%
@@ -4881,10 +4902,26 @@ ENDMACRO
                         \ fair distance from the planet, so jump to MA23 as we
                         \ haven't crashed into the planet
 
- SBC #36                \ Subtract 36 from x_hi^2 + y_hi^2 + z_hi^2. The radius
-                        \ of the planet is defined as 6 units and 6^2 = 36, so
-                        \ A now contains the high byte of our altitude above
-                        \ the planet surface, squared
+ SBC #36                \ Subtract 36 from x_hi^2 + y_hi^2 + z_hi^2
+                        \
+                        \ When we do the 3D Pythagoras calculation, we only use
+                        \ the high bytes of the coordinates, so that's x_hi,
+                        \ y_hi and z_hi and
+                        \
+                        \ The planet radius is (0 96 0), as defined in the
+                        \ PLANET routine, so the high byte is 96
+                        \
+                        \ When we square the coordinates above and add them,
+                        \ the result gets divided by 256 (otherwise the result
+                        \ wouldn't fit into one byte), so if we do the same for
+                        \ the planet's radius, we get:
+                        \
+                        \   96 * 96 / 256 = 36
+                        \
+                        \ So for the planet, the equivalent figure to test the
+                        \ sum of the _hi bytes against is 36, so A now contains
+                        \ the high byte of our altitude above the planet
+                        \ surface, squared
 
  BCC MA28               \ If A < 0 then jump to MA28 as we have crashed into
                         \ the planet
@@ -6870,6 +6907,7 @@ ENDMACRO
 \ ******************************************************************************
 
  CODE_B% = P%
+
  LOAD_B% = LOAD% + P% - CODE%
 
 \ ******************************************************************************
@@ -11601,6 +11639,7 @@ ENDIF
 \ ******************************************************************************
 
  CODE_C% = P%
+
  LOAD_C% = LOAD% +P% - CODE%
 
 \ ******************************************************************************
@@ -16939,6 +16978,7 @@ ENDIF
 \ ******************************************************************************
 
  CODE_D% = P%
+
  LOAD_D% = LOAD% + P% - CODE%
 
 \ ******************************************************************************
@@ -21409,6 +21449,7 @@ ENDIF
 \ ******************************************************************************
 
  CODE_E% = P%
+
  LOAD_E% = LOAD% + P% - CODE%
 
 \ ******************************************************************************
@@ -24405,15 +24446,15 @@ ENDIF
 \
 \       Name: PROJ
 \       Type: Subroutine
-\   Category: Drawing ships
-\    Summary: Project the current ship onto the screen
+\   Category: Maths (Geometry)
+\    Summary: Project the current ship or planet onto the screen
 \  Deep dive: Extended screen coordinates
 \
 \ ------------------------------------------------------------------------------
 \
-\ Project the current ship's location onto the screen, either returning the
-\ screen coordinates of the projection (if it's on-screen), or returning an
-\ error via the C flag.
+\ Project the current ship's location or the planet onto the screen, either
+\ returning the screen coordinates of the projection (if it's on-screen), or
+\ returning an error via the C flag.
 \
 \ In this context, "on-screen" means that the point is projected into the
 \ following range:
@@ -25409,6 +25450,7 @@ ENDIF
 \ ******************************************************************************
 
  CODE_F% = P%
+
  LOAD_F% = LOAD% + P% - CODE%
 
 \ ******************************************************************************
@@ -30450,6 +30492,7 @@ ENDMACRO
 \ ******************************************************************************
 
  CODE_G% = P%
+
  LOAD_G% = LOAD% + P% - CODE%
 
 \ ******************************************************************************
@@ -34702,6 +34745,7 @@ ENDMACRO
 \ ******************************************************************************
 
  CODE_SHIPS% = P%
+
  LOAD_SHIPS% = LOAD% + P% - CODE%
 
 \ ******************************************************************************
