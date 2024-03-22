@@ -3,8 +3,8 @@
 Acornsoft Elite (flicker-free version)
 
 Version: Acorn Electron
-Variant: Stairway to Hell archive
-Product: Acornsoft SLG38 (TBC)
+Variant: Ian Bell's Superior UEF
+Product: Superior Software (TBC)
 
 Contains the flicker-free ship drawing
 routines from the BBC Master version,
@@ -15,6 +15,6 @@
 
 See www.bbcelite.com for details
 
-Build: 2024-03-20 10:01:31
+Build: 2024-03-22 15:10:33
 ---------------------------------------
 

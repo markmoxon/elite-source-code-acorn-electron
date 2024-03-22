@@ -1,10 +1,16 @@
 BEEBASM?=beebasm
 PYTHON?=python
 
-# A make command with no arguments will build the Every Game Going variant
-# with the standard commander and crc32 verification of the game binaries
+# A make command with no arguments will build the Ian Bell Superior Software
+# variant with the standard commander and crc32 verification of the game
+# binaries
 #
 # Optional arguments for the make command are:
+#
+#   variant=<release>   Build the specified variant:
+#
+#                         ib-superior (default)
+#                         ib-acornsoft
 #
 #   commander=max       Start with a maxed-out commander
 #
@@ -12,9 +18,9 @@ PYTHON?=python
 #
 # So, for example:
 #
-#   make commander=max verify=no
+#   make variant=ib-acornsoft commander=max verify=no
 #
-# will build the Every Game Going variant with a maxed-out commander and
+# will build the Ian Bell Acornsoft variant with a maxed-out commander and
 # no crc32 verification
 
 ifeq ($(commander), max)
@@ -31,9 +37,15 @@ else
   remove-checksums=FALSE
 endif
 
-variant-number=1
-folder=/egg
-suffix=-flicker-free-egg
+ifeq ($(variant), ib-acornsoft)
+  variant-number=2
+  folder=/ib-acornsoft
+  suffix=-flicker-free-ib-acornsoft
+else
+  variant-number=1
+  folder=/ib-superior
+  suffix=-flicker-free-ib-superior
+endif
 
 .PHONY:all
 all:

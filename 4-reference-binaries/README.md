@@ -2,7 +2,9 @@
 
 This folder contains the binaries from the game disc for the Electron version of Elite.
 
-* [egg](egg) contains the binaries from the Every Game Going version
+* [ib-acornsoft](ib-acornsoft) contains the binaries from the Acornsoft version on Ian Bell's website
+
+* [ib-superior](ib-superior) contains the binaries from the Superior Software version on Ian Bell's website
 
 ---
 

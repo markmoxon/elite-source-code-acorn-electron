@@ -27,6 +27,9 @@
 
  INCLUDE "1-source-files/main-sources/elite-build-options.asm"
 
+ _IB_SUPERIOR           = (_VARIANT = 1)
+ _IB_ACORNSOFT          = (_VARIANT = 2)
+
  GUARD &5800            \ Guard against assembling over screen memory
 
 \ ******************************************************************************

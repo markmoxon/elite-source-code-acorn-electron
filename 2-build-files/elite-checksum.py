@@ -21,11 +21,16 @@ from __future__ import print_function
 import sys
 
 argv = sys.argv
-argc = len(argv)
 Encrypt = True
+release = 1
 
-if argc > 1 and argv[1] == "-u":
-    Encrypt = False
+for arg in argv[1:]:
+    if arg == "-u":
+        Encrypt = False
+    if arg == "-rel1":
+        release = 1
+    if arg == "-rel2":
+        release = 2
 
 print("Electron Elite Checksum")
 print("Encryption = ", Encrypt)
@@ -70,6 +75,11 @@ if Encrypt:
 
 checksum0_offset = len(data_block)
 data_block.append(0)
+
+# Skip another byte for the unused byte after checksum0 for IB Disc variant
+
+if release == 2:
+    data_block.append(0)
 
 # Append SHIPS file
 

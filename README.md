@@ -33,11 +33,17 @@ See the [introduction](#introduction) for more information, or jump straight int
   * [Verifying the output](#verifying-the-output)
   * [Log files](#log-files)
 
+* [Building different variants of the Electron version of Elite](#building-different-variants-of-the-electron-version-of-elite)
+
+  * [Building the Ian Bell Superior Software variant](#building-the-ian-bell-superior-software-variant)
+  * [Building the Ian Bell Acornsoft variant](#building-the-ian-bell-acornsoft-variant)
+  * [Differences between the variants](#differences-between-the-variants)
+
 ## Introduction
 
 This repository contains source code for Elite on the Acorn Electron, with every single line documented and (for the most part) explained.
 
-You can build the fully functioning game from this source. One variant is currently supported: the Every Game Going variant.
+You can build the fully functioning game from this source. [Two variants](#building-different-variants-of-the-electron-version-of-elite) are currently supported: the Superior Software version from Ian Bell's personal website, and the original Acornsoft version from the same site (which has the galactic hyperspace bug).
 
 It is a companion to the [bbcelite.com website](https://www.bbcelite.com), which contains all the code from this repository, but laid out in a much more human-friendly fashion. The links at the top of this page will take you to repositories for the other versions of Elite that are covered by this project.
 
@@ -59,9 +65,10 @@ The commentary is copyright &copy; Mark Moxon. Any misunderstandings or mistakes
 
 Huge thanks are due to the original authors for not only creating such an important piece of my childhood, but also for releasing the source code for us to play with; to Paul Brink for his annotated disassembly; and to Kieran Connell for his [BeebAsm version](https://github.com/kieranhj/elite-beebasm), which I forked as the original basis for this project. You can find more information about this project in the [accompanying website's project page](https://www.bbcelite.com/about_site/about_this_project.html).
 
-The following archive from Ian Bell's personal website forms the basis for this project:
+The following archives from Ian Bell's personal website forms the basis for this project:
 
-* [Elite, Electron version](http://www.elitehomepage.org/archive/a/a4090000.zip)
+* [Electron Elite, Acornsoft version](http://www.elitehomepage.org/archive/a/a4090000.zip)
+* [Electron Elite, Superior Software version](http://www.elitehomepage.org/archive/a/a4090010.zip)
 
 ### A note on licences, copyright etc.
 
@@ -163,7 +170,7 @@ All being well, entering the following into a command window:
 make.bat
 ```
 
-will produce a file called `elite-electron-egg.ssd` in the `5-compiled-game-discs` folder that contains the Every Game Going variant, which you can then load into an emulator, or into a real Electron using a device like a Gotek.
+will produce a file called `elite-electron-ib-superior.ssd` in the `5-compiled-game-discs` folder that contains the Ian Bell Superior Software variant, which you can then load into an emulator, or into a real Electron using a device like a Gotek.
 
 ### Mac and Linux
 
@@ -175,11 +182,16 @@ All being well, entering the following into a terminal window:
 make
 ```
 
-will produce a file called `elite-electron-egg.ssd` in the `5-compiled-game-discs` folder that contains the Every Game Going variant, which you can then load into an emulator, or into a real Electron using a device like a Gotek.
+will produce a file called `elite-electron-ib-superior.ssd` in the `5-compiled-game-discs` folder that contains the Ian Bell Superior Software variant, which you can then load into an emulator, or into a real Electron using a device like a Gotek.
 
 ### Build options
 
 By default the build process will create a typical Elite game disc with a standard commander and verified binaries. There are various arguments you can pass to the build to change how it works. They are:
+
+* `variant=<name>` - Build the specified variant:
+
+  * `variant=ib-superior` (default)
+  * `variant=ib-acornsoft`
 
 * `commander=max` - Start with a maxed-out commander (specifically, this is the test commander file from the original source, which is almost but not quite maxed-out)
 
@@ -187,9 +199,9 @@ By default the build process will create a typical Elite game disc with a standa
 
 So, for example:
 
-`make commander=max verify=no`
+`make variant=ib-acornsoft commander=max verify=no`
 
-will build the Every Game Going variant with a maxed-out commander and no crc32 verification.
+will build the Ian Bell Acornsoft variant with a maxed-out commander and no crc32 verification.
 
 See below for more on the verification process.
 
@@ -202,7 +214,7 @@ The Python script `crc32.py` in the `2-build-files` folder does the actual verif
 The binaries in the `4-reference-binaries` folder are those extracted from the released version of the game, while those in the `3-assembled-output` folder are produced by the build process. For example, if you don't make any changes to the code and build the project with `make`, then this is the output of the verification process:
 
 ```
-Results for variant: egg
+Results for variant: ib-superior
 [--originals--]  [---output----]
 Checksum   Size  Checksum   Size  Match  Filename
 -----------------------------------------------------------
@@ -220,11 +232,109 @@ f23f7ef2   2348  f23f7ef2   2348   Yes   SHIPS.bin
 a6ee7213   1024  a6ee7213   1024   Yes   WORDS9.bin
 ```
 
-All the compiled binaries match the originals, so we know we are producing the same final game as the Every Game Going variant.
+All the compiled binaries match the originals, so we know we are producing the same final game as the Ian Bell Superior Software variant.
 
 ### Log files
 
 During compilation, details of every step are output in a file called `compile.txt` in the `3-assembled-output` folder. If you have problems, it might come in handy, and it's a great reference if you need to know the addresses of labels and variables for debugging (or just snooping around).
+
+## Building different variants of the Electron version of Elite
+
+This repository contains the source code for two different variants of the Acorn Electron version of Elite:
+
+* The variant from the Superior Software UEF on Ian Bell's website
+
+* The variant from the Acornsoft UEF on Ian Bell's website
+
+By default the build process builds the Superior Software variant, but you can build a specified variant using the `variant=` build parameter.
+
+### Building the Ian Bell Superior Software variant
+
+You can add `variant=ib-superior` to produce the `elite-electron-ib-superior.ssd` file containing the Superior Software variant, though that's the default value so it isn't necessary. In other words, you can build it like this:
+
+```
+make.bat variant=ib-superior
+```
+
+or this on a Mac or Linux:
+
+```
+make variant=ib-superior
+```
+
+This will produce a file called `elite-electron-ib-superior.ssd` in the `5-compiled-game-discs` folder that contains the Ian Bell Superior Software variant.
+
+The verification checksums for this version are as follows:
+
+```
+Results for variant: ib-superior
+[--originals--]  [---output----]
+Checksum   Size  Checksum   Size  Match  Filename
+-----------------------------------------------------------
+171314b3  19200  171314b3  19200   Yes   ELITECO.bin
+a173fec7  19200  a173fec7  19200   Yes   ELITECO.unprot.bin
+97e920c8   4864  97e920c8   4864   Yes   ELITEDA.bin
+2e0a1a46   2205  2e0a1a46   2205   Yes   ELTA.bin
+7f230b24   2338  7f230b24   2338   Yes   ELTB.bin
+41e0d10e   2699  41e0d10e   2699   Yes   ELTC.bin
+7b227167   2786  7b227167   2786   Yes   ELTD.bin
+142b20dd   1812  142b20dd   1812   Yes   ELTE.bin
+440253b4   2671  440253b4   2671   Yes   ELTF.bin
+553b0078   2340  553b0078   2340   Yes   ELTG.bin
+f23f7ef2   2348  f23f7ef2   2348   Yes   SHIPS.bin
+a6ee7213   1024  a6ee7213   1024   Yes   WORDS9.bin
+```
+
+### Building the Ian Bell Acornsoft variant
+
+You can build the Ian Bell Acornsoft variant by appending `variant=ib-acornsoft` to the `make` command, like this on Windows:
+
+```
+make.bat variant=ib-acornsoft
+```
+
+or this on a Mac or Linux:
+
+```
+make variant=ib-acornsoft
+```
+
+This will produce a file called `elite-disc-ib-acornsoft.ssd` in the `5-compiled-game-discs` folder that contains the Ian Bell Acornsoft variant.
+
+The verification checksums for this version are as follows:
+
+```
+Results for variant: ib-acornsoft
+[--originals--]  [---output----]
+Checksum   Size  Checksum   Size  Match  Filename
+-----------------------------------------------------------
+be5d6b7c  19200  be5d6b7c  19200   Yes   ELITECO.bin
+e983beb3  19200  e983beb3  19200   Yes   ELITECO.unprot.bin
+97e920c8   4864  97e920c8   4864   Yes   ELITEDA.bin
+d27b7e45   2205  d27b7e45   2205   Yes   ELTA.bin
+30655bb7   2338  30655bb7   2338   Yes   ELTB.bin
+fdeca895   2699  fdeca895   2699   Yes   ELTC.bin
+f43fb8fd   2783  f43fb8fd   2783   Yes   ELTD.bin
+e08543b0   1814  e08543b0   1814   Yes   ELTE.bin
+1114d856   2671  1114d856   2671   Yes   ELTF.bin
+ea71aacd   2340  ea71aacd   2340   Yes   ELTG.bin
+f23f7ef2   2348  f23f7ef2   2348   Yes   SHIPS.bin
+a6ee7213   1024  a6ee7213   1024   Yes   WORDS9.bin
+```
+
+### Differences between the variants
+
+You can see the differences between the variants by searching the source code for `_IB_SUPERIOR` (for features in the Ian Bell Superior Software variant) or `_IB_ACORNSOFT` (for features in the Ian Bell Acornsoft variant). There are only a few differences:
+
+* The Acornsoft variant contains the galactic hyperspace bug from the first release of the game, which prevents the galactic hyperspace from working
+
+* Galactic hyperspace does not work in the Acornsoft variant, but if it did, it would drop you at a randomly generated point in the new galaxy, rather than the closest system to galactic coordinates (96, 96), which is how all the other versions work
+
+* If the galactic hyperspace worked in the Acornsoft variant, it would be triggered by CAPS-LOCK-H rather than CTRL-H
+
+* The Acornsoft variant contains the same "hyperspace while docking" as the original cassette and disc versions; the Superior Software variant contains part of the fix for this issue, but it isn't completely fixed
+
+See the [accompanying website](https://www.bbcelite.com/electron/releases.html) for a comprehensive list of differences between the variants.
 
 ---
 
