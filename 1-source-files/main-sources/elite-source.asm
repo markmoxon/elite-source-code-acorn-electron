@@ -35,6 +35,9 @@
 
  INCLUDE "1-source-files/main-sources/elite-build-options.asm"
 
+ _IB_SUPERIOR           = (_VARIANT = 1)
+ _IB_ACORNSOFT          = (_VARIANT = 2)
+
  GUARD &5800            \ Guard against assembling over screen memory
 
 \ ******************************************************************************
@@ -19080,14 +19083,33 @@ ENDIF
  LDA QQ22+1             \ Fetch QQ22+1, which contains the number that's shown
                         \ on-screen during hyperspace countdown
 
+IF _IB_SUPERIOR
+
  BNE zZ+1               \ If it is non-zero, return from the subroutine (as zZ+1
                         \ contains an RTS), as there is already a countdown in
                         \ progress
+
+ELIF _IB_ACORNSOFT
+
+ BNE Ghy-1              \ If it is non-zero, return from the subroutine (as
+                        \ Ghy-1 contains an RTS), as there is already a
+                        \ countdown in progress
+
+ENDIF
+
+IF _IB_SUPERIOR
 
  LDX #1                 \ Set X to the internal key number for CTRL
 
  JSR DKS4               \ Scan the keyboard to see if the key in X (i.e. CTRL)
                         \ is currently pressed
+
+ELIF _IB_ACORNSOFT
+
+ JSR CAPSL              \ Scan the keyboard to see if CAPS LOCK is currently
+                        \ pressed
+
+ENDIF
 
  BMI Ghy                \ If it is, then the galactic hyperdrive has been
                         \ activated, so jump to Ghy to process it
@@ -19095,10 +19117,21 @@ ENDIF
  JSR hm                 \ This is a chart view, so call hm to redraw the chart
                         \ crosshairs
 
+IF _IB_SUPERIOR
+
  LDA QQ8                \ If both bytes of the distance to the selected system
  ORA QQ8+1              \ in QQ8 are zero, return from the subroutine (as zZ+1
  BEQ zZ+1               \ contains an RTS), as the selected system is the
                         \ current system
+
+ELIF _IB_ACORNSOFT
+
+ LDA QQ8                \ If both bytes of the distance to the selected system
+ ORA QQ8+1              \ in QQ8 are zero, return from the subroutine (as Ghy-1
+ BEQ Ghy-1              \ contains an RTS), as the selected system is the
+                        \ current system
+
+ENDIF
 
  LDA #7                 \ Move the text cursor to column 7, row 23 (in the
  STA XC                 \ middle of the bottom text row)
@@ -19161,10 +19194,22 @@ ENDIF
                         \ to 5, so setting QQ22 to 15 here makes the first tick
                         \ of the hyperspace counter longer than subsequent ticks
 
+IF _IB_SUPERIOR
+
  TAX                    \ Print the 8-bit number in X (i.e. 15) at text location
  JMP ee3                \ (0, 1), padded to 5 digits, so it appears in the top
                         \ left corner of the screen, and return from the
                         \ subroutine using a tail call
+
+ELIF _IB_ACORNSOFT
+
+ TAX                    \ Print the 8-bit number in X (i.e. 15) at text location
+ JSR ee3                \ (0, 1), padded to 5 digits, so it appears in the top
+                        \ left corner of the screen
+
+ RTS                    \ Return from the subroutine
+
+ENDIF
 
 \ ******************************************************************************
 \
@@ -19198,16 +19243,35 @@ ENDIF
 \
 \   zZ+1                Contains an RTS
 \
+\   Ghy-1               Contains an RTS
+\
 \ ******************************************************************************
 
 .Ghy
+
+IF _IB_SUPERIOR
 
  LDX GHYP               \ Fetch GHYP, which tells us whether we own a galactic
  BEQ zZ+1               \ hyperdrive, and if it is zero, which means we don't,
                         \ return from the subroutine (as zZ+1 contains an RTS)
 
+ELIF _IB_ACORNSOFT
+
+ LDX GHYP               \ Fetch GHYP, which tells us whether we own a galactic
+ BEQ Ghy-1              \ hyperdrive, and if it is zero, which means we don't,
+                        \ return from the subroutine (as Ghy-1 contains an RTS)
+
+ENDIF
+
  INX                    \ We own a galactic hyperdrive, so X is &FF, so this
                         \ instruction sets X = 0
+
+IF _IB_ACORNSOFT
+
+ STX QQ8                \ Set the distance to the selected system in QQ8(1 0)
+ STX QQ8+1              \ to 0
+
+ENDIF
 
  STX GHYP               \ The galactic hyperdrive is a one-use item, so set GHYP
                         \ to 0 so we no longer have one fitted
@@ -19215,10 +19279,20 @@ ENDIF
  STX FIST               \ Changing galaxy also clears our criminal record, so
                         \ set our legal status in FIST to 0 ("clean")
 
+IF _IB_SUPERIOR
+
  JSR wW                 \ Call wW to start the hyperspace countdown
+
+ENDIF
 
  LDX #5                 \ To move galaxy, we rotate the galaxy's seeds left, so
                         \ set a counter in X for the 6 seed bytes
+
+IF _IB_ACORNSOFT
+
+ STX QQ22+1             \ Set the on-screen hyperspace countdown to 5
+
+ENDIF
 
  INC GCNT               \ Increment the current galaxy number in GCNT
 
@@ -19242,9 +19316,21 @@ ENDIF
 
 .zZ
 
+IF _IB_SUPERIOR
+
  LDA #96                \ Set (QQ9, QQ10) to (96, 96), which is where we always
  STA QQ9                \ arrive in a new galaxy (the selected system will be
  STA QQ10               \ set to the nearest actual system later on)
+
+ELIF _IB_ACORNSOFT
+
+ JSR DORND              \ Set A and X to random numbers
+
+ STA QQ9                \ Set (QQ9, QQ10) to a random point in the new galaxy
+ STX QQ10               \ (the selected system will be set to the nearest actual
+                        \ system later on)
+
+ENDIF
 
  JSR TT110              \ Call TT110 to show the front space view
 
@@ -19262,9 +19348,13 @@ ENDIF
                         \ This call sets the current system correctly, so we
                         \ always arrive at the nearest system to (96, 96)
 
+IF _IB_SUPERIOR
+
  LDX #0                 \ Set the distance to the selected system in QQ8(1 0)
  STX QQ8                \ to 0
  STX QQ8+1
+
+ENDIF
 
  LDA #116               \ Print recursive token 116 (GALACTIC HYPERSPACE ")
  JSR MESS               \ as an in-flight message
@@ -21034,13 +21124,31 @@ ENDIF
  EQUB 'e' EOR 164
  EQUB 'l' EOR 164
  EQUB 'l' EOR 164
+
+IF _IB_ACORNSOFT
+
+ EQUB '/' EOR 164
+
+ENDIF
+
  EQUB 'B' EOR 164
  EQUB 'r' EOR 164
  EQUB 'a' EOR 164
  EQUB 'b' EOR 164
  EQUB 'e' EOR 164
  EQUB 'n' EOR 164
+
+IF _IB_SUPERIOR
+
  EQUB ''' EOR 164
+
+ELIF _IB_ACORNSOFT
+
+ EQUB '1' EOR 164
+ EQUB '9' EOR 164
+
+ENDIF
+
  EQUB '8' EOR 164
  EQUB '4' EOR 164
 
@@ -33815,6 +33923,12 @@ ENDMACRO
  SKIP 1                 \ This value is checked against the calculated checksum
                         \ in part 5 of the loader in elite-loader.asm (or it
                         \ would be if this weren't an unprotected version)
+
+IF _IB_ACORNSOFT
+
+ SKIP 1                 \ This byte appears to be unused
+
+ENDIF
 
 \ ******************************************************************************
 \

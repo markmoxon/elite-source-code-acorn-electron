@@ -39,6 +39,9 @@
 
  INCLUDE "1-source-files/main-sources/elite-build-options.asm"
 
+ _IB_SUPERIOR           = (_VARIANT = 1)
+ _IB_ACORNSOFT          = (_VARIANT = 2)
+
  GUARD &5800            \ Guard against assembling over screen memory
 
 \ ******************************************************************************
@@ -101,6 +104,12 @@
 
  SKIP 1                 \ We skip this byte so we can insert the checksum later
                         \ in elite-checksum.py
+
+IF _IB_ACORNSOFT
+
+ SKIP 1                 \ This byte appears to be unused
+
+ENDIF
 
 .ships
 
