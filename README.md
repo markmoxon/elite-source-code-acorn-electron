@@ -55,6 +55,8 @@ It is a companion to the [bbcelite.com website](https://www.bbcelite.com), which
 
 Note that the disc images produced by this repository let you load the game from disc, but you can only save and load commander files to cassette. This is because the game in the disc images is still the cassette version of Electron Elite, it's just loading from disc, so it has to revert to cassette once it's loaded.
 
+Also, the build process for Electon Elite does not include the encryption from the original, so although the game code is identical, the binaries produced will not match the original cassettes, as the originals are encrypted.
+
 My hope is that this repository and the [accompanying website](https://www.bbcelite.com) will be useful for those who want to learn more about Elite and what makes it tick. It is provided on an educational and non-profit basis, with the aim of helping people appreciate one of the most iconic games of the 8-bit era.
 
 ## Acknowledgements
