@@ -40,10 +40,23 @@
  EQUB 10, 13
  EQUS "Version: Acorn Electron"
  EQUB 10, 13
- EQUS "Variant: Stairway to Hell archive"
+
+IF _IB_ACORNSOFT
+
+ EQUS "Variant: Ian Bell's Acornsoft UEF"
  EQUB 10, 13
  EQUS "Product: Acornsoft SLG38 (TBC)"
  EQUB 10, 13
+
+ELIF _IB_SUPERIOR
+
+ EQUS "Variant: Ian Bell's Superior UEF"
+ EQUB 10, 13
+ EQUS "Product: Superior Software (TBC)"
+ EQUB 10, 13
+
+ENDIF
+
  EQUB 10, 13
  EQUS "See www.bbcelite.com for details"
  EQUB 10, 13

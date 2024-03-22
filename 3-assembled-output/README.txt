@@ -3,8 +3,8 @@
 Acornsoft Elite
 
 Version: Acorn Electron
-Variant: Stairway to Hell archive
-Product: Acornsoft SLG38 (TBC)
+Variant: Ian Bell's Superior UEF
+Product: Superior Software (TBC)
 
 See www.bbcelite.com for details
 ---------------------------------------

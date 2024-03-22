@@ -16781,17 +16781,17 @@ Saving file '3-assembled-output/ELITEDA.bin'
      0055   0A
      0056   0D
      0057   56 61 72 ...
-     0078   0A
-     0079   0D
-     007A   50 72 6F ...
-     0098   0A
-     0099   0D
-     009A   0A
-     009B   0D
-     009C   53 65 65 ...
-     00BC   0A
-     00BD   0D
-     00BE   2D 2D 2D ...
-     00E5   0A
-     00E6   0D
+     0077   0A
+     0078   0D
+     0079   50 72 6F ...
+     0099   0A
+     009A   0D
+     009B   0A
+     009C   0D
+     009D   53 65 65 ...
+     00BD   0A
+     00BE   0D
+     00BF   2D 2D 2D ...
+     00E6   0A
+     00E7   0D
 Saving file '3-assembled-output/README.txt'
