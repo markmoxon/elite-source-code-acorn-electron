@@ -53,6 +53,8 @@ It is a companion to the [bbcelite.com website](https://www.bbcelite.com), which
 
 * If you want to build Elite from the source on a modern computer, to produce a working game disc that can be loaded into an Electron or an emulator, then you want the section on [Building Elite from the source](#building-elite-from-the-source).
 
+Note that the disc images produced by this repository let you load the game from disc, but you can only save and load commander files to cassette. This is because the game in the disc images is still the cassette version of Electron Elite, it's just loading from disc, so it has to revert to cassette once it's loaded.
+
 My hope is that this repository and the [accompanying website](https://www.bbcelite.com) will be useful for those who want to learn more about Elite and what makes it tick. It is provided on an educational and non-profit basis, with the aim of helping people appreciate one of the most iconic games of the 8-bit era.
 
 ## Acknowledgements
