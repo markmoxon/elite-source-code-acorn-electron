@@ -32,6 +32,7 @@ See the [introduction](#introduction) for more information, or jump straight int
   * [Build options](#build-options)
   * [Verifying the output](#verifying-the-output)
   * [Log files](#log-files)
+  * [Building a UEF tape image](#building-a-uef-tape-image)
 
 * [Building different variants of the Electron version of Elite](#building-different-variants-of-the-electron-version-of-elite)
 
@@ -241,6 +242,14 @@ All the compiled binaries match the originals, so we know we are producing the s
 ### Log files
 
 During compilation, details of every step are output in a file called `compile.txt` in the `3-assembled-output` folder. If you have problems, it might come in handy, and it's a great reference if you need to know the addresses of labels and variables for debugging (or just snooping around).
+
+### Building a UEF tape image
+
+Despite this being the cassette version of Acorn Electron Elite, this repository only builds disc images, as that's how BeebAsm works. If you want the authentic experience of loading Elite from cassette, then you can manually build a UEF tape image of the binaries yourself, using a program like [Disc Image Manager](https://github.com/geraldholdsworth/DiscImageManager).
+
+Once you have built the project, it will produce an SSD disc image file that contains binaries that are suitable for loading from cassette. You can extract the binaries from this image and add them to a UEF, in the following order: `ELITE`, `ELITEDA`, `ELITECO`.
+
+You should now be able to load Elite from your UEF on a an Acorn Electron, by entering `CHAIN "ELITE"`.
 
 ## Building different variants of the Electron version of Elite
 
