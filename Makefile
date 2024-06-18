@@ -22,6 +22,22 @@ PYTHON?=python
 #
 # will build the Ian Bell Acornsoft variant with a maxed-out commander and
 # no crc32 verification
+#
+# The following variables are written into elite-build-options.asm depending on
+# the above arguments, so they can be passed to BeebAsm:
+#
+# _VERSION
+#   5 = Acorn Electron
+#
+# _VARIANT
+#   1 = Ian Bell's Superior Software UEF (default)
+#   2 = Ian Bell's Acornsoft UEF
+#
+# _MAX_COMMANDER
+#   TRUE  = Maxed-out commander
+#   FALSE = Standard commander
+#
+# The verify argument is passed to the crc32.py script, rather than BeebAsm
 
 ifeq ($(commander), max)
   max-commander=TRUE
