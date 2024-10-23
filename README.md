@@ -24,7 +24,7 @@ See the [introduction](#introduction) for more information, or jump straight int
 
 * [Flicker-free Elite](#flicker-free-elite)
 
-* [Building Elite from the source](#building-elite-from-the-source)
+* [Building Acorn Electron Elite from the source](#building-electron-elite-from-the-source)
 
   * [Requirements](#requirements)
   * [Windows](#windows)
@@ -50,9 +50,9 @@ It is a companion to the [elite.bbcelite.com website](https://elite.bbcelite.com
 
 * If you want to browse the source and read about how Elite works under the hood, you will probably find [the website](https://elite.bbcelite.com) is a better place to start than this repository.
 
-* If you would rather explore the source code in your favourite IDE, then the [annotated source](1-source-files/main-sources/elite-source.asm) is what you're looking for. It contains the exact same content as the website, so you won't be missing out (the website is generated from the source files, so they are guaranteed to be identical). You might also like to read the section on [Browsing the source in an IDE](#browsing-the-source-in-an-ide) for some tips.
+* If you would rather explore the source code in your favourite IDE, then the [annotated source](1-source-files/main-sources/elite-source.asm) is what you're looking for. It contains the exact same content as the website, so you won't be missing out (the website is generated from the source files, so they are guaranteed to be identical). You might also like to read the section on [browsing the source in an IDE](#browsing-the-source-in-an-ide) for some tips.
 
-* If you want to build Elite from the source on a modern computer, to produce a working game disc that can be loaded into an Electron or an emulator, then you want the section on [Building Elite from the source](#building-elite-from-the-source).
+* If you want to build Acorn Electron Elite from the source on a modern computer, to produce a working game disc that can be loaded into an Electron or an emulator, then you want the section on [building Acorn Electron Elite from the source](#building-acorn-electron-elite-from-the-source).
 
 Note that the disc images produced by this repository let you load the game from disc, but you can only save and load commander files to cassette. This is because the game in the disc images is still the cassette version of Electron Elite, it's just loading from disc, so it has to revert to cassette once it's loaded.
 
@@ -72,8 +72,8 @@ Huge thanks are due to the original authors for not only creating such an import
 
 The following archives from Ian Bell's personal website forms the basis for this project:
 
-* [Electron Elite, Acornsoft version](http://www.elitehomepage.org/archive/a/a4090000.zip)
-* [Electron Elite, Superior Software version](http://www.elitehomepage.org/archive/a/a4090010.zip)
+* [Acorn Electron Elite, Acornsoft version](http://www.elitehomepage.org/archive/a/a4090000.zip)
+* [Acorn Electron Elite, Superior Software version](http://www.elitehomepage.org/archive/a/a4090010.zip)
 
 ### A note on licences, copyright etc.
 
@@ -147,23 +147,23 @@ The annotated source files in the `flicker-free` branch contain both the origina
 
 For more information on flicker-free Elite, see the [hacks section of the accompanying website](https://elite.bbcelite.com/hacks/flicker-free_elite.html).
 
-## Building Elite from the source
+## Building Acorn Electron Elite from the source
 
 Builds are supported for both Windows and Mac/Linux systems. In all cases the build process is defined in the `Makefile` provided.
 
 ### Requirements
 
-You will need the following to build Elite from the source:
+You will need the following to build Acorn Electron Elite from the source:
 
 * BeebAsm, which can be downloaded from the [BeebAsm repository](https://github.com/stardot/beebasm). Mac and Linux users will have to build their own executable with `make code`, while Windows users can just download the `beebasm.exe` file.
 
-* Python. The build process has only been tested on 3.x, but 2.7 should work.
+* Python. The build process has only been tested on 3.x, but 2.7 might work.
 
 * Mac and Linux users may need to install `make` if it isn't already present (for Windows users, `make.exe` is included in this repository).
 
 For details of how the build process works, see the [build documentation on bbcelite.com](https://elite.bbcelite.com/about_site/building_elite.html).
 
-Let's look at how to build Elite from the source.
+Let's look at how to build Acorn Electron Elite from the source.
 
 ### Windows
 
