@@ -198,6 +198,8 @@ By default the build process will create a typical Elite game disc with a standa
   * `variant=ib-superior` (default)
   * `variant=ib-acornsoft`
 
+* `disc=no` - Build a version to load from cassette rather than disc (the default is to build a version that loads from disc)
+
 * `commander=max` - Start with a maxed-out commander (specifically, this is the test commander file from the original source, which is almost but not quite maxed-out)
 
 * `verify=no` - Disable crc32 verification of the game binaries
@@ -247,7 +249,7 @@ During compilation, details of every step are output in a file called `compile.t
 
 Despite this being the cassette version of Acorn Electron Elite, this repository only builds disc images, as that's how BeebAsm works. If you want the authentic experience of loading Elite from cassette, then you can manually build a UEF tape image of the binaries yourself, using a program like [Disc Image Manager](https://github.com/geraldholdsworth/DiscImageManager).
 
-To do this, you should add the `disc=no` argument to the build. This ensures that the binaries are build to load at the correct address for tape systems, as otherwise the tape loading message will corrupt the game binary as it loads into screen memory.
+To do this, you should add the `disc=no` argument to the build. This ensures that the binaries are built to load at the correct address for tape systems, as otherwise the tape loading message will corrupt the game binary as it loads into screen memory.
 
 Once you have built the project, it will produce an SSD disc image file that contains binaries that are suitable for loading from cassette. You can extract the binaries from this image and add them to a UEF, as follows:
 
