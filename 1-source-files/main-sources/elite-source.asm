@@ -48,7 +48,15 @@
 
  CODE% = &0D00          \ The address where the code will be run
 
+IF _DISC
+
  LOAD% = &2000          \ The address where the code will be loaded
+
+ELSE
+
+ LOAD% = &0E00          \ The address where the code will be loaded
+
+ENDIF
 
  CODE_WORDS% = &0400    \ The address where the text data will be run
 

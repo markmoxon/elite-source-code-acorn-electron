@@ -53,7 +53,15 @@
  CODE% = &0D00          \ CODE% is set to the location that the main game code
                         \ gets moved to after it is loaded
 
+IF _DISC
+
  LOAD% = &2000          \ The load address of the main game code file
+
+ELSE
+
+ LOAD% = &0E00          \ The load address of the main game code file
+
+ENDIF
 
 \ ******************************************************************************
 \

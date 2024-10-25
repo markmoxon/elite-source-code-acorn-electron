@@ -247,9 +247,17 @@ During compilation, details of every step are output in a file called `compile.t
 
 Despite this being the cassette version of Acorn Electron Elite, this repository only builds disc images, as that's how BeebAsm works. If you want the authentic experience of loading Elite from cassette, then you can manually build a UEF tape image of the binaries yourself, using a program like [Disc Image Manager](https://github.com/geraldholdsworth/DiscImageManager).
 
-Once you have built the project, it will produce an SSD disc image file that contains binaries that are suitable for loading from cassette. You can extract the binaries from this image and add them to a UEF, in the following order: `ELITE`, `ELITEDA`, `ELITECO`.
+To do this, you should add the `disc=no` argument to the build. This ensures that the binaries are build to load at the correct address for tape systems, as otherwise the tape loading message will corrupt the game binary as it loads into screen memory.
 
-You should now be able to load Elite from your UEF on a an Acorn Electron, by entering `CHAIN "ELITE"`.
+Once you have built the project, it will produce an SSD disc image file that contains binaries that are suitable for loading from cassette. You can extract the binaries from this image and add them to a UEF, as follows:
+
+* Add the binaries in the following order: `ELITE`, `ELITEda`, `ELITEco`.
+
+* Rename `ELITEda` to `ELITEdata`.
+
+* Rename `ELITEco` to `ELITEcode`.
+
+You should now be able to load Elite from your UEF on an Acorn Electron, by entering `CHAIN "ELITE"`.
 
 ## Building different variants of the Electron version of Elite
 
