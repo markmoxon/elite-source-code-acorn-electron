@@ -19,9 +19,11 @@
 \
 \ ------------------------------------------------------------------------------
 \
-\ This source file produces the following SSD disc image:
+\ This source file produces one of the following SSD disc images, depending on
+\ which release is being built:
 \
-\   * elite-electron-sth.ssd
+\   * elite-electron-ib-superior.ssd
+\   * elite-electron-ib-acornsoft.ssd
 \
 \ This can be loaded into an emulator or a real Electron.
 \
