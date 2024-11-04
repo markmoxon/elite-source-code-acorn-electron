@@ -20190,8 +20190,8 @@ ENDIF
 \ Launch the ship (if we are docked), or show the front space view (if we are
 \ already in space).
 \
-\ Called when FUNC-1 is pressed while docked (launch), after we arrive in a
-\ new galaxy, or after a hyperspace if the current view is a space view.
+\ Called when FUNC-1 is pressed while docked (launch), after we arrive in a new
+\ galaxy, or after a hyperspace if the current view is a space view.
 \
 \ ******************************************************************************
 
