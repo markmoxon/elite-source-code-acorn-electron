@@ -185,7 +185,7 @@
      00D2
 .K4
      00E0
-Zero page variables from &0  to &E2 
+ZP workspace from &0 to &E1 inclusive
 .XX3
      0100
 .T%
@@ -247,7 +247,7 @@ Zero page variables from &0  to &E2
      0357
 .SY
      0362
-T% workspace from  &300  to &36D 
+T% workspace from &300 to &36C inclusive
 .QQ18
      0400   DC
      0401   00
@@ -3031,6 +3031,7 @@ S.WORDS9 &400  &800  &4400  &4400
 Saving file '3-assembled-output/WORDS9.bin'
 .K%
      0900
+K% workspace from &900 to &AAF inclusive
 .WP
      0BE0
 .FRIN
@@ -3134,7 +3135,7 @@ Saving file '3-assembled-output/WORDS9.bin'
      0CF2
 .QQ10
      0CF3
-WP workspace from  &BE0  to &CF4 
+WP workspace from &BE0 to &CF3 inclusive
 .S%
      0D00   40         RTI
 .KEYB

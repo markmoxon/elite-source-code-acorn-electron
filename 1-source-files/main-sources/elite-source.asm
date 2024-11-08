@@ -857,7 +857,7 @@ ENDIF
 
  SKIP 2                 \ Temporary storage, used in a number of places
 
- PRINT "Zero page variables from ", ~ZP, " to ", ~P%
+ PRINT "ZP workspace from ", ~ZP, "to ", ~P%-1, "inclusive"
 
 \ ******************************************************************************
 \
@@ -1201,7 +1201,7 @@ ENDIF
  SKIP NOST + 1          \ This is where we store the y_hi coordinates for all
                         \ the stardust particles
 
- PRINT "T% workspace from  ", ~T%, " to ", ~P%
+ PRINT "T% workspace from ", ~T%, "to ", ~P%-1, "inclusive"
 
 \ ******************************************************************************
 \
@@ -2633,6 +2633,8 @@ ENDMACRO
 
  SKIP NOSH * NI%        \ Ship data blocks and ship line heap
 
+ PRINT "K% workspace from ", ~K%, "to ", ~P%-1, "inclusive"
+
 \ ******************************************************************************
 \
 \       Name: WP
@@ -3061,7 +3063,7 @@ ENDMACRO
                         \ galaxy chart (and, most of the time, the selected
                         \ system's galactic y-coordinate)
 
- PRINT "WP workspace from  ", ~WP," to ", ~P%
+ PRINT "WP workspace from ", ~WP, "to ", ~P%-1, "inclusive"
 
 \ ******************************************************************************
 \
