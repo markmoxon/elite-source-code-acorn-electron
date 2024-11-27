@@ -12747,10 +12747,6 @@ ENDIF
 \   Category: Drawing circles
 \    Summary: Make the hyperspace sound and draw the hyperspace tunnel
 \
-\ ------------------------------------------------------------------------------
-\
-\ See the IRQ1 routine for details on the multi-coloured effect that's used.
-\
 \ ******************************************************************************
 
 .LL164
