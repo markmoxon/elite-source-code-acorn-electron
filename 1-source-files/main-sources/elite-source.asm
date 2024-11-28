@@ -8502,11 +8502,11 @@ ENDIF
                         \ the screen borders into consideration
 
  TYA                    \ Set Y = Y mod 8, which is the pixel row within the
- AND #7                 \ character block at which we want to draw the start of
- TAY                    \ our line (as each character block has 8 rows)
+ AND #7                 \ character block at which we want to draw our pixel
+ TAY                    \ (as each character block has 8 rows)
 
  TXA                    \ Set X = X mod 8, which is the horizontal pixel number
- AND #7                 \ within the character block where the line starts (as
+ AND #7                 \ within the character block where the pixel lies (as
  TAX                    \ each pixel line in the character block is 8 pixels
                         \ wide)
 
@@ -23255,9 +23255,9 @@ ENDIF
  AND #7                 \ number of the pixel row we need to draw within the
  TAY                    \ character block
 
- LDA X1                 \ Set X to just bits 0-2 of the x-coordinate, which will
- AND #%00000111         \ be the pixel number within the character row we need
- TAX                    \ to draw
+ LDA X1                 \ Set X to X1 mod 8, which will be the pixel number
+ AND #7                 \ within the character row we need to draw
+ TAX
 
  LDA TWOS,X             \ Fetch a mode 4 1-pixel byte with the pixel position
                         \ at X
