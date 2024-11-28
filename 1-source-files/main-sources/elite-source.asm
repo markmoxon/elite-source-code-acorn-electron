@@ -4735,7 +4735,7 @@ ENDMACRO
 
 .MA77
 
- LDA MCNT               \ Fetch the main loop counter and calculate MCNT mod 7,
+ LDA MCNT               \ Fetch the main loop counter and calculate MCNT mod 8,
  AND #7                 \ jumping to MA22 if it is non-zero (so the following
  BNE MA22               \ code only runs every 8 iterations of the main loop)
 
@@ -7987,9 +7987,9 @@ ENDIF
  SBC #&3F               \
  STA SC                 \ Starting with the low bytes
 
- LDA SC+1               \ And then subtracting the high bytes
+ LDA SCH                \ And then subtracting the high bytes
  SBC #&01
- STA SC+1
+ STA SCH
 
  LDY #7                 \ Set the pixel line to the last line in that character
                         \ block
@@ -8097,9 +8097,9 @@ ENDIF
  SBC #&3F               \
  STA SC                 \ Starting with the low bytes
 
- LDA SC+1               \ And then subtracting the high bytes
+ LDA SCH                \ And then subtracting the high bytes
  SBC #&01
- STA SC+1
+ STA SCH
 
  LDY #7                 \ Set the pixel line to the last line in that character
                         \ block
@@ -8128,7 +8128,7 @@ ENDIF
  STA SC
 
  BCS P%+4               \ If the subtraction of the low bytes of SC underflowed,
- DEC SC+1               \ decrement the high byte
+ DEC SCH                \ decrement the high byte
 
  CLC                    \ Clear the C flag so it doesn't affect the additions
                         \ below
@@ -8501,13 +8501,14 @@ ENDIF
                         \ in the character block containing the (x, y), taking
                         \ the screen borders into consideration
 
- TYA                    \ Set Y = Y AND %111
- AND #%00000111
- TAY
+ TYA                    \ Set Y = Y mod 8, which is the pixel row within the
+ AND #7                 \ character block at which we want to draw the start of
+ TAY                    \ our line (as each character block has 8 rows)
 
- TXA                    \ Set X = X AND %111
- AND #%00000111
- TAX
+ TXA                    \ Set X = X mod 8, which is the horizontal pixel number
+ AND #7                 \ within the character block where the line starts (as
+ TAX                    \ each pixel line in the character block is 8 pixels
+                        \ wide)
 
  LDA ZZ                 \ If distance in ZZ >= 144, then this point is a very
  CMP #144               \ long way away, so jump to PX14 to fetch a 2-pixel dash
@@ -23250,9 +23251,9 @@ ENDIF
                         \ in the character block containing the (x, y), taking
                         \ the screen borders into consideration
 
- LDA Y1                 \ Set Y to just bits 0-2 of the y-coordinate, which will
- AND #%00000111         \ be the number of the pixel row we need to draw into
- TAY                    \ within the character block
+ LDA Y1                 \ Set Y to the y-coordinate mod 8, which will be the
+ AND #7                 \ number of the pixel row we need to draw within the
+ TAY                    \ character block
 
  LDA X1                 \ Set X to just bits 0-2 of the x-coordinate, which will
  AND #%00000111         \ be the pixel number within the character row we need
