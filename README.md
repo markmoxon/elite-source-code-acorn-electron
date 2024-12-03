@@ -361,7 +361,7 @@ You can see the differences between the variants by searching the source code fo
 
 * If the galactic hyperspace worked in the Acornsoft variant, it would be triggered by CAPS-LOCK-H rather than CTRL-H
 
-* The Acornsoft variant contains the same "hyperspace while docking" as the original cassette and disc versions; the Superior Software variant contains part of the fix for this issue, but it isn't completely fixed
+* The Acornsoft variant contains the same "hyperspace while docking" bug as the original cassette and disc versions; the Superior Software variant contains part of the fix for this issue, but it isn't completely fixed
 
 See the [accompanying website](https://elite.bbcelite.com/electron/releases.html) for a comprehensive list of differences between the variants.
 
