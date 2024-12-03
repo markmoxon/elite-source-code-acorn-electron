@@ -20990,7 +20990,7 @@ ENDIF
 
  JSR BEEP               \ Call the BEEP subroutine to make a short, high beep
 
- LDY #200               \ Delay for 200 delay loops and return from the
+ LDY #200               \ Wait for 200 delay loops and return from the
  JMP DELAY              \ subroutine using a tail call
 
 \ ******************************************************************************
@@ -26572,7 +26572,7 @@ ENDIF
  LSR A                  \ and bit 0 of QQ11 is 1 (the current view is type 1),
  BCS P%+5               \ then skip the following instruction
 
- JSR DELAY-5            \ Delay for 1 delay loop, to slow the main loop down a
+ JSR DELAY-5            \ Wait for 1 delay loop, to slow the main loop down a
                         \ bit
 
  JSR TT17               \ Scan the keyboard for the cursor keys, returning the
