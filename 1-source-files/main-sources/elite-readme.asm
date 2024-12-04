@@ -19,6 +19,10 @@
 \
 \ ------------------------------------------------------------------------------
 \
+\ This source file produces a README file for Acorn Electron Elite.
+\
+\ ------------------------------------------------------------------------------
+\
 \ This source file produces the following binary file:
 \
 \   * README.txt

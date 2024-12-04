@@ -19,6 +19,12 @@
 \
 \ ------------------------------------------------------------------------------
 \
+\ This source file contains code to produce the Big Code File for Acorn Electron
+\ Elite. The Big Code File comprises the game code, the ship blueprints and the
+\ game text.
+\
+\ ------------------------------------------------------------------------------
+\
 \ This source file produces the following binary files:
 \
 \   * ELITECO.bin

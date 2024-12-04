@@ -19,6 +19,10 @@
 \
 \ ------------------------------------------------------------------------------
 \
+\ This source file contains the game loader for Acorn Electron Elite.
+\
+\ ------------------------------------------------------------------------------
+\
 \ This source file produces the following binary file:
 \
 \   * ELITEDA.bin
