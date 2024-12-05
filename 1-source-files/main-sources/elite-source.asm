@@ -1,6 +1,6 @@
 \ ******************************************************************************
 \
-\ ACORN ELECTRON ELITE GAME SOURCE
+\ ACORN ELECTRON ELITE MAIN GAME SOURCE
 \
 \ Acorn Electron Elite was written by Ian Bell and David Braben and is copyright
 \ Acornsoft 1984
