@@ -1,11 +1,11 @@
 \ ******************************************************************************
 \
-\ ELECTRON ELITE LOADER SOURCE
+\ ACORN ELECTRON ELITE LOADER SOURCE
 \
-\ Electron Elite was written by Ian Bell and David Braben and is copyright
+\ Acorn Electron Elite was written by Ian Bell and David Braben and is copyright
 \ Acornsoft 1984
 \
-\ The code on this site has been reconstructed from a disassembly of the version
+\ The code in this file has been reconstructed from a disassembly of the version
 \ released on Ian Bell's personal website at http://www.elitehomepage.org/
 \
 \ The commentary is copyright Mark Moxon, and any misunderstandings or mistakes
@@ -16,6 +16,10 @@
 \
 \ The deep dive articles referred to in this commentary can be found at
 \ https://elite.bbcelite.com/deep_dives
+\
+\ ------------------------------------------------------------------------------
+\
+\ This source file contains the game loader for Acorn Electron Elite.
 \
 \ ------------------------------------------------------------------------------
 \
@@ -134,9 +138,7 @@ ENDIF
                         \ Elite draws on-screen by poking bytes directly into
                         \ screen memory, and SC(1 0) is typically set to the
                         \ address of the character block containing the pixel
-                        \ we want to draw (see the deep dives on "Drawing
-                        \ monochrome pixels in mode 4" and "Drawing pixels
-                        \ in the Electron version" for more details)
+                        \ we want to draw
 
 .SCH
 
@@ -1233,7 +1235,7 @@ ENDMACRO
                         \
                         \   x = random number from 0 to 255
                         \   y = random number from 0 to 255
-                        \   (x^2 + y^2) div 256 >= 17
+                        \   HI(x^2 + y^2) >= 17
                         \
                         \ which is what we want
 
@@ -1560,9 +1562,6 @@ ENDMACRO
                         \ follows:
                         \
                         \   ZP = &5800 + (y div 8 * 256) + (y div 8 * 64) + 32
-                        \
-                        \ See the deep dive on "Drawing pixels in the Electron
-                        \ version" for details
 
  LSR A                  \ Set A = A >> 3
  LSR A                  \       = y div 8
@@ -1605,13 +1604,14 @@ ENDMACRO
                         \ in the character block containing the (x, y), taking
                         \ the screen borders into consideration
 
- TYA                    \ Set Y = Y AND %111
- AND #%00000111
- TAY
+ TYA                    \ Set Y = Y mod 8, which is the pixel row within the
+ AND #7                 \ character block at which we want to draw our pixel
+ TAY                    \ (as each character block has 8 rows)
 
- TXA                    \ Set X = X AND %111
- AND #%00000111
- TAX
+ TXA                    \ Set X = X mod 8, which is the horizontal pixel number
+ AND #7                 \ within the character block where the pixel lies (as
+ TAX                    \ each pixel line in the character block is 8 pixels
+                        \ wide)
 
  LDA TWOS,X             \ Fetch a pixel from TWOS and OR it into ZP+Y
  ORA (ZP),Y

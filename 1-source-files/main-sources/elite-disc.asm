@@ -1,11 +1,11 @@
 \ ******************************************************************************
 \
-\ ELECTRON ELITE DISC IMAGE SCRIPT
+\ ACORN ELECTRON ELITE DISC IMAGE SCRIPT
 \
-\ Electron Elite was written by Ian Bell and David Braben and is copyright
+\ Acorn Electron Elite was written by Ian Bell and David Braben and is copyright
 \ Acornsoft 1984
 \
-\ The code on this site has been reconstructed from a disassembly of the version
+\ The code in this file has been reconstructed from a disassembly of the version
 \ released on Ian Bell's personal website at http://www.elitehomepage.org/
 \
 \ The commentary is copyright Mark Moxon, and any misunderstandings or mistakes
@@ -19,9 +19,15 @@
 \
 \ ------------------------------------------------------------------------------
 \
-\ This source file produces the following SSD disc image:
+\ This source file produces an SSD disc image for Acorn Electron Elite.
 \
-\   * elite-electron-sth.ssd
+\ ------------------------------------------------------------------------------
+\
+\ This source file produces one of the following SSD disc images, depending on
+\ which release is being built:
+\
+\   * elite-electron-ib-superior.ssd
+\   * elite-electron-ib-acornsoft.ssd
 \
 \ This can be loaded into an emulator or a real Electron.
 \

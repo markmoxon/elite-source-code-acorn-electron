@@ -1,11 +1,11 @@
 \ ******************************************************************************
 \
-\ ELECTRON ELITE GAME SOURCE
+\ ACORN ELECTRON ELITE MAIN GAME SOURCE
 \
-\ Electron Elite was written by Ian Bell and David Braben and is copyright
+\ Acorn Electron Elite was written by Ian Bell and David Braben and is copyright
 \ Acornsoft 1984
 \
-\ The code on this site has been reconstructed from a disassembly of the version
+\ The code in this file has been reconstructed from a disassembly of the version
 \ released on Ian Bell's personal website at http://www.elitehomepage.org/
 \
 \ The commentary is copyright Mark Moxon, and any misunderstandings or mistakes
@@ -16,6 +16,11 @@
 \
 \ The deep dive articles referred to in this commentary can be found at
 \ https://elite.bbcelite.com/deep_dives
+\
+\ ------------------------------------------------------------------------------
+\
+\ This source file contains the main game code for Acorn Electron Elite. It also
+\ contains the ship blueprints and game text.
 \
 \ ------------------------------------------------------------------------------
 \
@@ -134,7 +139,7 @@ ENDIF
 \
 \       Name: ZP
 \       Type: Workspace
-\    Address: &0000 to &00B0
+\    Address: &0000 to &00E1
 \   Category: Workspaces
 \    Summary: Lots of important variables are stored in the zero page workspace
 \             as it is quicker and more space-efficient to access memory here
@@ -169,9 +174,7 @@ ENDIF
                         \ Elite draws on-screen by poking bytes directly into
                         \ screen memory, and SC(1 0) is typically set to the
                         \ address of the character block containing the pixel
-                        \ we want to draw (see the deep dives on "Drawing
-                        \ monochrome pixels in mode 4" and "Drawing pixels
-                        \ in the Electron version" for more details)
+                        \ we want to draw
 
 .SCH
 
@@ -269,7 +272,7 @@ ENDIF
                         \
                         \ A value of 0 denotes the leftmost column and 32 the
                         \ rightmost column, but because the top part of the
-                        \ screen (the space view) has a white border that
+                        \ screen (the space view) has a border box that
                         \ clashes with columns 0 and 32, text is only shown
                         \ in columns 1-31
 
@@ -285,7 +288,7 @@ ENDIF
                         \ just before the screen splits
                         \
                         \ A value of 0 denotes the top row, but because the
-                        \ top part of the screen has a white border that clashes
+                        \ top part of the screen has a border box that clashes
                         \ with row 0, text is always shown at row 1 or greater
 
 .QQ22
@@ -379,15 +382,13 @@ ENDIF
                         \ enables Elite to scan for concurrent key presses of
                         \ the primary flight keys, plus a secondary flight key
                         \
-                        \ See the deep dive on "The key logger" for more details
-                        \
                         \ If a key is being pressed that is not in the keyboard
                         \ table at KYTB, it can be stored here (as seen in
                         \ routine DK4, for example)
 
 .KY1
 
- SKIP 1                 \ "?" is being pressed
+ SKIP 1                 \ "?" is being pressed (slow down)
                         \
                         \   * 0 = no
                         \
@@ -395,7 +396,7 @@ ENDIF
 
 .KY2
 
- SKIP 1                 \ Space is being pressed
+ SKIP 1                 \ Space is being pressed (speed up)
                         \
                         \   * 0 = no
                         \
@@ -403,7 +404,7 @@ ENDIF
 
 .KY3
 
- SKIP 1                 \ "<" is being pressed
+ SKIP 1                 \ "<" is being pressed (roll left)
                         \
                         \   * 0 = no
                         \
@@ -411,7 +412,7 @@ ENDIF
 
 .KY4
 
- SKIP 1                 \ ">" is being pressed
+ SKIP 1                 \ ">" is being pressed (roll right)
                         \
                         \   * 0 = no
                         \
@@ -419,7 +420,7 @@ ENDIF
 
 .KY5
 
- SKIP 1                 \ "X" is being pressed
+ SKIP 1                 \ "X" is being pressed (pull up)
                         \
                         \   * 0 = no
                         \
@@ -427,7 +428,7 @@ ENDIF
 
 .KY6
 
- SKIP 1                 \ "S" is being pressed
+ SKIP 1                 \ "S" is being pressed (pitch down)
                         \
                         \   * 0 = no
                         \
@@ -435,7 +436,7 @@ ENDIF
 
 .KY7
 
- SKIP 1                 \ "A" is being pressed
+ SKIP 1                 \ "A" is being pressed (fire lasers)
                         \
                         \   * 0 = no
                         \
@@ -443,7 +444,7 @@ ENDIF
 
 .KY12
 
- SKIP 1                 \ "-" is being pressed
+ SKIP 1                 \ "-" is being pressed (energy bomb)
                         \
                         \   * 0 = no
                         \
@@ -451,7 +452,7 @@ ENDIF
 
 .KY13
 
- SKIP 1                 \ ESCAPE is being pressed
+ SKIP 1                 \ ESCAPE is being pressed (launch escape pod)
                         \
                         \   * 0 = no
                         \
@@ -459,7 +460,7 @@ ENDIF
 
 .KY14
 
- SKIP 1                 \ "T" is being pressed
+ SKIP 1                 \ "T" is being pressed (target missile)
                         \
                         \   * 0 = no
                         \
@@ -467,7 +468,7 @@ ENDIF
 
 .KY15
 
- SKIP 1                 \ "U" is being pressed
+ SKIP 1                 \ "U" is being pressed (unarm missile)
                         \
                         \   * 0 = no
                         \
@@ -475,7 +476,7 @@ ENDIF
 
 .KY16
 
- SKIP 1                 \ "M" is being pressed
+ SKIP 1                 \ "M" is being pressed (fire missile)
                         \
                         \   * 0 = no
                         \
@@ -483,7 +484,7 @@ ENDIF
 
 .KY17
 
- SKIP 1                 \ "E" is being pressed
+ SKIP 1                 \ "E" is being pressed (activate E.C.M.)
                         \
                         \   * 0 = no
                         \
@@ -491,7 +492,7 @@ ENDIF
 
 .KY18
 
- SKIP 1                 \ "J" is being pressed
+ SKIP 1                 \ "J" is being pressed (in-system jump)
                         \
                         \   * 0 = no
                         \
@@ -499,7 +500,7 @@ ENDIF
 
 .KY19
 
- SKIP 1                 \ "C" is being pressed
+ SKIP 1                 \ "C" is being pressed (activate docking computer)
                         \
                         \   * 0 = no
                         \
@@ -542,10 +543,7 @@ ENDIF
                         \ access and manipulate ship data, so to make this an
                         \ efficient exercise, the ship data is first copied from
                         \ the ship data blocks at K% into INWK (or, when new
-                        \ ships are spawned, from the blueprints at XX21). See
-                        \ the deep dive on "Ship data blocks" for details of
-                        \ what each of the bytes in the INWK data block
-                        \ represents
+                        \ ships are spawned, from the blueprints at XX21)
 
 .XX19
 
@@ -556,16 +554,12 @@ ENDIF
 
  SKIP 1                 \ The ball line heap pointer, which contains the number
                         \ of the first free byte after the end of the LSX2 and
-                        \ LSY2 heaps (see the deep dive on "The ball line heap"
-                        \ for details)
+                        \ LSY2 heaps
 
 .QQ15
 
  SKIP 6                 \ The three 16-bit seeds for the selected system, i.e.
                         \ the one in the crosshairs in the Short-range Chart
-                        \
-                        \ See the deep dives on "Galaxy and system seeds" and
-                        \ "Twisting the system seeds" for more details
 
 .K5
 
@@ -684,10 +678,10 @@ ENDIF
  SKIP 1                 \ The type of the current view:
                         \
                         \   0   = Space view
-                        \   1   = Title screen
+                        \   1   = Data on System screen (FUNC-7)
                         \         Get commander name ("@", save/load commander)
                         \         In-system jump just arrived ("J")
-                        \         Data on System screen (FUNC-7)
+                        \         Title screen
                         \         Buy Cargo screen (FUNC-2)
                         \   4   = Sell Cargo screen (FUNC-3)
                         \   6   = Death screen
@@ -714,9 +708,7 @@ ENDIF
  SKIP 1                 \ The main loop counter
                         \
                         \ This counter determines how often certain actions are
-                        \ performed within the main loop. See the deep dive on
-                        \ "Scheduling tasks with the main loop counter" for more
-                        \ details
+                        \ performed within the main loop
 
  SKIP 1                 \ This byte is unused in this version of Elite (it
                         \ is used to store the delay counter in the other
@@ -903,7 +895,7 @@ ENDIF
 
  SKIP 2                 \ Temporary storage, used in a number of places
 
- PRINT "Zero page variables from ", ~ZP, " to ", ~P%
+ PRINT "ZP workspace from ", ~ZP, "to ", ~P%-1, "inclusive"
 
 \ ******************************************************************************
 \
@@ -973,9 +965,6 @@ ENDIF
                         \ left (rolling each byte within itself) to get the
                         \ seeds for the next galaxy, so after eight galactic
                         \ jumps, the seeds roll around to the first galaxy again
-                        \
-                        \ See the deep dives on "Galaxy and system seeds" and
-                        \ "Twisting the system seeds" for more details
 
 .CASH
 
@@ -1000,10 +989,6 @@ ENDIF
 .COK
 
  SKIP 1                 \ Flags used to generate the competition code
-                        \
-                        \ See the deep dive on "The competition code" for
-                        \ details of these flags and how they are used in
-                        \ generating and decoding the competition code
 
 .GCNT
 
@@ -1166,9 +1151,7 @@ ENDIF
                         \   * AVL+7 contains the amount of computers (item 7)
                         \
                         \ See QQ23 for a list of market item numbers and their
-                        \ storage units, and the deep dive on "Market item
-                        \ prices and availability" for details of the algorithm
-                        \ used for calculating each item's availability
+                        \ storage units
 
 .QQ26
 
@@ -1176,8 +1159,7 @@ ENDIF
                         \
                         \ This value is set to a new random number for each
                         \ change of system, so we can add a random factor into
-                        \ the calculations for market prices (for details of how
-                        \ this is used, see the deep dive on "Market prices")
+                        \ the calculations for market prices
 
 .TALLY
 
@@ -1247,7 +1229,7 @@ ENDIF
  SKIP NOST + 1          \ This is where we store the y_hi coordinates for all
                         \ the stardust particles
 
- PRINT "T% workspace from  ", ~T%, " to ", ~P%
+ PRINT "T% workspace from ", ~T%, "to ", ~P%-1, "inclusive"
 
 \ ******************************************************************************
 \
@@ -1277,9 +1259,6 @@ ENDIF
 \   CHAR 'x'            Insert ASCII character "x"
 \
 \ To include an apostrophe, use a backtick character, as in CHAR '`'.
-\
-\ See the deep dive on "Printing text tokens" for details on how characters are
-\ stored in the recursive token table.
 \
 \ ------------------------------------------------------------------------------
 \
@@ -1313,9 +1292,6 @@ ENDMACRO
 \
 \   TWOK 'x', 'y'       Insert two-letter token "xy"
 \
-\ See the deep dive on "Printing text tokens" for details on how two-letter
-\ tokens are stored in the recursive token table.
-\
 \ ------------------------------------------------------------------------------
 \
 \ Arguments:
@@ -1330,38 +1306,133 @@ ENDMACRO
 
 MACRO TWOK t, k
 
- IF t = 'A' AND k = 'L' : EQUB 128 EOR RE : ENDIF
- IF t = 'L' AND k = 'E' : EQUB 129 EOR RE : ENDIF
- IF t = 'X' AND k = 'E' : EQUB 130 EOR RE : ENDIF
- IF t = 'G' AND k = 'E' : EQUB 131 EOR RE : ENDIF
- IF t = 'Z' AND k = 'A' : EQUB 132 EOR RE : ENDIF
- IF t = 'C' AND k = 'E' : EQUB 133 EOR RE : ENDIF
- IF t = 'B' AND k = 'I' : EQUB 134 EOR RE : ENDIF
- IF t = 'S' AND k = 'O' : EQUB 135 EOR RE : ENDIF
- IF t = 'U' AND k = 'S' : EQUB 136 EOR RE : ENDIF
- IF t = 'E' AND k = 'S' : EQUB 137 EOR RE : ENDIF
- IF t = 'A' AND k = 'R' : EQUB 138 EOR RE : ENDIF
- IF t = 'M' AND k = 'A' : EQUB 139 EOR RE : ENDIF
- IF t = 'I' AND k = 'N' : EQUB 140 EOR RE : ENDIF
- IF t = 'D' AND k = 'I' : EQUB 141 EOR RE : ENDIF
- IF t = 'R' AND k = 'E' : EQUB 142 EOR RE : ENDIF
- IF t = 'A' AND k = '?' : EQUB 143 EOR RE : ENDIF
- IF t = 'E' AND k = 'R' : EQUB 144 EOR RE : ENDIF
- IF t = 'A' AND k = 'T' : EQUB 145 EOR RE : ENDIF
- IF t = 'E' AND k = 'N' : EQUB 146 EOR RE : ENDIF
- IF t = 'B' AND k = 'E' : EQUB 147 EOR RE : ENDIF
- IF t = 'R' AND k = 'A' : EQUB 148 EOR RE : ENDIF
- IF t = 'L' AND k = 'A' : EQUB 149 EOR RE : ENDIF
- IF t = 'V' AND k = 'E' : EQUB 150 EOR RE : ENDIF
- IF t = 'T' AND k = 'I' : EQUB 151 EOR RE : ENDIF
- IF t = 'E' AND k = 'D' : EQUB 152 EOR RE : ENDIF
- IF t = 'O' AND k = 'R' : EQUB 153 EOR RE : ENDIF
- IF t = 'Q' AND k = 'U' : EQUB 154 EOR RE : ENDIF
- IF t = 'A' AND k = 'N' : EQUB 155 EOR RE : ENDIF
- IF t = 'T' AND k = 'E' : EQUB 156 EOR RE : ENDIF
- IF t = 'I' AND k = 'S' : EQUB 157 EOR RE : ENDIF
- IF t = 'R' AND k = 'I' : EQUB 158 EOR RE : ENDIF
- IF t = 'O' AND k = 'N' : EQUB 159 EOR RE : ENDIF
+ IF t = 'A' AND k = 'L'
+  EQUB 128 EOR RE
+ ENDIF
+
+ IF t = 'L' AND k = 'E'
+  EQUB 129 EOR RE
+ ENDIF
+
+ IF t = 'X' AND k = 'E'
+  EQUB 130 EOR RE
+ ENDIF
+
+ IF t = 'G' AND k = 'E'
+  EQUB 131 EOR RE
+ ENDIF
+
+ IF t = 'Z' AND k = 'A'
+  EQUB 132 EOR RE
+ ENDIF
+
+ IF t = 'C' AND k = 'E'
+  EQUB 133 EOR RE
+ ENDIF
+
+ IF t = 'B' AND k = 'I'
+  EQUB 134 EOR RE
+ ENDIF
+
+ IF t = 'S' AND k = 'O'
+  EQUB 135 EOR RE
+ ENDIF
+
+ IF t = 'U' AND k = 'S'
+  EQUB 136 EOR RE
+ ENDIF
+
+ IF t = 'E' AND k = 'S'
+  EQUB 137 EOR RE
+ ENDIF
+
+ IF t = 'A' AND k = 'R'
+  EQUB 138 EOR RE
+ ENDIF
+
+ IF t = 'M' AND k = 'A'
+  EQUB 139 EOR RE
+ ENDIF
+
+ IF t = 'I' AND k = 'N'
+  EQUB 140 EOR RE
+ ENDIF
+
+ IF t = 'D' AND k = 'I'
+  EQUB 141 EOR RE
+ ENDIF
+
+ IF t = 'R' AND k = 'E'
+  EQUB 142 EOR RE
+ ENDIF
+
+ IF t = 'A' AND k = '?'
+  EQUB 143 EOR RE
+ ENDIF
+
+ IF t = 'E' AND k = 'R'
+  EQUB 144 EOR RE
+ ENDIF
+
+ IF t = 'A' AND k = 'T'
+  EQUB 145 EOR RE
+ ENDIF
+
+ IF t = 'E' AND k = 'N'
+  EQUB 146 EOR RE
+ ENDIF
+
+ IF t = 'B' AND k = 'E'
+  EQUB 147 EOR RE
+ ENDIF
+
+ IF t = 'R' AND k = 'A'
+  EQUB 148 EOR RE
+ ENDIF
+
+ IF t = 'L' AND k = 'A'
+  EQUB 149 EOR RE
+ ENDIF
+
+ IF t = 'V' AND k = 'E'
+  EQUB 150 EOR RE
+ ENDIF
+
+ IF t = 'T' AND k = 'I'
+  EQUB 151 EOR RE
+ ENDIF
+
+ IF t = 'E' AND k = 'D'
+  EQUB 152 EOR RE
+ ENDIF
+
+ IF t = 'O' AND k = 'R'
+  EQUB 153 EOR RE
+ ENDIF
+
+ IF t = 'Q' AND k = 'U'
+  EQUB 154 EOR RE
+ ENDIF
+
+ IF t = 'A' AND k = 'N'
+  EQUB 155 EOR RE
+ ENDIF
+
+ IF t = 'T' AND k = 'E'
+  EQUB 156 EOR RE
+ ENDIF
+
+ IF t = 'I' AND k = 'S'
+  EQUB 157 EOR RE
+ ENDIF
+
+ IF t = 'R' AND k = 'I'
+  EQUB 158 EOR RE
+ ENDIF
+
+ IF t = 'O' AND k = 'N'
+  EQUB 159 EOR RE
+ ENDIF
 
 ENDMACRO
 
@@ -1378,9 +1449,6 @@ ENDMACRO
 \ The following macro is used when building the recursive token table:
 \
 \   CONT n              Insert control code token {n}
-\
-\ See the deep dive on "Printing text tokens" for details on how characters are
-\ stored in the recursive token table.
 \
 \ ------------------------------------------------------------------------------
 \
@@ -1415,9 +1483,6 @@ ENDMACRO
 \                         * Tokens 128-145 get stored as n - 114
 \
 \                         * Tokens 96-127 get stored as n
-\
-\ See the deep dive on "Printing text tokens" for details on how recursive
-\ tokens are stored in the recursive token table.
 \
 \ ------------------------------------------------------------------------------
 \
@@ -2667,10 +2732,6 @@ ENDMACRO
 \ bytes per ship, and the ship line heap grows downwards from WP at the end of
 \ the K% workspace.
 \
-\ See the deep dive on "Ship data blocks" for details on ship data blocks, and
-\ the deep dive on "The local bubble of universe" for details of how Elite
-\ stores the local universe in K%, FRIN and UNIV.
-\
 \ ******************************************************************************
 
  ORG &0900
@@ -2678,6 +2739,8 @@ ENDMACRO
 .K%
 
  SKIP NOSH * NI%        \ Ship data blocks and ship line heap
+
+ PRINT "K% workspace from ", ~K%, "to ", ~P%-1, "inclusive"
 
 \ ******************************************************************************
 \
@@ -2705,10 +2768,6 @@ ENDMACRO
                         \ (the last slot is effectively used as a null
                         \ terminator when shuffling the slots down in the
                         \ KILLSHP routine)
-                        \
-                        \ See the deep dive on "The local bubble of universe"
-                        \ for details of how Elite stores the local universe in
-                        \ FRIN, UNIV and K%
 
 .LAS2
 
@@ -2730,9 +2789,6 @@ ENDMACRO
                         \
                         \ The number of ships of type X in the local bubble is
                         \ stored at MANY+X
-                        \
-                        \ See the deep dive on "Ship blueprints" for a list of
-                        \ ship types
 
 .SSPR
 
@@ -2875,13 +2931,11 @@ ENDMACRO
 
 .LSX2
 
- SKIP 40                \ The ball line heap for storing x-coordinates (see the
-                        \ deep dive on "The ball line heap" for details)
+ SKIP 40                \ The ball line heap for storing x-coordinates
 
 .LSY2
 
- SKIP 40                \ The ball line heap for storing y-coordinates (see the
-                        \ deep dive on "The ball line heap" for details)
+ SKIP 40                \ The ball line heap for storing y-coordinates
 
 .SYL
 
@@ -2976,9 +3030,6 @@ ENDMACRO
                         \   * 5 = Rich Agricultural
                         \   * 6 = Average Agricultural
                         \   * 7 = Poor Agricultural
-                        \
-                        \ See the deep dive on "Generating system data" for more
-                        \ information on economies
 
                         \ --- Mod: Code moved for flicker-free planets: ------->
 
@@ -2991,16 +3042,10 @@ ENDMACRO
 .gov
 
  SKIP 1                 \ The current system's government type (0-7)
-                        \
-                        \ See the deep dive on "Generating system data" for
-                        \ details of the various government types
 
 .tek
 
  SKIP 1                 \ The current system's tech level (0-14)
-                        \
-                        \ See the deep dive on "Generating system data" for more
-                        \ information on tech levels
 
 .SLSP
 
@@ -3037,9 +3082,6 @@ ENDMACRO
 
  SKIP 6                 \ The three 16-bit seeds for the current system, i.e.
                         \ the one we are currently in
-                        \
-                        \ See the deep dives on "Galaxy and system seeds" and
-                        \ "Twisting the system seeds" for more details
 
                         \ --- Mod: Code moved for flicker-free planets: ------->
 
@@ -3055,40 +3097,25 @@ ENDMACRO
 \                       \   * 5 = Rich Agricultural
 \                       \   * 6 = Average Agricultural
 \                       \   * 7 = Poor Agricultural
-\                       \
-\                       \ See the deep dive on "Generating system data" for more
-\                       \ information on economies
 
                         \ --- End of moved code ------------------------------->
 
 .QQ4
 
  SKIP 1                 \ The selected system's government (0-7)
-                        \
-                        \ See the deep dive on "Generating system data" for more
-                        \ details of the various government types
 
 .QQ5
 
  SKIP 1                 \ The selected system's tech level (0-14)
-                        \
-                        \ See the deep dive on "Generating system data" for more
-                        \ information on tech levels
 
 .QQ6
 
  SKIP 2                 \ The selected system's population in billions * 10
                         \ (1-71), so the maximum population is 7.1 billion
-                        \
-                        \ See the deep dive on "Generating system data" for more
-                        \ details on population levels
 
 .QQ7
 
  SKIP 2                 \ The selected system's productivity in M CR (96-62480)
-                        \
-                        \ See the deep dive on "Generating system data" for more
-                        \ details about productivity levels
 
 .QQ8
 
@@ -3115,7 +3142,7 @@ ENDMACRO
                         \ galaxy chart (and, most of the time, the selected
                         \ system's galactic y-coordinate)
 
- PRINT "WP workspace from  ", ~WP," to ", ~P%
+ PRINT "WP workspace from ", ~WP, "to ", ~P%-1, "inclusive"
 
 \ ******************************************************************************
 \
@@ -3689,8 +3716,7 @@ ENDMACRO
 \   * Scan for flight keys and process the results
 \
 \ Flight keys are logged in the key logger at location KY1 onwards, with a
-\ non-zero value in the relevant location indicating a key press. See the deep
-\ dive on "The key logger" for more details.
+\ non-zero value in the relevant location indicating a key press.
 \
 \ The key presses that are processed are as follows:
 \
@@ -4278,9 +4304,6 @@ ENDMACRO
 \
 \   * Process docking with a space station
 \
-\ For details on the various docking checks in this routine, see the deep dive
-\ on "Docking checks".
-\
 \ ------------------------------------------------------------------------------
 \
 \ Other entry points:
@@ -4696,7 +4719,7 @@ ENDMACRO
 
 .MA77
 
- LDA MCNT               \ Fetch the main loop counter and calculate MCNT mod 7,
+ LDA MCNT               \ Fetch the main loop counter and calculate MCNT mod 8,
  AND #7                 \ jumping to MA22 if it is non-zero (so the following
  BNE MA22               \ code only runs every 8 iterations of the main loop)
 
@@ -6216,8 +6239,7 @@ ENDMACRO
 \ rotation more stable (though more elliptic).
 \
 \ If that paragraph makes sense to you, then you should probably be writing
-\ this commentary! For the rest of us, there's a detailed explanation of all
-\ this in the deep dive on "Pitching and rolling".
+\ this commentary! For the rest of us, see the associated deep dives.
 \
 \ ------------------------------------------------------------------------------
 \
@@ -6646,8 +6668,6 @@ ENDMACRO
 \   3. y = K2 - beta * z
 \   4. x = x + alpha * y
 \
-\ See the deep dive on "Rotating the universe" for more details on the above.
-\
 \ ------------------------------------------------------------------------------
 \
 \ Arguments:
@@ -6954,9 +6974,9 @@ ENDMACRO
 
  EQUS "JAMESON"         \ The current commander name, which defaults to JAMESON
  EQUB 13                \
-                        \ The commander name can be up to 7 characters (the DFS
-                        \ limit for filenames), and is terminated by a carriage
-                        \ return
+                        \ The commander name can be up to seven characters (the
+                        \ DFS limit for filenames), and is terminated by a
+                        \ carriage return
 
                         \ NA%+8 is the start of the commander data block
                         \
@@ -7125,12 +7145,9 @@ ENDIF
 \   Category: Universe
 \    Summary: Table of pointers to the local universe's ship data blocks
 \  Deep dive: The local bubble of universe
+\             Ship data blocks
 \
 \ ------------------------------------------------------------------------------
-\
-\ See the deep dive on "Ship data blocks" for details on ship data blocks, and
-\ the deep dive on "The local bubble of universe" for details of how Elite
-\ stores the local universe in K%, FRIN and UNIV.
 \
 \ ******************************************************************************
 
@@ -7148,7 +7165,7 @@ ENDIF
 \       Type: Variable
 \   Category: Drawing pixels
 \    Summary: Ready-made single-pixel character row bytes for mode 4
-\  Deep dive: Drawing monochrome pixels in mode 4
+\  Deep dive: Drawing monochrome pixels on the BBC Micro
 \
 \ ------------------------------------------------------------------------------
 \
@@ -7202,7 +7219,7 @@ ENDIF
 \       Type: Variable
 \   Category: Drawing pixels
 \    Summary: Ready-made double-pixel character row bytes for mode 4
-\  Deep dive: Drawing monochrome pixels in mode 4
+\  Deep dive: Drawing monochrome pixels on the BBC Micro
 \
 \ ------------------------------------------------------------------------------
 \
@@ -7266,11 +7283,11 @@ ENDIF
 
  SKIP 0                 \ LL30 is a synonym for LOIN
                         \
-                        \ In the cassette and disc versions of Elite, LL30 and
-                        \ LOIN are synonyms for the same routine, presumably
-                        \ because the two developers each had their own line
-                        \ routines to start with, and then chose one of them for
-                        \ the final game
+                        \ In the BBC Micro cassette and disc versions of Elite,
+                        \ LL30 and LOIN are synonyms for the same routine,
+                        \ presumably because the two developers each had their
+                        \ own line routines to start with, and then chose one of
+                        \ them for the final game
 
 .LOIN
 
@@ -7383,9 +7400,6 @@ ENDIF
                         \ as follows:
                         \
                         \   SC = &5800 + (Y1 div 8 * 256) + (Y1 div 8 * 64) + 32
-                        \
-                        \ See the deep dive on "Drawing pixels in the Electron
-                        \ version" for details
 
  LDA Y1                 \ Set A = Y1 / 8, so A now contains the character row
  LSR A                  \ that will contain our horizontal line
@@ -7776,9 +7790,6 @@ ENDIF
                         \ as follows:
                         \
                         \   SC = &5800 + (Y1 div 8 * 256) + (Y1 div 8 * 64) + 32
-                        \
-                        \ See the deep dive on "Drawing pixels in the Electron
-                        \ version" for details
 
  LSR A                  \ Set A = Y1 / 8, so A now contains the character row
  LSR A                  \ that will contain our horizontal line
@@ -7948,9 +7959,9 @@ ENDIF
  SBC #&3F               \
  STA SC                 \ Starting with the low bytes
 
- LDA SC+1               \ And then subtracting the high bytes
+ LDA SCH                \ And then subtracting the high bytes
  SBC #&01
- STA SC+1
+ STA SCH
 
  LDY #7                 \ Set the pixel line to the last line in that character
                         \ block
@@ -8058,9 +8069,9 @@ ENDIF
  SBC #&3F               \
  STA SC                 \ Starting with the low bytes
 
- LDA SC+1               \ And then subtracting the high bytes
+ LDA SCH                \ And then subtracting the high bytes
  SBC #&01
- STA SC+1
+ STA SCH
 
  LDY #7                 \ Set the pixel line to the last line in that character
                         \ block
@@ -8089,7 +8100,7 @@ ENDIF
  STA SC
 
  BCS P%+4               \ If the subtraction of the low bytes of SC underflowed,
- DEC SC+1               \ decrement the high byte
+ DEC SCH                \ decrement the high byte
 
  CLC                    \ Clear the C flag so it doesn't affect the additions
                         \ below
@@ -8204,7 +8215,7 @@ ENDIF
 \ ------------------------------------------------------------------------------
 \
 \ This draws a line from (2, A) to (254, A), which is almost screen-wide and
-\ fits in nicely between the white borders without clashing with it.
+\ fits in nicely between the border boxes without clashing with it.
 \
 \ ------------------------------------------------------------------------------
 \
@@ -8233,14 +8244,11 @@ ENDIF
 \       Type: Subroutine
 \   Category: Drawing lines
 \    Summary: Draw a horizontal line from (X1, Y1) to (X2, Y1)
-\  Deep dive: Drawing monochrome pixels in mode 4
+\  Deep dive: Drawing monochrome pixels on the BBC Micro
 \
 \ ------------------------------------------------------------------------------
 \
 \ We do not draw a pixel at the right end of the line.
-\
-\ To understand how this routine works, you might find it helpful to read the
-\ deep dive on "Drawing monochrome pixels in mode 4".
 \
 \ ------------------------------------------------------------------------------
 \
@@ -8406,10 +8414,10 @@ ENDIF
 
 .PX2
 
- STA T                  \ Set A = 97 - Y1
- LDA #97                \
- SBC T                  \ So if Y is positive we display the point up from the
-                        \ centre at y-coordinate 97, while a negative Y means
+ STA T                  \ Set A = #Y + 1 - Y1
+ LDA #Y+1               \
+ SBC T                  \ So if Y1 is positive we display the point up from the
+                        \ centre at y-coordinate 97, while a negative Y1 means
                         \ down from the centre
 
                         \ Fall through into PIXEL to draw the stardust at the
@@ -8421,7 +8429,7 @@ ENDIF
 \       Type: Subroutine
 \   Category: Drawing pixels
 \    Summary: Draw a 1-pixel dot, 2-pixel dash or 4-pixel square
-\  Deep dive: Drawing monochrome pixels in mode 4
+\  Deep dive: Drawing monochrome pixels on the BBC Micro
 \
 \ ------------------------------------------------------------------------------
 \
@@ -8459,9 +8467,6 @@ ENDIF
                         \ as follows:
                         \
                         \   SC = &5800 + (Y1 div 8 * 256) + (Y1 div 8 * 64) + 32
-                        \
-                        \ See the deep dive on "Drawing pixels in the Electron
-                        \ version" for details
 
  STY T1                 \ Store Y in T1
 
@@ -8506,13 +8511,14 @@ ENDIF
                         \ in the character block containing the (x, y), taking
                         \ the screen borders into consideration
 
- TYA                    \ Set Y = Y AND %111
- AND #%00000111
- TAY
+ TYA                    \ Set Y = Y mod 8, which is the pixel row within the
+ AND #7                 \ character block at which we want to draw our pixel
+ TAY                    \ (as each character block has 8 rows)
 
- TXA                    \ Set X = X AND %111
- AND #%00000111
- TAX
+ TXA                    \ Set X = X mod 8, which is the horizontal pixel number
+ AND #7                 \ within the character block where the pixel lies (as
+ TAX                    \ each pixel line in the character block is 8 pixels
+                        \ wide)
 
                         \ --- Mod: Code removed for flicker-free planets: ----->
 
@@ -9148,7 +9154,7 @@ ENDIF
 \   7. x = x + 2 * (beta * y / 256) ^ 2
 \   8. y = y - beta * 256
 \
-\ For more information see the deep dive on "Stardust in the front view".
+\ For more information see the associated deep dive.
 \
 \ ******************************************************************************
 
@@ -9476,6 +9482,7 @@ ENDIF
 \       Type: Subroutine
 \   Category: Stardust
 \    Summary: Process the stardust for the rear view
+\  Deep dive: Stardust in the front view
 \
 \ ------------------------------------------------------------------------------
 \
@@ -9501,7 +9508,7 @@ ENDIF
 \   7. x = x + 2 * (beta * y / 256) ^ 2
 \   8. y = y - beta * 256
 \
-\ For more information see the deep dive on "Stardust in the front view".
+\ For more information see the associated deep dive.
 \
 \ ******************************************************************************
 
@@ -9907,7 +9914,7 @@ ENDIF
 
 .STATUS
 
- LDA #8                 \ Clear the top part of the screen, draw a white border,
+ LDA #8                 \ Clear the top part of the screen, draw a border box,
  JSR TT66               \ and set the current view type in QQ11 to 8 (Status
                         \ Mode screen)
 
@@ -10195,7 +10202,7 @@ ENDIF
 \ so the biggest number we can print is 99,999,999,999. This maximum number
 \ plus 1 is 100,000,000,000, which in hexadecimal is:
 \
-\   & 17 48 76 E8 00
+\   17 48 76 E8 00
 \
 \ The TENS variable contains the lowest four bytes in this number, with the
 \ most significant byte first, i.e. 48 76 E8 00. This value is used in the
@@ -10305,9 +10312,6 @@ ENDIF
 \ Print the 32-bit number stored in K(0 1 2 3) to a specific number of digits,
 \ left-padding with spaces for numbers with fewer digits (so lower numbers are
 \ right-aligned). Optionally include a decimal point.
-\
-\ See the deep dive on "Printing decimal numbers" for details of the algorithm
-\ used in this routine.
 \
 \ ------------------------------------------------------------------------------
 \
@@ -10848,7 +10852,7 @@ ENDIF
 
  JSR TTX66              \ We are off the bottom of the screen, so we don't want
                         \ to print anything, so first clear the screen and draw
-                        \ a white border
+                        \ a border box
 
  JMP RR4                \ Jump to RR4 to restore the registers and return from
                         \ the subroutine
@@ -10857,9 +10861,6 @@ ENDIF
                         \ screen address we need to write to, as follows:
                         \
                         \   SC = &5800 + (char row * 256) + (char row * 64) + 32
-                        \
-                        \ See the deep dive on "Drawing pixels in the Electron
-                        \ version" for details
 
  LSR A                  \ Set (A SC) = (A SC) / 4
  ROR SC                 \            = (4 * ((char row * 64) + 32)) / 4
@@ -11319,7 +11320,7 @@ ENDIF
  BCC DL2                \ indicator, which is less than a full character's
                         \ width, so jump down to DL2 to do this
 
- SBC #8                 \ Otherwise we can draw an 8-pixel wide block, so
+ SBC #8                 \ Otherwise we can draw an eight-pixel wide block, so
  STA Q                  \ subtract 8 from Q so it contains the amount of the
                         \ indicator that's left to draw after this character
 
@@ -13058,10 +13059,6 @@ ENDIF
 \   Category: Drawing circles
 \    Summary: Make the hyperspace sound and draw the hyperspace tunnel
 \
-\ ------------------------------------------------------------------------------
-\
-\ See the IRQ1 routine for details on the multi-coloured effect that's used.
-\
 \ ******************************************************************************
 
 .LL164
@@ -13150,7 +13147,7 @@ ENDIF
 
  STA STP                \ Store the step size in A
 
- JSR TTX66              \ Clear the screen and draw a white border
+ JSR TTX66              \ Clear the screen and draw a border box
 
  JSR HFS1               \ Call HFS1 below and then fall through into the same
                         \ routine, so this effectively runs HFS1 twice, and as
@@ -13243,7 +13240,7 @@ ENDIF
 \   5. x = x - alpha * x * y
 \   6. y = y + alpha * y * y + alpha
 \
-\ For more information see the deep dive on "Stardust in the side views".
+\ For more information see the associated deep dive.
 \
 \ ------------------------------------------------------------------------------
 \
@@ -13604,12 +13601,10 @@ ENDIF
   N = ABS(SIN((I% / 64) * 2 * PI))
 
   IF N >= 1
-   B% = 255
+   EQUB 255
   ELSE
-   B% = INT(256 * N + 0.5)
+   EQUB INT(256 * N + 0.5)
   ENDIF
-
-  EQUB B%
 
  NEXT
 
@@ -14067,8 +14062,7 @@ ENDIF
 \   (A P) = P * X
 \
 \ This uses the same shift-and-add approach as MULT1, but it's simpler as we
-\ are dealing with unsigned numbers in P and X. See the deep dive on
-\ "Shift-and-add multiplication" for a discussion of how this algorithm works.
+\ are dealing with unsigned numbers in P and X.
 \
 \ ******************************************************************************
 
@@ -16121,7 +16115,7 @@ ENDIF
 
  STX VIEW               \ Set the current space view to X
 
- JSR TT66               \ Clear the top part of the screen, draw a white border,
+ JSR TT66               \ Clear the top part of the screen, draw a border box,
                         \ and set the current view type in QQ11 to 0 (space
                         \ view)
 
@@ -16142,7 +16136,7 @@ ENDIF
 
  STX VIEW               \ Change the current space view to X
 
- JSR TT66               \ Clear the top part of the screen, draw a white border,
+ JSR TT66               \ Clear the top part of the screen, draw a border box,
                         \ and set the current view type in QQ11 to 0 (space
                         \ view)
 
@@ -16203,7 +16197,7 @@ ENDIF
 \
 \ ------------------------------------------------------------------------------
 \
-\ Clear the top part of the screen, draw a white border, and set the current
+\ Clear the top part of the screen, draw a border box, and set the current
 \ view type in QQ11 to A.
 \
 \ ------------------------------------------------------------------------------
@@ -16229,18 +16223,18 @@ ENDIF
  STA QQ11               \ Set the current view type in QQ11 to A
 
                         \ Fall through into TTX66 to clear the screen and draw a
-                        \ white border
+                        \ border box
 
 \ ******************************************************************************
 \
 \       Name: TTX66
 \       Type: Subroutine
 \   Category: Drawing the screen
-\    Summary: Clear the top part of the screen and draw a white border
+\    Summary: Clear the top part of the screen and draw a border box
 \
 \ ------------------------------------------------------------------------------
 \
-\ Clear the top part of the screen (the space view) and draw a white border
+\ Clear the top part of the screen (the space view) and draw a border box
 \ along the top and sides.
 \
 \ ------------------------------------------------------------------------------
@@ -16352,9 +16346,9 @@ ENDIF
                         \   (255, 0) to (255, 191)
                         \   (254, 0) to (254, 191)
                         \
-                        \ So that's a 2-pixel wide vertical border along the
+                        \ So that's a two-pixel wide vertical border along the
                         \ left edge of the upper part of the screen, and a
-                        \ 2-pixel wide vertical border along the right edge
+                        \ two-pixel wide vertical border along the right edge
 
 .BOS2
 
@@ -16499,12 +16493,12 @@ ENDIF
 \       Name: CLYNS
 \       Type: Subroutine
 \   Category: Drawing the screen
-\    Summary: Clear the bottom three text rows of the mode 4 screen
+\    Summary: Clear the bottom three text rows of the space view
 \
 \ ------------------------------------------------------------------------------
 \
 \ This routine clears some space at the bottom of the screen and moves the text
-\ cursor to column 1, row 21.
+\ cursor to column 1, row 20.
 \
 \ Specifically, it zeroes the following screen locations:
 \
@@ -16634,8 +16628,7 @@ ENDIF
 
                         \ Now, we convert the x_hi coordinate of the ship into
                         \ the screen x-coordinate of the dot on the scanner,
-                        \ using the following (see the deep dive on "The 3D
-                        \ scanner" for an explanation):
+                        \ using the following:
                         \
                         \   X1 = 123 + (x_sign x_hi)
 
@@ -16660,8 +16653,7 @@ ENDIF
 
                         \ Next, we convert the z_hi coordinate of the ship into
                         \ the y-coordinate of the base of the ship's stick,
-                        \ like this (see the deep dive on "The 3D scanner" for
-                        \ an explanation):
+                        \ like this:
                         \
                         \   SC = 220 - (z_sign z_hi) / 4
                         \
@@ -16693,8 +16685,7 @@ ENDIF
  STA SC                 \ range 205 to 235, with a higher z_hi giving a lower SC
 
                         \ Now for the stick height, which we calculate using the
-                        \ following (see the deep dive on "The 3D scanner" for
-                        \ an explanation):
+                        \ following:
                         \
                         \ A = - (y_sign y_hi) / 2
 
@@ -17393,7 +17384,7 @@ ENDIF
 
 .TT25
 
- JSR TT66-2             \ Clear the top part of the screen, draw a white border,
+ JSR TT66-2             \ Clear the top part of the screen, draw a border box,
                         \ and set the current view type in QQ11 to 1
 
  LDA #9                 \ Move the text cursor to column 9
@@ -17799,7 +17790,7 @@ ENDIF
 
 .TT22
 
- LDA #64                \ Clear the top part of the screen, draw a white border,
+ LDA #64                \ Clear the top part of the screen, draw a border box,
  JSR TT66               \ and set the current view type in QQ11 to 32 (Long-
                         \ range Chart)
 
@@ -18165,7 +18156,7 @@ ENDIF
 
 .TT219
 
- JSR TT66-2             \ Clear the top part of the screen, draw a white border,
+ JSR TT66-2             \ Clear the top part of the screen, draw a border box,
                         \ and set the current view type in QQ11 to 1
 
  JSR TT163              \ Print the column headers for the prices table
@@ -18210,8 +18201,7 @@ ENDIF
 .TT224
 
  JSR CLYNS              \ Clear the bottom three text rows of the upper screen,
-                        \ and move the text cursor to column 1 on row 21, i.e.
-                        \ the start of the top row of the three bottom rows
+                        \ and move the text cursor to the first cleared row
 
  LDA #204               \ Print recursive token 44 ("QUANTITY OF ")
  JSR TT27
@@ -18385,8 +18375,8 @@ ENDIF
 
  BCC OUT                \ If A < 0, jump to OUT to load the current number and
                         \ return from the subroutine, as the key pressed was
-                        \ RETURN (or some other ncharacter with a value less
-                        \ than ASCII "0")
+                        \ RETURN (or some other character with a value less than
+                        \ ASCII "0")
 
  CMP #10                \ If A >= 10, jump to BAY2 to display the Inventory
  BCS BAY2               \ screen, as the key pressed was a letter or other
@@ -18445,7 +18435,7 @@ ENDIF
 
 .TT208
 
- LDA #4                 \ Clear the top part of the screen, draw a white border,
+ LDA #4                 \ Clear the top part of the screen, draw a border box,
  JSR TT66               \ and set the current view type in QQ11 to 4 (Sell
                         \ Cargo screen)
 
@@ -18615,7 +18605,7 @@ ENDIF
 
 .TT213
 
- LDA #8                 \ Clear the top part of the screen, draw a white border,
+ LDA #8                 \ Clear the top part of the screen, draw a border box,
  JSR TT66               \ and set the current view type in QQ11 to 8 (Inventory
                         \ screen)
 
@@ -18948,7 +18938,7 @@ ENDIF
 
 .TT23
 
- LDA #128               \ Clear the top part of the screen, draw a white border,
+ LDA #128               \ Clear the top part of the screen, draw a border box,
  JSR TT66               \ and set the current view type in QQ11 to 128 (Short-
                         \ range Chart)
 
@@ -19485,8 +19475,7 @@ ENDIF
 .hy6
 
  JSR CLYNS              \ Clear the bottom three text rows of the upper screen,
-                        \ and move the text cursor to column 1 on row 21, i.e.
-                        \ the start of the top row of the three bottom rows
+                        \ and move the text cursor to the first cleared row
 
  LDA #15                \ Move the text cursor to column 15 (the middle of the
  STA XC                 \ screen), setting A to 15 at the same time for the
@@ -20270,7 +20259,7 @@ ENDIF
 
 .TT167
 
- LDA #16                \ Clear the top part of the screen, draw a white border,
+ LDA #16                \ Clear the top part of the screen, draw a border box,
  JSR TT66               \ and set the current view type in QQ11 to 16 (Market
                         \ Price screen)
 
@@ -20590,7 +20579,7 @@ ENDIF
  LDA QQ11               \ If the current view is not a space view, jump to ee5
  BNE ee5                \ to skip the following
 
- JSR TT66               \ Clear the top part of the screen, draw a white border,
+ JSR TT66               \ Clear the top part of the screen, draw a border box,
                         \ and set the current view type in QQ11 to 0 (space
                         \ view)
 
@@ -20613,7 +20602,7 @@ ENDIF
  AND #%00111111         \ one of the charts (64 or 128), return from the
  BNE hyR                \ subroutine (as hyR contains an RTS)
 
- JSR TTX66              \ Otherwise clear the screen and draw a white border
+ JSR TTX66              \ Otherwise clear the screen and draw a border box
 
  LDA QQ11               \ If the current view is one of the charts, jump to
  BNE TT114              \ TT114 (from which we jump to the correct routine to
@@ -20635,8 +20624,8 @@ ENDIF
 \ Launch the ship (if we are docked), or show the front space view (if we are
 \ already in space).
 \
-\ Called when FUNC-1 is pressed while docked (launch), after we arrive in a
-\ new galaxy, or after a hyperspace if the current view is a space view.
+\ Called when FUNC-1 is pressed while docked (launch), after we arrive in a new
+\ galaxy, or after a hyperspace if the current view is a space view.
 \
 \ ******************************************************************************
 
@@ -20909,7 +20898,7 @@ ENDIF
 
  JSR DIALS              \ Call DIALS to update the dashboard
 
- LDA #32                \ Clear the top part of the screen, draw a white border,
+ LDA #32                \ Clear the top part of the screen, draw a border box,
  JSR TT66               \ and set the current view type in QQ11 to 32 (Equip
                         \ Ship screen)
 
@@ -21000,8 +20989,7 @@ ENDIF
  BCC EQL1               \ list of equipment available at this station
 
  JSR CLYNS              \ Clear the bottom three text rows of the upper screen,
-                        \ and move the text cursor to column 1 on row 21, i.e.
-                        \ the start of the top row of the three bottom rows
+                        \ and move the text cursor to the first cleared row
 
  LDA #127               \ Print recursive token 127 ("ITEM") followed by a
  JSR prq                \ question mark
@@ -21346,7 +21334,7 @@ ENDIF
 
  JSR BEEP               \ Call the BEEP subroutine to make a short, high beep
 
- LDY #200               \ Delay for 200 delay loops and return from the
+ LDY #200               \ Wait for 200 delay loops and return from the
  JMP DELAY              \ subroutine using a tail call
 
 \ ******************************************************************************
@@ -21502,8 +21490,7 @@ ENDIF
 .qv3
 
  JSR CLYNS              \ Clear the bottom three text rows of the upper screen,
-                        \ and move the text cursor to column 1 on row 21, i.e.
-                        \ the start of the top row of the three bottom rows
+                        \ and move the text cursor to the first cleared row
 
 .qv2
 
@@ -22002,7 +21989,7 @@ ENDIF
                         \ and return from the subroutine using a tail call
 
  DEX                    \ If token = 4, this is control code 4 (commander
- BEQ cmn                \ name), so jump to cmm to print the commander name
+ BEQ cmn                \ name), so jump to cmn to print the commander name
                         \ and return from the subroutine using a tail call
 
  DEX                    \ If token = 5, this is control code 5 (fuel, newline,
@@ -22849,7 +22836,7 @@ ENDIF
                         \           = x +/- random * cloud size
 
  BNE EX4                \ If A is non-zero, the particle is off-screen as the
-                        \ coordinate is bigger than 255), so jump to EX11 to do
+                        \ coordinate is bigger than 255), so jump to EX4 to do
                         \ the next particle
 
                         \ Otherwise X contains a random x-coordinate within the
@@ -23195,8 +23182,9 @@ ENDIF
 \
 \ ******************************************************************************
 
- DEX                    \ Increment the shield value so that it doesn't go past
-                        \ a maximum of 255
+ DEX                    \ If we get here then we just incremented the shield
+                        \ value back around to zero, so decrement it back down
+                        \ to 255 so it stays at the maximum value of 255
 
  RTS                    \ Return from the subroutine
 
@@ -23206,7 +23194,8 @@ ENDIF
 
  BEQ SHD-2              \ If the shield value is 0 then this means it was 255
                         \ before, which is the maximum value, so jump to SHD-2
-                        \ to bring it back down to 258 and return
+                        \ to bring it back down to 255 and return without
+                        \ draining our energy banks
 
                         \ Otherwise fall through into DENGY to drain our energy
                         \ to pay for all this shield charging
@@ -23557,9 +23546,6 @@ ENDIF
                         \ follows:
                         \
                         \   SC = &5800 + (y div 8 * 256) + (y div 8 * 64) + 32
-                        \
-                        \ See the deep dive on "Drawing pixels in the Electron
-                        \ version" for details
 
  LSR A                  \ Set A = A >> 3
  LSR A                  \       = y div 8
@@ -23604,13 +23590,13 @@ ENDIF
                         \ in the character block containing the (x, y), taking
                         \ the screen borders into consideration
 
- LDA Y1                 \ Set Y to just bits 0-2 of the y-coordinate, which will
- AND #%00000111         \ be the number of the pixel row we need to draw into
- TAY                    \ within the character block
+ LDA Y1                 \ Set Y to the y-coordinate mod 8, which will be the
+ AND #7                 \ number of the pixel row we need to draw within the
+ TAY                    \ character block
 
- LDA X1                 \ Set X to just bits 0-2 of the x-coordinate, which will
- AND #%00000111         \ be the pixel number within the character row we need
- TAX                    \ to draw
+ LDA X1                 \ Set X to X1 mod 8, which will be the pixel number
+ AND #7                 \ within the character row we need to draw
+ TAX
 
  LDA TWOS,X             \ Fetch a mode 4 1-pixel byte with the pixel position
                         \ at X
@@ -26458,8 +26444,7 @@ ENDIF
 \
 \ Note that because this routine uses the value of X returned by DORND, and X
 \ contains the value of A returned by the previous call to DORND, this routine
-\ does not necessarily set the new ship to a totally random location. See the
-\ deep dive on "Fixing ship positions" for details.
+\ does not necessarily set the new ship to a totally random location.
 \
 \ ******************************************************************************
 
@@ -26698,8 +26683,7 @@ ENDIF
                         \ Note that because we use the value of X returned by
                         \ DORND, and X contains the value of A returned by the
                         \ previous call to DORND, this does not set the new ship
-                        \ to a totally random location. See the deep dive on
-                        \ "Fixing ship positions" for details
+                        \ to a totally random location
 
  AND #%10000000         \ Set x_sign = bit 7 of x_lo
  STA INWK+2
@@ -26809,8 +26793,7 @@ ENDIF
                         \ Note that because Ze uses the value of X returned by
                         \ DORND, and X contains the value of A returned by the
                         \ previous call to DORND, this does not set the new ship
-                        \ to a totally random location. See the deep dive on
-                        \ "Fixing ship positions" for details
+                        \ to a totally random location
 
  CMP T                  \ If the random value in A >= our badness level, which
  BCS P%+7               \ will be the case unless we have been really, really
@@ -26882,8 +26865,7 @@ ENDIF
                         \ Note that because Ze uses the value of X returned by
                         \ DORND, and X contains the value of A returned by the
                         \ previous call to DORND, this does not set the new ship
-                        \ to a totally random location. See the deep dive on
-                        \ "Fixing ship positions" for details
+                        \ to a totally random location
 
  CMP #200               \ If the random number in A >= 200 (13% chance), jump
  BCS mt1                \ to mt1 to spawn pirates, otherwise keep going to
@@ -27009,7 +26991,7 @@ ENDIF
  LSR A                  \ and bit 0 of QQ11 is 1 (the current view is type 1),
  BCS P%+5               \ then skip the following instruction
 
- JSR DELAY-5            \ Delay for 1 delay loop, to slow the main loop down a
+ JSR DELAY-5            \ Wait for 1 delay loop, to slow the main loop down a
                         \ bit
 
  JSR TT17               \ Scan the keyboard for the cursor keys, returning the
@@ -27468,7 +27450,7 @@ ENDIF
  ASL DELTA              \ Divide our speed in DELTA by 4
  ASL DELTA
 
- JSR TT66               \ Clear the top part of the screen, draw a white border,
+ JSR TT66               \ Clear the top part of the screen, draw a border box,
                         \ and set the current view type in QQ11 to 6 (death
                         \ screen)
 
@@ -27479,7 +27461,7 @@ ENDIF
                         \ it by 1 below to give a total of 5, so this makes the
                         \ animation last for 10 iterations of the main loop)
 
- JSR BOX                \ Call BOX to redraw the same white border (BOX is part
+ JSR BOX                \ Call BOX to redraw the same border box (BOX is part
                         \ of TT66), which removes the border as it is drawn
                         \ using EOR logic
 
@@ -27654,7 +27636,7 @@ ENDIF
  JSR TRNME              \ Once loaded, we copy the commander name to NA%
 
  JSR TTX66              \ And we clear the top part of the screen and draw a
-                        \ white border
+                        \ border box
 
 \ ******************************************************************************
 \
@@ -27849,7 +27831,7 @@ ENDIF
  JSR RESET              \ Reset our ship so we can use it for the rotating
                         \ title ship
 
- LDA #1                 \ Clear the top part of the screen, draw a white border,
+ LDA #1                 \ Clear the top part of the screen, draw a border box,
  JSR TT66               \ and set the current view type in QQ11 to 1
 
  DEC QQ11               \ Decrement QQ11 to 0, so from here on we are using a
@@ -27896,8 +27878,7 @@ ENDIF
 .awe
 
  JSR CLYNS              \ Clear the bottom three text rows of the upper screen,
-                        \ and move the text cursor to column 1 on row 21, i.e.
-                        \ the start of the top row of the three bottom rows.
+                        \ and move the text cursor to the first cleared row.
                         \ It also returns with Y = 0
 
  STY DELTA              \ Set DELTA = 0 (i.e. ship speed = 0)
@@ -28086,7 +28067,7 @@ ENDIF
 
 .GTNME
 
- LDA #1                 \ Clear the top part of the screen, draw a white border,
+ LDA #1                 \ Clear the top part of the screen, draw a border box,
  JSR TT66               \ and set the current view type in QQ11 to 1
 
  LDA #123               \ Print recursive token 123 ("{crlf}COMMANDER'S NAME? ")
@@ -29208,6 +29189,9 @@ ENDIF
 
  BPL NOL1               \ Loop back for the next source byte
 
+                        \ Fall through into KYTB to return from the subroutine,
+                        \ as the first byte of KYTB is an RTS
+
 \ ******************************************************************************
 \
 \       Name: KYTB
@@ -29249,7 +29233,7 @@ ENDIF
  EQUB &62 + 128         \ Space     KYTB+2      Speed up
  EQUB &66 + 128         \ <         KYTB+3      Roll left
  EQUB &67 + 128         \ >         KYTB+4      Roll right
- EQUB &42 + 128         \ X         KYTB+5      Pitch up
+ EQUB &42 + 128         \ X         KYTB+5      Pull up
  EQUB &51 + 128         \ S         KYTB+6      Pitch down
  EQUB &41 + 128         \ A         KYTB+7      Fire lasers
 
@@ -29662,7 +29646,7 @@ ENDIF
 .DK4
 
  JSR RDKEY              \ Scan the keyboard for a key press and return the
-                        \ internal key number in X (or 0 for no key press)
+                        \ internal key number in A and X (or 0 for no key press)
 
  STX KL                 \ Store X in KL, byte #0 of the key logger
 
@@ -29680,7 +29664,7 @@ ENDIF
  JSR DEL8               \ Call DEL8 to wait for 30 delay loops
 
  JSR RDKEY              \ Scan the keyboard for a key press and return the
-                        \ internal key number in X (or 0 for no key press)
+                        \ internal key number in A and X (or 0 for no key press)
 
  CPX #&51               \ If "S" is not being pressed, skip to DK6
  BNE DK6
@@ -30039,8 +30023,7 @@ ENDIF
 \
 \ ------------------------------------------------------------------------------
 \
-\ Two-letter token lookup table for tokens 128-159. See the deep dive on
-\ "Printing text tokens" for details of how the two-letter token system works.
+\ Two-letter token lookup table for tokens 128-159.
 \
 \ ******************************************************************************
 
@@ -30093,9 +30076,7 @@ ENDIF
 \
 \   ITEM price, factor, units, quantity, mask
 \
-\ It inserts an item into the market prices table at QQ23. See the deep dive on
-\ "Market item prices and availability" for more information on how the market
-\ system works.
+\ It inserts an item into the market prices table at QQ23.
 \
 \ ------------------------------------------------------------------------------
 \
@@ -33788,8 +33769,6 @@ ENDMACRO
 \ along the line until it is on-screen, so this effectively clips the (x1, y1)
 \ end of a line to be on the screen.
 \
-\ See the deep dive on "Line-clipping" for more details.
-\
 \ ------------------------------------------------------------------------------
 \
 \ Arguments:
@@ -34906,16 +34885,13 @@ ENDIF
 \   Category: Drawing ships
 \    Summary: Macro definition for adding vertices to ship blueprints
 \  Deep dive: Ship blueprints
+\             Drawing ships
 \
 \ ------------------------------------------------------------------------------
 \
 \ The following macro is used to build the ship blueprints:
 \
 \   VERTEX x, y, z, face1, face2, face3, face4, visibility
-\
-\ See the deep dive on "Ship blueprints" for details of how vertices are stored
-\ in the ship blueprints, and the deep dive on "Drawing ships" for information
-\ on how vertices are used to draw 3D wireframe ships.
 \
 \ ------------------------------------------------------------------------------
 \
@@ -34978,16 +34954,13 @@ ENDMACRO
 \   Category: Drawing ships
 \    Summary: Macro definition for adding edges to ship blueprints
 \  Deep dive: Ship blueprints
+\             Drawing ships
 \
 \ ------------------------------------------------------------------------------
 \
 \ The following macro is used to build the ship blueprints:
 \
 \   EDGE vertex1, vertex2, face1, face2, visibility
-\
-\ See the deep dive on "Ship blueprints" for details of how edges are stored
-\ in the ship blueprints, and the deep dive on "Drawing ships" for information
-\ on how edges are used to draw 3D wireframe ships.
 \
 \ ------------------------------------------------------------------------------
 \
@@ -35020,16 +34993,13 @@ ENDMACRO
 \   Category: Drawing ships
 \    Summary: Macro definition for adding faces to ship blueprints
 \  Deep dive: Ship blueprints
+\             Drawing ships
 \
 \ ------------------------------------------------------------------------------
 \
 \ The following macro is used to build the ship blueprints:
 \
 \   FACE normal_x, normal_y, normal_z, visibility
-\
-\ See the deep dive on "Ship blueprints" for details of how faces are stored
-\ in the ship blueprints, and the deep dive on "Drawing ships" for information
-\ on how faces are used to draw 3D wireframe ships.
 \
 \ ------------------------------------------------------------------------------
 \
@@ -35147,13 +35117,13 @@ ENDMACRO
 .SHIP_SIDEWINDER_FACES
 
     \ normal_x, normal_y, normal_z, visibility
- FACE        0,       32,        8,         31    \ Face 0
- FACE      -12,       47,        6,         31    \ Face 1
- FACE       12,       47,        6,         31    \ Face 2
- FACE        0,        0,     -112,         31    \ Face 3
- FACE      -12,      -47,        6,         31    \ Face 4
- FACE        0,      -32,        8,         31    \ Face 5
- FACE       12,      -47,        6,         31    \ Face 6
+ FACE        0,       32,        8,         31      \ Face 0
+ FACE      -12,       47,        6,         31      \ Face 1
+ FACE       12,       47,        6,         31      \ Face 2
+ FACE        0,        0,     -112,         31      \ Face 3
+ FACE      -12,      -47,        6,         31      \ Face 4
+ FACE        0,      -32,        8,         31      \ Face 5
+ FACE       12,      -47,        6,         31      \ Face 6
 
 \ ******************************************************************************
 \
@@ -35237,13 +35207,13 @@ ENDMACRO
 .SHIP_VIPER_FACES
 
     \ normal_x, normal_y, normal_z, visibility
- FACE        0,       32,        0,         31    \ Face 0
- FACE      -22,       33,       11,         31    \ Face 1
- FACE       22,       33,       11,         31    \ Face 2
- FACE      -22,      -33,       11,         31    \ Face 3
- FACE       22,      -33,       11,         31    \ Face 4
- FACE        0,      -32,        0,         31    \ Face 5
- FACE        0,        0,      -48,         31    \ Face 6
+ FACE        0,       32,        0,         31      \ Face 0
+ FACE      -22,       33,       11,         31      \ Face 1
+ FACE       22,       33,       11,         31      \ Face 2
+ FACE      -22,      -33,       11,         31      \ Face 3
+ FACE       22,      -33,       11,         31      \ Face 4
+ FACE        0,      -32,        0,         31      \ Face 5
+ FACE        0,        0,      -48,         31      \ Face 6
 
 \ ******************************************************************************
 \
@@ -35345,11 +35315,11 @@ ENDMACRO
 .SHIP_MAMBA_FACES
 
     \ normal_x, normal_y, normal_z, visibility
- FACE        0,      -24,        2,         30    \ Face 0
- FACE        0,       24,        2,         30    \ Face 1
- FACE      -32,       64,       16,         30    \ Face 2
- FACE       32,       64,       16,         30    \ Face 3
- FACE        0,        0,     -127,         30    \ Face 4
+ FACE        0,      -24,        2,         30      \ Face 0
+ FACE        0,       24,        2,         30      \ Face 1
+ FACE      -32,       64,       16,         30      \ Face 2
+ FACE       32,       64,       16,         30      \ Face 3
+ FACE        0,        0,     -127,         30      \ Face 4
 
 \ ******************************************************************************
 \
@@ -35435,19 +35405,19 @@ ENDMACRO
 .SHIP_PYTHON_FACES
 
     \ normal_x, normal_y, normal_z, visibility
- FACE      -27,       40,       11,         30    \ Face 0
- FACE       27,       40,       11,         30    \ Face 1
- FACE      -27,      -40,       11,         30    \ Face 2
- FACE       27,      -40,       11,         30    \ Face 3
- FACE      -19,       38,        0,         30    \ Face 4
- FACE       19,       38,        0,         30    \ Face 5
- FACE      -19,      -38,        0,         30    \ Face 6
- FACE       19,      -38,        0,         30    \ Face 7
- FACE      -25,       37,      -11,         30    \ Face 8
- FACE       25,       37,      -11,         30    \ Face 9
- FACE       25,      -37,      -11,         30    \ Face 10
- FACE      -25,      -37,      -11,         30    \ Face 11
- FACE        0,        0,     -112,         30    \ Face 12
+ FACE      -27,       40,       11,         30      \ Face 0
+ FACE       27,       40,       11,         30      \ Face 1
+ FACE      -27,      -40,       11,         30      \ Face 2
+ FACE       27,      -40,       11,         30      \ Face 3
+ FACE      -19,       38,        0,         30      \ Face 4
+ FACE       19,       38,        0,         30      \ Face 5
+ FACE      -19,      -38,        0,         30      \ Face 6
+ FACE       19,      -38,        0,         30      \ Face 7
+ FACE      -25,       37,      -11,         30      \ Face 8
+ FACE       25,       37,      -11,         30      \ Face 9
+ FACE       25,      -37,      -11,         30      \ Face 10
+ FACE      -25,      -37,      -11,         30      \ Face 11
+ FACE        0,        0,     -112,         30      \ Face 12
 
 \ ******************************************************************************
 \
@@ -35562,19 +35532,19 @@ ENDMACRO
 .SHIP_COBRA_MK_3_FACES
 
     \ normal_x, normal_y, normal_z, visibility
- FACE        0,       62,       31,         31    \ Face 0
- FACE      -18,       55,       16,         31    \ Face 1
- FACE       18,       55,       16,         31    \ Face 2
- FACE      -16,       52,       14,         31    \ Face 3
- FACE       16,       52,       14,         31    \ Face 4
- FACE      -14,       47,        0,         31    \ Face 5
- FACE       14,       47,        0,         31    \ Face 6
- FACE      -61,      102,        0,         31    \ Face 7
- FACE       61,      102,        0,         31    \ Face 8
- FACE        0,        0,      -80,         31    \ Face 9
- FACE       -7,      -42,        9,         31    \ Face 10
- FACE        0,      -30,        6,         31    \ Face 11
- FACE        7,      -42,        9,         31    \ Face 12
+ FACE        0,       62,       31,         31      \ Face 0
+ FACE      -18,       55,       16,         31      \ Face 1
+ FACE       18,       55,       16,         31      \ Face 2
+ FACE      -16,       52,       14,         31      \ Face 3
+ FACE       16,       52,       14,         31      \ Face 4
+ FACE      -14,       47,        0,         31      \ Face 5
+ FACE       14,       47,        0,         31      \ Face 6
+ FACE      -61,      102,        0,         31      \ Face 7
+ FACE       61,      102,        0,         31      \ Face 8
+ FACE        0,        0,      -80,         31      \ Face 9
+ FACE       -7,      -42,        9,         31      \ Face 10
+ FACE        0,      -30,        6,         31      \ Face 11
+ FACE        7,      -42,        9,         31      \ Face 12
 
 \ ******************************************************************************
 \
@@ -35667,20 +35637,20 @@ ENDMACRO
 .SHIP_CORIOLIS_FACES
 
     \ normal_x, normal_y, normal_z, visibility
- FACE        0,        0,      160,         31    \ Face 0
- FACE      107,     -107,      107,         31    \ Face 1
- FACE      107,      107,      107,         31    \ Face 2
- FACE     -107,      107,      107,         31    \ Face 3
- FACE     -107,     -107,      107,         31    \ Face 4
- FACE        0,     -160,        0,         31    \ Face 5
- FACE      160,        0,        0,         31    \ Face 6
- FACE     -160,        0,        0,         31    \ Face 7
- FACE        0,      160,        0,         31    \ Face 8
- FACE     -107,     -107,     -107,         31    \ Face 9
- FACE      107,     -107,     -107,         31    \ Face 10
- FACE      107,      107,     -107,         31    \ Face 11
- FACE     -107,      107,     -107,         31    \ Face 12
- FACE        0,        0,     -160,         31    \ Face 13
+ FACE        0,        0,      160,         31      \ Face 0
+ FACE      107,     -107,      107,         31      \ Face 1
+ FACE      107,      107,      107,         31      \ Face 2
+ FACE     -107,      107,      107,         31      \ Face 3
+ FACE     -107,     -107,      107,         31      \ Face 4
+ FACE        0,     -160,        0,         31      \ Face 5
+ FACE      160,        0,        0,         31      \ Face 6
+ FACE     -160,        0,        0,         31      \ Face 7
+ FACE        0,      160,        0,         31      \ Face 8
+ FACE     -107,     -107,     -107,         31      \ Face 9
+ FACE      107,     -107,     -107,         31      \ Face 10
+ FACE      107,      107,     -107,         31      \ Face 11
+ FACE     -107,      107,     -107,         31      \ Face 12
+ FACE        0,        0,     -160,         31      \ Face 13
 
 \ ******************************************************************************
 \
@@ -35770,15 +35740,15 @@ ENDMACRO
 .SHIP_MISSILE_FACES
 
     \ normal_x, normal_y, normal_z, visibility
- FACE      -64,        0,       16,         31    \ Face 0
- FACE        0,      -64,       16,         31    \ Face 1
- FACE       64,        0,       16,         31    \ Face 2
- FACE        0,       64,       16,         31    \ Face 3
- FACE       32,        0,        0,         31    \ Face 4
- FACE        0,      -32,        0,         31    \ Face 5
- FACE      -32,        0,        0,         31    \ Face 6
- FACE        0,       32,        0,         31    \ Face 7
- FACE        0,        0,     -176,         31    \ Face 8
+ FACE      -64,        0,       16,         31      \ Face 0
+ FACE        0,      -64,       16,         31      \ Face 1
+ FACE       64,        0,       16,         31      \ Face 2
+ FACE        0,       64,       16,         31      \ Face 3
+ FACE       32,        0,        0,         31      \ Face 4
+ FACE        0,      -32,        0,         31      \ Face 5
+ FACE      -32,        0,        0,         31      \ Face 6
+ FACE        0,       32,        0,         31      \ Face 7
+ FACE        0,        0,     -176,         31      \ Face 8
 
 \ ******************************************************************************
 \
@@ -35857,20 +35827,20 @@ ENDMACRO
 .SHIP_ASTEROID_FACES
 
     \ normal_x, normal_y, normal_z, visibility
- FACE        9,       66,       81,         31    \ Face 0
- FACE        9,      -66,       81,         31    \ Face 1
- FACE      -72,       64,       31,         31    \ Face 2
- FACE      -64,      -73,       47,         31    \ Face 3
- FACE       45,      -79,       65,         31    \ Face 4
- FACE      135,       15,       35,         31    \ Face 5
- FACE       38,       76,       70,         31    \ Face 6
- FACE      -66,       59,      -39,         31    \ Face 7
- FACE      -67,      -15,      -80,         31    \ Face 8
- FACE       66,      -14,      -75,         31    \ Face 9
- FACE      -70,      -80,      -40,         31    \ Face 10
- FACE       58,     -102,      -51,         31    \ Face 11
- FACE       81,        9,      -67,         31    \ Face 12
- FACE       47,       94,      -63,         31    \ Face 13
+ FACE        9,       66,       81,         31      \ Face 0
+ FACE        9,      -66,       81,         31      \ Face 1
+ FACE      -72,       64,       31,         31      \ Face 2
+ FACE      -64,      -73,       47,         31      \ Face 3
+ FACE       45,      -79,       65,         31      \ Face 4
+ FACE      135,       15,       35,         31      \ Face 5
+ FACE       38,       76,       70,         31      \ Face 6
+ FACE      -66,       59,      -39,         31      \ Face 7
+ FACE      -67,      -15,      -80,         31      \ Face 8
+ FACE       66,      -14,      -75,         31      \ Face 9
+ FACE      -70,      -80,      -40,         31      \ Face 10
+ FACE       58,     -102,      -51,         31      \ Face 11
+ FACE       81,        9,      -67,         31      \ Face 12
+ FACE       47,       94,      -63,         31      \ Face 13
 
 \ ******************************************************************************
 \
@@ -35944,13 +35914,13 @@ ENDMACRO
 .SHIP_CANISTER_FACES
 
     \ normal_x, normal_y, normal_z, visibility
- FACE       96,        0,        0,         31    \ Face 0
- FACE        0,       41,       30,         31    \ Face 1
- FACE        0,      -18,       48,         31    \ Face 2
- FACE        0,      -51,        0,         31    \ Face 3
- FACE        0,      -18,      -48,         31    \ Face 4
- FACE        0,       41,      -30,         31    \ Face 5
- FACE      -96,        0,        0,         31    \ Face 6
+ FACE       96,        0,        0,         31      \ Face 0
+ FACE        0,       41,       30,         31      \ Face 1
+ FACE        0,      -18,       48,         31      \ Face 2
+ FACE        0,      -51,        0,         31      \ Face 3
+ FACE        0,      -18,      -48,         31      \ Face 4
+ FACE        0,       41,      -30,         31      \ Face 5
+ FACE      -96,        0,        0,         31      \ Face 6
 
 \ ******************************************************************************
 \
@@ -36009,10 +35979,10 @@ ENDMACRO
 .SHIP_ESCAPE_POD_FACES
 
     \ normal_x, normal_y, normal_z, visibility
- FACE       26,        0,      -61,         31    \ Face 0
- FACE       19,       51,       15,         31    \ Face 1
- FACE       19,      -51,       15,         31    \ Face 2
- FACE      -56,        0,        0,         31    \ Face 3
+ FACE       26,        0,      -61,         31      \ Face 0
+ FACE       19,       51,       15,         31      \ Face 1
+ FACE       19,      -51,       15,         31      \ Face 2
+ FACE      -56,        0,        0,         31      \ Face 3
 
 \ ******************************************************************************
 \

@@ -1,6 +1,6 @@
 # Fully documented source code for Elite on the Acorn Electron
 
-[BBC Micro cassette Elite](https://github.com/markmoxon/elite-source-code-bbc-micro-cassette) | [BBC Micro disc Elite](https://github.com/markmoxon/elite-source-code-bbc-micro-disc) | [6502 Second Processor Elite](https://github.com/markmoxon/elite-source-code-6502-second-processor) | [BBC Master Elite](https://github.com/markmoxon/elite-source-code-bbc-master) | **Acorn Electron Elite** | [NES Elite](https://github.com/markmoxon/elite-source-code-nes) | [Elite-A](https://github.com/markmoxon/elite-a-source-code-bbc-micro) | [Teletext Elite](https://github.com/markmoxon/teletext-elite) | [Elite Universe Editor](https://github.com/markmoxon/elite-universe-editor) | [Elite Compendium (BBC Master)](https://github.com/markmoxon/elite-compendium-bbc-master) | [Elite Compendium (BBC Micro)](https://github.com/markmoxon/elite-compendium-bbc-micro) | [Elite over Econet](https://github.com/markmoxon/elite-over-econet) | [Flicker-free Commodore 64 Elite](https://github.com/markmoxon/c64-elite-flicker-free) | [BBC Micro Aviator](https://github.com/markmoxon/aviator-source-code-bbc-micro) | [BBC Micro Revs](https://github.com/markmoxon/revs-source-code-bbc-micro) | [Archimedes Lander](https://github.com/markmoxon/lander-source-code-acorn-archimedes)
+[BBC Micro cassette Elite](https://github.com/markmoxon/elite-source-code-bbc-micro-cassette) | [BBC Micro disc Elite](https://github.com/markmoxon/elite-source-code-bbc-micro-disc) | **Acorn Electron Elite** | [6502 Second Processor Elite](https://github.com/markmoxon/elite-source-code-6502-second-processor) | [Commodore 64 Elite](https://github.com/markmoxon/elite-source-code-commodore-64) | [Apple II Elite](https://github.com/markmoxon/elite-source-code-apple-ii) | [BBC Master Elite](https://github.com/markmoxon/elite-source-code-bbc-master) | [NES Elite](https://github.com/markmoxon/elite-source-code-nes) | [Elite-A](https://github.com/markmoxon/elite-a-source-code-bbc-micro) | [Teletext Elite](https://github.com/markmoxon/teletext-elite) | [Elite Universe Editor](https://github.com/markmoxon/elite-universe-editor) | [Elite Compendium (BBC Master)](https://github.com/markmoxon/elite-compendium-bbc-master) | [Elite Compendium (BBC Micro)](https://github.com/markmoxon/elite-compendium-bbc-micro) | [Elite over Econet](https://github.com/markmoxon/elite-over-econet) | [Flicker-free Commodore 64 Elite](https://github.com/markmoxon/c64-elite-flicker-free) | [BBC Micro Aviator](https://github.com/markmoxon/aviator-source-code-bbc-micro) | [BBC Micro Revs](https://github.com/markmoxon/revs-source-code-bbc-micro) | [Archimedes Lander](https://github.com/markmoxon/lander-source-code-acorn-archimedes)
 
 ![Screenshot of Elite on the Acorn Electron](https://elite.bbcelite.com/images/github/Elite-Electron.png)
 
@@ -46,11 +46,11 @@ This repository contains source code for Elite on the Acorn Electron, with every
 
 You can build the fully functioning game from this source. [Two variants](#building-different-variants-of-the-electron-version-of-elite) are currently supported: the Superior Software version from Ian Bell's personal website, and the original Acornsoft version from the same site (which has the galactic hyperspace bug).
 
-It is a companion to the [elite.bbcelite.com website](https://elite.bbcelite.com), which contains all the code from this repository, but laid out in a much more human-friendly fashion. The links at the top of this page will take you to repositories for the other versions of Elite that are covered by this project.
+This repository is a companion to the [elite.bbcelite.com website](https://elite.bbcelite.com), which contains all the code from this repository, but laid out in a much more human-friendly fashion. The links at the top of this page will take you to repositories for the other versions of Elite that are covered by this project.
 
-* If you want to browse the source and read about how Elite works under the hood, you will probably find [the website](https://elite.bbcelite.com) is a better place to start than this repository.
+* If you want to browse the source and read about how Elite works under the hood, you will probably find [the website](https://elite.bbcelite.com) a better place to start than this repository.
 
-* If you would rather explore the source code in your favourite IDE, then the [annotated source](1-source-files/main-sources/elite-source.asm) is what you're looking for. It contains the exact same content as the website, so you won't be missing out (the website is generated from the source files, so they are guaranteed to be identical). You might also like to read the section on [browsing the source in an IDE](#browsing-the-source-in-an-ide) for some tips.
+* If you would rather explore the source code in your favourite IDE, then the [annotated source](1-source-files/main-sources) is what you're looking for. It contains the exact same content as the website, so you won't be missing out (the website is generated from the source files, so they are guaranteed to be identical). You might also like to read the section on [browsing the source in an IDE](#browsing-the-source-in-an-ide) for some tips.
 
 * If you want to build Acorn Electron Elite from the source on a modern computer, to produce a working game disc that can be loaded into an Electron or an emulator, then you want the section on [building Acorn Electron Elite from the source](#building-acorn-electron-elite-from-the-source).
 
@@ -62,13 +62,15 @@ My hope is that this repository and the [accompanying website](https://elite.bbc
 
 ## Acknowledgements
 
-Electron Elite was written by Ian Bell and David Braben and is copyright &copy; Acornsoft 1984.
+Acorn Electron Elite was written by Ian Bell and David Braben and is copyright &copy; Acornsoft 1984.
 
 The code on this site has been reconstructed from a disassembly of the version released on [Ian Bell's personal website](http://www.elitehomepage.org/).
 
 The commentary is copyright &copy; Mark Moxon. Any misunderstandings or mistakes in the documentation are entirely my fault.
 
 Huge thanks are due to the original authors for not only creating such an important piece of my childhood, but also for releasing the source code for us to play with; to Paul Brink for his annotated disassembly; and to Kieran Connell for his [BeebAsm version](https://github.com/kieranhj/elite-beebasm), which I forked as the original basis for this project. You can find more information about this project in the [accompanying website's project page](https://elite.bbcelite.com/about_site/about_this_project.html).
+
+Thank you to Diminished for the UEF scripts, which are part of the [Quadbike 2](https://stardot.org.uk/forums/viewtopic.php?t=26669) tape transcriber.
 
 The following archives from Ian Bell's personal website forms the basis for this project:
 
@@ -198,6 +200,8 @@ By default the build process will create a typical Elite game disc with a standa
   * `variant=ib-superior` (default)
   * `variant=ib-acornsoft`
 
+* `disc=no` - Build a version to load from cassette rather than disc (the default is to build a version that loads from disc)
+
 * `commander=max` - Start with a maxed-out commander (specifically, this is the test commander file from the original source, which is almost but not quite maxed-out)
 
 * `verify=no` - Disable crc32 verification of the game binaries
@@ -245,19 +249,23 @@ During compilation, details of every step are output in a file called `compile.t
 
 ### Building a UEF tape image
 
-Despite this being the cassette version of Acorn Electron Elite, this repository only builds disc images, as that's how BeebAsm works. If you want the authentic experience of loading Elite from cassette, then you can manually build a UEF tape image of the binaries yourself, using a program like [Disc Image Manager](https://github.com/geraldholdsworth/DiscImageManager).
+Despite this being the cassette version of Acorn Electron Elite, this repository only builds disc images by default, as that's how BeebAsm works. If you want the authentic experience of loading Elite from cassette, then you can build a UEF with the following command on Windows:
 
-To do this, you should add the `disc=no` argument to the build. This ensures that the binaries are build to load at the correct address for tape systems, as otherwise the tape loading message will corrupt the game binary as it loads into screen memory.
+```
+make.bat uef disc=no
+```
 
-Once you have built the project, it will produce an SSD disc image file that contains binaries that are suitable for loading from cassette. You can extract the binaries from this image and add them to a UEF, as follows:
+or this on Mac/Linux:
 
-* Add the binaries in the following order: `ELITE`, `ELITEda`, `ELITEco`.
+```
+make uef disc=no
+```
 
-* Rename `ELITEda` to `ELITEdata`.
+You should now be able to load Elite from your UEF on an Electron, by entering `CHAIN "ELITE"`. These UEF tape images will work with emulators and the TZXDuino (though you may need to unzip them before they will work with the latter).
 
-* Rename `ELITEco` to `ELITEcode`.
+For this to work, you will need PHP installed, and you should edit the `Makefile` (and `make.bat` on Windows) to point to PHP (specifically, you'll need to point the `PHP` variable to point to the locations of your `php` or `php.exe` binary).
 
-You should now be able to load Elite from your UEF on an Acorn Electron, by entering `CHAIN "ELITE"`.
+Note that in order for your UEF to work, you need to include the `disc=no` argument to the build (as above). This ensures that the binaries are built to load at the correct address for tape systems, and it also disables the block-level tape protection system, as this only works with specially created tape images, like the ones that Acornsoft originally released.
 
 ## Building different variants of the Electron version of Elite
 
@@ -353,7 +361,7 @@ You can see the differences between the variants by searching the source code fo
 
 * If the galactic hyperspace worked in the Acornsoft variant, it would be triggered by CAPS-LOCK-H rather than CTRL-H
 
-* The Acornsoft variant contains the same "hyperspace while docking" as the original cassette and disc versions; the Superior Software variant contains part of the fix for this issue, but it isn't completely fixed
+* The Acornsoft variant contains the same "hyperspace while docking" bug as the original cassette and disc versions; the Superior Software variant contains part of the fix for this issue, but it isn't completely fixed
 
 See the [accompanying website](https://elite.bbcelite.com/electron/releases.html) for a comprehensive list of differences between the variants.
 

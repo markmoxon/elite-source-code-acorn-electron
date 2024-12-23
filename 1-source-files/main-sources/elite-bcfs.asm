@@ -1,11 +1,11 @@
 \ ******************************************************************************
 \
-\ ELECTRON ELITE BIG CODE FILE SOURCE
+\ ACORN ELECTRON ELITE BIG CODE FILE SOURCE
 \
-\ Electron Elite was written by Ian Bell and David Braben and is copyright
+\ Acorn Electron Elite was written by Ian Bell and David Braben and is copyright
 \ Acornsoft 1984
 \
-\ The code on this site has been reconstructed from a disassembly of the version
+\ The code in this file has been reconstructed from a disassembly of the version
 \ released on Ian Bell's personal website at http://www.elitehomepage.org/
 \
 \ The commentary is copyright Mark Moxon, and any misunderstandings or mistakes
@@ -16,6 +16,12 @@
 \
 \ The deep dive articles referred to in this commentary can be found at
 \ https://elite.bbcelite.com/deep_dives
+\
+\ ------------------------------------------------------------------------------
+\
+\ This source file contains code to produce the Big Code File for Acorn Electron
+\ Elite. The Big Code File comprises the game code, the ship blueprints and the
+\ game text.
 \
 \ ------------------------------------------------------------------------------
 \
