@@ -96,5 +96,5 @@ endif
 .PHONY:uef-electron
 uef: all
 	$(PHP) 2-build-files/mktibet-0.3.php +t temp.tbt +n ELITE +d FFFF0E00 +x FFFF8023 1-source-files/basic-programs/$$.ELITE-cassette.bin +n ELITEdata +d FFFF4400 +x FFFF5200 3-assembled-output/ELITEDA.bin +n ELITEcode +d 00000000 +x FFFFFFFF 3-assembled-output/ELITECO.bin +n README +d FFFFFFFF +x FFFFFFFF 3-assembled-output/README.txt
-	php 2-build-files/tibetuef-0.8.php temp.tbt 5-compiled-game-discs/elite-electron$(suffix).uef
+	php 2-build-files/tibetuef-0.8.php +nz temp.tbt 5-compiled-game-discs/elite-electron$(suffix).uef
 	rm temp.tbt
