@@ -7150,7 +7150,7 @@ ENDIF
 \
 \ Ready-made bytes for plotting two-pixel points in the mode 4 dashboard (the
 \ bottom part of the screen). The layout of the pixels is similar to the layout
-\ of four-colour mode 5 pixels, so the byte at position X contains a 2-pixel
+\ of four-colour mode 5 pixels, so the byte at position X contains a two-pixel
 \ mode 4 dot at position 2 * X (we do this so the same code can be used to
 \ create both the monochrome Electron dashboard and the four-colour mode 5
 \ dashboard in the other versions).
@@ -7398,7 +7398,7 @@ ENDIF
  TAX                    \ each pixel line in the character block is 8 pixels
                         \ wide)
 
- LDA TWOS,X             \ Fetch a 1-pixel byte from TWOS where pixel X is set,
+ LDA TWOS,X             \ Fetch a one-pixel byte from TWOS where pixel X is set,
  STA R                  \ and store it in R
 
                         \ The following calculates:
@@ -7786,7 +7786,7 @@ ENDIF
  AND #7                 \ character block at which we want to draw the start of
  TAX                    \ our line (as each character block has 8 rows)
 
- LDA TWOS,X             \ Fetch a mode 4 1-pixel byte with the pixel position
+ LDA TWOS,X             \ Fetch a mode 4 one-pixel byte with the pixel position
  STA R                  \ at X and store it in R to act as a mask
 
                         \ The following calculates:
@@ -8244,7 +8244,14 @@ ENDIF
 \
 \   Y1                  The y-coordinate offset
 \
-\   ZZ                  The distance of the point (further away = smaller point)
+\   ZZ                  The distance of the point, with bigger distances drawing
+\                       smaller points:
+\
+\                         * ZZ < 80           Double-height four-pixel square
+\
+\                         * 80 <= ZZ <= 143   Single-height two-pixel dash
+\
+\                         * ZZ > 143          Single-height one-pixel dot
 \
 \ ******************************************************************************
 
@@ -8257,7 +8264,7 @@ ENDIF
  TXA                    \ Set SYL+Y to X, the low byte of the result
  STA SYL,Y
 
-                        \ Fall through into PIX1 to draw the stardust particle
+                        \ Fall through into PIXEL2 to draw the stardust particle
                         \ at (X1,Y1)
 
 \ ******************************************************************************
@@ -8281,7 +8288,14 @@ ENDIF
 \   Y1                  The y-coordinate offset (positive means up the screen
 \                       from the centre, negative means down the screen)
 \
-\   ZZ                  The distance of the point (further away = smaller point)
+\   ZZ                  The distance of the point, with bigger distances drawing
+\                       smaller points:
+\
+\                         * ZZ < 80           Double-height four-pixel square
+\
+\                         * 80 <= ZZ <= 143   Single-height two-pixel dash
+\
+\                         * ZZ > 143          Single-height one-pixel dot
 \
 \ ******************************************************************************
 
@@ -8335,7 +8349,7 @@ ENDIF
 \       Name: PIXEL
 \       Type: Subroutine
 \   Category: Drawing pixels
-\    Summary: Draw a 1-pixel dot, 2-pixel dash or 4-pixel square
+\    Summary: Draw a one-pixel dot, two-pixel dash or four-pixel square
 \  Deep dive: Drawing monochrome pixels on the BBC Micro
 \
 \ ------------------------------------------------------------------------------
@@ -8351,7 +8365,14 @@ ENDIF
 \
 \   A                   The screen y-coordinate of the point to draw
 \
-\   ZZ                  The distance of the point (further away = smaller point)
+\   ZZ                  The distance of the point, with bigger distances drawing
+\                       smaller points:
+\
+\                         * ZZ < 80           Double-height four-pixel square
+\
+\                         * 80 <= ZZ <= 143   Single-height two-pixel dash
+\
+\                         * ZZ > 143          Single-height one-pixel dot
 \
 \ ------------------------------------------------------------------------------
 \
@@ -8375,7 +8396,8 @@ ENDIF
                         \
                         \   SC = &5800 + (Y1 div 8 * 256) + (Y1 div 8 * 64) + 32
 
- STY T1                 \ Store Y in T1
+ STY T1                 \ Store Y in T1 so we can restore it at the end of the
+                        \ subroutine
 
  LDY #128               \ Set SC = 128 for use in the calculation below
  STY SC
@@ -8428,24 +8450,24 @@ ENDIF
                         \ wide)
 
  LDA ZZ                 \ If distance in ZZ >= 144, then this point is a very
- CMP #144               \ long way away, so jump to PX14 to fetch a 2-pixel dash
- BCS PX14               \ from TWOS2 and EOR it into SC+Y
+ CMP #144               \ long way away, so jump to PX14 to fetch a two-pixel
+ BCS PX14               \ dash from TWOS2 and EOR it into SC+Y
 
- LDA TWOS2,X            \ Otherwise fetch a 2-pixel dash from TWOS2 and EOR it
+ LDA TWOS2,X            \ Otherwise fetch a two-pixel dash from TWOS2 and EOR it
  EOR (SC),Y             \ into SC+Y
  STA (SC),Y
 
  LDA ZZ                 \ If distance in ZZ >= 80, then this point is a medium
  CMP #80                \ distance away, so jump to PX13 to stop drawing, as a
- BCS PX13               \ 2-pixel dash is enough
+ BCS PX13               \ two-pixel dash is enough
 
                         \ Otherwise we keep going to draw another 2 pixel point
                         \ either above or below the one we just drew, to make a
-                        \ 4-pixel square
+                        \ four-pixel square
 
  DEY                    \ Reduce Y by 1 to point to the pixel row above the one
  BPL PX14               \ we just plotted, and if it is still positive, jump to
-                        \ PX14 to draw our second 2-pixel dash
+                        \ PX14 to draw our second two-pixel dash
 
  LDY #1                 \ Reducing Y by 1 made it negative, which means Y was
                         \ 0 before we did the DEY above, so set Y to 1 to point
@@ -8453,8 +8475,8 @@ ENDIF
 
 .PX14
 
- LDA TWOS2,X            \ Fetch a 2-pixel dash from TWOS2 and EOR it into this
- EOR (SC),Y             \ second row to make a 4-pixel square
+ LDA TWOS2,X            \ Fetch a two-pixel dash from TWOS2 and EOR it into this
+ EOR (SC),Y             \ second row to make a four-pixel square
  STA (SC),Y
 
 .PX13
@@ -10967,7 +10989,7 @@ ENDIF
  LDA R                  \ Fetch the shape of the indicator row that we need to
                         \ display from R, so we can use it as a mask when
                         \ painting the indicator. It will be &FF at this point
-                        \ (i.e. a full 4-pixel row)
+                        \ (i.e. a full four-pixel row)
 
 .DL5
 
@@ -11116,11 +11138,11 @@ ENDIF
                         \ drawing blank characters after this one until we reach
                         \ the end of the indicator row
 
- LDA CTWOS,X            \ CTWOS is a table of ready-made 2-pixel mode 4 bytes,
+ LDA CTWOS,X            \ CTWOS is a table of ready-made two-pixel mode 4 bytes,
                         \ similar to the TWOS and TWOS2 tables, but laid out in
                         \ a similar way to the mode 5 pixel bytes in the other
                         \ versions (see the PIXEL routine for details of how
-                        \ they work). This fetches a 2-pixel mode 4 byte with
+                        \ they work). This fetches a two-pixel mode 4 byte with
                         \ the pixel position at 2 * X, so the pixel is at the
                         \ offset that we want for our vertical bar
 
@@ -16362,7 +16384,7 @@ ENDIF
                         \ We can use there as the starting point for drawing the
                         \ stick, if there is one
 
- LDA TWOS,X             \ Load the same mode 4 1-pixel byte that we just used
+ LDA TWOS,X             \ Load the same mode 4 one-pixel byte that we just used
  STA X1                 \ for the top-right pixel and store it in X1, so we can
                         \ use it as the character row byte for the stick
 
@@ -17047,18 +17069,18 @@ ENDIF
  INX                    \ is stored in the range 0-14 but the displayed range
                         \ should be 1-15
 
- CLC                    \ Call pr2 to print the technology level as a 3-digit
- JSR pr2                \ number without a decimal point (by clearing the C
-                        \ flag)
+ CLC                    \ Call pr2 to print the technology level as a
+ JSR pr2                \ three-digit number without a decimal point (by
+                        \ clearing the C flag)
 
  JSR TTX69              \ Print a paragraph break and set Sentence Case
 
  LDA #192               \ Print recursive token 32 ("POPULATION") followed by a
  JSR TT68               \ colon
 
- SEC                    \ Call pr2 to print the population as a 3-digit number
- LDX QQ6                \ with a decimal point (by setting the C flag), so the
- JSR pr2                \ number printed will be population / 10
+ SEC                    \ Call pr2 to print the population as a three-digit
+ LDX QQ6                \ number with a decimal point (by setting the C flag),
+ JSR pr2                \ so the number printed will be population / 10
 
  LDA #198               \ Print recursive token 38 (" BILLION"), followed by a
  JSR TT60               \ paragraph break and Sentence Case
@@ -17413,9 +17435,9 @@ ENDIF
 
  JSR PIXEL              \ Call PIXEL to draw a point at (X, A), with the size of
                         \ the point dependent on the distance specified in ZZ
-                        \ (so a high value of ZZ will produce a 1-pixel point,
-                        \ a medium value will produce a 2-pixel dash, and a
-                        \ small value will produce a 4-pixel square)
+                        \ (so a high value of ZZ will produce a one-pixel point,
+                        \ a medium value will produce a two-pixel dash, and a
+                        \ small value will produce a four-pixel square)
 
  JSR TT20               \ We want to move on to the next system, so call TT20
                         \ to twist the three 16-bit seeds in QQ15
@@ -19675,7 +19697,7 @@ ENDIF
 
  LDA XC                 \ Move the text cursor in XC to the right by 4 columns,
  ADC #4                 \ so the cursor is where the last digit would be if we
- STA XC                 \ were printing a 5-digit availability number
+ STA XC                 \ were printing a five-digit availability number
 
  LDA #'-'               \ Print a "-" character by jumping to TT162+2, which
  BNE TT162+2            \ contains JMP TT27 (this BNE is effectively a JMP as A
@@ -22904,8 +22926,8 @@ ENDIF
 
  LDX #8                 \ First we need to copy the space station's coordinates
                         \ into K3, so set a counter to copy the first 9 bytes
-                        \ (the 3-byte x, y and z coordinates) from the station's
-                        \ data block at K% + NI% into K3
+                        \ (the three-byte x, y and z coordinates) from the
+                        \ station's data block at K% + NI% into K3
 
 .SPL1
 
@@ -23165,7 +23187,7 @@ ENDIF
  AND #7                 \ within the character row we need to draw
  TAX
 
- LDA TWOS,X             \ Fetch a mode 4 1-pixel byte with the pixel position
+ LDA TWOS,X             \ Fetch a mode 4 one-pixel byte with the pixel position
                         \ at X
 
  EOR (SC),Y             \ Draw the pixel on-screen using EOR logic, so we can
@@ -23177,7 +23199,7 @@ ENDIF
 
  INX                    \ Increment X to get the next pixel along
 
- LDA TWOS,X             \ Fetch a mode 4 1-pixel byte with the pixel position
+ LDA TWOS,X             \ Fetch a mode 4 one-pixel byte with the pixel position
                         \ at X
 
  BPL CP1                \ The CTWOS table is followed by the TWOS2 table, whose
@@ -23195,7 +23217,7 @@ ENDIF
  INC SC+1               \ the high byte of SC(1 0), as this means we just moved
                         \ into the right half of the screen row
 
- LDA TWOS,X             \ Re-fetch the mode 4 1-pixel byte from before, as we
+ LDA TWOS,X             \ Re-fetch the mode 4 one-pixel byte from before, as we
                         \ just overwrote A
 
 .CP1
@@ -24062,9 +24084,10 @@ ENDIF
 
  LDA MDIALS,X           \ Fetch the X-th bitmap from the MDIALS table
 
- STA (SC),Y             \ Draw the 3-pixel row, and as we do not use EOR logic,
-                        \ this will overwrite anything that is already there
-                        \ (so drawing a black missile will delete what's there)
+ STA (SC),Y             \ Draw the three-pixel row, and as we do not use EOR
+                        \ logic, this will overwrite anything that is already
+                        \ there (so drawing a black missile will delete what's
+                        \ there)
 
  DEX                    \ Decrement the bitmap counter for the next row
 
@@ -28658,8 +28681,9 @@ ENDIF
  ADC #3                 \ Set Y = A + 3, so Y now points to the last byte of
  TAY                    \ four within the block of four-byte values
 
- LDX #7                 \ We want to copy four bytes, spread out into an 8-byte
-                        \ block, so set a counter in Y to cover 8 bytes
+ LDX #7                 \ We want to copy four bytes, spread out into an
+                        \ eight-byte block, so set a counter in Y to cover eight
+                        \ bytes
 
 .NOL1
 
@@ -30155,8 +30179,8 @@ ENDMACRO
                         \ from byte Y-1 to byte Y+2. If the ship's screen point
                         \ turns out to be off-screen, then this routine aborts
                         \ the entire call to LL9, exiting via nono. The four
-                        \ bytes define a horizontal 4-pixel dash, for either the
-                        \ top or the bottom of the ship's dot
+                        \ bytes define a horizontal four-pixel dash, for either
+                        \ the top or the bottom of the ship's dot
 
  STA (XX19),Y           \ Store A in byte Y of the ship line heap (i.e. Y1)
 
