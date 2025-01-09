@@ -1565,7 +1565,9 @@ ENDMACRO
 
  LSR A                  \ Set A = A >> 3
  LSR A                  \       = y div 8
- LSR A                  \       = character row number
+ LSR A                  \
+                        \ So A now contains the number of the character row
+                        \ that will contain the pixel we want to draw
 
                         \ Also, as ZP = 128, we have:
                         \

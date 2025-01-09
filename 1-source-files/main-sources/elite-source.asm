@@ -7352,10 +7352,13 @@ ENDIF
                         \
                         \   SC = &5800 + (Y1 div 8 * 256) + (Y1 div 8 * 64) + 32
 
- LDA Y1                 \ Set A = Y1 / 8, so A now contains the character row
- LSR A                  \ that will contain our horizontal line
- LSR A
- LSR A
+ LDA Y1                 \ Set A to the y-coordinate in Y1
+
+ LSR A                  \ Set A = A >> 3
+ LSR A                  \       = y div 8
+ LSR A                  \
+                        \ So A now contains the number of the character row
+                        \ that will contain the start of the line
 
  STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
                         \                           = char row * 256
@@ -7742,9 +7745,11 @@ ENDIF
                         \
                         \   SC = &5800 + (Y1 div 8 * 256) + (Y1 div 8 * 64) + 32
 
- LSR A                  \ Set A = Y1 / 8, so A now contains the character row
- LSR A                  \ that will contain our horizontal line
- LSR A
+ LSR A                  \ Set A = A >> 3
+ LSR A                  \       = y div 8
+ LSR A                  \
+                        \ So A now contains the number of the character row
+                        \ that will contain the the (X1, Y1) pixel
 
  STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
                         \                           = char row * 256
@@ -8406,7 +8411,9 @@ ENDIF
 
  LSR A                  \ Set A = A >> 3
  LSR A                  \       = y div 8
- LSR A                  \       = character row number
+ LSR A                  \
+                        \ So A now contains the number of the character row
+                        \ that will contain the pixel we want to draw
 
  STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
                         \                           = char row * 256
@@ -18657,10 +18664,11 @@ ENDIF
                         \ so this sets Y1 to the centre 90 +/- 74, the pixel
                         \ y-coordinate of this system
 
- LSR A                  \ Set Y = Y1 / 8, so Y contains the number of the text
- LSR A                  \ row that contains this system
- LSR A
- TAY
+ LSR A                  \ Set Y = A >> 3
+ LSR A                  \       = Y1 div 8
+ LSR A                  \
+ TAY                    \ So Y now contains the number of the character row
+                        \ that contains this system
 
                         \ Now to see if there is room for this system's label.
                         \ Ideally we would print the system name on the same
@@ -23138,7 +23146,9 @@ ENDIF
 
  LSR A                  \ Set A = A >> 3
  LSR A                  \       = y div 8
- LSR A                  \       = character row number
+ LSR A                  \
+                        \ So A now contains the number of the character row
+                        \ that will contain the pixel we want to draw
 
                         \ Also, as SC = 128, we have:
                         \
