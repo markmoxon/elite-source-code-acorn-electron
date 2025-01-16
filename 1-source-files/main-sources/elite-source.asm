@@ -684,8 +684,10 @@ ENDIF
                         \ This counter determines how often certain actions are
                         \ performed within the main loop
 
- SKIP 1                 \ This byte is unused in this version of Elite (it
-                        \ is used to store the delay counter in the other
+.DL
+
+ SKIP 1                 \ This byte is unused in this version of Elite (it is
+                        \ used to store the vertical sync flag in the BBC Micro
                         \ versions)
 
 .TYPE
