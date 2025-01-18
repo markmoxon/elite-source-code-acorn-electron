@@ -23768,12 +23768,6 @@ ENDIF
 \
 \ ------------------------------------------------------------------------------
 \
-\ Arguments:
-\
-\   Y                   The new status of the leftmost missile indicator
-\
-\ ------------------------------------------------------------------------------
-\
 \ Other entry points:
 \
 \   ABORT-2             Set the indicator to disarmed (white square)
