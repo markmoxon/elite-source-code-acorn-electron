@@ -7749,7 +7749,7 @@ ENDIF
  LSR A                  \       = y div 8
  LSR A                  \
                         \ So A now contains the number of the character row
-                        \ that will contain the the (X1, Y1) pixel
+                        \ that will contain the (X1, Y1) pixel
 
  STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
                         \                           = char row * 256
