@@ -6450,7 +6450,7 @@ Saving file '3-assembled-output/ELTB.bin'
      2449   A9 00      LDA #&00
      244B   A2 08      LDX #&08
      244D   46 1B      LSR &1B
-.MUL6
+.MUL6K
      244F   90 02      BCC &2453
      2451   65 D1      ADC &D1
      2453   6A         ROR A
