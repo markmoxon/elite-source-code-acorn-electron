@@ -26588,8 +26588,8 @@ ENDIF
 \ Arguments:
 \
 \   A                   The internal key number of the key pressed (see p.40 of
-\                       the Electron Advanced User Guide for a list of internal
-\                       key numbers)
+\                       the "Acorn Electron Advanced User Guide" by Holmes and
+\                       Dickens for a list of internal key numbers)
 \
 \   X                   The amount to move the crosshairs in the x-axis
 \
@@ -28286,8 +28286,9 @@ ENDIF
 \ ------------------------------------------------------------------------------
 \
 \ Scan the keyboard, starting with internal key number 16 ("Q") and working
-\ through the set of internal key numbers (see p.40 of the Electron Advanced
-\ User Guide for a list of internal key numbers).
+\ through the set of internal key numbers (see p.40 of the "Acorn Electron
+\ Advanced User Guide" by Holmes and Dickens for a list of internal key
+\ numbers).
 \
 \ This routine is effectively the same as OSBYTE 122, though the OSBYTE call
 \ preserves A, unlike this routine.
@@ -28730,8 +28731,8 @@ ENDIF
 \ ------------------------------------------------------------------------------
 \
 \ Keyboard table for in-flight controls. This table contains the internal key
-\ codes for the flight keys (see p.40 of the Electron Advanced User Guide for a
-\ list of internal key numbers).
+\ codes for the flight keys (see p.40 of the "Acorn Electron Advanced User
+\ Guide" by Holmes and Dickens for a list of internal key numbers).
 \
 \ The pitch, roll, speed and laser keys (i.e. the seven primary flight
 \ control keys) have bit 7 set, so they have 128 added to their internal
@@ -28788,8 +28789,8 @@ ENDIF
 \ Arguments:
 \
 \   X                   The internal number of the key to check (see p.40 of the
-\                       Electron Advanced User Guide for a list of internal key
-\                       numbers)
+\                       "Acorn Electron Advanced User Guide" by Holmes and
+\                       Dickens for a list of internal key numbers)
 \
 \ ------------------------------------------------------------------------------
 \
@@ -28965,11 +28966,11 @@ ENDIF
 \   * J toggles reverse both joystick channels (&45)
 \   * K toggles keyboard and joystick (&46)
 \
-\ The numbers in brackets are the internal key numbers (see p.40 of the Electron
-\ Advanced User Guide for a list of internal key numbers). We pass the key that
-\ has been pressed in X, and the configuration option to check it against in Y,
-\ so this routine is typically called in a loop that loops through the various
-\ configuration options.
+\ The numbers in brackets are the internal key numbers (see p.40 of the "Acorn
+\ Electron Advanced User Guide" by Holmes and Dickens for a list of internal key
+\ numbers). We pass the key that has been pressed in X, and the configuration
+\ option to check it against in Y, so this routine is typically called in a loop
+\ that loops through the various configuration options.
 \
 \ Note that the Electron version doesn't support joysticks, but you can still
 \ configure them (though this does break the chart views, as they still call the
