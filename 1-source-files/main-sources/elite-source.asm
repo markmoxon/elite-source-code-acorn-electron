@@ -348,7 +348,7 @@ ENDIF
 .X1
 
  SKIP 1                 \ Temporary storage, typically used for x-coordinates in
-                        \ line-drawing routines
+                        \ the line-drawing routines
 
 .Y1
 
@@ -358,7 +358,7 @@ ENDIF
 .X2
 
  SKIP 1                 \ Temporary storage, typically used for x-coordinates in
-                        \ line-drawing routines
+                        \ the line-drawing routines
 
 .Y2
 
@@ -710,8 +710,10 @@ ENDIF
                         \ This counter determines how often certain actions are
                         \ performed within the main loop
 
- SKIP 1                 \ This byte is unused in this version of Elite (it
-                        \ is used to store the delay counter in the other
+.DL
+
+ SKIP 1                 \ This byte is unused in this version of Elite (it is
+                        \ used to store the vertical sync flag in the BBC Micro
                         \ versions)
 
 .TYPE
@@ -1171,23 +1173,27 @@ ENDIF
                         \
                         \ If the high byte in TALLY+1 is 0 then we have between
                         \ 0 and 255 kills, so our rank is Harmless, Mostly
-                        \ Harmless, Poor, Average or Above Average, according to
-                        \ the value of the low byte in TALLY:
+                        \ Harmless, Poor, Average Above Average or Competent,
+                        \ according to the value of the low byte in TALLY:
                         \
-                        \   Harmless        = %00000000 to %00000011 = 0 to 3
-                        \   Mostly Harmless = %00000100 to %00000111 = 4 to 7
-                        \   Poor            = %00001000 to %00001111 = 8 to 15
-                        \   Average         = %00010000 to %00011111 = 16 to 31
-                        \   Above Average   = %00100000 to %11111111 = 32 to 255
+                        \   Harmless         %00000000 to %00000111 = 0 to 7
+                        \   Mostly Harmless  %00001000 to %00001111 = 8 to 15
+                        \   Poor             %00010000 to %00011111 = 16 to 31
+                        \   Average          %00100000 to %00111111 = 32 to 63
+                        \   Above Average    %01000000 to %01111111 = 64 to 127
+                        \   Competent        %10000000 to %11111111 = 128 to 255
+                        \
+                        \ Note that the Competent range also covers kill counts
+                        \ from 256 to 511, as follows
                         \
                         \ If the high byte in TALLY+1 is non-zero then we are
                         \ Competent, Dangerous, Deadly or Elite, according to
-                        \ the high byte in TALLY+1:
+                        \ the value of TALLY(1 0):
                         \
-                        \   Competent       = 1           = 256 to 511 kills
-                        \   Dangerous       = 2 to 9      = 512 to 2559 kills
-                        \   Deadly          = 10 to 24    = 2560 to 6399 kills
-                        \   Elite           = 25 and up   = 6400 kills and up
+                        \   Competent   (1 0) to (1 255)   = 256 to 511 kills
+                        \   Dangerous   (2 0) to (9 255)   = 512 to 2559 kills
+                        \   Deadly      (10 0) to (24 255) = 2560 to 6399 kills
+                        \   Elite       (25 0) and up      = 6400 kills and up
                         \
                         \ You can see the rating calculation in the STATUS
                         \ subroutine
@@ -1514,6 +1520,14 @@ ENDMACRO
 \   Category: Text
 \    Summary: The recursive token table for tokens 0-148
 \  Deep dive: Printing text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ The encodings shown for each recursive text token use the following notation:
+\
+\   {n}           Control code              n = 0 to 13
+\   <n>           Two-letter token          n = 128 to 159
+\   [n]           Recursive token           n = 0 to 148
 \
 \ ******************************************************************************
 
@@ -5750,6 +5764,7 @@ ENDMACRO
 \       Type: Subroutine
 \   Category: Moving
 \    Summary: Move current ship: Move the ship in space according to our speed
+\  Deep dive: A sense of scale
 \
 \ ------------------------------------------------------------------------------
 \
@@ -7147,8 +7162,6 @@ ENDIF
 \  Deep dive: The local bubble of universe
 \             Ship data blocks
 \
-\ ------------------------------------------------------------------------------
-\
 \ ******************************************************************************
 
 .UNIV
@@ -7199,7 +7212,7 @@ ENDIF
 \
 \ Ready-made bytes for plotting two-pixel points in the mode 4 dashboard (the
 \ bottom part of the screen). The layout of the pixels is similar to the layout
-\ of four-colour mode 5 pixels, so the byte at position X contains a 2-pixel
+\ of four-colour mode 5 pixels, so the byte at position X contains a two-pixel
 \ mode 4 dot at position 2 * X (we do this so the same code can be used to
 \ create both the monochrome Electron dashboard and the four-colour mode 5
 \ dashboard in the other versions).
@@ -7401,10 +7414,13 @@ ENDIF
                         \
                         \   SC = &5800 + (Y1 div 8 * 256) + (Y1 div 8 * 64) + 32
 
- LDA Y1                 \ Set A = Y1 / 8, so A now contains the character row
- LSR A                  \ that will contain our horizontal line
- LSR A
- LSR A
+ LDA Y1                 \ Set A to the y-coordinate in Y1
+
+ LSR A                  \ Set A = A >> 3
+ LSR A                  \       = y div 8
+ LSR A                  \
+                        \ So A now contains the number of the character row
+                        \ that will contain the start of the line
 
  STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
                         \                           = char row * 256
@@ -7447,7 +7463,7 @@ ENDIF
  TAX                    \ each pixel line in the character block is 8 pixels
                         \ wide)
 
- LDA TWOS,X             \ Fetch a 1-pixel byte from TWOS where pixel X is set,
+ LDA TWOS,X             \ Fetch a one-pixel byte from TWOS where pixel X is set,
  STA R                  \ and store it in R
 
                         \ The following calculates:
@@ -7791,9 +7807,11 @@ ENDIF
                         \
                         \   SC = &5800 + (Y1 div 8 * 256) + (Y1 div 8 * 64) + 32
 
- LSR A                  \ Set A = Y1 / 8, so A now contains the character row
- LSR A                  \ that will contain our horizontal line
- LSR A
+ LSR A                  \ Set A = A >> 3
+ LSR A                  \       = y div 8
+ LSR A                  \
+                        \ So A now contains the number of the character row
+                        \ that will contain the (X1, Y1) pixel
 
  STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
                         \                           = char row * 256
@@ -7835,7 +7853,7 @@ ENDIF
  AND #7                 \ character block at which we want to draw the start of
  TAX                    \ our line (as each character block has 8 rows)
 
- LDA TWOS,X             \ Fetch a mode 4 1-pixel byte with the pixel position
+ LDA TWOS,X             \ Fetch a mode 4 one-pixel byte with the pixel position
  STA R                  \ at X and store it in R to act as a mask
 
                         \ The following calculates:
@@ -8103,7 +8121,7 @@ ENDIF
  DEC SCH                \ decrement the high byte
 
  CLC                    \ Clear the C flag so it doesn't affect the additions
-                        \ below
+                        \ if we loop back
 
 .LIC6
 
@@ -8337,7 +8355,14 @@ ENDIF
 \
 \   Y1                  The y-coordinate offset
 \
-\   ZZ                  The distance of the point (further away = smaller point)
+\   ZZ                  The distance of the point, with bigger distances drawing
+\                       smaller points:
+\
+\                         * ZZ < 80           Double-height four-pixel square
+\
+\                         * 80 <= ZZ <= 143   Single-height two-pixel dash
+\
+\                         * ZZ > 143          Single-height one-pixel dot
 \
 \ ******************************************************************************
 
@@ -8350,7 +8375,7 @@ ENDIF
  TXA                    \ Set SYL+Y to X, the low byte of the result
  STA SYL,Y
 
-                        \ Fall through into PIX1 to draw the stardust particle
+                        \ Fall through into PIXEL2 to draw the stardust particle
                         \ at (X1,Y1)
 
 \ ******************************************************************************
@@ -8374,7 +8399,14 @@ ENDIF
 \   Y1                  The y-coordinate offset (positive means up the screen
 \                       from the centre, negative means down the screen)
 \
-\   ZZ                  The distance of the point (further away = smaller point)
+\   ZZ                  The distance of the point, with bigger distances drawing
+\                       smaller points:
+\
+\                         * ZZ < 80           Double-height four-pixel square
+\
+\                         * 80 <= ZZ <= 143   Single-height two-pixel dash
+\
+\                         * ZZ > 143          Single-height one-pixel dot
 \
 \ ******************************************************************************
 
@@ -8428,7 +8460,7 @@ ENDIF
 \       Name: PIXEL
 \       Type: Subroutine
 \   Category: Drawing pixels
-\    Summary: Draw a 1-pixel dot, 2-pixel dash or 4-pixel square
+\    Summary: Draw a one-pixel dot, two-pixel dash or four-pixel square
 \  Deep dive: Drawing monochrome pixels on the BBC Micro
 \
 \ ------------------------------------------------------------------------------
@@ -8444,7 +8476,14 @@ ENDIF
 \
 \   A                   The screen y-coordinate of the point to draw
 \
-\   ZZ                  The distance of the point (further away = smaller point)
+\   ZZ                  The distance of the point, with bigger distances drawing
+\                       smaller points:
+\
+\                         * ZZ < 80           Double-height four-pixel square
+\
+\                         * 80 <= ZZ <= 143   Single-height two-pixel dash
+\
+\                         * ZZ > 143          Single-height one-pixel dot
 \
 \ ------------------------------------------------------------------------------
 \
@@ -8468,7 +8507,8 @@ ENDIF
                         \
                         \   SC = &5800 + (Y1 div 8 * 256) + (Y1 div 8 * 64) + 32
 
- STY T1                 \ Store Y in T1
+ STY T1                 \ Store Y in T1 so we can restore it at the end of the
+                        \ subroutine
 
  LDY #128               \ Set SC = 128 for use in the calculation below
  STY SC
@@ -8477,7 +8517,9 @@ ENDIF
 
  LSR A                  \ Set A = A >> 3
  LSR A                  \       = y div 8
- LSR A                  \       = character row number
+ LSR A                  \
+                        \ So A now contains the number of the character row
+                        \ that will contain the pixel we want to draw
 
  STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
                         \                           = char row * 256
@@ -8523,8 +8565,8 @@ ENDIF
                         \ --- Mod: Code removed for flicker-free planets: ----->
 
 \LDA ZZ                 \ If distance in ZZ >= 144, then this point is a very
-\CMP #144               \ long way away, so jump to PX14 to fetch a 2-pixel dash
-\BCS PX14               \ from TWOS2 and EOR it into SC+Y
+\CMP #144               \ long way away, so jump to PX14 to fetch a two-pixel
+\BCS PX14               \ dash from TWOS2 and EOR it into SC+Y
 
                         \ --- And replaced by: -------------------------------->
 
@@ -8534,21 +8576,21 @@ ENDIF
 
                         \ --- End of replacement ------------------------------>
 
- LDA TWOS2,X            \ Otherwise fetch a 2-pixel dash from TWOS2 and EOR it
+ LDA TWOS2,X            \ Otherwise fetch a two-pixel dash from TWOS2 and EOR it
  EOR (SC),Y             \ into SC+Y
  STA (SC),Y
 
  LDA ZZ                 \ If distance in ZZ >= 80, then this point is a medium
  CMP #80                \ distance away, so jump to PX13 to stop drawing, as a
- BCS PX13               \ 2-pixel dash is enough
+ BCS PX13               \ two-pixel dash is enough
 
                         \ Otherwise we keep going to draw another 2 pixel point
                         \ either above or below the one we just drew, to make a
-                        \ 4-pixel square
+                        \ four-pixel square
 
  DEY                    \ Reduce Y by 1 to point to the pixel row above the one
  BPL PX14               \ we just plotted, and if it is still positive, jump to
-                        \ PX14 to draw our second 2-pixel dash
+                        \ PX14 to draw our second two-pixel dash
 
  LDY #1                 \ Reducing Y by 1 made it negative, which means Y was
                         \ 0 before we did the DEY above, so set Y to 1 to point
@@ -8556,8 +8598,8 @@ ENDIF
 
 .PX14
 
- LDA TWOS2,X            \ Fetch a 2-pixel dash from TWOS2 and EOR it into this
- EOR (SC),Y             \ second row to make a 4-pixel square
+ LDA TWOS2,X            \ Fetch a two-pixel dash from TWOS2 and EOR it into this
+ EOR (SC),Y             \ second row to make a four-pixel square
  STA (SC),Y
 
 .PX13
@@ -9886,10 +9928,10 @@ ENDIF
                         \ The high bytes of the top tier ratings are as follows,
                         \ so this a relatively simple calculation:
                         \
-                        \   Competent       = 1 to 2
-                        \   Dangerous       = 2 to 9
-                        \   Deadly          = 10 to 24
-                        \   Elite           = 25 and up
+                        \   Competent = 1
+                        \   Dangerous = 2 to 9
+                        \   Deadly    = 10 to 24
+                        \   Elite     = 25 and up
 
  LDX #9                 \ Set X to 9 for an Elite rating
 
@@ -10006,33 +10048,34 @@ ENDIF
  JSR spc                \ space
 
  LDA TALLY+1            \ Fetch the high byte of the kill tally, and if it is
- BNE st4                \ not zero, then we have more than 256 kills, so jump
-                        \ to st4 to work out whether we are Competent,
+ BNE st4                \ not zero, then we have more than 256 kill points, so
+                        \ jump to st4 to work out whether we are Competent,
                         \ Dangerous, Deadly or Elite
 
-                        \ Otherwise we have fewer than 256 kills, so we are one
-                        \ of Harmless, Mostly Harmless, Poor, Average or Above
-                        \ Average
+                        \ Otherwise we have fewer than 256 kill pointss, so we
+                        \ are one of Harmless, Mostly Harmless, Poor, Average,
+                        \ Above Average or Competent
 
  TAX                    \ Set X to 0 (as A is 0)
 
- LDA TALLY              \ Set A = lower byte of tally / 4
- LSR A
- LSR A
+ LDA TALLY              \ Set A to the lower byte of tally, with bits 0 and 1
+ LSR A                  \ shifted off to the right, so we can now analyse bits
+ LSR A                  \ 2 to 7 by shifting A to the right one bit at a time
 
 .st5L
 
                         \ We now loop through bits 2 to 7, shifting each of them
                         \ off the end of A until there are no set bits left, and
-                        \ incrementing X for each shift, so at the end of the
+                        \ incrementing X before each shift, so at the end of the
                         \ process, X contains the position of the leftmost 1 in
                         \ A. Looking at the rank values in TALLY:
                         \
-                        \   Harmless        = %00000000 to %00000011
-                        \   Mostly Harmless = %00000100 to %00000111
-                        \   Poor            = %00001000 to %00001111
-                        \   Average         = %00010000 to %00011111
-                        \   Above Average   = %00100000 to %11111111
+                        \   Harmless        = %00000000 to %00000111
+                        \   Mostly Harmless = %00001000 to %00001111
+                        \   Poor            = %00010000 to %00011111
+                        \   Average         = %00100000 to %00111111
+                        \   Above Average   = %01000000 to %01111111
+                        \   Competent       = %10000000 to %11111111
                         \
                         \ we can see that the values returned by this process
                         \ are:
@@ -10042,8 +10085,9 @@ ENDIF
                         \   Poor            = 3
                         \   Average         = 4
                         \   Above Average   = 5
+                        \   Competent       = 6
 
- INX                    \ Increment X for each shift
+ INX                    \ Increment X to count the number of shifts
 
  LSR A                  \ Shift A to the right
 
@@ -10294,8 +10338,8 @@ ENDIF
                         \ number (0 0 Y X)
 
                         \ Finally we fall through into BPRNT to print out the
-                        \ number in K to K+3, which now contains (Y X), to 3
-                        \ digits (as U = 3), using the same C flag as when pr2
+                        \ number in K to K+3, which now contains (Y X), to A
+                        \ digits (as U = A), using the same C flag as when pr2
                         \ was called to control the decimal point
 
 \ ******************************************************************************
@@ -11327,7 +11371,7 @@ ENDIF
  LDA R                  \ Fetch the shape of the indicator row that we need to
                         \ display from R, so we can use it as a mask when
                         \ painting the indicator. It will be &FF at this point
-                        \ (i.e. a full 4-pixel row)
+                        \ (i.e. a full four-pixel row)
 
 .DL5
 
@@ -11476,11 +11520,11 @@ ENDIF
                         \ drawing blank characters after this one until we reach
                         \ the end of the indicator row
 
- LDA CTWOS,X            \ CTWOS is a table of ready-made 2-pixel mode 4 bytes,
+ LDA CTWOS,X            \ CTWOS is a table of ready-made two-pixel mode 4 bytes,
                         \ similar to the TWOS and TWOS2 tables, but laid out in
                         \ a similar way to the mode 5 pixel bytes in the other
                         \ versions (see the PIXEL routine for details of how
-                        \ they work). This fetches a 2-pixel mode 4 byte with
+                        \ they work). This fetches a two-pixel mode 4 byte with
                         \ the pixel position at 2 * X, so the pixel is at the
                         \ offset that we want for our vertical bar
 
@@ -14286,7 +14330,12 @@ ENDIF
 \LDX #8
 \LSR P
 \
-\.MUL6
+\.MUL6K                 \ This label is a duplicate of a label in the MULTU
+\                       \ routine
+\                       \
+\                       \ In the original source this label is MUL6, but
+\                       \ because BeebAsm doesn't allow us to redefine labels,
+\                       \ I have renamed it to MUL6K
 \
 \BCC P%+4
 
@@ -14298,7 +14347,7 @@ ENDIF
 \ ROR A
 \ ROR P
 \ DEX
-\ BNE MUL6
+\ BNE MUL6K
 \ RTS
 
                         \ --- End of removed code ----------------------------->
@@ -15671,6 +15720,7 @@ ENDIF
 \       Type: Subroutine
 \   Category: Flight
 \    Summary: Perform an in-system jump
+\  Deep dive: A sense of scale
 \
 \ ------------------------------------------------------------------------------
 \
@@ -16230,7 +16280,8 @@ ENDIF
 \       Name: TTX66
 \       Type: Subroutine
 \   Category: Drawing the screen
-\    Summary: Clear the top part of the screen and draw a border box
+\    Summary: Clear the top part of the screen, draw a border box and configure
+\             the specified view
 \
 \ ------------------------------------------------------------------------------
 \
@@ -16378,7 +16429,7 @@ ENDIF
 \       Name: DELAY
 \       Type: Subroutine
 \   Category: Utility routines
-\    Summary: Wait for a specified time
+\    Summary: Wait for a specified time, measured in loop iterations
 \
 \ ------------------------------------------------------------------------------
 \
@@ -16465,7 +16516,7 @@ ENDIF
 \
 \ Set the system closest to galactic coordinates (QQ9, QQ10) as the selected
 \ system, redraw the crosshairs on the chart accordingly (if they are being
-\ shown), and, if this is not a space view, clear the bottom three text rows of
+\ shown), and if this is not the space view, clear the bottom three text rows of
 \ the screen.
 \
 \ ******************************************************************************
@@ -16797,7 +16848,7 @@ ENDIF
                         \ We can use there as the starting point for drawing the
                         \ stick, if there is one
 
- LDA TWOS,X             \ Load the same mode 4 1-pixel byte that we just used
+ LDA TWOS,X             \ Load the same mode 4 one-pixel byte that we just used
  STA X1                 \ for the top-right pixel and store it in X1, so we can
                         \ use it as the character row byte for the stick
 
@@ -17482,18 +17533,18 @@ ENDIF
  INX                    \ is stored in the range 0-14 but the displayed range
                         \ should be 1-15
 
- CLC                    \ Call pr2 to print the technology level as a 3-digit
- JSR pr2                \ number without a decimal point (by clearing the C
-                        \ flag)
+ CLC                    \ Call pr2 to print the technology level as a
+ JSR pr2                \ three-digit number without a decimal point (by
+                        \ clearing the C flag)
 
  JSR TTX69              \ Print a paragraph break and set Sentence Case
 
  LDA #192               \ Print recursive token 32 ("POPULATION") followed by a
  JSR TT68               \ colon
 
- SEC                    \ Call pr2 to print the population as a 3-digit number
- LDX QQ6                \ with a decimal point (by setting the C flag), so the
- JSR pr2                \ number printed will be population / 10
+ SEC                    \ Call pr2 to print the population as a three-digit
+ LDX QQ6                \ number with a decimal point (by setting the C flag),
+ JSR pr2                \ so the number printed will be population / 10
 
  LDA #198               \ Print recursive token 38 (" BILLION"), followed by a
  JSR TT60               \ paragraph break and Sentence Case
@@ -17785,6 +17836,7 @@ ENDIF
 \       Type: Subroutine
 \   Category: Charts
 \    Summary: Show the Long-range Chart (FUNC-5)
+\  Deep dive: A sense of scale
 \
 \ ******************************************************************************
 
@@ -17847,9 +17899,9 @@ ENDIF
 
  JSR PIXEL              \ Call PIXEL to draw a point at (X, A), with the size of
                         \ the point dependent on the distance specified in ZZ
-                        \ (so a high value of ZZ will produce a 1-pixel point,
-                        \ a medium value will produce a 2-pixel dash, and a
-                        \ small value will produce a 4-pixel square)
+                        \ (so a high value of ZZ will produce a one-pixel point,
+                        \ a medium value will produce a two-pixel dash, and a
+                        \ small value will produce a four-pixel square)
 
  JSR TT20               \ We want to move on to the next system, so call TT20
                         \ to twist the three 16-bit seeds in QQ15
@@ -18012,10 +18064,10 @@ ENDIF
  STA XX15+2             \ Set XX15+2 (X2) = the x-coordinate of the centre of
                         \ the crosshairs
 
- JMP LL30               \ Draw a vertical line (X1, Y1) to (X2, Y2), which will
-                        \ draw from the top edge of the crosshairs to the bottom
-                        \ edge, through the centre of the crosshairs, returning
-                        \ from the subroutine using a tail call
+ JMP LL30               \ Draw a vertical line from (X1, Y1) to (X2, Y2), which
+                        \ will draw from the top edge of the crosshairs to the
+                        \ bottom edge, through the centre of the crosshairs,
+                        \ and returning from the subroutine using a tail call
 
 \ ******************************************************************************
 \
@@ -19069,10 +19121,11 @@ ENDIF
                         \ so this sets Y1 to the centre 90 +/- 74, the pixel
                         \ y-coordinate of this system
 
- LSR A                  \ Set Y = Y1 / 8, so Y contains the number of the text
- LSR A                  \ row that contains this system
- LSR A
- TAY
+ LSR A                  \ Set Y = A >> 3
+ LSR A                  \       = Y1 div 8
+ LSR A                  \
+ TAY                    \ So Y now contains the number of the character row
+                        \ that contains this system
 
                         \ Now to see if there is room for this system's label.
                         \ Ideally we would print the system name on the same
@@ -20109,7 +20162,7 @@ ENDIF
 
  LDA XC                 \ Move the text cursor in XC to the right by 4 columns,
  ADC #4                 \ so the cursor is where the last digit would be if we
- STA XC                 \ were printing a 5-digit availability number
+ STA XC                 \ were printing a five-digit availability number
 
  LDA #'-'               \ Print a "-" character by jumping to TT162+2, which
  BNE TT162+2            \ contains JMP TT27 (this BNE is effectively a JMP as A
@@ -22962,6 +23015,7 @@ ENDIF
 \       Type: Subroutine
 \   Category: Universe
 \    Summary: Set up various aspects of arriving in a new system
+\  Deep dive: A sense of scale
 \
 \ ------------------------------------------------------------------------------
 \
@@ -23337,8 +23391,8 @@ ENDIF
 
  LDX #8                 \ First we need to copy the space station's coordinates
                         \ into K3, so set a counter to copy the first 9 bytes
-                        \ (the 3-byte x, y and z coordinates) from the station's
-                        \ data block at K% + NI% into K3
+                        \ (the three-byte x, y and z coordinates) from the
+                        \ station's data block at K% + NI% into K3
 
 .SPL1
 
@@ -23549,7 +23603,9 @@ ENDIF
 
  LSR A                  \ Set A = A >> 3
  LSR A                  \       = y div 8
- LSR A                  \       = character row number
+ LSR A                  \
+                        \ So A now contains the number of the character row
+                        \ that will contain the pixel we want to draw
 
                         \ Also, as SC = 128, we have:
                         \
@@ -23598,7 +23654,7 @@ ENDIF
  AND #7                 \ within the character row we need to draw
  TAX
 
- LDA TWOS,X             \ Fetch a mode 4 1-pixel byte with the pixel position
+ LDA TWOS,X             \ Fetch a mode 4 one-pixel byte with the pixel position
                         \ at X
 
  EOR (SC),Y             \ Draw the pixel on-screen using EOR logic, so we can
@@ -23610,7 +23666,7 @@ ENDIF
 
  INX                    \ Increment X to get the next pixel along
 
- LDA TWOS,X             \ Fetch a mode 4 1-pixel byte with the pixel position
+ LDA TWOS,X             \ Fetch a mode 4 one-pixel byte with the pixel position
                         \ at X
 
  BPL CP1                \ The CTWOS table is followed by the TWOS2 table, whose
@@ -23628,7 +23684,7 @@ ENDIF
  INC SC+1               \ the high byte of SC(1 0), as this means we just moved
                         \ into the right half of the screen row
 
- LDA TWOS,X             \ Re-fetch the mode 4 1-pixel byte from before, as we
+ LDA TWOS,X             \ Re-fetch the mode 4 one-pixel byte from before, as we
                         \ just overwrote A
 
 .CP1
@@ -24094,7 +24150,7 @@ ENDIF
 .NW2
 
  STA FRIN,X             \ Store the ship type in the X-th byte of FRIN, so the
-                        \ this slot is now shown as occupied in the index table
+                        \ slot is now shown as occupied in the index table
 
  TAX                    \ Copy the ship type into X
 
@@ -24165,12 +24221,6 @@ ENDIF
 \       Type: Subroutine
 \   Category: Dashboard
 \    Summary: Disarm missiles and update the dashboard indicators
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   Y                   The new status of the leftmost missile indicator
 \
 \ ------------------------------------------------------------------------------
 \
@@ -24495,9 +24545,10 @@ ENDIF
 
  LDA MDIALS,X           \ Fetch the X-th bitmap from the MDIALS table
 
- STA (SC),Y             \ Draw the 3-pixel row, and as we do not use EOR logic,
-                        \ this will overwrite anything that is already there
-                        \ (so drawing a black missile will delete what's there)
+ STA (SC),Y             \ Draw the three-pixel row, and as we do not use EOR
+                        \ logic, this will overwrite anything that is already
+                        \ there (so drawing a black missile will delete what's
+                        \ there)
 
  DEX                    \ Decrement the bitmap counter for the next row
 
@@ -27063,9 +27114,9 @@ ENDIF
 \
 \ Arguments:
 \
-\   A                   The internal key number of the key pressed (see p.40 of
-\                       the Electron Advanced User Guide for a list of internal
-\                       key numbers)
+\   A                   The internal key number of the key pressed (see page 40
+\                       of the "Acorn Electron Advanced User Guide" by Holmes
+\                       and Dickens for a list of internal key numbers)
 \
 \   X                   The amount to move the crosshairs in the x-axis
 \
@@ -27338,6 +27389,7 @@ ENDIF
 \       Type: Subroutine
 \   Category: Maths (Geometry)
 \    Summary: Compare x_hi, y_hi and z_hi with 224
+\  Deep dive: A sense of scale
 \
 \ ------------------------------------------------------------------------------
 \
@@ -27923,7 +27975,8 @@ ENDIF
 
  DEC MCNT               \ Decrement the main loop counter
 
- JSR RDKEY              \ Scan the keyboard for a key press
+ JSR RDKEY              \ Scan the keyboard for a key press and return the
+                        \ internal key number in A and X (or 0 for no key press)
 
  BEQ TLL2               \ If no key was pressed, loop back up to move/rotate
                         \ the ship and check again for a key press
@@ -28760,8 +28813,9 @@ ENDIF
 \ ------------------------------------------------------------------------------
 \
 \ Scan the keyboard, starting with internal key number 16 ("Q") and working
-\ through the set of internal key numbers (see p.40 of the Electron Advanced
-\ User Guide for a list of internal key numbers).
+\ through the set of internal key numbers (see page 40 of the "Acorn Electron
+\ Advanced User Guide" by Holmes and Dickens for a list of internal key
+\ numbers).
 \
 \ This routine is effectively the same as OSBYTE 122, though the OSBYTE call
 \ preserves A, unlike this routine.
@@ -28831,13 +28885,8 @@ ENDIF
 \
 \       Name: ECMOF
 \       Type: Subroutine
-\   Category: Sound
-\    Summary: Switch off the E.C.M.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Switch the E.C.M. off, turn off the dashboard bulb and make the sound of the
-\ E.C.M. switching off).
+\   Category: Dashboard
+\    Summary: Switch off the E.C.M. and turn off the dashboard bulb
 \
 \ ------------------------------------------------------------------------------
 \
@@ -28954,7 +29003,8 @@ ENDIF
 \       Name: EXNO
 \       Type: Subroutine
 \   Category: Sound
-\    Summary: Make the sound of a laser strike or ship explosion
+\    Summary: Make the sound of a laser strike on another ship or a ship
+\             explosion
 \
 \ ------------------------------------------------------------------------------
 \
@@ -29170,8 +29220,9 @@ ENDIF
  ADC #3                 \ Set Y = A + 3, so Y now points to the last byte of
  TAY                    \ four within the block of four-byte values
 
- LDX #7                 \ We want to copy four bytes, spread out into an 8-byte
-                        \ block, so set a counter in Y to cover 8 bytes
+ LDX #7                 \ We want to copy four bytes, spread out into an
+                        \ eight-byte block, so set a counter in Y to cover eight
+                        \ bytes
 
 .NOL1
 
@@ -29203,8 +29254,8 @@ ENDIF
 \ ------------------------------------------------------------------------------
 \
 \ Keyboard table for in-flight controls. This table contains the internal key
-\ codes for the flight keys (see p.40 of the Electron Advanced User Guide for a
-\ list of internal key numbers).
+\ codes for the flight keys (see page 40 of the "Acorn Electron Advanced User
+\ Guide" by Holmes and Dickens for a list of internal key numbers).
 \
 \ The pitch, roll, speed and laser keys (i.e. the seven primary flight
 \ control keys) have bit 7 set, so they have 128 added to their internal
@@ -29260,9 +29311,9 @@ ENDIF
 \
 \ Arguments:
 \
-\   X                   The internal number of the key to check (see p.40 of the
-\                       Electron Advanced User Guide for a list of internal key
-\                       numbers)
+\   X                   The internal number of the key to check (see page 40 of
+\                       the "Acorn Electron Advanced User Guide" by Holmes and
+\                       Dickens for a list of internal key numbers)
 \
 \ ------------------------------------------------------------------------------
 \
@@ -29298,8 +29349,8 @@ ENDIF
                         \ will scan the keyboard like OSBYTE 121, which expects
                         \ X to be set to the internal key number to scan for,
                         \ EOR'd with %10000000. Unlike OSBYTE 121, a direct call
-                        \ to KEYV will return negative value in both A and X if
-                        \ that key is being pressed
+                        \ to KEYV will return a negative value in both A and X
+                        \ if that key is being pressed
 
 .CAPSL
 
@@ -29442,11 +29493,11 @@ ENDIF
 \   * J toggles reverse both joystick channels (&45)
 \   * K toggles keyboard and joystick (&46)
 \
-\ The numbers in brackets are the internal key numbers (see p.40 of the Electron
-\ Advanced User Guide for a list of internal key numbers). We pass the key that
-\ has been pressed in X, and the configuration option to check it against in Y,
-\ so this routine is typically called in a loop that loops through the various
-\ configuration options.
+\ The numbers in brackets are the internal key numbers (see page 40 of the
+\ "Acorn Electron Advanced User Guide" by Holmes and Dickens for a list of
+\ internal key numbers). We pass the key that has been pressed in X, and the
+\ configuration option to check it against in Y, so this routine is typically
+\ called in a loop that loops through the various configuration options.
 \
 \ Note that the Electron version doesn't support joysticks, but you can still
 \ configure them (though this does break the chart views, as they still call the
@@ -30125,6 +30176,7 @@ ENDMACRO
 \       Type: Variable
 \   Category: Market
 \    Summary: Market prices table
+\  Deep dive: Market item prices and availability
 \
 \ ------------------------------------------------------------------------------
 \
@@ -30136,12 +30188,12 @@ ENDMACRO
 \   Byte #2 = Base quantity
 \   Byte #3 = Mask to control price fluctuations
 \
-\ To make it easier for humans to follow, we've defined a macro called ITEM
+\ To make it easier for humans to follow, I've defined a macro called ITEM
 \ that takes the following arguments and builds the four bytes for us:
 \
 \   ITEM base price, economic factor, units, base quantity, mask
 \
-\ So for food, we have the following:
+\ So for food, we have the following, for example:
 \
 \   * Base price = 19
 \   * Economic factor = -2
@@ -30712,8 +30764,8 @@ ENDMACRO
 \                       \ from byte Y-1 to byte Y+2. If the ship's screen point
 \                       \ turns out to be off-screen, then this routine aborts
 \                       \ the entire call to LL9, exiting via nono. The four
-\                       \ bytes define a horizontal 4-pixel dash, for either the
-\                       \ top or the bottom of the ship's dot
+\                       \ bytes define a horizontal four-pixel dash, for either
+\                       \ the top or the bottom of the ship's dot
 \
 \STA (XX19),Y           \ Store A in byte Y of the ship line heap (i.e. Y1)
 \
@@ -33339,6 +33391,11 @@ ENDMACRO
 \
 \LDA (V),Y              \ Fetch byte #3 for this edge into Q, which contains
 \STA Q                  \ the number of the vertex at the end of the edge
+\                       \
+\                       \ Byte #3 contains the vertex number multiplied by 4,
+\                       \ so we can use it as an index into the heap at XX3 to
+\                       \ fetch the vertex's screen coordinates, which are
+\                       \ stored as four bytes containing two 16-bit numbers
 
                         \ --- And replaced by: -------------------------------->
 
@@ -33346,6 +33403,11 @@ ENDMACRO
 
  LDA (V),Y              \ Fetch byte #2 for this edge into X, which contains
  TAX                    \ the number of the vertex at the start of the edge
+                        \
+                        \ Byte #2 contains the vertex number multiplied by 4,
+                        \ so we can use it as an index into the heap at XX3 to
+                        \ fetch the vertex's screen coordinates, which are
+                        \ stored as four bytes containing two 16-bit numbers
 
                         \ --- End of replacement ------------------------------>
 
@@ -34962,6 +35024,11 @@ ENDMACRO
 \
 \   EDGE vertex1, vertex2, face1, face2, visibility
 \
+\ When stored in memory, bytes #2 and #3 contain the vertex numbers multiplied
+\ by 4, so we can use them as indices into the heap at XX3 to fetch the screen
+\ coordinates for each vertex, as they are stored as four bytes containing two
+\ 16-bit numbers (see part 10 of the LL9 routine for details).
+\
 \ ------------------------------------------------------------------------------
 \
 \ Arguments:
@@ -35052,6 +35119,7 @@ ENDMACRO
 \   Category: Drawing ships
 \    Summary: Ship blueprint for a Sidewinder
 \  Deep dive: Ship blueprints
+\             Comparing ship specifications
 \
 \ ******************************************************************************
 
@@ -35132,6 +35200,7 @@ ENDMACRO
 \   Category: Drawing ships
 \    Summary: Ship blueprint for a Viper
 \  Deep dive: Ship blueprints
+\             Comparing ship specifications
 \
 \ ******************************************************************************
 
@@ -35222,6 +35291,7 @@ ENDMACRO
 \   Category: Drawing ships
 \    Summary: Ship blueprint for a Mamba
 \  Deep dive: Ship blueprints
+\             Comparing ship specifications
 \
 \ ******************************************************************************
 
@@ -35328,6 +35398,7 @@ ENDMACRO
 \   Category: Drawing ships
 \    Summary: Ship blueprint for a Python
 \  Deep dive: Ship blueprints
+\             Comparing ship specifications
 \
 \ ******************************************************************************
 
@@ -35426,6 +35497,7 @@ ENDMACRO
 \   Category: Drawing ships
 \    Summary: Ship blueprint for a Cobra Mk III
 \  Deep dive: Ship blueprints
+\             Comparing ship specifications
 \
 \ ******************************************************************************
 
@@ -35553,6 +35625,7 @@ ENDMACRO
 \   Category: Drawing ships
 \    Summary: Ship blueprint for a Coriolis space station
 \  Deep dive: Ship blueprints
+\             Comparing ship specifications
 \
 \ ******************************************************************************
 
@@ -35659,6 +35732,7 @@ ENDMACRO
 \   Category: Drawing ships
 \    Summary: Ship blueprint for a missile
 \  Deep dive: Ship blueprints
+\             Comparing ship specifications
 \
 \ ******************************************************************************
 
@@ -35757,6 +35831,7 @@ ENDMACRO
 \   Category: Drawing ships
 \    Summary: Ship blueprint for an asteroid
 \  Deep dive: Ship blueprints
+\             Comparing ship specifications
 \
 \ ******************************************************************************
 
@@ -35849,6 +35924,7 @@ ENDMACRO
 \   Category: Drawing ships
 \    Summary: Ship blueprint for a cargo canister
 \  Deep dive: Ship blueprints
+\             Comparing ship specifications
 \
 \ ******************************************************************************
 
@@ -35929,6 +36005,7 @@ ENDMACRO
 \   Category: Drawing ships
 \    Summary: Ship blueprint for an escape pod
 \  Deep dive: Ship blueprints
+\             Comparing ship specifications
 \
 \ ******************************************************************************
 

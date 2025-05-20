@@ -144,6 +144,7 @@
      00A8
 .MCNT
      00A9
+.DL
      00AA
 .TYPE
      00AB
@@ -6459,6 +6460,7 @@ Saving file '3-assembled-output/ELTB.bin'
      247F   A6 87      LDX &87
      2481   86 1B      STX &1B
 .MULTS
+<<<<<<< HEAD
      2483   AA         TAX
      2484   29 80      AND #&80
      2486   85 D1      STA &D1
@@ -6485,6 +6487,182 @@ Saving file '3-assembled-output/ELTB.bin'
      24AA   90 02      BCC &24AE
      24AC   65 06      ADC &06
      24AE   6A         ROR A
+=======
+     23AD   AA         TAX
+     23AE   29 80      AND #&80
+     23B0   85 D1      STA &D1
+     23B2   8A         TXA
+     23B3   29 7F      AND #&7F
+     23B5   F0 64      BEQ &241B
+     23B7   AA         TAX
+     23B8   CA         DEX
+     23B9   86 06      STX &06
+     23BB   A9 00      LDA #&00
+     23BD   46 1B      LSR &1B
+     23BF   90 02      BCC &23C3
+     23C1   65 06      ADC &06
+     23C3   6A         ROR A
+     23C4   66 1B      ROR &1B
+     23C6   90 02      BCC &23CA
+     23C8   65 06      ADC &06
+     23CA   6A         ROR A
+     23CB   66 1B      ROR &1B
+     23CD   90 02      BCC &23D1
+     23CF   65 06      ADC &06
+     23D1   6A         ROR A
+     23D2   66 1B      ROR &1B
+     23D4   90 02      BCC &23D8
+     23D6   65 06      ADC &06
+     23D8   6A         ROR A
+     23D9   66 1B      ROR &1B
+     23DB   90 02      BCC &23DF
+     23DD   65 06      ADC &06
+     23DF   6A         ROR A
+     23E0   66 1B      ROR &1B
+     23E2   4A         LSR A
+     23E3   66 1B      ROR &1B
+     23E5   4A         LSR A
+     23E6   66 1B      ROR &1B
+     23E8   4A         LSR A
+     23E9   66 1B      ROR &1B
+     23EB   05 D1      ORA &D1
+     23ED   60         RTS
+.SQUA
+     23EE   29 7F      AND #&7F
+.SQUA2
+     23F0   85 1B      STA &1B
+     23F2   AA         TAX
+     23F3   D0 12      BNE &2407
+.MU1
+     23F5   18         CLC
+     23F6   86 1B      STX &1B
+     23F8   8A         TXA
+     23F9   60         RTS
+.MLU1
+     23FA   B9 62 03   LDA &0362,Y
+     23FD   85 32      STA &32
+.MLU2
+     23FF   29 7F      AND #&7F
+     2401   85 1B      STA &1B
+.MULTU
+     2403   A6 A0      LDX &A0
+     2405   F0 EE      BEQ &23F5
+.MU11
+     2407   CA         DEX
+     2408   86 D1      STX &D1
+     240A   A9 00      LDA #&00
+     240C   A2 08      LDX #&08
+     240E   46 1B      LSR &1B
+.MUL6
+     2410   90 02      BCC &2414
+     2412   65 D1      ADC &D1
+     2414   6A         ROR A
+     2415   66 1B      ROR &1B
+     2417   CA         DEX
+     2418   D0 F6      BNE &2410
+     241A   60         RTS
+.MU6
+     241B   85 1C      STA &1C
+     241D   85 1B      STA &1B
+     241F   60         RTS
+.FMLTU2
+     2420   29 1F      AND #&1F
+     2422   AA         TAX
+     2423   BD 3B 23   LDA &233B,X
+     2426   85 A0      STA &A0
+     2428   A5 3D      LDA &3D
+.FMLTU
+     242A   49 FF      EOR #&FF
+     242C   38         SEC
+     242D   6A         ROR A
+     242E   85 1B      STA &1B
+     2430   A9 00      LDA #&00
+.MUL3
+     2432   B0 08      BCS &243C
+     2434   65 A0      ADC &A0
+     2436   6A         ROR A
+     2437   46 1B      LSR &1B
+     2439   D0 F7      BNE &2432
+     243B   60         RTS
+.MU7
+     243C   4A         LSR A
+     243D   46 1B      LSR &1B
+     243F   D0 F1      BNE &2432
+     2441   60         RTS
+     2442   A6 A0      LDX &A0
+     2444   F0 AF      BEQ &23F5
+     2446   CA         DEX
+     2447   86 D1      STX &D1
+     2449   A9 00      LDA #&00
+     244B   A2 08      LDX #&08
+     244D   46 1B      LSR &1B
+.MUL6K
+     244F   90 02      BCC &2453
+     2451   65 D1      ADC &D1
+     2453   6A         ROR A
+     2454   66 1B      ROR &1B
+     2456   CA         DEX
+     2457   D0 F6      BNE &244F
+     2459   60         RTS
+     245A   86 A0      STX &A0
+.MLTU2
+     245C   49 FF      EOR #&FF
+     245E   4A         LSR A
+     245F   85 1C      STA &1C
+     2461   A9 00      LDA #&00
+     2463   A2 10      LDX #&10
+     2465   66 1B      ROR &1B
+.MUL7
+     2467   B0 0B      BCS &2474
+     2469   65 A0      ADC &A0
+     246B   6A         ROR A
+     246C   66 1C      ROR &1C
+     246E   66 1B      ROR &1B
+     2470   CA         DEX
+     2471   D0 F4      BNE &2467
+     2473   60         RTS
+.MU21
+     2474   4A         LSR A
+     2475   66 1C      ROR &1C
+     2477   66 1B      ROR &1B
+     2479   CA         DEX
+     247A   D0 EB      BNE &2467
+     247C   60         RTS
+.MUT3
+     247D   A6 87      LDX &87
+     247F   86 1B      STX &1B
+.MUT2
+     2481   A6 25      LDX &25
+     2483   86 A2      STX &A2
+.MUT1
+     2485   A6 24      LDX &24
+     2487   86 A1      STX &A1
+.MULT1
+     2489   AA         TAX
+     248A   29 7F      AND #&7F
+     248C   4A         LSR A
+     248D   85 1B      STA &1B
+     248F   8A         TXA
+     2490   45 A0      EOR &A0
+     2492   29 80      AND #&80
+     2494   85 D1      STA &D1
+     2496   A5 A0      LDA &A0
+     2498   29 7F      AND #&7F
+     249A   F0 18      BEQ &24B4
+     249C   AA         TAX
+     249D   CA         DEX
+     249E   86 06      STX &06
+     24A0   A9 00      LDA #&00
+     24A2   A2 07      LDX #&07
+.MUL4
+     24A4   90 02      BCC &24A8
+     24A6   65 06      ADC &06
+     24A8   6A         ROR A
+     24A9   66 1B      ROR &1B
+     24AB   CA         DEX
+     24AC   D0 F6      BNE &24A4
+     24AE   4A         LSR A
+>>>>>>> main
      24AF   66 1B      ROR &1B
      24B1   90 02      BCC &24B5
      24B3   65 06      ADC &06
