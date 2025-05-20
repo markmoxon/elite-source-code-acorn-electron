@@ -28822,8 +28822,8 @@ ENDIF
                         \ will scan the keyboard like OSBYTE 121, which expects
                         \ X to be set to the internal key number to scan for,
                         \ EOR'd with %10000000. Unlike OSBYTE 121, a direct call
-                        \ to KEYV will return negative value in both A and X if
-                        \ that key is being pressed
+                        \ to KEYV will return a negative value in both A and X
+                        \ if that key is being pressed
 
 .CAPSL
 
