@@ -88,17 +88,17 @@ print("3-assembled-output/SHIPS.bin file read")
 
 # Calculate checksum0
 
-checksum0 = 0
-for n in range(0x0, 0x4600):
-    checksum0 += data_block[n + 0x28]
-
-# This is an unprotected version, so let's just hard-code the checksum
-# to the value from the extracted binary
-checksum0 = 0x67
-
-print("checksum 0 = ", hex(checksum0))
-
 if encrypt:
+    checksum0 = 0
+    for n in range(0x0, 0x4600):
+        checksum0 += data_block[n + 0x28]
+
+    # This is an unprotected version, so let's just hard-code the checksum
+    # to the value from the extracted binary
+    checksum0 = 0x67
+
+    print("checksum 0 = ", hex(checksum0))
+
     data_block[checksum0_offset] = checksum0 % 256
 
 # Write output file for ELITECO
