@@ -351,8 +351,8 @@ ENDIF
 \
 \ This table contains the sound envelope data, which is passed to OSWORD by the
 \ FNE macro to create the four sound envelopes used in-game. Refer to chapter 22
-\ of the Acorn Electron User Guide for details of sound envelopes and what all
-\ the parameters mean.
+\ of the "Electron User Guide" by Acorn Computers for details of sound envelopes
+\ and what all the parameters mean.
 \
 \ The envelopes are as follows:
 \
@@ -1592,7 +1592,9 @@ ENDMACRO
 
  LSR A                  \ Set A = A >> 3
  LSR A                  \       = y div 8
- LSR A                  \       = character row number
+ LSR A                  \
+                        \ So A now contains the number of the character row
+                        \ that will contain the pixel we want to draw
 
                         \ Also, as ZP = 128, we have:
                         \
