@@ -76,6 +76,8 @@ else
   suffix=-flicker-free-ib-superior
 endif
 
+unencrypt=-u
+
 .PHONY:all
 all:
 	echo _VERSION=5 > 1-source-files/main-sources/elite-build-options.asm

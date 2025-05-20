@@ -64,18 +64,28 @@
  LE% = &0B00            \ LE% is the address to which the code from UU% onwards
                         \ is copied in part 3
 
- C% = &0D00             \ C% is set to the location that the main game code gets
-                        \ moved to after it is loaded
+                        \ --- Mod: Code removed for sideways RAM: ------------->
 
-IF _DISC
+\C% = &0D00             \ C% is set to the location that the main game code gets
+\                       \ moved to after it is loaded
+\
+\IF _DISC
+\
+\L% = &2000             \ L% is the load address of the main game code file
+\
+\ELSE
+\
+\L% = &0E00             \ L% is the load address of the main game code file
+\
+\ENDIF
 
- L% = &2000             \ L% is the load address of the main game code file
+                        \ --- And replaced by: -------------------------------->
 
-ELSE
+ C% = &1200             \ C% is set to the location of the main game code
 
- L% = &0E00             \ L% is the load address of the main game code file
+ L% = &1200             \ L% is the load address of the main game code file
 
-ENDIF
+                        \ --- End of replacement ------------------------------>
 
  S% = C%                \ S% points to the entry point for the main game code
 
@@ -170,6 +180,15 @@ ENDIF
 .EXCN
 
  SKIP 2                 \ Gets set to &03C2 as part of the obfuscation code
+
+                        \ --- Mod: Code added for sideways RAM: --------------->
+
+.sramBankNumber
+
+ SKIP 1                 \ The bank number of the sideways RAM slot containing
+                        \ the speed-sensitive code
+
+                        \ --- End of added code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -640,8 +659,12 @@ ENDMACRO
  NOP
  NOP
 
- LDA #&60               \ This appears to be a lone instruction left over from
- STA &0088              \ the unprotected code, as this value is never used
+                        \ --- Mod: Code removed for sideways RAM: ------------->
+
+\LDA #&60               \ This appears to be a lone instruction left over from
+\STA &0088              \ the unprotected code, as this value is never used
+
+                        \ --- End of removed code ----------------------------->
 
  NOP                    \ This part of the loader has been disabled by the
  NOP                    \ crackers, as this is an unprotected version
@@ -1178,10 +1201,14 @@ ENDMACRO
                         \ handler (this has nothing to do with drawing Saturn,
                         \ it's all part of the copy protection)
 
- LDX #&60               \ This is normally part of the copy protection, but it's
- STX &0087              \ been disabled in this unprotected version so this has
-                        \ no effect (though the crackers presumably thought they
-                        \ might as well still set the value just in case)
+                        \ --- Mod: Code removed for sideways RAM: ------------->
+
+\LDX #&60               \ This is normally part of the copy protection, but it's
+\STX &0087              \ been disabled in this unprotected version so this has
+\                       \ no effect (though the crackers presumably thought they
+\                       \ might as well still set the value just in case)
+
+                        \ --- End of removed code ----------------------------->
 
 \ ******************************************************************************
 \
@@ -1903,66 +1930,115 @@ ENDMACRO
 
 .ENTRY2
 
- LDX #LO(MESS1)         \ Set (Y X) to point to MESS1 ("LOAD EliteCo FFFF2000")
+                        \ --- Mod: Code added for sideways RAM: --------------->
+
+ LDA #12                \ Switch to the sideways RAM bank in sramBankNumber by
+ JSR VIA05              \ first switching to one of ROM 12 to 15, and then
+ LDA sramBankNumber     \ switching to the required bank
+ JSR VIA05
+
+                        \ ??? Need to add SRAM loader here, do in URL in the
+                        \ meantime
+
+                        \ --- End of added code ------------------------------->
+
+                        \ --- Mod: Code removed for sideways RAM: ------------->
+
+\LDX #LO(MESS1)         \ Set (Y X) to point to MESS1 ("LOAD EliteCo FFFF2000")
+\LDY #HI(MESS1)
+\
+\JSR OSCLI              \ Call OSCLI to run the OS command in MESS1, which loads
+\                       \ the main game code at location &2000
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDX #LO(MESS1)         \ Set (Y X) to point to MESS1 ("LOAD EliteCo FFFF1200")
  LDY #HI(MESS1)
 
  JSR OSCLI              \ Call OSCLI to run the OS command in MESS1, which loads
-                        \ the main game code at location &2000
+                        \ the main game code at location &1200
+
+                        \ --- End of replacement ------------------------------>
 
  LDA #3                 \ Directly update &0258, the memory location associated
  STA &0258              \ with OSBYTE 200, so this is the same as calling OSBYTE
                         \ with A = 200, X = 3 and Y = 0 to disable the ESCAPE
                         \ key and clear memory if the BREAK key is pressed
 
- LDA #140               \ Call OSBYTE with A = 140 and X = 12 to select the
- LDX #12                \ tape filing system (i.e. do a *TAPE command)
- LDY #0
- JSR OSBYTE
+                        \ --- Mod: Code removed for sideways RAM: ------------->
+
+\LDA #140               \ Call OSBYTE with A = 140 and X = 12 to select the
+\LDX #12                \ tape filing system (i.e. do a *TAPE command)
+\LDY #0
+\JSR OSBYTE
+
+                        \ --- End of removed code ----------------------------->
 
  LDA #143               \ Call OSBYTE 143 to issue a paged ROM service call of
  LDX #&C                \ type &C with argument &FF, which is the "NMI claim"
  LDY #&FF               \ service call that asks the current user of the NMI
  JSR OSBYTE             \ space to clear it out
 
- LDA #&40               \ Set S% to an RTI instruction (opcode &40), so we can
- STA S%                 \ claim the NMI workspace at &0D00 (the RTI makes sure
-                        \ we return from any spurious NMIs that still call this
-                        \ workspace)
+                        \ --- Mod: Code removed for sideways RAM: ------------->
 
- LDX #&4A               \ Set X = &4A, as we want to copy the &4A pages of main
-                        \ game code from where we just loaded it at &2000, down
-                        \ to &0D00 where we will run it
+\LDA #&40               \ Set S% to an RTI instruction (opcode &40), so we can
+\STA S%                 \ claim the NMI workspace at &0D00 (the RTI makes sure
+\                       \ we return from any spurious NMIs that still call this
+\                       \ workspace)
 
- LDY #0                 \ Set the source and destination addresses for the copy:
- STY ZP                 \
- STY P                  \   ZP(1 0) = L% = &2000
- LDA #HI(L%)            \   P(1 0) = C% = &0D00
- STA ZP+1               \
- LDA #HI(C%)            \ and set Y = 0 to act as a byte counter in the
- STA P+1                \ following loop
+                        \ --- And replaced by: -------------------------------->
 
-.MVDL
+ LDA #&40               \ Set &0D00 to an RTI instruction (opcode &40), so we
+ STA &0D00              \ can claim the NMI workspace at &0D00 (the RTI makes
+                        \ sure we return from any spurious NMIs that still call
+                        \ this workspace)
 
- LDA (ZP),Y             \ Copy the Y-th byte from the source to the Y-th byte of
- STA (P),Y              \ the destination
+                        \ --- End of replacement ------------------------------>
 
- LDA #0                 \ Zero the source byte we just copied, so that this loop
- STA (ZP),Y             \ moves the memory block rather than copying it
+                        \ --- Mod: Code removed for sideways RAM: ------------->
+ 
+\LDX #&4A               \ Set X = &4A, as we want to copy the &4A pages of main
+\                       \ game code from where we just loaded it at &2000, down
+\                       \ to &0D00 where we will run it
+\
+\LDY #0                 \ Set the source and destination addresses for the copy:
+\STY ZP                 \
+\STY P                  \   ZP(1 0) = L% = &2000
+\LDA #HI(L%)            \   P(1 0) = C% = &0D00
+\STA ZP+1               \
+\LDA #HI(C%)            \ and set Y = 0 to act as a byte counter in the
+\STA P+1                \ following loop
+\
+\.MVDL
+\
+\LDA (ZP),Y             \ Copy the Y-th byte from the source to the Y-th byte of
+\STA (P),Y              \ the destination
+\
+\LDA #0                 \ Zero the source byte we just copied, so that this loop
+\STA (ZP),Y             \ moves the memory block rather than copying it
+\
+\INY                    \ Increment the byte counter
+\
+\BNE MVDL               \ Loop back until we have copied a whole page of bytes
+\
+\INC ZP+1               \ Increment the high bytes of ZP(1 0) and P(1 0) so we
+\INC P+1                \ copy bytes from the next page in memory
+\
+\DEX                    \ Decrement the page counter in X
+\
+\BPL MVDL               \ Loop back to move the next page of bytes until we have
+\                       \ moved the number of pages in X (this also sets X to
+\                       \ &FF)
 
- INY                    \ Increment the byte counter
-
- BNE MVDL               \ Loop back until we have copied a whole page of bytes
-
- INC ZP+1               \ Increment the high bytes of ZP(1 0) and P(1 0) so we
- INC P+1                \ copy bytes from the next page in memory
-
- DEX                    \ Decrement the page counter in X
-
- BPL MVDL               \ Loop back to move the next page of bytes until we have
-                        \ moved the number of pages in X (this also sets X to
-                        \ &FF)
+                        \ --- End of removed code ----------------------------->
 
  SEI                    \ Disable all interrupts
+
+                        \ --- Mod: Code added for sideways RAM: --------------->
+
+ LDX #&FF               \ Set X for the TXS instruction below
+
+                        \ --- End of added code ------------------------------->
 
  TXS                    \ Set the stack pointer to &01FF, which is the standard
                         \ location for the 6502 stack, so this instruction
@@ -2003,12 +2079,22 @@ ENDMACRO
  LDA S%+13
  STA IRQ1V+1
 
- LDA #%11111100         \ Clear all interrupts (bits 4-7) and de-select the
- JSR VIA05              \ BASIC ROM (bits 0-3) by setting the interrupt clear
-                        \ and paging register at SHEILA &05
+                        \ --- Mod: Code removed for sideways RAM: ------------->
 
- LDA #%00001000         \ Select ROM 8 (the keyboard) by setting the interrupt
- JSR VIA05              \ clear and paging register at SHEILA &05
+\LDA #%11111100         \ Clear all interrupts (bits 4-7) and de-select the
+\JSR VIA05              \ BASIC ROM (bits 0-3) by setting the interrupt clear
+\                       \ and paging register at SHEILA &05
+\
+\LDA #%00001000         \ Select ROM 8 (the keyboard) by setting the interrupt
+\JSR VIA05              \ clear and paging register at SHEILA &05
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDA sramBankNumber     \ Clear all interrupts (bits 4-7) and select the bank of
+ ORA #%11111000         \ code in sramBankNumber (bits 0-3) by setting the
+ JSR VIA05              \ interrupt clear and paging register at SHEILA &05
+
+                        \ --- End of replacement ------------------------------>
 
  LDA #&60               \ Set the screen start address registers at SHEILA &02
  STA VIA+&02            \ and SHEILA &03 so screen memory starts at &7EC0. This
@@ -2017,6 +2103,16 @@ ENDMACRO
                         \ of mode 4 is &140 bytes), and then the rest of the
                         \ screen memory from &5800 to &7EBF cover the second
                         \ row and down
+
+                        \ --- Mod: Code added for sideways RAM: --------------->
+
+ LDA sramBankNumber     \ Store the bank number of the game code in sideways RAM
+ STA S%                 \ in the first byte of S%, which can be reused as the
+                        \ game code is no longer loading at the NMI address of
+                        \ &0D00, so we don't need it to contain an RTI
+                        \ instruction
+
+                        \ --- End of added code ------------------------------->
 
  CLI                    \ Re-enable interrupts
 
@@ -2045,8 +2141,17 @@ ENDMACRO
 
 IF _DISC
 
- EQUS "LOAD EliteCo FFFF2000"
+                        \ --- Mod: Code removed for sideways RAM: ------------->
+
+\EQUS "LOAD EliteCo FFFF2000"
+\EQUB 13
+
+                        \ --- And replaced by: -------------------------------->
+
+ EQUS "LOAD EliteCo FFFF1200"
  EQUB 13
+
+                        \ --- End of replacement ------------------------------>
 
 ELSE
 
