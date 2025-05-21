@@ -1241,10 +1241,10 @@
                         \ The following variables have been moved into sideways
                         \ RAM (see the ELITE SIDEWAYS RAM FILE section at the
                         \ end of this source file)
-
-\ SX
-\ SXL
-\ SY
+                        \
+                        \   * SX
+                        \   * SXL
+                        \   * SY
 
                         \ --- End of moved code ------------------------------->
 
@@ -2744,9 +2744,9 @@ ENDMACRO
                         \ The following workspaces have been moved into sideways
                         \ RAM (see the ELITE SIDEWAYS RAM FILE section at the
                         \ end of this source file)
-
-\ K%
-\ WP
+                        \
+                        \   * K%
+                        \   * WP
 
                         \ --- End of moved code ------------------------------->
 
@@ -3131,3448 +3131,48 @@ ENDMACRO
 
                         \ --- End of added code ------------------------------->
 
-\ ******************************************************************************
-\
-\       Name: Main flight loop (Part 1 of 16)
-\       Type: Subroutine
-\   Category: Main loop
-\    Summary: Seed the random number generator
-\  Deep dive: Program flow of the main game loop
-\             Generating random numbers
-\
-\ ------------------------------------------------------------------------------
-\
-\ The main flight loop covers most of the flight-specific aspects of Elite. This
-\ section covers the following:
-\
-\   * Seed the random number generator
-\
-\   * Update the sound channel's duration counter to ensure sounds are allocated
-\     a minimum duration (unless they are stopped by a higher priority sound)
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   M%                  The entry point for the main flight loop
-\
-\ ******************************************************************************
-
-.M%
-
- LDA K%                 \ We want to seed the random number generator with a
-                        \ pretty random number, so fetch the contents of K%,
-                        \ which is the x_lo coordinate of the planet. This value
-                        \ will be fairly unpredictable, so it's a pretty good
-                        \ candidate
-
- STA RAND               \ Store the seed in the first byte of the four-byte
-                        \ random number seed that's stored in RAND
-
-                        \ The following processes each sound channel to ensure
-                        \ that sounds last for their minimum duration (see the
-                        \ SFX variable for more details)
-
- LDA #0                 \ Set A = 0 so we can use it for resetting the sound
-                        \ channel's duration and priority values below
-
- LDX #1                 \ Set X as a sound channel counter, starting with
-                        \ channel 1 and then doing channel 0
-
-.SFXL
-
- DEC SFXDU,X            \ Decrement this sound channel's SFXDU duration value
-
- BPL P%+8               \ If the duration is still positive, skip the following
-                        \ two instructions
-
- STA SFXDU,X            \ The duration just reached zero, so the sound on this
- STA SFXPR,X            \ channel has reached the end of its minimum duration,
-                        \ so we zero the channel's SFXDU duration and SFXPR
-                        \ priority values so any new sounds that need to be made
-                        \ will be made regardless of priority
-
- DEX                    \ Decrement the sound channel
-
- BPL SFXL               \ Loop back to process the next sound channel until we
-                        \ have done both
-
-\ ******************************************************************************
-\
-\       Name: Main flight loop (Part 2 of 16)
-\       Type: Subroutine
-\   Category: Main loop
-\    Summary: Calculate the alpha and beta angles from the current pitch and
-\             roll of our ship
-\  Deep dive: Program flow of the main game loop
-\             Pitching and rolling
-\
-\ ------------------------------------------------------------------------------
-\
-\ The main flight loop covers most of the flight-specific aspects of Elite. This
-\ section covers the following:
-\
-\   * Calculate the alpha and beta angles from the current pitch and roll
-\
-\ Here we take the current rate of pitch and roll, as set by the keyboard,
-\ and convert them into alpha and beta angles that we can use in the
-\ matrix functions to rotate space around our ship. The alpha angle covers
-\ roll, while the beta angle covers pitch (there is no yaw in this version of
-\ Elite). The angles are in radians, which allows us to use the small angle
-\ approximation when moving objects in the sky (see the MVEIT routine for more
-\ on this). Also, the signs of the two angles are stored separately, in both
-\ the sign and the flipped sign, as this makes calculations easier.
-\
-\ ******************************************************************************
-
- LDX JSTX               \ Set X to the current rate of roll in JSTX
-
- JSR cntr               \ Apply keyboard damping twice (if enabled) so the roll
- JSR cntr               \ rate in X creeps towards the centre by 2
-
-                        \ The roll rate in JSTX increases if we press ">" (and
-                        \ the RL indicator on the dashboard goes to the right)
-                        \
-                        \ This rolls our ship to the right (clockwise), but we
-                        \ actually implement this by rolling everything else
-                        \ to the left (anti-clockwise), so a positive roll rate
-                        \ in JSTX translates to a negative roll angle alpha
-
- TXA                    \ Set A and Y to the roll rate but with the sign bit
- EOR #%10000000         \ flipped (i.e. set them to the sign we want for alpha)
- TAY
-
- AND #%10000000         \ Extract the flipped sign of the roll rate
-
-                        \ --- Mod: Code removed for flicker-free planets: ----->
-
-\JMP P%+11              \ This skips over the following block of bytes, which
-\                       \ appear to be unused; it isn't clear what they do
-\
-\EQUB &A1, &BB          \ These bytes appear to be unused
-\EQUB &80, &00
-\EQUB &90, &01
-\EQUB &D6, &F1
-
-                        \ --- End of removed code ----------------------------->
-
- STA ALP2               \ Store the flipped sign of the roll rate in ALP2 (so
-                        \ ALP2 contains the sign of the roll angle alpha)
-
- STX JSTX               \ Update JSTX with the damped value that's still in X
-
- EOR #%10000000         \ Extract the correct sign of the roll rate and store
- STA ALP2+1             \ in ALP2+1 (so ALP2+1 contains the flipped sign of the
-                        \ roll angle alpha)
-
- TYA                    \ Set A to the roll rate but with the sign bit flipped
-
- BPL P%+7               \ If the value of A is positive, skip the following
-                        \ three instructions
-
- EOR #%11111111         \ A is negative, so change the sign of A using two's
- CLC                    \ complement so that A is now positive and contains
- ADC #1                 \ the absolute value of the roll rate, i.e. |JSTX|
-
- LSR A                  \ Divide the (positive) roll rate in A by 4
- LSR A
-
- CMP #8                 \ If A >= 8, skip the following two instructions
- BCS P%+4
-
- LSR A                  \ A < 8, so halve A again
-
- CLC                    \ This instruction has no effect, as we only get here
-                        \ if the C flag is clear (if it is set, we skip this
-                        \ instruction)
-
- STA ALP1               \ Store A in ALP1, so we now have:
-                        \
-                        \   ALP1 = |JSTX| / 8    if |JSTX| < 32
-                        \
-                        \   ALP1 = |JSTX| / 4    if |JSTX| >= 32
-                        \
-                        \ This means that at lower roll rates, the roll angle is
-                        \ reduced closer to zero than at higher roll rates,
-                        \ which gives us finer control over the ship's roll at
-                        \ lower roll rates
-                        \
-                        \ Because JSTX is in the range -127 to +127, ALP1 is
-                        \ in the range 0 to 31
-
- ORA ALP2               \ Store A in ALPHA, but with the sign set to ALP2 (so
- STA ALPHA              \ ALPHA has a different sign to the actual roll rate)
-
- LDX JSTY               \ Set X to the current rate of pitch in JSTY
-
- JSR cntr               \ Apply keyboard damping so the pitch rate in X creeps
-                        \ towards the centre by 1
-
- TXA                    \ Set A and Y to the pitch rate but with the sign bit
- EOR #%10000000         \ flipped
- TAY
-
- AND #%10000000         \ Extract the flipped sign of the pitch rate into A
-
- STX JSTY               \ Update JSTY with the damped value that's still in X
-
- STA BET2+1             \ Store the flipped sign of the pitch rate in BET2+1
-
- EOR #%10000000         \ Extract the correct sign of the pitch rate and store
- STA BET2               \ it in BET2
-
- TYA                    \ Set A to the pitch rate but with the sign bit flipped
-
- BPL P%+4               \ If the value of A is positive, skip the following
-                        \ instruction
-
- EOR #%11111111         \ A is negative, so flip the bits
-
- ADC #4                 \ Add 4 to the (positive) pitch rate, so the maximum
-                        \ value is now up to 131 (rather than 127)
-
- LSR A                  \ Divide the (positive) pitch rate in A by 16
- LSR A
- LSR A
- LSR A
-
- CMP #3                 \ If A >= 3, skip the following instruction
- BCS P%+3
-
- LSR A                  \ A < 3, so halve A again
-
- STA BET1               \ Store A in BET1, so we now have:
-                        \
-                        \   BET1 = |JSTY| / 32    if |JSTY| < 48
-                        \
-                        \   BET1 = |JSTY| / 16    if |JSTY| >= 48
-                        \
-                        \ This means that at lower pitch rates, the pitch angle
-                        \ is reduced closer to zero than at higher pitch rates,
-                        \ which gives us finer control over the ship's pitch at
-                        \ lower pitch rates
-                        \
-                        \ Because JSTY is in the range -131 to +131, BET1 is in
-                        \ the range 0 to 8
-
- ORA BET2               \ Store A in BETA, but with the sign set to BET2 (so
- STA BETA               \ BETA has the same sign as the actual pitch rate)
-
-\ ******************************************************************************
-\
-\       Name: Main flight loop (Part 3 of 16)
-\       Type: Subroutine
-\   Category: Main loop
-\    Summary: Scan for flight keys and process the results
-\  Deep dive: Program flow of the main game loop
-\             The key logger
-\
-\ ------------------------------------------------------------------------------
-\
-\ The main flight loop covers most of the flight-specific aspects of Elite. This
-\ section covers the following:
-\
-\   * Scan for flight keys and process the results
-\
-\ Flight keys are logged in the key logger at location KY1 onwards, with a
-\ non-zero value in the relevant location indicating a key press.
-\
-\ The key presses that are processed are as follows:
-\
-\   * Space and "?" to speed up and slow down
-\   * "U", "T" and "M" to disarm, arm and fire missiles
-\   * "-" to fire an energy bomb
-\   * ESCAPE to launch an escape pod
-\   * "J" to initiate an in-system jump
-\   * "E" to deploy E.C.M. anti-missile countermeasures
-\   * "C" to use the docking computer
-\   * "A" to fire lasers
-\
-\ ******************************************************************************
-
- LDA KY2                \ If Space is being pressed, keep going, otherwise jump
- BEQ MA17               \ down to MA17 to skip the following
-
- LDA DELTA              \ The "go faster" key is being pressed, so first we
- CMP #40                \ fetch the current speed from DELTA into A, and if
- BCS MA17               \ A >= 40, we are already going at full pelt, so jump
-                        \ down to MA17 to skip the following
-
- INC DELTA              \ We can go a bit faster, so increment the speed in
-                        \ location DELTA
-
-.MA17
-
- LDA KY1                \ If "?" is being pressed, keep going, otherwise jump
- BEQ MA4                \ down to MA4 to skip the following
-
- DEC DELTA              \ The "slow down" key is being pressed, so we decrement
-                        \ the current ship speed in DELTA
-
- BNE MA4                \ If the speed is still greater than zero, jump to MA4
-
- INC DELTA              \ Otherwise we just braked a little too hard, so bump
-                        \ the speed back up to the minimum value of 1
-
-.MA4
-
- LDA KY15               \ If "U" is being pressed and the number of missiles
- AND NOMSL              \ in NOMSL is non-zero, keep going, otherwise jump down
- BEQ MA20               \ to MA20 to skip the following
-
- JSR ABORT-2            \ The "disarm missiles" key is being pressed, so call
-                        \ ABORT-2 to disarm the missile and update the missile
-                        \ indicators on the dashboard to white squares (Y = &09)
-
- LDA #40                \ Call the NOISE routine with A = 40 to make a low,
- JSR NOISE              \ long beep to indicate the missile is now disarmed
-
-.MA31
-
- LDA #0                 \ Set MSAR to 0 to indicate that no missiles are
- STA MSAR               \ currently armed
-
-.MA20
-
- LDA MSTG               \ If MSTG is positive (i.e. it does not have bit 7 set),
- BPL MA25               \ then it indicates we already have a missile locked on
-                        \ a target (in which case MSTG contains the ship number
-                        \ of the target), so jump to MA25 to skip targeting. Or
-                        \ to put it another way, if MSTG = &FF, which means
-                        \ there is no current target lock, keep going
-
- LDA KY14               \ If "T" is being pressed, keep going, otherwise jump
- BEQ MA25               \ down to MA25 to skip the following
-
- LDX NOMSL              \ If the number of missiles in NOMSL is zero, jump down
- BEQ MA25               \ to MA25 to skip the following
-
- STA MSAR               \ The "target missile" key is being pressed and we have
-                        \ at least one missile, so set MSAR = &FF to denote that
-                        \ our missile is currently armed (we know A has the
-                        \ value &FF, as we just loaded it from MSTG and checked
-                        \ that it was negative)
-
- LDY #&0D               \ Change the leftmost missile indicator to a black box
- JSR MSBAR              \ in a white square on the missile bar (this call
-                        \ changes the leftmost indicator because we set X to the
-                        \ number of missiles in NOMSL above, and the indicators
-                        \ are numbered from right to left, so X is the number of
-                        \ the leftmost indicator)
-
-.MA25
-
- LDA KY16               \ If "M" is being pressed, keep going, otherwise jump
- BEQ MA24               \ down to MA24 to skip the following
-
- LDA MSTG               \ If MSTG = &FF then there is no target lock, so jump to
- BMI MA64               \ MA64 to skip the following (also skipping the checks
-                        \ for "-", ESCAPE, "J" and "E")
-
- JSR FRMIS              \ The "fire missile" key is being pressed and we have
-                        \ a missile lock, so call the FRMIS routine to fire
-                        \ the missile
-
-.MA24
-
- LDA KY12               \ If "-" is being pressed, keep going, otherwise jump
- BEQ MA76               \ down to MA76 to skip the following
-
- ASL BOMB               \ The "energy bomb" key is being pressed, so double
-                        \ the value in BOMB. If we have an energy bomb fitted,
-                        \ BOMB will contain &7F (%01111111) before this shift
-                        \ and will contain &FE (%11111110) after the shift; if
-                        \ we don't have an energy bomb fitted, BOMB will still
-                        \ contain 0. The bomb explosion is dealt with in the
-                        \ MAL1 routine below - this just registers the fact that
-                        \ we've set the bomb ticking
-
-.MA76
-
- LDA KY13               \ If ESCAPE is being pressed and we have an escape pod
- AND ESCP               \ fitted, keep going, otherwise skip the next
- BEQ P%+5               \ instruction
-
- JMP ESCAPE             \ The button is being pressed to launch an escape pod
-                        \ and we have an escape pod fitted, so jump to ESCAPE to
-                        \ launch it, and exit the main flight loop using a tail
-                        \ call
-
- LDA KY18               \ If "J" is being pressed, keep going, otherwise skip
- BEQ P%+5               \ the next instruction
-
- JSR WARP               \ Call the WARP routine to do an in-system jump
-
- LDA KY17               \ If "E" is being pressed and we have an E.C.M. fitted,
- AND ECM                \ keep going, otherwise jump down to MA64 to skip the
- BEQ MA64               \ following
-
- LDA ECMA               \ If ECMA is non-zero, that means an E.C.M. is already
- BNE MA64               \ operating and is counting down (this can be either
-                        \ our E.C.M. or an opponent's), so jump down to MA64 to
-                        \ skip the following (as we can't have two E.C.M.
-                        \ systems operating at the same time)
-
- DEC ECMP               \ The E.C.M. button is being pressed and nobody else
-                        \ is operating their E.C.M., so decrease the value of
-                        \ ECMP to make it non-zero, to denote that our E.C.M.
-                        \ is now on
-
- JSR ECBLB2             \ Call ECBLB2 to light up the E.C.M. indicator bulb on
-                        \ the dashboard, set the E.C.M. countdown timer to 32,
-                        \ and start making the E.C.M. sound
-
-.MA64
-
- LDA KY19               \ If "C" is being pressed, and we have a docking
- AND DKCMP              \ computer fitted, and we are inside the space station's
- AND SSPR               \ safe zone, keep going, otherwise jump down to MA68 to
- BEQ MA68               \ skip the following
-
- LDA K%+NI%+32          \ Fetch the AI counter (byte #32) of the second ship
- BMI MA68               \ from the ship data workspace at K%, which is reserved
-                        \ for the space station. If byte #32 is negative,
-                        \ meaning the station is hostile, then jump down to
-                        \ MA68 to skip the following (so we can't use the
-                        \ docking computer to dock at a station that has turned
-                        \ against us)
-
- JMP GOIN               \ The Docking Computer button has been pressed and
-                        \ we are allowed to dock at the station, so jump to
-                        \ GOIN to dock (or "go in"), and exit the main flight
-                        \ loop using a tail call
-
-.MA68
-
- LDA #0                 \ Set LAS = 0, to switch the laser off while we do the
- STA LAS                \ following logic
-
- STA DELT4              \ Take the 16-bit value (DELTA 0) - i.e. a two-byte
- LDA DELTA              \ number with DELTA as the high byte and 0 as the low
- LSR A                  \ byte - and divide it by 4, storing the 16-bit result
- ROR DELT4              \ in DELT4(1 0). This has the effect of storing the
- LSR A                  \ current speed * 64 in the 16-bit location DELT4(1 0)
- ROR DELT4
- STA DELT4+1
-
- LDA LASCT              \ If LASCT is zero, keep going, otherwise the laser is
- BNE MA3                \ a pulse laser that is between pulses, so jump down to
-                        \ MA3 to skip the following
-
- LDA KY7                \ If "A" is being pressed, keep going, otherwise jump
- BEQ MA3                \ down to MA3 to skip the following
-
- LDA GNTMP              \ If the laser temperature >= 242 then the laser has
- CMP #242               \ overheated, so jump down to MA3 to skip the following
- BCS MA3
-
- LDX VIEW               \ If the current space view has a laser fitted (i.e. the
- LDA LASER,X            \ laser power for this view is greater than zero), then
- BEQ MA3                \ keep going, otherwise jump down to MA3 to skip the
-                        \ following
-
-                        \ If we get here, then the "fire" button is being
-                        \ pressed, our laser hasn't overheated and isn't already
-                        \ being fired, and we actually have a laser fitted to
-                        \ the current space view, so it's time to hit me with
-                        \ those laser beams
-
- PHA                    \ Store the current view's laser power on the stack
-
- AND #%01111111         \ Set LAS and LAS2 to bits 0-6 of the laser power
- STA LAS
- STA LAS2
-
- LDA #0                 \ Call the NOISE routine with A = 0 to make the sound
- JSR NOISE              \ of our laser firing
-
- JSR LASLI              \ Call LASLI to draw the laser lines
-
- PLA                    \ Restore the current view's laser power into A
-
- BPL ma1                \ If the laser power has bit 7 set, then it's an "always
-                        \ on" laser rather than a pulsing laser, so keep going,
-                        \ otherwise jump down to ma1 to skip the following
-                        \ instruction
-
- LDA #0                 \ This is an "always on" laser (i.e. a beam laser,
-                        \ as this version of Elite doesn't have military
-                        \ lasers), so set A = 0, which will be stored in LASCT
-                        \ to denote that this is not a pulsing laser
-
-.ma1
-
- AND #%11111010         \ LASCT will be set to 0 for beam lasers, and to the
- STA LASCT              \ laser power AND %11111010 for pulse lasers, which
-                        \ comes to 10 (as pulse lasers have a power of 15). See
-                        \ MA23 below for more on laser pulsing and LASCT
-
-\ ******************************************************************************
-\
-\       Name: Main flight loop (Part 4 of 16)
-\       Type: Subroutine
-\   Category: Main loop
-\    Summary: For each nearby ship: Copy the ship's data block from K% to the
-\             zero-page workspace at INWK
-\  Deep dive: Program flow of the main game loop
-\             Ship data blocks
-\
-\ ------------------------------------------------------------------------------
-\
-\ The main flight loop covers most of the flight-specific aspects of Elite. This
-\ section covers the following:
-\
-\   * Start looping through all the ships in the local bubble, and for each
-\     one:
-\
-\     * Copy the ship's data block from K% to INWK
-\
-\     * Set XX0 to point to the ship's blueprint (if this is a ship)
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   MAL1                Marks the beginning of the ship analysis loop, so we
-\                       can jump back here from part 12 of the main flight loop
-\                       to work our way through each ship in the local bubble.
-\                       We also jump back here when a ship is removed from the
-\                       bubble, so we can continue processing from the next ship
-\
-\ ******************************************************************************
-
-.MA3
-
- LDX #0                 \ We're about to work our way through all the ships in
-                        \ our local bubble of universe, so set a counter in X,
-                        \ starting from 0, to refer to each ship slot in turn
-
-.MAL1
-
- STX XSAV               \ Store the current slot number in XSAV
-
- LDA FRIN,X             \ Fetch the contents of this slot into A. If it is 0
- BNE P%+5               \ then this slot is empty and we have no more ships to
- JMP MA18               \ process, so jump to MA18 below, otherwise A contains
-                        \ the type of ship that's in this slot, so skip over the
-                        \ JMP MA18 instruction and keep going
-
- STA TYPE               \ Store the ship type in TYPE
-
- JSR GINF               \ Call GINF to fetch the address of the ship data block
-                        \ for the ship in slot X and store it in INF. The data
-                        \ block is in the K% workspace, which is where all the
-                        \ ship data blocks are stored
-
-                        \ Next we want to copy the ship data block from INF to
-                        \ the zero-page workspace at INWK, so we can process it
-                        \ more efficiently
-
- LDY #NI%-1             \ There are NI% bytes in each ship data block (and in
-                        \ the INWK workspace, so we set a counter in Y so we can
-                        \ loop through them
-
-.MAL2
-
- LDA (INF),Y            \ Load the Y-th byte of INF and store it in the Y-th
- STA INWK,Y             \ byte of INWK
-
- DEY                    \ Decrement the loop counter
-
- BPL MAL2               \ Loop back for the next byte until we have copied the
-                        \ last byte from INF to INWK
-
- LDA TYPE               \ If the ship type is negative then this indicates a
- BMI MA21               \ planet, so jump down to MA21, as the next bit sets
-                        \ up a pointer to the ship blueprint, and then checks
-                        \ for energy bomb damage, and neither of these apply
-                        \ to planets
-
- ASL A                  \ Set Y = ship type * 2
- TAY
-
- LDA XX21-2,Y           \ The ship blueprints at XX21 start with a lookup
- STA XX0                \ table that points to the individual ship blueprints,
-                        \ so this fetches the low byte of this particular ship
-                        \ type's blueprint and stores it in XX0
-
- LDA XX21-1,Y           \ Fetch the high byte of this particular ship type's
- STA XX0+1              \ blueprint and store it in XX0+1
-
-\ ******************************************************************************
-\
-\       Name: Main flight loop (Part 5 of 16)
-\       Type: Subroutine
-\   Category: Main loop
-\    Summary: For each nearby ship: If an energy bomb has been set off,
-\             potentially kill this ship
-\  Deep dive: Program flow of the main game loop
-\
-\ ------------------------------------------------------------------------------
-\
-\ The main flight loop covers most of the flight-specific aspects of Elite. This
-\ section covers the following:
-\
-\   * Continue looping through all the ships in the local bubble, and for each
-\     one:
-\
-\     * If an energy bomb has been set off and this ship can be killed, kill it
-\       and increase the kill tally
-\
-\ ******************************************************************************
-
- LDA BOMB               \ If we set off our energy bomb (see MA24 above), then
- BPL MA21               \ BOMB is now negative, so this skips to MA21 if our
-                        \ energy bomb is not going off
-
- CPY #2*SST             \ If the ship in Y is the space station, jump to BA21
- BEQ MA21               \ as energy bombs are useless against space stations
-
- LDA INWK+31            \ If the ship we are checking has bit 5 set in its ship
- AND #%00100000         \ byte #31, then it is already exploding, so jump to
- BNE MA21               \ BA21 as ships can't explode more than once
-
- LDA INWK+31            \ The energy bomb is killing this ship, so set bit 7 of
- ORA #%10000000         \ the ship byte #31 to indicate that it has now been
- STA INWK+31            \ killed
-
- JSR EXNO2              \ Call EXNO2 to process the fact that we have killed a
-                        \ ship (so increase the kill tally, make an explosion
-                        \ sound and possibly display "RIGHT ON COMMANDER!")
-
-\ ******************************************************************************
-\
-\       Name: Main flight loop (Part 6 of 16)
-\       Type: Subroutine
-\   Category: Main loop
-\    Summary: For each nearby ship: Move the ship in space and copy the updated
-\             INWK data block back to K%
-\  Deep dive: Program flow of the main game loop
-\             Program flow of the ship-moving routine
-\             Ship data blocks
-\
-\ ------------------------------------------------------------------------------
-\
-\ The main flight loop covers most of the flight-specific aspects of Elite. This
-\ section covers the following:
-\
-\   * Continue looping through all the ships in the local bubble, and for each
-\     one:
-\
-\     * Move the ship in space
-\
-\     * Copy the updated ship's data block from INWK back to K%
-\
-\ ******************************************************************************
-
-.MA21
-
- JSR MVEIT              \ Call MVEIT to move the ship we are processing in space
-
-                        \ Now that we are done processing this ship, we need to
-                        \ copy the ship data back from INWK to the correct place
-                        \ in the K% workspace. We already set INF in part 4 to
-                        \ point to the ship's data block in K%, so we can simply
-                        \ do the reverse of the copy we did before, this time
-                        \ copying from INWK to INF
-
- LDY #NI%-1             \ Set a counter in Y so we can loop through the NI%
-                        \ bytes in the ship data block
-
-.MAL3
-
- LDA INWK,Y             \ Load the Y-th byte of INWK and store it in the Y-th
- STA (INF),Y            \ byte of INF
-
- DEY                    \ Decrement the loop counter
-
- BPL MAL3               \ Loop back for the next byte, until we have copied the
-                        \ last byte from INWK back to INF
-
-\ ******************************************************************************
-\
-\       Name: Main flight loop (Part 7 of 16)
-\       Type: Subroutine
-\   Category: Main loop
-\    Summary: For each nearby ship: Check whether we are docking, scooping or
-\             colliding with it
-\  Deep dive: Program flow of the main game loop
-\
-\ ------------------------------------------------------------------------------
-\
-\ The main flight loop covers most of the flight-specific aspects of Elite. This
-\ section covers the following:
-\
-\   * Continue looping through all the ships in the local bubble, and for each
-\     one:
-\
-\     * Check how close we are to this ship and work out if we are docking,
-\       scooping or colliding with it
-\
-\ ******************************************************************************
-
- LDA INWK+31            \ Fetch the status of this ship from bits 5 (is ship
- AND #%10100000         \ exploding?) and bit 7 (has ship been killed?) from
-                        \ ship byte #31 into A
-
- JSR MAS4               \ Or this value with x_hi, y_hi and z_hi
-
- BNE MA65               \ If this value is non-zero, then either the ship is
-                        \ far away (i.e. has a non-zero high byte in at least
-                        \ one of the three axes), or it is already exploding,
-                        \ or has been flagged as being killed - in which case
-                        \ jump to MA65 to skip the following, as we can't dock
-                        \ scoop or collide with it
-
- LDA INWK               \ Set A = (x_lo OR y_lo OR z_lo), and if bit 7 of the
- ORA INWK+3             \ result is set, the ship is still a fair distance
- ORA INWK+6             \ away (further than 127 in at least one axis), so jump
- BMI MA65               \ to MA65 to skip the following, as it's too far away to
-                        \ dock, scoop or collide with
-
- LDX TYPE               \ If the current ship type is negative then it's the
- BMI MA65               \ planet, so jump down to MA65 to skip the following,
-                        \ as we can't dock with it or scoop it
-
- CPX #SST               \ If this ship is the space station, jump to ISDK to
- BEQ ISDK               \ check whether we are docking with it
-
- AND #%11000000         \ If bit 6 of (x_lo OR y_lo OR z_lo) is set, then the
- BNE MA65               \ ship is still a reasonable distance away (further than
-                        \ 63 in at least one axis), so jump to MA65 to skip the
-                        \ following, as it's too far away to dock, scoop or
-                        \ collide with
-
- CPX #MSL               \ If this ship is a missile, jump down to MA65 to skip
- BEQ MA65               \ the following, as we can't scoop or dock with a
-                        \ missile, and it has its own dedicated collision
-                        \ checks in the TACTICS routine
-
- CPX #OIL               \ If ship type >= OIL (i.e. it's a cargo canister or
- BCS P%+5               \ escape pod), skip the JMP instruction and continue
- JMP MA58               \ on, otherwise jump to MA58 to process a potential
-                        \ collision
-
- LDA BST                \ If we have fuel scoops fitted then BST will be &FF,
-                        \ otherwise it will be 0
-
- AND INWK+5             \ Ship byte #5 contains the y_sign of this ship, so a
-                        \ negative value here means the canister is below us,
-                        \ which means the result of the AND will be negative if
-                        \ the canister is below us and we have a fuel scoop
-                        \ fitted
-
- BPL MA58               \ If the result is positive, then we either have no
-                        \ scoop or the canister is above us, and in both cases
-                        \ this means we can't scoop the item, so jump to MA58
-                        \ to process a collision
-
-\ ******************************************************************************
-\
-\       Name: Main flight loop (Part 8 of 16)
-\       Type: Subroutine
-\   Category: Main loop
-\    Summary: For each nearby ship: Process us potentially scooping this item
-\  Deep dive: Program flow of the main game loop
-\
-\ ------------------------------------------------------------------------------
-\
-\ The main flight loop covers most of the flight-specific aspects of Elite. This
-\ section covers the following:
-\
-\   * Continue looping through all the ships in the local bubble, and for each
-\     one:
-\
-\     * Process us potentially scooping this item
-\
-\ ******************************************************************************
-
- LDA #3                 \ Set A to 3 to denote we may be scooping an escape pod
-
- CPX #ESC               \ If this is not an escape pod, jump to oily to randomly
- BNE oily               \ decide the canister's contents
-
- BEQ slvy2              \ This is an escape pod, so jump to slvy2 with A set to
-                        \ 3, so we scoop up the escape pod as slaves
-
-.oily
-
- JSR DORND              \ Set A and X to random numbers and reduce A to a
- AND #7                 \ random number in the range 0-7
-
-.slvy2
-
-                        \ By the time we get here, we are scooping, and A
-                        \ contains the type of item we are scooping (a random
-                        \ number 0-7 if we are scooping a cargo canister, or 3
-                        \ if we are scooping an escape pod). These numbers
-                        \ correspond to the relevant market items (see QQ23
-                        \ for a list), so a cargo canister can contain
-                        \ anything from food to computers, while escape pods
-                        \ contain slaves
-
- STA QQ29               \ Call tnpr with the scooped cargo type stored in QQ29
- LDA #1                 \ and A set to 1, to work out whether we have room in
- JSR tnpr               \ the hold for the scooped item (A is preserved by this
-                        \ call, and the C flag contains the result)
-
- LDY #78                \ This instruction has no effect, so presumably it used
-                        \ to do something, but didn't get removed
-
- BCS MA59               \ If the C flag is set then we have no room in the hold
-                        \ for the scooped item, so jump down to MA59 make a
-                        \ sound to indicate failure, before destroying the
-                        \ canister
-
- LDY QQ29               \ Scooping was successful, so set Y to the type of
-                        \ item we just scooped, which we stored in QQ29 above
-
- ADC QQ20,Y             \ Add A (which we set to 1 above) to the number of items
- STA QQ20,Y             \ of type Y in the cargo hold, as we just successfully
-                        \ scooped one canister of type Y
-
- TYA                    \ Print recursive token 48 + Y as an in-flight token,
- ADC #208               \ which will be in the range 48 ("FOOD") to 64 ("ALIEN
- JSR MESS               \ ITEMS"), so this prints the scooped item's name
-
- JMP MA60               \ We are done scooping, so jump down to MA60 to set the
-                        \ kill flag on the canister, as it no longer exists in
-                        \ the local bubble
-
-.MA65
-
- JMP MA26               \ If we get here, then the ship we are processing was
-                        \ too far away to be scooped, docked or collided with,
-                        \ so jump to MA26 to skip over the collision routines
-                        \ and move on to missile targeting
-
-\ ******************************************************************************
-\
-\       Name: Main flight loop (Part 9 of 16)
-\       Type: Subroutine
-\   Category: Main loop
-\    Summary: For each nearby ship: If it is a space station, check whether we
-\             are successfully docking with it
-\  Deep dive: Program flow of the main game loop
-\             Docking checks
-\
-\ ------------------------------------------------------------------------------
-\
-\ The main flight loop covers most of the flight-specific aspects of Elite. This
-\ section covers the following:
-\
-\   * Process docking with a space station
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   GOIN                We jump here from part 3 of the main flight loop if the
-\                       docking computer is activated by pressing "C"
-\
-\ ******************************************************************************
-
-.ISDK
-
- LDA K%+NI%+32          \ 1. Fetch the AI counter (byte #32) of the second ship
- BMI MA62               \ in the ship data workspace at K%, which is reserved
-                        \ for the space station, and if it's negative, i.e. bit
-                        \ 7 is set, meaning the station is hostile, jump down
-                        \ to MA62 to fail docking (so trying to dock at a
-                        \ station that we have annoyed does not end well)
-
- LDA INWK+14            \ 2. If nosev_z_hi < 214, jump down to MA62 to fail
- CMP #214               \ docking, as the angle of approach is greater than 26
- BCC MA62               \ degrees
-
- JSR SPS4               \ Call SPS4 to get the vector to the space station
-                        \ into XX15
-
- LDA XX15+2             \ 3. Check the sign of the z-axis (bit 7 of XX15+2) and
- BMI MA62               \ if it is negative, we are facing away from the
-                        \ station, so jump to MA62 to fail docking
-
- CMP #89                \ 4. If z-axis < 89, jump to MA62 to fail docking, as
- BCC MA62               \ we are not in the 22.0 degree safe cone of approach
-
- LDA INWK+16            \ 5. If |roofv_x_hi| < 80, jump to MA62 to fail docking,
- AND #%01111111         \ as the slot is more than 36.6 degrees from horizontal
- CMP #80
- BCC MA62
-
-.GOIN
-
-                        \ If we arrive here, either the docking computer has
-                        \ been activated, or we just docked successfully
-
- LDA #0                 \ Set the on-screen hyperspace counter to 0
- STA QQ22+1
-
- LDA #8                 \ This instruction has no effect, so presumably it used
-                        \ to do something, and didn't get removed
-
- JSR LAUN               \ Show the space station launch tunnel
-
- JSR RES4               \ Reset the shields and energy banks, stardust and INWK
-                        \ workspace
-
- JMP BAY                \ Go to the docking bay (i.e. show the Status Mode
-                        \ screen)
-
-.MA62
-
-                        \ If we arrive here, docking has just failed
-
- LDA DELTA              \ If the ship's speed is < 5, jump to MA67 to register
- CMP #5                 \ some damage, but not a huge amount
- BCC MA67
-
- JMP DEATH              \ Otherwise we have just crashed into the station, so
-                        \ process our death
-
-\ ******************************************************************************
-\
-\       Name: Main flight loop (Part 10 of 16)
-\       Type: Subroutine
-\   Category: Main loop
-\    Summary: For each nearby ship: Remove if scooped, or process collisions
-\  Deep dive: Program flow of the main game loop
-\
-\ ------------------------------------------------------------------------------
-\
-\ The main flight loop covers most of the flight-specific aspects of Elite. This
-\ section covers the following:
-\
-\   * Continue looping through all the ships in the local bubble, and for each
-\     one:
-\
-\     * Remove scooped item after both successful and failed scooping attempts
-\
-\     * Process collisions
-\
-\ ******************************************************************************
-
-.MA59
-
-                        \ If we get here then scooping failed
-
- JSR EXNO3              \ Make the sound of the cargo canister being destroyed
-                        \ and fall through into MA60 to remove the canister
-                        \ from our local bubble
-
-.MA60
-
-                        \ If we get here then scooping was successful
-
- ASL INWK+31            \ Set bit 7 of the scooped or destroyed item, to denote
- SEC                    \ that it has been killed and should be removed from
- ROR INWK+31            \ the local bubble
-
-.MA61
-
- BNE MA26               \ Jump to MA26 to skip over the collision routines and
-                        \ to move on to missile targeting (this BNE is
-                        \ effectively a JMP as A will never be zero)
-
-.MA67
-
-                        \ If we get here then we have collided with something,
-                        \ but not fatally
-
- LDA #1                 \ Set the speed in DELTA to 1 (i.e. a sudden stop)
- STA DELTA
-
- LDA #5                 \ Set the amount of damage in A to 5 (a small dent) and
- BNE MA63               \ jump down to MA63 to process the damage (this BNE is
-                        \ effectively a JMP as A will never be zero)
-
-.MA58
-
-                        \ If we get here, we have collided with something in a
-                        \ potentially fatal way
-
- ASL INWK+31            \ Set bit 7 of the ship we just collided with, to
- SEC                    \ denote that it has been killed and should be removed
- ROR INWK+31            \ from the local bubble
-
- LDA INWK+35            \ Load A with the energy level of the ship we just hit
-
- SEC                    \ Set the amount of damage in A to 128 + A / 2, so
- ROR A                  \ this is quite a big dent, and colliding with higher
-                        \ energy ships will cause more damage
-
-.MA63
-
- JSR OOPS               \ The amount of damage is in A, so call OOPS to reduce
-                        \ our shields, and if the shields are gone, there's a
-                        \ chance of cargo loss or even death
-
- JSR EXNO3              \ Make the sound of colliding with the other ship and
-                        \ fall through into MA26 to try targeting a missile
-
-\ ******************************************************************************
-\
-\       Name: Main flight loop (Part 11 of 16)
-\       Type: Subroutine
-\   Category: Main loop
-\    Summary: For each nearby ship: Process missile lock and firing our laser
-\  Deep dive: Program flow of the main game loop
-\             Flipping axes between space views
-\
-\ ------------------------------------------------------------------------------
-\
-\ The main flight loop covers most of the flight-specific aspects of Elite. This
-\ section covers the following:
-\
-\   * Continue looping through all the ships in the local bubble, and for each
-\     one:
-\
-\     * If this is not the front space view, flip the axes of the ship's
-\        coordinates in INWK
-\
-\     * Process missile lock
-\
-\     * Process our laser firing
-\
-\ ******************************************************************************
-
-.MA26
-
- LDA QQ11               \ If this is not a space view, jump to MA15 to skip
- BNE MA15               \ missile and laser locking
-
- JSR PLUT               \ Call PLUT to update the geometric axes in INWK to
-                        \ match the view (front, rear, left, right)
-
- JSR HITCH              \ Call HITCH to see if this ship is in the crosshairs,
- BCC MA8                \ in which case the C flag will be set (so if there is
-                        \ no missile or laser lock, we jump to MA8 to skip the
-                        \ following)
-
- LDA MSAR               \ We have missile lock, so check whether the leftmost
- BEQ MA47               \ missile is currently armed, and if not, jump to MA47
-                        \ to process laser fire, as we can't lock an unarmed
-                        \ missile
-
- JSR BEEP               \ We have missile lock and an armed missile, so call
-                        \ the BEEP subroutine to make a short, high beep
-
- LDX XSAV               \ Call ABORT2 to store the details of this missile
- LDY #&11               \ lock, with the targeted ship's slot number in X
- JSR ABORT2             \ (which we stored in XSAV at the start of this ship's
-                        \ loop at MAL1), and set the shape of the missile
-                        \ indicator to the value in Y (black "T" in white
-                        \ square = &11)
-
-.MA47
-
-                        \ If we get here then the ship is in our sights, but
-                        \ we didn't lock a missile, so let's see if we're
-                        \ firing the laser
-
- LDA LAS                \ If we are firing the laser then LAS will contain the
- BEQ MA8                \ laser power (which we set in MA68 above), so if this
-                        \ is zero, jump down to MA8 to skip the following
-
- LDX #15                \ We are firing our laser and the ship in INWK is in
- JSR EXNO               \ the crosshairs, so call EXNO to make the sound of
-                        \ us making a laser strike on another ship
-
- LDA INWK+35            \ Fetch the hit ship's energy from byte #35 and subtract
- SEC                    \ our current laser power, and if the result is greater
- SBC LAS                \ than zero, the other ship has survived the hit, so
- BCS MA14               \ jump down to MA14 to make it angry
-
- LDA TYPE               \ Did we just hit the space station? If so, jump to
- CMP #SST               \ MA14+2 to make the station hostile, skipping the
- BEQ MA14+2             \ following as we can't destroy a space station
-
- LDA INWK+31            \ Set bit 7 of the enemy ship's byte #31, to indicate
- ORA #%10000000         \ that it has been killed
- STA INWK+31
-
- BCS MA8                \ If the enemy ship type is >= SST (i.e. missile,
-                        \ asteroid, canister or escape pod) then jump down
-                        \ to MA8
-
- JSR DORND              \ Fetch a random number, and jump to oh if it is
- BPL oh                 \ positive (50% chance)
-
- LDY #0                 \ Fetch the first byte of the hit ship's blueprint,
- AND (XX0),Y            \ which determines the maximum number of bits of
-                        \ debris shown when the ship is destroyed, and AND
-                        \ with the random number we just fetched
-
- STA CNT                \ Store the result in CNT, so CNT contains a random
-                        \ number between 0 and the maximum number of bits of
-                        \ debris that this ship will release when destroyed
-
-.um
-
- BEQ oh                 \ We're going to go round a loop using CNT as a counter
-                        \ so this checks whether the counter is zero and jumps
-                        \ to oh when it gets there (which might be straight
-                        \ away)
-
- LDX #OIL               \ Call SFS1 to spawn a cargo canister from the now
- LDA #0                 \ deceased parent ship, giving the spawned canister an
- JSR SFS1               \ AI flag of 0 (no AI, no E.C.M., non-hostile)
-
- DEC CNT                \ Decrease the loop counter
-
- BPL um                 \ Jump back up to um (this BPL is effectively a JMP as
-                        \ CNT will never be negative)
-
-.oh
-
- JSR EXNO2              \ Call EXNO2 to process the fact that we have killed a
-                        \ ship (so increase the kill tally, make an explosion
-                        \ sound and so on)
-
-.MA14
-
- STA INWK+35            \ Store the hit ship's updated energy in ship byte #35
-
- LDA TYPE               \ Call ANGRY to make this ship hostile, now that we
- JSR ANGRY              \ have hit it
-
-\ ******************************************************************************
-\
-\       Name: Main flight loop (Part 12 of 16)
-\       Type: Subroutine
-\   Category: Main loop
-\    Summary: For each nearby ship: Draw the ship, remove if killed, loop back
-\  Deep dive: Program flow of the main game loop
-\             Drawing ships
-\
-\ ------------------------------------------------------------------------------
-\
-\ The main flight loop covers most of the flight-specific aspects of Elite. This
-\ section covers the following:
-\
-\   * Continue looping through all the ships in the local bubble, and for each
-\     one:
-\
-\     * Draw the ship
-\
-\     * Process removal of killed ships
-\
-\   * Loop back up to MAL1 to move onto the next ship in the local bubble
-\
-\ ******************************************************************************
-
-.MA8
-
- JSR LL9                \ Call LL9 to draw the ship we're processing on-screen
-
-.MA15
-
- LDY #35                \ Fetch the ship's energy from byte #35 and copy it to
- LDA INWK+35            \ byte #35 in INF (so the ship's data in K% gets
- STA (INF),Y            \ updated)
-
- LDA INWK+31            \ If bit 7 of the ship's byte #31 is clear, then the
- BPL MAC1               \ ship hasn't been killed by energy bomb, collision or
-                        \ laser fire, so jump to MAC1 to skip the following
-
- AND #%00100000         \ If bit 5 of the ship's byte #31 is clear then the
- BEQ NBOUN              \ ship is no longer exploding, so jump to NBOUN to skip
-                        \ the following
-
- LDA TYPE               \ If the ship we just destroyed was a cop, keep going,
- CMP #COPS              \ otherwise jump to q2 to skip the following
- BNE q2
-
- LDA FIST               \ We shot the sheriff, so update our FIST flag
- ORA #64                \ ("fugitive/innocent status") to at least 64, which
- STA FIST               \ will instantly make us a fugitive
-
-.q2
-
- LDA DLY                \ If we already have an in-flight message on-screen (in
- BNE KS1S               \ which case DLY > 0), jump to KS1S to skip showing an
-                        \ on-screen bounty for this kill
-
- LDY #10                \ Fetch byte #10 of the ship's blueprint, which is the
- LDA (XX0),Y            \ low byte of the bounty awarded when this ship is
- BEQ KS1S               \ killed (in Cr * 10), and if it's zero jump to KS1S as
-                        \ there is no on-screen bounty to display
-
- TAX                    \ Put the low byte of the bounty into X
-
- INY                    \ Fetch byte #11 of the ship's blueprint, which is the
- LDA (XX0),Y            \ high byte of the bounty awarded (in Cr * 10), and put
- TAY                    \ it into Y
-
- JSR MCASH              \ Call MCASH to add (Y X) to the cash pot
-
- LDA #0                 \ Print control code 0 (current cash, right-aligned to
- JSR MESS               \ width 9, then " CR", newline) as an in-flight message
-
-.KS1S
-
- JMP KS1                \ Process the killing of this ship (which removes this
-                        \ ship from its slot and shuffles all the other ships
-                        \ down to close up the gap)
-
-.NBOUN
-
-.MAC1
-
- LDA TYPE               \ If the ship we are processing is the planet, jump to
- BMI MA27               \ MA27 to skip the following two instructions
-
- JSR FAROF              \ If the ship we are processing is a long way away (its
- BCC KS1S               \ distance in any one direction is > 224, jump to KS1S
-                        \ to remove the ship from our local bubble, as it's just
-                        \ left the building
-
-.MA27
-
- LDY #31                \ Fetch the ship's explosion/killed state from byte #31
- LDA INWK+31            \ and copy it to byte #31 in INF (so the ship's data in
- STA (INF),Y            \ K% gets updated)
-
- LDX XSAV               \ We're done processing this ship, so fetch the ship's
-                        \ slot number, which we saved in XSAV back at the start
-                        \ of the loop
-
- INX                    \ Increment the slot number to move on to the next slot
-
- JMP MAL1               \ And jump back up to the beginning of the loop to get
-                        \ the next ship in the local bubble for processing
-
-\ ******************************************************************************
-\
-\       Name: Main flight loop (Part 13 of 16)
-\       Type: Subroutine
-\   Category: Main loop
-\    Summary: Show energy bomb effect, charge shields and energy banks
-\  Deep dive: Program flow of the main game loop
-\             Scheduling tasks with the main loop counter
-\
-\ ------------------------------------------------------------------------------
-\
-\ The main flight loop covers most of the flight-specific aspects of Elite. This
-\ section covers the following:
-\
-\   * Show energy bomb effect (if applicable)
-\
-\   * Charge shields and energy banks (every 7 iterations of the main loop)
-\
-\ ******************************************************************************
-
-.MA18
-
- LDA BOMB               \ If we set off our energy bomb (see MA24 above), then
- BPL MA77               \ BOMB is now negative, so this skips to MA21 if our
-                        \ energy bomb is not going off
-
- ASL BOMB               \ We set off our energy bomb, so rotate BOMB to the
-                        \ left by one place. BOMB was rotated left once already
-                        \ during this iteration of the main loop, back at MA24,
-                        \ so if this is the first pass it will already be
-                        \ %11111110, and this will shift it to %11111100 - so
-                        \ if we set off an energy bomb, it stays activated
-                        \ (BOMB > 0) for four iterations of the main loop
-
-.MA77
-
- LDA MCNT               \ Fetch the main loop counter and calculate MCNT mod 8,
- AND #7                 \ jumping to MA22 if it is non-zero (so the following
- BNE MA22               \ code only runs every 8 iterations of the main loop)
-
- LDX ENERGY             \ Fetch our ship's energy levels and skip to b if bit 7
- BPL b                  \ is not set, i.e. only charge the shields from the
-                        \ energy banks if they are at more than 50% charge
-
- LDX ASH                \ Call SHD to recharge our aft shield and update the
- JSR SHD                \ shield status in ASH
- STX ASH
-
- LDX FSH                \ Call SHD to recharge our forward shield and update
- JSR SHD                \ the shield status in FSH
- STX FSH
-
-.b
-
- SEC                    \ Set A = ENERGY + ENGY + 1, so our ship's energy
- LDA ENGY               \ level goes up by 2 if we have an energy unit fitted,
- ADC ENERGY             \ otherwise it goes up by 1
-
- BCS P%+5               \ If the value of A did not overflow (the maximum
- STA ENERGY             \ energy level is &FF), then store A in ENERGY
-
-\ ******************************************************************************
-\
-\       Name: Main flight loop (Part 14 of 16)
-\       Type: Subroutine
-\   Category: Main loop
-\    Summary: Spawn a space station if we are close enough to the planet
-\  Deep dive: Program flow of the main game loop
-\             Scheduling tasks with the main loop counter
-\             Ship data blocks
-\             The space station safe zone
-\
-\ ------------------------------------------------------------------------------
-\
-\ The main flight loop covers most of the flight-specific aspects of Elite. This
-\ section covers the following:
-\
-\   * Spawn a space station if we are close enough to the planet (every 32
-\     iterations of the main loop)
-\
-\ ******************************************************************************
-
- LDA MCNT               \ Fetch the main loop counter and calculate MCNT mod 32,
- AND #31                \ jumping to MA93 if it is on-zero (so the following
- BNE MA93               \ code only runs every 32 iterations of the main loop)
-
- LDA SSPR               \ If we are inside the space station safe zone, jump to
- BNE MA23S              \ MA23S to skip the following, as we already have a
-                        \ space station and don't need another
-
- TAY                    \ Set Y = A = 0 (A is 0 as we didn't branch with the
-                        \ previous BNE instruction)
-
- JSR MAS2               \ Call MAS2 to calculate the largest distance to the
- BNE MA23S              \ planet in any of the three axes, and if it's
-                        \ non-zero, jump to MA23S to skip the following, as we
-                        \ are too far from the planet to bump into a space
-                        \ station
-
-                        \ We now want to spawn a space station, so first we
-                        \ need to set up a ship data block for the station in
-                        \ INWK that we can then pass to NWSPS to add a new
-                        \ station to our bubble of universe. We do this by
-                        \ copying the planet data block from K% to INWK so we
-                        \ can work on it, but we only need the first 29 bytes,
-                        \ as we don't need to worry about bytes #29 to #35
-                        \ for planets (as they don't have rotation counters,
-                        \ AI, explosions, missiles, a ship line heap or energy
-                        \ levels)
-
- LDX #28                \ So we set a counter in X to copy 29 bytes from K%+0
-                        \ to K%+28
-
-.MAL4
-
- LDA K%,X               \ Load the X-th byte of K% and store in the X-th byte
- STA INWK,X             \ of the INWK workspace
-
- DEX                    \ Decrement the loop counter
-
- BPL MAL4               \ Loop back for the next byte until we have copied the
-                        \ first 28 bytes of K% to INWK
-
-                        \ We now check the distance from our ship (at the
-                        \ origin) towards the point where we will spawn the
-                        \ space station if we are close enough
-                        \
-                        \ This point is calculated by starting at the planet's
-                        \ centre and adding 2 * nosev, which takes us to a point
-                        \ above the planet's surface, at an altitude that
-                        \ matches the planet's radius
-                        \
-                        \ This point pitches and rolls around the planet as the
-                        \ nosev vector rotates with the planet, and if our ship
-                        \ is within a distance of (192 0) from this point in all
-                        \ three axes, then we spawn the space station at this
-                        \ point, with the station's slot facing towards the
-                        \ planet, along the nosev vector
-                        \
-                        \ This works because in the following, we calculate the
-                        \ station's coordinates one axis at a time, and store
-                        \ the results in the INWK block, so by the time we have
-                        \ calculated and checked all three, the ship data block
-                        \ is set up with the correct spawning coordinates
-
- INX                    \ Set X = 0 (as we ended the above loop with X as &FF)
-
- LDY #9                 \ Call MAS1 with X = 0, Y = 9 to do the following:
- JSR MAS1               \
-                        \   (x_sign x_hi x_lo) += (nosev_x_hi nosev_x_lo) * 2
-                        \
-                        \   A = |x_sign|
-
- BNE MA23S              \ If A > 0, jump to MA23S to skip the following, as we
-                        \ are too far from the planet in the x-direction to
-                        \ bump into a space station
-
- LDX #3                 \ Call MAS1 with X = 3, Y = 11 to do the following:
- LDY #11                \
- JSR MAS1               \   (y_sign y_hi y_lo) += (nosev_y_hi nosev_y_lo) * 2
-                        \
-                        \   A = |y_sign|
-
- BNE MA23S              \ If A > 0, jump to MA23S to skip the following, as we
-                        \ are too far from the planet in the y-direction to
-                        \ bump into a space station
-
- LDX #6                 \ Call MAS1 with X = 6, Y = 13 to do the following:
- LDY #13                \
- JSR MAS1               \   (z_sign z_hi z_lo) += (nosev_z_hi nosev_z_lo) * 2
-                        \
-                        \   A = |z_sign|
-
- BNE MA23S              \ If A > 0, jump to MA23S to skip the following, as we
-                        \ are too far from the planet in the z-direction to
-                        \ bump into a space station
-
- LDA #192               \ Call FAROF2 to compare x_hi, y_hi and z_hi with 192,
- JSR FAROF2             \ which will set the C flag if all three are < 192, or
-                        \ clear the C flag if any of them are >= 192
-
- BCC MA23S              \ Jump to MA23S if any one of x_hi, y_hi or z_hi are
-                        \ >= 192 (i.e. they must all be < 192 for us to be near
-                        \ enough to the planet to bump into a space station)
-
- JSR NWSPS              \ Add a new space station to our local bubble of
-                        \ universe
-
-.MA23S
-
- JMP MA23               \ Jump to MA23 to skip the following planet altitude
-                        \ checks
-
-\ ******************************************************************************
-\
-\       Name: Main flight loop (Part 15 of 16)
-\       Type: Subroutine
-\   Category: Main loop
-\    Summary: Perform altitude checks with the planet
-\  Deep dive: Program flow of the main game loop
-\             Scheduling tasks with the main loop counter
-\
-\ ------------------------------------------------------------------------------
-\
-\ The main flight loop covers most of the flight-specific aspects of Elite. This
-\ section covers the following:
-\
-\   * Perform an altitude check with the planet (every 32 iterations of the main
-\     loop, on iteration 10 of each 32)
-\
-\ ******************************************************************************
-
-.MA22
-
- LDA MCNT               \ Fetch the main loop counter and calculate MCNT mod 32,
- AND #31                \ which tells us the position of this loop in each block
-                        \ of 32 iterations
-
-.MA93
-
- CMP #10                \ If this is the tenth iteration in this block of 32,
- BNE MA29               \ do the following, otherwise jump to MA29 to skip the
-                        \ planet altitude check
-
- LDA #50                \ If our energy bank status in ENERGY is >= 50, skip
- CMP ENERGY             \ printing the following message (so the message is
- BCC P%+6               \ only shown if our energy is low)
-
- ASL A                  \ Print recursive token 100 ("ENERGY LOW{beep}") as an
- JSR MESS               \ in-flight message
-
- LDY #&FF               \ Set our altitude in ALTIT to &FF, the maximum
- STY ALTIT
-
- INY                    \ Set Y = 0
-
- JSR m                  \ Call m to calculate the maximum distance to the
-                        \ planet in any of the three axes, returned in A
-
- BNE MA23               \ If A > 0 then we are a fair distance away from the
-                        \ planet in at least one axis, so jump to MA23 to skip
-                        \ the rest of the altitude check
-
- JSR MAS3               \ Set A = x_hi^2 + y_hi^2 + z_hi^2, so using Pythagoras
-                        \ we now know that A now contains the square of the
-                        \ distance between our ship (at the origin) and the
-                        \ centre of the planet at (x_hi, y_hi, z_hi)
-
- BCS MA23               \ If the C flag was set by MAS3, then the result
-                        \ overflowed (was greater than &FF) and we are still a
-                        \ fair distance from the planet, so jump to MA23 as we
-                        \ haven't crashed into the planet
-
- SBC #36                \ Subtract 36 from x_hi^2 + y_hi^2 + z_hi^2
-                        \
-                        \ When we do the 3D Pythagoras calculation, we only use
-                        \ the high bytes of the coordinates, so that's x_hi,
-                        \ y_hi and z_hi and
-                        \
-                        \ The planet radius is (0 96 0), as defined in the
-                        \ PLANET routine, so the high byte is 96
-                        \
-                        \ When we square the coordinates above and add them,
-                        \ the result gets divided by 256 (otherwise the result
-                        \ wouldn't fit into one byte), so if we do the same for
-                        \ the planet's radius, we get:
-                        \
-                        \   96 * 96 / 256 = 36
-                        \
-                        \ So for the planet, the equivalent figure to test the
-                        \ sum of the _hi bytes against is 36, so A now contains
-                        \ the high byte of our altitude above the planet
-                        \ surface, squared
-
- BCC MA28               \ If A < 0 then jump to MA28 as we have crashed into
-                        \ the planet
-
- STA R                  \ We are getting close to the planet, so we need to
- JSR LL5                \ work out how close. We know from the above that A
-                        \ contains our altitude squared, so we store A in R
-                        \ and call LL5 to calculate:
-                        \
-                        \   Q = SQRT(R Q) = SQRT(A Q)
-                        \
-                        \ Interestingly, Q doesn't appear to be set to 0 for
-                        \ this calculation, so presumably this doesn't make a
-                        \ difference
-
- LDA Q                  \ Store the result in ALTIT, our altitude
- STA ALTIT
-
- BNE MA23               \ If our altitude is non-zero then we haven't crashed,
-                        \ so jump to MA23 to skip to the next section
-
-.MA28
-
- JMP DEATH              \ If we get here then we just crashed into the planet,
-                        \ so jump to DEATH to start the funeral preparations
-                        \ and return from the main flight loop using a tail call
-
-.MA29
-
-\ ******************************************************************************
-\
-\       Name: Main flight loop (Part 16 of 16)
-\       Type: Subroutine
-\   Category: Main loop
-\    Summary: Process laser pulsing, E.C.M. energy drain, call stardust routine
-\  Deep dive: Program flow of the main game loop
-\
-\ ------------------------------------------------------------------------------
-\
-\ The main flight loop covers most of the flight-specific aspects of Elite. This
-\ section covers the following:
-\
-\   * Process laser pulsing
-\
-\   * Process E.C.M. energy drain
-\
-\   * Jump to the stardust routine if we are in a space view
-\
-\   * Return from the main flight loop
-\
-\ ******************************************************************************
-
-.MA23
-
- LDA LAS2               \ If the current view has no laser, jump to MA16 to skip
- BEQ MA16               \ the following
-
- LDA LASCT              \ If LASCT >= 8, jump to MA16 to skip the following, so
- CMP #8                 \ for a pulse laser with a LASCT between 8 and 10, the
- BCS MA16               \ laser stays on, but for a LASCT of 7 or less it gets
-                        \ turned off and stays off until LASCT reaches zero and
-                        \ the next pulse can start (if the fire button is still
-                        \ being pressed)
-                        \
-                        \ For pulse lasers, LASCT gets set to 10 in ma1 above,
-                        \ and it decrements by 4 on every iteration of the main
-                        \ game loop, so this means it pulses every fourth
-                        \ iteration, with the laser being off for the first
-                        \ three iterations, and on for the fourth iteration
-                        \
-                        \ If this is a beam laser, LASCT is 0 so we always keep
-                        \ going here. This means the laser doesn't pulse, but it
-                        \ does get drawn and removed every cycle, in a slightly
-                        \ different place each time, so the beams still flicker
-                        \ around the screen
-
- JSR LASLI2             \ Redraw the existing laser lines, which has the effect
-                        \ of removing them from the screen
-
- LDA #0                 \ Set LAS2 to 0 so if this is a pulse laser, it will
- STA LAS2               \ skip over the above until the next pulse (this has no
-                        \ effect if this is a beam laser)
-
-.MA16
-
- LDA ECMP               \ If our E.C.M is not on, skip to MA69, otherwise keep
- BEQ MA69               \ going to drain some energy
-
- JSR DENGY              \ Call DENGY to deplete our energy banks by 1
-
- BEQ MA70               \ If we have no energy left, jump to MA70 to turn our
-                        \ E.C.M. off
-
-.MA69
-
- LDA ECMA               \ If an E.C.M is going off (ours or an opponent's) then
- BEQ MA66               \ keep going, otherwise skip to MA66
-
- DEC ECMA               \ Decrement the E.C.M. countdown timer twice, and if it
- DEC ECMA               \ has reached zero, keep going, otherwise skip to MA66
- BNE MA66
-
-.MA70
-
- JSR ECMOF              \ If we get here then either we have either run out of
-                        \ energy, or the E.C.M. timer has run down, so switch
-                        \ off the E.C.M.
-
-.MA66
-
- LDA QQ11               \ If this is not a space view (i.e. QQ11 is non-zero)
- BNE MA9                \ then jump to MA9 to return from the main flight loop
-                        \ (as MA9 is an RTS)
-
- JMP STARS              \ This is a space view, so jump to the STARS routine to
-                        \ process the stardust, and return from the main flight
-                        \ loop using a tail call
-
-\ ******************************************************************************
-\
-\       Name: MAS1
-\       Type: Subroutine
-\   Category: Maths (Geometry)
-\    Summary: Add an orientation vector coordinate to an INWK coordinate
-\  Deep dive: The space station safe zone
-\
-\ ------------------------------------------------------------------------------
-\
-\ Add a doubled nosev vector coordinate, e.g. (nosev_y_hi nosev_y_lo) * 2, to
-\ an INWK coordinate, e.g. (x_sign x_hi x_lo), storing the result in the INWK
-\ coordinate. The axes used in each side of the addition are specified by the
-\ arguments X and Y.
-\
-\ In the comments below, we document the routine as if we are doing the
-\ following, i.e. if X = 0 and Y = 11:
-\
-\   (x_sign x_hi x_lo) = (x_sign x_hi x_lo) + (nosev_y_hi nosev_y_lo) * 2
-\
-\ as that way the variable names in the comments contain "x" and "y" to match
-\ the registers that specify the vector axis to use.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   X                   The coordinate to add, as follows:
-\
-\                         * If X = 0, add (x_sign x_hi x_lo)
-\                         * If X = 3, add (y_sign y_hi y_lo)
-\                         * If X = 6, add (z_sign z_hi z_lo)
-\
-\   Y                   The vector to add, as follows:
-\
-\                         * If Y = 9,  add (nosev_x_hi nosev_x_lo)
-\                         * If Y = 11, add (nosev_y_hi nosev_y_lo)
-\                         * If Y = 13, add (nosev_z_hi nosev_z_lo)
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   A                   The highest byte of the result with the sign cleared
-\                       (e.g. |x_sign| when X = 0, etc.)
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   MA9                 Contains an RTS
-\
-\ ******************************************************************************
-
-.MAS1
-
- LDA INWK,Y             \ Set K(2 1) = (nosev_y_hi nosev_y_lo) * 2
- ASL A
- STA K+1
- LDA INWK+1,Y
- ROL A
- STA K+2
-
- LDA #0                 \ Set K+3 bit 7 to the C flag, so the sign bit of the
- ROR A                  \ above result goes into K+3
- STA K+3
-
- JSR MVT3               \ Add (x_sign x_hi x_lo) to K(3 2 1)
-
- STA INWK+2,X           \ Store the sign of the result in x_sign
-
- LDY K+1                \ Store K(2 1) in (x_hi x_lo)
- STY INWK,X
- LDY K+2
- STY INWK+1,X
-
- AND #%01111111         \ Set A to the sign byte with the sign cleared,
-                        \ i.e. |x_sign| when X = 0
-
-.MA9
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: MAS2
-\       Type: Subroutine
-\   Category: Maths (Geometry)
-\    Summary: Calculate a cap on the maximum distance to the planet
-\
-\ ------------------------------------------------------------------------------
-\
-\ Given a value in Y that points to the start of a ship data block as an offset
-\ from K%, calculate the following:
-\
-\   A = A OR x_sign OR y_sign OR z_sign
-\
-\ and clear the sign bit of the result. The K% workspace contains the ship data
-\ blocks, so the offset in Y must be 0 or a multiple of NI% (as each block in
-\ K% contains NI% bytes).
-\
-\ The result effectively contains a maximum cap of the three values (though it
-\ might not be one of the three input values - it's just guaranteed to be
-\ larger than all of them).
-\
-\ If Y = 0 and A = 0, then this calculates the maximum cap of the highest byte
-\ containing the distance to the planet, as K%+2 = x_sign, K%+5 = y_sign and
-\ K%+8 = z_sign (the first slot in the K% workspace represents the planet).
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   Y                   The offset from K% for the start of the ship data block
-\                       to use
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   A                   A OR K%+2+Y OR K%+5+Y OR K%+8+Y, with bit 7 cleared
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   m                   Do not include A in the calculation
-\
-\ ******************************************************************************
-
-.m
-
- LDA #0                 \ Set A = 0 and fall through into MAS2 to calculate the
-                        \ OR of the three bytes at K%+2+Y, K%+5+Y and K%+8+Y
-
-.MAS2
-
- ORA K%+2,Y             \ Set A = A OR x_sign OR y_sign OR z_sign
- ORA K%+5,Y
- ORA K%+8,Y
-
- AND #%01111111         \ Clear bit 7 in A
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: MAS3
-\       Type: Subroutine
-\   Category: Maths (Arithmetic)
-\    Summary: Calculate A = x_hi^2 + y_hi^2 + z_hi^2 in the K% block
-\
-\ ------------------------------------------------------------------------------
-\
-\ Given a value in Y that points to the start of a ship data block as an offset
-\ from K%, calculate the following:
-\
-\   A = x_hi^2 + y_hi^2 + z_hi^2
-\
-\ returning A = &FF if the calculation overflows a one-byte result. The K%
-\ workspace contains the ship data blocks, so the offset in Y must be 0 or a
-\ multiple of NI% (as each block in K% contains NI% bytes).
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   Y                   The offset from K% for the start of the ship data block
-\                       to use
-\
-\ Returns
-\
-\   A                   A = x_hi^2 + y_hi^2 + z_hi^2
-\
-\                       A = &FF if the calculation overflows a one-byte result
-\
-\ ******************************************************************************
-
-.MAS3
-
- LDA K%+1,Y             \ Set (A P) = x_hi * x_hi
- JSR SQUA2
-
- STA R                  \ Store A (high byte of result) in R
-
- LDA K%+4,Y             \ Set (A P) = y_hi * y_hi
- JSR SQUA2
-
- ADC R                  \ Add A (high byte of second result) to R
-
- BCS MA30               \ If the addition of the two high bytes caused a carry
-                        \ (i.e. they overflowed), jump to MA30 to return A = &FF
-
- STA R                  \ Store A (sum of the two high bytes) in R
-
- LDA K%+7,Y             \ Set (A P) = z_hi * z_hi
- JSR SQUA2
-
- ADC R                  \ Add A (high byte of third result) to R, so R now
-                        \ contains the sum of x_hi^2 + y_hi^2 + z_hi^2
-
- BCC P%+4               \ If there is no carry, skip the following instruction
-                        \ to return straight from the subroutine
-
-.MA30
-
- LDA #&FF               \ The calculation has overflowed, so set A = &FF
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: MVEIT (Part 1 of 9)
-\       Type: Subroutine
-\   Category: Moving
-\    Summary: Move current ship: Tidy the orientation vectors
-\  Deep dive: Program flow of the ship-moving routine
-\             Scheduling tasks with the main loop counter
-\
-\ ------------------------------------------------------------------------------
-\
-\ This routine has multiple stages. This stage does the following:
-\
-\   * Tidy the orientation vectors for one of the ship slots
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   INWK                The current ship/planet's data block
-\
-\   XSAV                The slot number of the current ship/planet
-\
-\   TYPE                The type of the current ship/planet
-\
-\ ******************************************************************************
-
-.MVEIT
-
- LDA INWK+31            \ If bits 5 or 7 of ship byte #31 are set, jump to MV30
- AND #%10100000         \ as the ship is either exploding or has been killed, so
- BNE MV30               \ we don't need to tidy its orientation vectors or apply
-                        \ tactics
-
- LDA MCNT               \ Fetch the main loop counter
-
- EOR XSAV               \ Fetch the slot number of the ship we are moving, EOR
- AND #15                \ with the loop counter and apply mod 15 to the result.
- BNE MV3                \ The result will be zero when "counter mod 15" matches
-                        \ the slot number, so this makes sure we call TIDY 12
-                        \ times every 16 main loop iterations, like this:
-                        \
-                        \   Iteration 0, tidy the ship in slot 0
-                        \   Iteration 1, tidy the ship in slot 1
-                        \   Iteration 2, tidy the ship in slot 2
-                        \     ...
-                        \   Iteration 11, tidy the ship in slot 11
-                        \   Iteration 12, do nothing
-                        \   Iteration 13, do nothing
-                        \   Iteration 14, do nothing
-                        \   Iteration 15, do nothing
-                        \   Iteration 16, tidy the ship in slot 0
-                        \     ...
-                        \
-                        \ and so on
-
- JSR TIDY               \ Call TIDY to tidy up the orientation vectors, to
-                        \ prevent the ship from getting elongated and out of
-                        \ shape due to the imprecise nature of trigonometry
-                        \ in assembly language
-
-\ ******************************************************************************
-\
-\       Name: MVEIT (Part 2 of 9)
-\       Type: Subroutine
-\   Category: Moving
-\    Summary: Move current ship: Call tactics routine, remove ship from scanner
-\  Deep dive: Scheduling tasks with the main loop counter
-\
-\ ------------------------------------------------------------------------------
-\
-\ This routine has multiple stages. This stage does the following:
-\
-\   * Apply tactics to ships with AI enabled (by calling the TACTICS routine)
-\
-\   * Remove the ship from the scanner, so we can move it
-\
-\ ******************************************************************************
-
-.MV3
-
- LDX TYPE               \ If the type of the ship we are moving is positive,
- BPL P%+5               \ i.e. it is not a planet (types 128 and 130), then
-                        \ skip the following instruction
-
- JMP MV40               \ This item is the planet, so jump to MV40 to move it,
-                        \ which ends by jumping back into this routine at MV45
-                        \ (after all the rotation, tactics and scanner code,
-                        \ which we don't need to apply to planets)
-
- LDA INWK+32            \ Fetch the ship's byte #32 (AI flag) into A
-
- BPL MV30               \ If bit 7 of the AI flag is clear, then if this is a
-                        \ ship or missile it is dumb and has no AI, and if this
-                        \ is the space station it is not hostile, so in both
-                        \ cases skip the following as it has no tactics
-
- CPX #MSL               \ If the ship is a missile, skip straight to MV26 to
- BEQ MV26               \ call the TACTICS routine, as we do this every
-                        \ iteration of the main loop for missiles only
-
- LDA MCNT               \ Fetch the main loop counter
-
- EOR XSAV               \ Fetch the slot number of the ship we are moving, EOR
- AND #7                 \ with the loop counter and apply mod 8 to the result.
- BNE MV30               \ The result will be zero when "counter mod 8" matches
-                        \ the slot number mod 8, so this makes sure we call
-                        \ TACTICS 12 times every 8 main loop iterations, like
-                        \ this:
-                        \
-                        \   Iteration 0, apply tactics to slots 0 and 8
-                        \   Iteration 1, apply tactics to slots 1 and 9
-                        \   Iteration 2, apply tactics to slots 2 and 10
-                        \   Iteration 3, apply tactics to slots 3 and 11
-                        \   Iteration 4, apply tactics to slot 4
-                        \   Iteration 5, apply tactics to slot 5
-                        \   Iteration 6, apply tactics to slot 6
-                        \   Iteration 7, apply tactics to slot 7
-                        \   Iteration 8, apply tactics to slots 0 and 8
-                        \     ...
-                        \
-                        \ and so on
-
-.MV26
-
- JSR TACTICS            \ Call TACTICS to apply AI tactics to this ship
-
-.MV30
-
- JSR SCAN               \ Draw the ship on the scanner, which has the effect of
-                        \ removing it, as it's already at this point and hasn't
-                        \ yet moved
-
-\ ******************************************************************************
-\
-\       Name: MVEIT (Part 3 of 9)
-\       Type: Subroutine
-\   Category: Moving
-\    Summary: Move current ship: Move ship forward according to its speed
-\
-\ ------------------------------------------------------------------------------
-\
-\ This routine has multiple stages. This stage does the following:
-\
-\   * Move the ship forward (along the vector pointing in the direction of
-\     travel) according to its speed:
-\
-\     (x, y, z) += nosev_hi * speed / 64
-\
-\ ******************************************************************************
-
- LDA INWK+27            \ Set Q = the ship's speed byte #27 * 4
- ASL A
- ASL A
- STA Q
-
- LDA INWK+10            \ Set A = |nosev_x_hi|
- AND #%01111111
-
- JSR FMLTU              \ Set R = A * Q / 256
- STA R                  \       = |nosev_x_hi| * speed / 64
-
- LDA INWK+10            \ If nosev_x_hi is positive, then:
- LDX #0                 \
- JSR MVT1-2             \   (x_sign x_hi x_lo) = (x_sign x_hi x_lo) + R
-                        \
-                        \ If nosev_x_hi is negative, then:
-                        \
-                        \   (x_sign x_hi x_lo) = (x_sign x_hi x_lo) - R
-                        \
-                        \ So in effect, this does:
-                        \
-                        \   (x_sign x_hi x_lo) += nosev_x_hi * speed / 64
-
- LDA INWK+12            \ Set A = |nosev_y_hi|
- AND #%01111111
-
- JSR FMLTU              \ Set R = A * Q / 256
- STA R                  \       = |nosev_y_hi| * speed / 64
-
- LDA INWK+12            \ If nosev_y_hi is positive, then:
- LDX #3                 \
- JSR MVT1-2             \   (y_sign y_hi y_lo) = (y_sign y_hi y_lo) + R
-                        \
-                        \ If nosev_y_hi is negative, then:
-                        \
-                        \   (y_sign y_hi y_lo) = (y_sign y_hi y_lo) - R
-                        \
-                        \ So in effect, this does:
-                        \
-                        \   (y_sign y_hi y_lo) += nosev_y_hi * speed / 64
-
- LDA INWK+14            \ Set A = |nosev_z_hi|
- AND #%01111111
-
- JSR FMLTU              \ Set R = A * Q / 256
- STA R                  \       = |nosev_z_hi| * speed / 64
-
- LDA INWK+14            \ If nosev_y_hi is positive, then:
- LDX #6                 \
- JSR MVT1-2             \   (z_sign z_hi z_lo) = (z_sign z_hi z_lo) + R
-                        \
-                        \ If nosev_z_hi is negative, then:
-                        \
-                        \   (z_sign z_hi z_lo) = (z_sign z_hi z_lo) - R
-                        \
-                        \ So in effect, this does:
-                        \
-                        \   (z_sign z_hi z_lo) += nosev_z_hi * speed / 64
-
-\ ******************************************************************************
-\
-\       Name: MVEIT (Part 4 of 9)
-\       Type: Subroutine
-\   Category: Moving
-\    Summary: Move current ship: Apply acceleration to ship's speed as a one-off
-\
-\ ------------------------------------------------------------------------------
-\
-\ This routine has multiple stages. This stage does the following:
-\
-\   * Apply acceleration to the ship's speed (if acceleration is non-zero),
-\     and then zero the acceleration as it's a one-off change
-\
-\ ******************************************************************************
-
- LDA INWK+27            \ Set A = the ship's speed in byte #24 + the ship's
- CLC                    \ acceleration in byte #28
- ADC INWK+28
-
- BPL P%+4               \ If the result is positive, skip the following
-                        \ instruction
-
- LDA #0                 \ Set A to 0 to stop the speed from going negative
-
- LDY #15                \ We now fetch byte #15 from the ship's blueprint, which
-                        \ contains the ship's maximum speed, so set Y = 15 to
-                        \ use as an index
-
- CMP (XX0),Y            \ If A < the ship's maximum speed, skip the following
- BCC P%+4               \ instruction
-
- LDA (XX0),Y            \ Set A to the ship's maximum speed
-
- STA INWK+27            \ We have now calculated the new ship's speed after
-                        \ accelerating and keeping the speed within the ship's
-                        \ limits, so store the updated speed in byte #27
-
- LDA #0                 \ We have added the ship's acceleration, so we now set
- STA INWK+28            \ it back to 0 in byte #28, as it's a one-off change
-
-\ ******************************************************************************
-\
-\       Name: MVEIT (Part 5 of 9)
-\       Type: Subroutine
-\   Category: Moving
-\    Summary: Move current ship: Rotate ship's location by our pitch and roll
-\  Deep dive: Rotating the universe
-\
-\ ------------------------------------------------------------------------------
-\
-\ This routine has multiple stages. This stage does the following:
-\
-\   * Rotate the ship's location in space by the amount of pitch and roll of
-\     our ship. See below for a deeper explanation of this routine
-\
-\ ******************************************************************************
-
- LDX ALP1               \ Fetch the magnitude of the current roll into X, so
-                        \ if the roll angle is alpha, X contains |alpha|
-
- LDA INWK               \ Set P = ~x_lo (i.e. with all its bits flipped) so that
- EOR #%11111111         \ we can pass x_lo to MLTU2 below)
- STA P
-
- LDA INWK+1             \ Set A = x_hi
-
- JSR MLTU2-2            \ Set (A P+1 P) = (A ~P) * X
-                        \               = (x_hi x_lo) * alpha
-
- STA P+2                \ Store the high byte of the result in P+2, so we now
-                        \ have:
-                        \
-                        \ P(2 1 0) = (x_hi x_lo) * alpha
-
- LDA ALP2+1             \ Fetch the flipped sign of the current roll angle alpha
- EOR INWK+2             \ from ALP2+1 and EOR with byte #2 (x_sign), so if the
-                        \ flipped roll angle and x_sign have the same sign, A
-                        \ will be positive, else it will be negative. So A will
-                        \ contain the sign bit of x_sign * flipped alpha sign,
-                        \ which is the opposite to the sign of the above result,
-                        \ so we now have:
-                        \
-                        \ (A P+2 P+1) = - (x_sign x_hi x_lo) * alpha / 256
-
- LDX #3                 \ Set (A P+2 P+1) = (y_sign y_hi y_lo) + (A P+2 P+1)
- JSR MVT6               \                 = y - x * alpha / 256
-
- STA K2+3               \ Set K2(3) = A = the sign of the result
-
- LDA P+1                \ Set K2(1) = P+1, the low byte of the result
- STA K2+1
-
- EOR #%11111111         \ Set P = ~K2+1 (i.e. with all its bits flipped) so
- STA P                  \ that we can pass K2+1 to MLTU2 below)
-
- LDA P+2                \ Set K2(2) = A = P+2
- STA K2+2
-
-                        \ So we now have result 1 above:
-                        \
-                        \ K2(3 2 1) = (A P+2 P+1)
-                        \           = y - x * alpha / 256
-
- LDX BET1               \ Fetch the magnitude of the current pitch into X, so
-                        \ if the pitch angle is beta, X contains |beta|
-
- JSR MLTU2-2            \ Set (A P+1 P) = (A ~P) * X
-                        \               = K2(2 1) * beta
-
- STA P+2                \ Store the high byte of the result in P+2, so we now
-                        \ have:
-                        \
-                        \ P(2 1 0) = K2(2 1) * beta
-
- LDA K2+3               \ Fetch the sign of the above result in K(3 2 1) from
- EOR BET2               \ K2+3 and EOR with BET2, the sign of the current pitch
-                        \ rate, so if the pitch and K(3 2 1) have the same sign,
-                        \ A will be positive, else it will be negative. So A
-                        \ will contain the sign bit of K(3 2 1) * beta, which is
-                        \ the same as the sign of the above result, so we now
-                        \ have:
-                        \
-                        \ (A P+2 P+1) = K2(3 2 1) * beta / 256
-
- LDX #6                 \ Set (A P+2 P+1) = (z_sign z_hi z_lo) + (A P+2 P+1)
- JSR MVT6               \                 = z + K2 * beta / 256
-
- STA INWK+8             \ Set z_sign = A = the sign of the result
-
- LDA P+1                \ Set z_lo = P+1, the low byte of the result
- STA INWK+6
-
- EOR #%11111111         \ Set P = ~z_lo (i.e. with all its bits flipped) so that
- STA P                  \ we can pass z_lo to MLTU2 below)
-
- LDA P+2                \ Set z_hi = P+2
- STA INWK+7
-
-                        \ So we now have result 2 above:
-                        \
-                        \ (z_sign z_hi z_lo) = (A P+2 P+1)
-                        \                    = z + K2 * beta / 256
-
- JSR MLTU2              \ MLTU2 doesn't change Q, and Q was set to beta in
-                        \ the previous call to MLTU2, so this call does:
-                        \
-                        \ (A P+1 P) = (A ~P) * Q
-                        \           = (z_hi z_lo) * beta
-
- STA P+2                \ Set P+2 = A = the high byte of the result, so we
-                        \ now have:
-                        \
-                        \ P(2 1 0) = (z_hi z_lo) * beta
-
- LDA K2+3               \ Set y_sign = K2+3
- STA INWK+5
-
- EOR BET2               \ EOR y_sign with BET2, the sign of the current pitch
- EOR INWK+8             \ rate, and z_sign. If the result is positive jump to
- BPL MV43               \ MV43, otherwise this means beta * z and y have
-                        \ different signs, i.e. P(2 1) and K2(3 2 1) have
-                        \ different signs, so we need to add them in order to
-                        \ calculate K2(2 1) - P(2 1)
-
- LDA P+1                \ Set (y_hi y_lo) = K2(2 1) + P(2 1)
- ADC K2+1
- STA INWK+3
- LDA P+2
- ADC K2+2
- STA INWK+4
-
- JMP MV44               \ Jump to MV44 to continue the calculation
-
-.MV43
-
- LDA K2+1               \ Reversing the logic above, we need to subtract P(2 1)
- SBC P+1                \ and K2(3 2 1) to calculate K2(2 1) - P(2 1), so this
- STA INWK+3             \ sets (y_hi y_lo) = K2(2 1) - P(2 1)
- LDA K2+2
- SBC P+2
- STA INWK+4
-
- BCS MV44               \ If the above subtraction did not underflow, then
-                        \ jump to MV44, otherwise we need to negate the result
-
- LDA #1                 \ Negate (y_sign y_hi y_lo) using two's complement,
- SBC INWK+3             \ first doing the low bytes:
- STA INWK+3             \
-                        \ y_lo = 1 - y_lo
-
- LDA #0                 \ Then the high bytes:
- SBC INWK+4             \
- STA INWK+4             \ y_hi = 0 - y_hi
-
- LDA INWK+5             \ And finally flip the sign in y_sign
- EOR #%10000000
- STA INWK+5
-
-.MV44
-
-                        \ So we now have result 3 above:
-                        \
-                        \ (y_sign y_hi y_lo) = K2(2 1) - P(2 1)
-                        \                    = K2 - beta * z
-
- LDX ALP1               \ Fetch the magnitude of the current roll into X, so
-                        \ if the roll angle is alpha, X contains |alpha|
-
- LDA INWK+3             \ Set P = ~y_lo (i.e. with all its bits flipped) so that
- EOR #&FF               \ we can pass y_lo to MLTU2 below)
- STA P
-
- LDA INWK+4             \ Set A = y_hi
-
- JSR MLTU2-2            \ Set (A P+1 P) = (A ~P) * X
-                        \               = (y_hi y_lo) * alpha
-
- STA P+2                \ Store the high byte of the result in P+2, so we now
-                        \ have:
-                        \
-                        \ P(2 1 0) = (y_hi y_lo) * alpha
-
- LDA ALP2               \ Fetch the correct sign of the current roll angle alpha
- EOR INWK+5             \ from ALP2 and EOR with byte #5 (y_sign), so if the
-                        \ correct roll angle and y_sign have the same sign, A
-                        \ will be positive, else it will be negative. So A will
-                        \ contain the sign bit of x_sign * correct alpha sign,
-                        \ which is the same as the sign of the above result,
-                        \ so we now have:
-                        \
-                        \ (A P+2 P+1) = (y_sign y_hi y_lo) * alpha / 256
-
- LDX #0                 \ Set (A P+2 P+1) = (x_sign x_hi x_lo) + (A P+2 P+1)
- JSR MVT6               \                 = x + y * alpha / 256
-
- STA INWK+2             \ Set x_sign = A = the sign of the result
-
- LDA P+2                \ Set x_hi = P+2, the high byte of the result
- STA INWK+1
-
- LDA P+1                \ Set x_lo = P+1, the low byte of the result
- STA INWK
-
-                        \ So we now have result 4 above:
-                        \
-                        \ x = x + alpha * y
-                        \
-                        \ and the rotation of (x, y, z) is done
-
-\ ******************************************************************************
-\
-\       Name: MVEIT (Part 6 of 9)
-\       Type: Subroutine
-\   Category: Moving
-\    Summary: Move current ship: Move the ship in space according to our speed
-\  Deep dive: A sense of scale
-\
-\ ------------------------------------------------------------------------------
-\
-\ This routine has multiple stages. This stage does the following:
-\
-\   * Move the ship in space according to our speed (we already moved it
-\     according to its own speed in part 3).
-\
-\ We do this by subtracting our speed (i.e. the distance we travel in this
-\ iteration of the loop) from the other ship's z-coordinate. We subtract because
-\ they appear to be "moving" in the opposite direction to us, and the whole
-\ MVEIT routine is about moving the other ships rather than us (even though we
-\ are the one doing the moving).
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   MV45                Rejoin the MVEIT routine after the rotation, tactics and
-\                       scanner code
-\
-\ ******************************************************************************
-
-.MV45
-
- LDA DELTA              \ Set R to our speed in DELTA
- STA R
-
- LDA #%10000000         \ Set A to zeroes but with bit 7 set, so that (A R) is
-                        \ a 16-bit number containing -R, or -speed
-
- LDX #6                 \ Set X to the z-axis so the call to MVT1 does this:
- JSR MVT1               \
-                        \ (z_sign z_hi z_lo) = (z_sign z_hi z_lo) + (A R)
-                        \                    = (z_sign z_hi z_lo) - speed
-
-\ ******************************************************************************
-\
-\       Name: MVEIT (Part 7 of 9)
-\       Type: Subroutine
-\   Category: Moving
-\    Summary: Move current ship: Rotate ship's orientation vectors by pitch/roll
-\  Deep dive: Orientation vectors
-\             Pitching and rolling
-\
-\ ------------------------------------------------------------------------------
-\
-\ This routine has multiple stages. This stage does the following:
-\
-\   * Rotate the ship's orientation vectors according to our pitch and roll
-\
-\ As with the previous step, this is all about moving the other ships rather
-\ than us (even though we are the one doing the moving). So we rotate the
-\ current ship's orientation vectors (which defines its orientation in space),
-\ by the angles we are "moving" the rest of the sky through (alpha and beta, our
-\ roll and pitch), so the ship appears to us to be stationary while we rotate.
-\
-\ ******************************************************************************
-
- LDY #9                 \ Apply our pitch and roll rotations to the current
- JSR MVS4               \ ship's nosev vector
-
- LDY #15                \ Apply our pitch and roll rotations to the current
- JSR MVS4               \ ship's roofv vector
-
- LDY #21                \ Apply our pitch and roll rotations to the current
- JSR MVS4               \ ship's sidev vector
-
-\ ******************************************************************************
-\
-\       Name: MVEIT (Part 8 of 9)
-\       Type: Subroutine
-\   Category: Moving
-\    Summary: Move current ship: Rotate ship about itself by its own pitch/roll
-\  Deep dive: Orientation vectors
-\             Pitching and rolling by a fixed angle
-\
-\ ------------------------------------------------------------------------------
-\
-\ This routine has multiple stages. This stage does the following:
-\
-\   * If the ship we are processing is rolling or pitching itself, rotate it and
-\     apply damping if required
-\
-\ ******************************************************************************
-
- LDA INWK+30            \ Fetch the ship's pitch counter and extract the sign
- AND #%10000000         \ into RAT2
- STA RAT2
-
- LDA INWK+30            \ Fetch the ship's pitch counter and extract the value
- AND #%01111111         \ without the sign bit into A
-
- BEQ MV8                \ If the pitch counter is 0, then jump to MV8 to skip
-                        \ the following, as the ship is not pitching
-
- CMP #%01111111         \ If bits 0-6 are set in the pitch counter (i.e. the
-                        \ ship's pitch is not damping down), then the C flag
-                        \ will be set by this instruction
-
- SBC #0                 \ Set A = A - 0 - (1 - C), so if we are damping then we
-                        \ reduce A by 1, otherwise it is unchanged
-
- ORA RAT2               \ Change bit 7 of A to the sign we saved in RAT2, so
-                        \ the updated pitch counter in A retains its sign
-
- STA INWK+30            \ Store the updated pitch counter in byte #30
-
- LDX #15                \ Rotate (roofv_x, nosev_x) by a small angle (pitch)
- LDY #9
- JSR MVS5
-
- LDX #17                \ Rotate (roofv_y, nosev_y) by a small angle (pitch)
- LDY #11
- JSR MVS5
-
- LDX #19                \ Rotate (roofv_z, nosev_z) by a small angle (pitch)
- LDY #13
- JSR MVS5
-
-.MV8
-
- LDA INWK+29            \ Fetch the ship's roll counter and extract the sign
- AND #%10000000         \ into RAT2
- STA RAT2
-
- LDA INWK+29            \ Fetch the ship's roll counter and extract the value
- AND #%01111111         \ without the sign bit into A
-
- BEQ MV5                \ If the roll counter is 0, then jump to MV5 to skip the
-                        \ following, as the ship is not rolling
-
- CMP #%01111111         \ If bits 0-6 are set in the roll counter (i.e. the
-                        \ ship's roll is not damping down), then the C flag
-                        \ will be set by this instruction
-
- SBC #0                 \ Set A = A - 0 - (1 - C), so if we are damping then we
-                        \ reduce A by 1, otherwise it is unchanged
-
- ORA RAT2               \ Change bit 7 of A to the sign we saved in RAT2, so
-                        \ the updated roll counter in A retains its sign
-
- STA INWK+29            \ Store the updated pitch counter in byte #29
-
- LDX #15                \ Rotate (roofv_x, sidev_x) by a small angle (roll)
- LDY #21
- JSR MVS5
-
- LDX #17                \ Rotate (roofv_y, sidev_y) by a small angle (roll)
- LDY #23
- JSR MVS5
-
- LDX #19                \ Rotate (roofv_z, sidev_z) by a small angle (roll)
- LDY #25
- JSR MVS5
-
-\ ******************************************************************************
-\
-\       Name: MVEIT (Part 9 of 9)
-\       Type: Subroutine
-\   Category: Moving
-\    Summary: Move current ship: Redraw on scanner, if it hasn't been destroyed
-\
-\ ------------------------------------------------------------------------------
-\
-\ This routine has multiple stages. This stage does the following:
-\
-\   * If the ship is exploding or being removed, hide it on the scanner
-\
-\   * Otherwise redraw the ship on the scanner, now that it's been moved
-\
-\ ******************************************************************************
-
-.MV5
-
- LDA INWK+31            \ Fetch the ship's exploding/killed state from byte #31
-
- AND #%10100000         \ If we are exploding or removing this ship then jump to
- BNE MVD1               \ MVD1 to remove it from the scanner permanently
-
- LDA INWK+31            \ Set bit 4 to keep the ship visible on the scanner
- ORA #%00010000
- STA INWK+31
-
- JMP SCAN               \ Display the ship on the scanner, returning from the
-                        \ subroutine using a tail call
-
-.MVD1
-
- LDA INWK+31            \ Clear bit 4 to hide the ship on the scanner
- AND #%11101111
- STA INWK+31
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: MVT1
-\       Type: Subroutine
-\   Category: Moving
-\    Summary: Calculate (x_sign x_hi x_lo) = (x_sign x_hi x_lo) + (A R)
-\
-\ ------------------------------------------------------------------------------
-\
-\ Add the signed delta (A R) to a ship's coordinate, along the axis given in X.
-\ Mathematically speaking, this routine translates the ship along a single axis
-\ by a signed delta. Taking the example of X = 0, the x-axis, it does the
-\ following:
-\
-\   (x_sign x_hi x_lo) = (x_sign x_hi x_lo) + (A R)
-\
-\ (In practice, MVT1 is only ever called directly with A = 0 or 128, otherwise
-\ it is always called via MVT-2, which clears A apart from the sign bit. The
-\ routine is written to cope with a non-zero delta_hi, so it supports a full
-\ 16-bit delta, but it appears that delta_hi is only ever used to hold the
-\ sign of the delta.)
-\
-\ The comments below assume we are adding delta to the x-axis, though the axis
-\ is determined by the value of X.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   (A R)               The signed delta, so A = delta_hi and R = delta_lo
-\
-\   X                   Determines which coordinate axis of INWK to change:
-\
-\                         * X = 0 adds the delta to (x_lo, x_hi, x_sign)
-\
-\                         * X = 3 adds the delta to (y_lo, y_hi, y_sign)
-\
-\                         * X = 6 adds the delta to (z_lo, z_hi, z_sign)
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   MVT1-2              Clear bits 0-6 of A before entering MVT1
-\
-\ ******************************************************************************
-
- AND #%10000000         \ Clear bits 0-6 of A
-
-.MVT1
-
- ASL A                  \ Set the C flag to the sign bit of the delta, leaving
-                        \ delta_hi << 1 in A
-
- STA S                  \ Set S = delta_hi << 1
-                        \
-                        \ This also clears bit 0 of S
-
- LDA #0                 \ Set T = just the sign bit of delta (in bit 7)
- ROR A
- STA T
-
- LSR S                  \ Set S = delta_hi >> 1
-                        \       = |delta_hi|
-                        \
-                        \ This also clear the C flag, as we know that bit 0 of
-                        \ S was clear before the LSR
-
- EOR INWK+2,X           \ If T EOR x_sign has bit 7 set, then x_sign and delta
- BMI MV10               \ have different signs, so jump to MV10
-
-                        \ At this point, we know x_sign and delta have the same
-                        \ sign, that sign is in T, and S contains |delta_hi|,
-                        \ so now we want to do:
-                        \
-                        \   (x_sign x_hi x_lo) = (x_sign x_hi x_lo) + (S R)
-                        \
-                        \ and then set the sign of the result to the same sign
-                        \ as x_sign and delta
-
- LDA R                  \ First we add the low bytes, so:
- ADC INWK,X             \
- STA INWK,X             \   x_lo = x_lo + R
-
- LDA S                  \ Then we add the high bytes:
- ADC INWK+1,X           \
- STA INWK+1,X           \   x_hi = x_hi + S
-
- LDA INWK+2,X           \ And finally we add any carry into x_sign, and if the
- ADC #0                 \ sign of x_sign and delta in T is negative, make sure
- ORA T                  \ the result is negative (by OR'ing with T)
- STA INWK+2,X
-
- RTS                    \ Return from the subroutine
-
-.MV10
-
-                        \ If we get here, we know x_sign and delta have
-                        \ different signs, with delta's sign in T, and
-                        \ |delta_hi| in S, so now we want to do:
-                        \
-                        \   (x_sign x_hi x_lo) = (x_sign x_hi x_lo) - (S R)
-                        \
-                        \ and then set the sign of the result according to
-                        \ the signs of x_sign and delta
-
- LDA INWK,X             \ First we subtract the low bytes, so:
- SEC                    \
- SBC R                  \   x_lo = x_lo - R
- STA INWK,X
-
- LDA INWK+1,X           \ Then we subtract the high bytes:
- SBC S                  \
- STA INWK+1,X           \   x_hi = x_hi - S
-
- LDA INWK+2,X           \ And finally we subtract any borrow from bits 0-6 of
- AND #%01111111         \ x_sign, and give the result the opposite sign bit to T
- SBC #0                 \ (i.e. give it the sign of the original x_sign)
- ORA #%10000000
- EOR T
- STA INWK+2,X
-
- BCS MV11               \ If the C flag is set by the above SBC, then our sum
-                        \ above didn't underflow and is correct - to put it
-                        \ another way, (x_sign x_hi x_lo) >= (S R) so the result
-                        \ should indeed have the same sign as x_sign, so jump to
-                        \ MV11 to return from the subroutine
-
-                        \ Otherwise our subtraction underflowed because
-                        \ (x_sign x_hi x_lo) < (S R), so we now need to flip the
-                        \ subtraction around by using two's complement to this:
-                        \
-                        \   (S R) - (x_sign x_hi x_lo)
-                        \
-                        \ and then we need to give the result the same sign as
-                        \ (S R), the delta, as that's the dominant figure in the
-                        \ sum
-
- LDA #1                 \ First we subtract the low bytes, so:
- SBC INWK,X             \
- STA INWK,X             \   x_lo = 1 - x_lo
-
- LDA #0                 \ Then we subtract the high bytes:
- SBC INWK+1,X           \
- STA INWK+1,X           \   x_hi = 0 - x_hi
-
- LDA #0                 \ And then we subtract the sign bytes:
- SBC INWK+2,X           \
-                        \   x_sign = 0 - x_sign
-
- AND #%01111111         \ Finally, we set the sign bit to the sign in T, the
- ORA T                  \ sign of the original delta, as the delta is the
- STA INWK+2,X           \ dominant figure in the sum
-
-.MV11
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: MVT3
-\       Type: Subroutine
-\   Category: Moving
-\    Summary: Calculate K(3 2 1) = (x_sign x_hi x_lo) + K(3 2 1)
-\
-\ ------------------------------------------------------------------------------
-\
-\ Add an INWK position coordinate - i.e. x, y or z - to K(3 2 1), like this:
-\
-\   K(3 2 1) = (x_sign x_hi x_lo) + K(3 2 1)
-\
-\ The INWK coordinate to add to K(3 2 1) is specified by X.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   X                   The coordinate to add to K(3 2 1), as follows:
-\
-\                         * If X = 0, add (x_sign x_hi x_lo)
-\
-\                         * If X = 3, add (y_sign y_hi y_lo)
-\
-\                         * If X = 6, add (z_sign z_hi z_lo)
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   A                   Contains a copy of the high byte of the result, K+3
-\
-\   X                   X is preserved
-\
-\ ******************************************************************************
-
-.MVT3
-
- LDA K+3                \ Set S = K+3
- STA S
-
- AND #%10000000         \ Set T = sign bit of K(3 2 1)
- STA T
-
- EOR INWK+2,X           \ If x_sign has a different sign to K(3 2 1), jump to
- BMI MV13               \ MV13 to process the addition as a subtraction
-
- LDA K+1                \ Set K(3 2 1) = K(3 2 1) + (x_sign x_hi x_lo)
- CLC                    \ starting with the low bytes
- ADC INWK,X
- STA K+1
-
- LDA K+2                \ Then the middle bytes
- ADC INWK+1,X
- STA K+2
-
- LDA K+3                \ And finally the high bytes
- ADC INWK+2,X
-
- AND #%01111111         \ Setting the sign bit of K+3 to T, the original sign
- ORA T                  \ of K(3 2 1)
- STA K+3
-
- RTS                    \ Return from the subroutine
-
-.MV13
-
- LDA S                  \ Set S = |K+3| (i.e. K+3 with the sign bit cleared)
- AND #%01111111
- STA S
-
- LDA INWK,X             \ Set K(3 2 1) = (x_sign x_hi x_lo) - K(3 2 1)
- SEC                    \ starting with the low bytes
- SBC K+1
- STA K+1
-
- LDA INWK+1,X           \ Then the middle bytes
- SBC K+2
- STA K+2
-
- LDA INWK+2,X           \ And finally the high bytes, doing A = |x_sign| - |K+3|
- AND #%01111111         \ and setting the C flag for testing below
- SBC S
-
- ORA #%10000000         \ Set the sign bit of K+3 to the opposite sign of T,
- EOR T                  \ i.e. the opposite sign to the original K(3 2 1)
- STA K+3
-
- BCS MV14               \ If the C flag is set, i.e. |x_sign| >= |K+3|, then
-                        \ the sign of K(3 2 1). In this case, we want the
-                        \ result to have the same sign as the largest argument,
-                        \ which is (x_sign x_hi x_lo), which we know has the
-                        \ opposite sign to K(3 2 1), and that's what we just set
-                        \ the sign of K(3 2 1) to... so we can jump to MV14 to
-                        \ return from the subroutine
-
- LDA #1                 \ We need to swap the sign of the result in K(3 2 1),
- SBC K+1                \ which we do by calculating 0 - K(3 2 1), which we can
- STA K+1                \ do with 1 - C - K(3 2 1), as we know the C flag is
-                        \ clear. We start with the low bytes
-
- LDA #0                 \ Then the middle bytes
- SBC K+2
- STA K+2
-
- LDA #0                 \ And finally the high bytes
- SBC K+3
-
- AND #%01111111         \ Set the sign bit of K+3 to the same sign as T,
- ORA T                  \ i.e. the same sign as the original K(3 2 1), as
- STA K+3                \ that's the largest argument
-
-.MV14
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: MVS4
-\       Type: Subroutine
-\   Category: Moving
-\    Summary: Apply pitch and roll to an orientation vector
-\  Deep dive: Orientation vectors
-\             Pitching and rolling
-\
-\ ------------------------------------------------------------------------------
-\
-\ Apply pitch and roll angles alpha and beta to the orientation vector in Y.
-\
-\ Specifically, this routine rotates a point (x, y, z) around the origin by
-\ pitch alpha and roll beta, using the small angle approximation to make the
-\ maths easier, and incorporating the Minsky circle algorithm to make the
-\ rotation more stable (though more elliptic).
-\
-\ If that paragraph makes sense to you, then you should probably be writing
-\ this commentary! For the rest of us, see the associated deep dives.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   Y                   Determines which of the INWK orientation vectors to
-\                       transform:
-\
-\                         * Y = 9 rotates nosev: (nosev_x, nosev_y, nosev_z)
-\
-\                         * Y = 15 rotates roofv: (roofv_x, roofv_y, roofv_z)
-\
-\                         * Y = 21 rotates sidev: (sidev_x, sidev_y, sidev_z)
-\
-\ ******************************************************************************
-
-.MVS4
-
- LDA ALPHA              \ Set Q = alpha (the roll angle to rotate through)
- STA Q
-
- LDX INWK+2,Y           \ Set (S R) = nosev_y
- STX R
- LDX INWK+3,Y
- STX S
-
- LDX INWK,Y             \ These instructions have no effect as MAD overwrites
- STX P                  \ X and P when called, but they set X = P = nosev_x_lo
-
- LDA INWK+1,Y           \ Set A = -nosev_x_hi
- EOR #%10000000
-
- JSR MAD                \ Set (A X) = Q * A + (S R)
- STA INWK+3,Y           \           = alpha * -nosev_x_hi + nosev_y
- STX INWK+2,Y           \
-                        \ and store (A X) in nosev_y, so this does:
-                        \
-                        \ nosev_y = nosev_y - alpha * nosev_x_hi
-
- STX P                  \ This instruction has no effect as MAD overwrites P,
-                        \ but it sets P = nosev_y_lo
-
- LDX INWK,Y             \ Set (S R) = nosev_x
- STX R
- LDX INWK+1,Y
- STX S
-
- LDA INWK+3,Y           \ Set A = nosev_y_hi
-
- JSR MAD                \ Set (A X) = Q * A + (S R)
- STA INWK+1,Y           \           = alpha * nosev_y_hi + nosev_x
- STX INWK,Y             \
-                        \ and store (A X) in nosev_x, so this does:
-                        \
-                        \ nosev_x = nosev_x + alpha * nosev_y_hi
-
- STX P                  \ This instruction has no effect as MAD overwrites P,
-                        \ but it sets P = nosev_x_lo
-
- LDA BETA               \ Set Q = beta (the pitch angle to rotate through)
- STA Q
-
- LDX INWK+2,Y           \ Set (S R) = nosev_y
- STX R
- LDX INWK+3,Y
- STX S
- LDX INWK+4,Y
-
- STX P                  \ This instruction has no effect as MAD overwrites P,
-                        \ but it sets P = nosev_y
-
- LDA INWK+5,Y           \ Set A = -nosev_z_hi
- EOR #%10000000
-
- JSR MAD                \ Set (A X) = Q * A + (S R)
- STA INWK+3,Y           \           = beta * -nosev_z_hi + nosev_y
- STX INWK+2,Y           \
-                        \ and store (A X) in nosev_y, so this does:
-                        \
-                        \ nosev_y = nosev_y - beta * nosev_z_hi
-
- STX P                  \ This instruction has no effect as MAD overwrites P,
-                        \ but it sets P = nosev_y_lo
-
- LDX INWK+4,Y           \ Set (S R) = nosev_z
- STX R
- LDX INWK+5,Y
- STX S
-
- LDA INWK+3,Y           \ Set A = nosev_y_hi
-
- JSR MAD                \ Set (A X) = Q * A + (S R)
- STA INWK+5,Y           \           = beta * nosev_y_hi + nosev_z
- STX INWK+4,Y           \
-                        \ and store (A X) in nosev_z, so this does:
-                        \
-                        \ nosev_z = nosev_z + beta * nosev_y_hi
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: MVS5
-\       Type: Subroutine
-\   Category: Moving
-\    Summary: Apply a 3.6 degree pitch or roll to an orientation vector
-\  Deep dive: Orientation vectors
-\             Pitching and rolling by a fixed angle
-\
-\ ------------------------------------------------------------------------------
-\
-\ Pitch or roll a ship by a small, fixed amount (1/16 radians, or 3.6 degrees),
-\ in a specified direction, by rotating the orientation vectors. The vectors to
-\ rotate are given in X and Y, and the direction of the rotation is given in
-\ RAT2. The calculation is as follows:
-\
-\   * If the direction is positive:
-\
-\     X = X * (1 - 1/512) + Y / 16
-\     Y = Y * (1 - 1/512) - X / 16
-\
-\   * If the direction is negative:
-\
-\     X = X * (1 - 1/512) - Y / 16
-\     Y = Y * (1 - 1/512) + X / 16
-\
-\ So if X = 15 (roofv_x), Y = 21 (sidev_x) and RAT2 is positive, it does this:
-\
-\   roofv_x = roofv_x * (1 - 1/512)  + sidev_x / 16
-\   sidev_x = sidev_x * (1 - 1/512)  - roofv_x / 16
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   X                   The first vector to rotate:
-\
-\                         * If X = 15, rotate roofv_x
-\
-\                         * If X = 17, rotate roofv_y
-\
-\                         * If X = 19, rotate roofv_z
-\
-\                         * If X = 21, rotate sidev_x
-\
-\                         * If X = 23, rotate sidev_y
-\
-\                         * If X = 25, rotate sidev_z
-\
-\   Y                   The second vector to rotate:
-\
-\                         * If Y = 9,  rotate nosev_x
-\
-\                         * If Y = 11, rotate nosev_y
-\
-\                         * If Y = 13, rotate nosev_z
-\
-\                         * If Y = 21, rotate sidev_x
-\
-\                         * If Y = 23, rotate sidev_y
-\
-\                         * If Y = 25, rotate sidev_z
-\
-\   RAT2                The direction of the pitch or roll to perform, positive
-\                       or negative (i.e. the sign of the roll or pitch counter
-\                       in bit 7)
-\
-\ ******************************************************************************
-
-.MVS5
-
- LDA INWK+1,X           \ Fetch roofv_x_hi, clear the sign bit, divide by 2 and
- AND #%01111111         \ store in T, so:
- LSR A                  \
- STA T                  \ T = |roofv_x_hi| / 2
-                        \   = |roofv_x| / 512
-                        \
-                        \ The above is true because:
-                        \
-                        \ |roofv_x| = |roofv_x_hi| * 256 + roofv_x_lo
-                        \
-                        \ so:
-                        \
-                        \ |roofv_x| / 512 = |roofv_x_hi| * 256 / 512
-                        \                    + roofv_x_lo / 512
-                        \                  = |roofv_x_hi| / 2
-
- LDA INWK,X             \ Now we do the following subtraction:
- SEC                    \
- SBC T                  \ (S R) = (roofv_x_hi roofv_x_lo) - |roofv_x| / 512
- STA R                  \       = (1 - 1/512) * roofv_x
-                        \
-                        \ by doing the low bytes first
-
- LDA INWK+1,X           \ And then the high bytes (the high byte of the right
- SBC #0                 \ side of the subtraction being 0)
- STA S
-
- LDA INWK,Y             \ Set P = nosev_x_lo
- STA P
-
- LDA INWK+1,Y           \ Fetch the sign of nosev_x_hi (bit 7) and store in T
- AND #%10000000
- STA T
-
- LDA INWK+1,Y           \ Fetch nosev_x_hi into A and clear the sign bit, so
- AND #%01111111         \ A = |nosev_x_hi|
-
- LSR A                  \ Set (A P) = (A P) / 16
- ROR P                  \           = |nosev_x_hi nosev_x_lo| / 16
- LSR A                  \           = |nosev_x| / 16
- ROR P
- LSR A
- ROR P
- LSR A
- ROR P
-
- ORA T                  \ Set the sign of A to the sign in T (i.e. the sign of
-                        \ the original nosev_x), so now:
-                        \
-                        \ (A P) = nosev_x / 16
-
- EOR RAT2               \ Give it the sign as if we multiplied by the direction
-                        \ by the pitch or roll direction
-
- STX Q                  \ Store the value of X so it can be restored after the
-                        \ call to ADD
-
- JSR ADD                \ (A X) = (A P) + (S R)
-                        \       = +/-nosev_x / 16 + (1 - 1/512) * roofv_x
-
- STA K+1                \ Set K(1 0) = (1 - 1/512) * roofv_x +/- nosev_x / 16
- STX K
-
- LDX Q                  \ Restore the value of X from before the call to ADD
-
- LDA INWK+1,Y           \ Fetch nosev_x_hi, clear the sign bit, divide by 2 and
- AND #%01111111         \ store in T, so:
- LSR A                  \
- STA T                  \ T = |nosev_x_hi| / 2
-                        \   = |nosev_x| / 512
-
- LDA INWK,Y             \ Now we do the following subtraction:
- SEC                    \
- SBC T                  \ (S R) = (nosev_x_hi nosev_x_lo) - |nosev_x| / 512
- STA R                  \       = (1 - 1/512) * nosev_x
-                        \
-                        \ by doing the low bytes first
-
- LDA INWK+1,Y           \ And then the high bytes (the high byte of the right
- SBC #0                 \ side of the subtraction being 0)
- STA S
-
- LDA INWK,X             \ Set P = roofv_x_lo
- STA P
-
- LDA INWK+1,X           \ Fetch the sign of roofv_x_hi (bit 7) and store in T
- AND #%10000000
- STA T
-
- LDA INWK+1,X           \ Fetch roofv_x_hi into A and clear the sign bit, so
- AND #%01111111         \ A = |roofv_x_hi|
-
- LSR A                  \ Set (A P) = (A P) / 16
- ROR P                  \           = |roofv_x_hi roofv_x_lo| / 16
- LSR A                  \           = |roofv_x| / 16
- ROR P
- LSR A
- ROR P
- LSR A
- ROR P
-
- ORA T                  \ Set the sign of A to the opposite sign to T (i.e. the
- EOR #%10000000         \ sign of the original -roofv_x), so now:
-                        \
-                        \ (A P) = -roofv_x / 16
-
- EOR RAT2               \ Give it the sign as if we multiplied by the direction
-                        \ by the pitch or roll direction
-
- STX Q                  \ Store the value of X so it can be restored after the
-                        \ call to ADD
-
- JSR ADD                \ (A X) = (A P) + (S R)
-                        \       = -/+roofv_x / 16 + (1 - 1/512) * nosev_x
-
- STA INWK+1,Y           \ Set nosev_x = (1-1/512) * nosev_x -/+ roofv_x / 16
- STX INWK,Y
-
- LDX Q                  \ Restore the value of X from before the call to ADD
-
- LDA K                  \ Set roofv_x = K(1 0)
- STA INWK,X             \              = (1-1/512) * roofv_x +/- nosev_x / 16
- LDA K+1
- STA INWK+1,X
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: MVT6
-\       Type: Subroutine
-\   Category: Moving
-\    Summary: Calculate (A P+2 P+1) = (x_sign x_hi x_lo) + (A P+2 P+1)
-\
-\ ------------------------------------------------------------------------------
-\
-\ Do the following calculation, for the coordinate given by X (so this is what
-\ it does for the x-coordinate):
-\
-\   (A P+2 P+1) = (x_sign x_hi x_lo) + (A P+2 P+1)
-\
-\ A is a sign bit and is not included in the calculation, but bits 0-6 of A are
-\ preserved. Bit 7 is set to the sign of the result.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   A                   The sign of P(2 1) in bit 7
-\
-\   P(2 1)              The 16-bit value we want to add the coordinate to
-\
-\   X                   The coordinate to add, as follows:
-\
-\                         * If X = 0, add to (x_sign x_hi x_lo)
-\
-\                         * If X = 3, add to (y_sign y_hi y_lo)
-\
-\                         * If X = 6, add to (z_sign z_hi z_lo)
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   A                   The sign of the result (in bit 7)
-\
-\ ******************************************************************************
-
-.MVT6
-
- TAY                    \ Store argument A into Y, for later use
-
- EOR INWK+2,X           \ Set A = A EOR x_sign
-
- BMI MV50               \ If the sign is negative, i.e. A and x_sign have
-                        \ different signs, jump to MV50
-
-                        \ The signs are the same, so we can add the two
-                        \ arguments and keep the sign to get the result
-
- LDA P+1                \ First we add the low bytes:
- CLC                    \
- ADC INWK,X             \   P+1 = P+1 + x_lo
- STA P+1
-
- LDA P+2                \ And then the high bytes:
- ADC INWK+1,X           \
- STA P+2                \   P+2 = P+2 + x_hi
-
- TYA                    \ Restore the original A argument that we stored earlier
-                        \ so that we keep the original sign
-
- RTS                    \ Return from the subroutine
-
-.MV50
-
- LDA INWK,X             \ First we subtract the low bytes:
- SEC                    \
- SBC P+1                \   P+1 = x_lo - P+1
- STA P+1
-
- LDA INWK+1,X           \ And then the high bytes:
- SBC P+2                \
- STA P+2                \   P+2 = x_hi - P+2
-
- BCC MV51               \ If the last subtraction underflowed, then the C flag
-                        \ will be clear and x_hi < P+2, so jump to MV51 to
-                        \ negate the result
-
- TYA                    \ Restore the original A argument that we stored earlier
- EOR #%10000000         \ but flip bit 7, which flips the sign. We do this
-                        \ because x_hi >= P+2 so we want the result to have the
-                        \ same sign as x_hi (as it's the dominant side in this
-                        \ calculation). The sign of x_hi is x_sign, and x_sign
-                        \ has the opposite sign to A, so we flip the sign in A
-                        \ to return the correct result
-
- RTS                    \ Return from the subroutine
-
-.MV51
-
- LDA #1                 \ Our subtraction underflowed, so we negate the result
- SBC P+1                \ using two's complement, first with the low byte:
- STA P+1                \
-                        \   P+1 = 1 - P+1
-
- LDA #0                 \ And then the high byte:
- SBC P+2                \
- STA P+2                \   P+2 = 0 - P+2
-
- TYA                    \ Restore the original A argument that we stored earlier
-                        \ as this is the correct sign for the result. This is
-                        \ because x_hi < P+2, so we want to return the same sign
-                        \ as P+2, the dominant side
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: MV40
-\       Type: Subroutine
-\   Category: Moving
-\    Summary: Rotate the planet's location in space by the amount of pitch and
-\             roll of our ship
-\  Deep dive: Rotating the universe
-\
-\ ------------------------------------------------------------------------------
-\
-\ We implement this using the same equations as in part 5 of MVEIT, where we
-\ rotated the current ship's location by our pitch and roll. Specifically, the
-\ calculation is as follows:
-\
-\   1. K2 = y - alpha * x
-\   2. z = z + beta * K2
-\   3. y = K2 - beta * z
-\   4. x = x + alpha * y
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   X                   The type of the planet
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   MV40-1              Contains an RTS
-\
-\ ******************************************************************************
-
-.MV40
-
- TXA                    \ If bit 0 of X is set, then this is 129, which is the
- LSR A                  \ placeholder used to denote that there is no space
- BCS MV40-1             \ station, so return from the subroutine (as MV40-1
-                        \ contains an RTS)
-
- LDA ALPHA              \ Set Q = -ALPHA, so Q contains the angle we want to
- EOR #%10000000         \ roll the planet through (i.e. in the opposite
- STA Q                  \ direction to our ship's roll angle alpha)
-
- LDA INWK               \ Set P(1 0) = (x_hi x_lo)
- STA P
- LDA INWK+1
- STA P+1
-
- LDA INWK+2             \ Set A = x_sign
-
- JSR MULT3              \ Set K(3 2 1 0) = (A P+1 P) * Q
-                        \
-                        \ which also means:
-                        \
-                        \   K(3 2 1) = (A P+1 P) * Q / 256
-                        \            = x * -alpha / 256
-                        \            = - alpha * x / 256
-
- LDX #3                 \ Set K(3 2 1) = (y_sign y_hi y_lo) + K(3 2 1)
- JSR MVT3               \              = y - alpha * x / 256
-
- LDA K+1                \ Set K2(2 1) = P(1 0) = K(2 1)
- STA K2+1
- STA P
-
- LDA K+2                \ Set K2+2 = K+2
- STA K2+2
-
- STA P+1                \ Set P+1 = K+2
-
- LDA BETA               \ Set Q = beta, the pitch angle of our ship
- STA Q
-
- LDA K+3                \ Set K+3 to K2+3, so now we have result 1 above:
- STA K2+3               \
-                        \   K2(3 2 1) = K(3 2 1)
-                        \             = y - alpha * x / 256
-
-                        \ We also have:
-                        \
-                        \   A = K+3
-                        \
-                        \   P(1 0) = K(2 1)
-                        \
-                        \ so combined, these mean:
-                        \
-                        \   (A P+1 P) = K(3 2 1)
-                        \             = K2(3 2 1)
-
- JSR MULT3              \ Set K(3 2 1 0) = (A P+1 P) * Q
-                        \
-                        \ which also means:
-                        \
-                        \   K(3 2 1) = (A P+1 P) * Q / 256
-                        \            = K2(3 2 1) * beta / 256
-                        \            = beta * K2 / 256
-
- LDX #6                 \ K(3 2 1) = (z_sign z_hi z_lo) + K(3 2 1)
- JSR MVT3               \          = z + beta * K2 / 256
-
- LDA K+1                \ Set P = K+1
- STA P
-
- STA INWK+6             \ Set z_lo = K+1
-
- LDA K+2                \ Set P+1 = K+2
- STA P+1
-
- STA INWK+7             \ Set z_hi = K+2
-
- LDA K+3                \ Set A = z_sign = K+3, so now we have:
- STA INWK+8             \
-                        \   (z_sign z_hi z_lo) = K(3 2 1)
-                        \                      = z + beta * K2 / 256
-
-                        \ So we now have result 2 above:
-                        \
-                        \   z = z + beta * K2
-
- EOR #%10000000         \ Flip the sign bit of A to give A = -z_sign
-
- JSR MULT3              \ Set K(3 2 1 0) = (A P+1 P) * Q
-                        \                = (-z_sign z_hi z_lo) * beta
-                        \                = -z * beta
-
- LDA K+3                \ Set T to the sign bit of K(3 2 1 0), i.e. to the sign
- AND #%10000000         \ bit of -z * beta
- STA T
-
- EOR K2+3               \ If K2(3 2 1 0) has a different sign to K(3 2 1 0),
- BMI MV1                \ then EOR'ing them will produce a 1 in bit 7, so jump
-                        \ to MV1 to take this into account
-
-                        \ If we get here, K and K2 have the same sign, so we can
-                        \ add them together to get the result we're after, and
-                        \ then set the sign afterwards
-
- LDA K                  \ We now do the following sum:
- ADC K2                 \
-                        \   (A y_hi y_lo -) = K(3 2 1 0) + K2(3 2 1 0)
-                        \
-                        \ starting with the low bytes (which we don't keep)
-                        \
-                        \ The addition works because MULT3 clears the C flag
-
- LDA K+1                \ We then do the middle bytes, which go into y_lo
- ADC K2+1
- STA INWK+3
-
- LDA K+2                \ And then the high bytes, which go into y_hi
- ADC K2+2
- STA INWK+4
-
- LDA K+3                \ And then the sign bytes into A, so overall we have the
- ADC K2+3               \ following, if we drop the low bytes from the result:
-                        \
-                        \   (A y_hi y_lo) = (K + K2) / 256
-
- JMP MV2                \ Jump to MV2 to skip the calculation for when K and K2
-                        \ have different signs
-
-.MV1
-
- LDA K                  \ If we get here then K2 and K have different signs, so
- SEC                    \ instead of adding, we need to subtract to get the
- SBC K2                 \ result we want, like this:
-                        \
-                        \   (A y_hi y_lo -) = K(3 2 1 0) - K2(3 2 1 0)
-                        \
-                        \ starting with the low bytes (which we don't keep)
-
- LDA K+1                \ We then do the middle bytes, which go into y_lo
- SBC K2+1
- STA INWK+3
-
- LDA K+2                \ And then the high bytes, which go into y_hi
- SBC K2+2
- STA INWK+4
-
- LDA K2+3               \ Now for the sign bytes, so first we extract the sign
- AND #%01111111         \ byte from K2 without the sign bit, so P = |K2+3|
- STA P
-
- LDA K+3                \ And then we extract the sign byte from K without the
- AND #%01111111         \ sign bit, so A = |K+3|
-
- SBC P                  \ And finally we subtract the sign bytes, so P = A - P
- STA P
-
-                        \ By now we have the following, if we drop the low bytes
-                        \ from the result:
-                        \
-                        \   (A y_hi y_lo) = (K - K2) / 256
-                        \
-                        \ so now we just need to make sure the sign of the
-                        \ result is correct
-
- BCS MV2                \ If the C flag is set, then the last subtraction above
-                        \ didn't underflow and the result is correct, so jump to
-                        \ MV2 as we are done with this particular stage
-
- LDA #1                 \ Otherwise the subtraction above underflowed, as K2 is
- SBC INWK+3             \ the dominant part of the subtraction, so we need to
- STA INWK+3             \ negate the result using two's complement, starting
-                        \ with the low bytes:
-                        \
-                        \   y_lo = 1 - y_lo
-
- LDA #0                 \ And then the high bytes:
- SBC INWK+4             \
- STA INWK+4             \   y_hi = 0 - y_hi
-
- LDA #0                 \ And finally the sign bytes:
- SBC P                  \
-                        \   A = 0 - P
-
- ORA #%10000000         \ We now force the sign bit to be negative, so that the
-                        \ final result below gets the opposite sign to K, which
-                        \ we want as K2 is the dominant part of the sum
-
-.MV2
-
- EOR T                  \ T contains the sign bit of K, so if K is negative,
-                        \ this flips the sign of A
-
- STA INWK+5             \ Store A in y_sign
-
-                        \ So we now have result 3 above:
-                        \
-                        \   y = K2 + K
-                        \     = K2 - beta * z
-
- LDA ALPHA              \ Set A = alpha
- STA Q
-
- LDA INWK+3             \ Set P(1 0) = (y_hi y_lo)
- STA P
- LDA INWK+4
- STA P+1
-
- LDA INWK+5             \ Set A = y_sign
-
- JSR MULT3              \ Set K(3 2 1 0) = (A P+1 P) * Q
-                        \                = (y_sign y_hi y_lo) * alpha
-                        \                = y * alpha
-
- LDX #0                 \ Set K(3 2 1) = (x_sign x_hi x_lo) + K(3 2 1)
- JSR MVT3               \              = x + y * alpha / 256
-
- LDA K+1                \ Set (x_sign x_hi x_lo) = K(3 2 1)
- STA INWK               \                        = x + y * alpha / 256
- LDA K+2
- STA INWK+1
- LDA K+3
- STA INWK+2
-
-                        \ So we now have result 4 above:
-                        \
-                        \   x = x + y * alpha
-
- JMP MV45               \ We have now finished rotating the planet by our pitch
-                        \ and roll, so jump back into the MVEIT routine at MV45
-                        \ to apply all the other movements
+                        \ --- Mod: Code moved for sideways RAM: --------------->
+
+                        \ The following routines have been moved into sideways
+                        \ RAM (see the ELITE SIDEWAYS RAM FILE section at the
+                        \ end of this source file)
+                        \
+                        \   * Main flight loop (Part 1 of 16)
+                        \   * Main flight loop (Part 2 of 16)
+                        \   * Main flight loop (Part 3 of 16)
+                        \   * Main flight loop (Part 4 of 16)
+                        \   * Main flight loop (Part 5 of 16)
+                        \   * Main flight loop (Part 6 of 16)
+                        \   * Main flight loop (Part 7 of 16)
+                        \   * Main flight loop (Part 8 of 16)
+                        \   * Main flight loop (Part 9 of 16)
+                        \   * Main flight loop (Part 10 of 16)
+                        \   * Main flight loop (Part 11 of 16)
+                        \   * Main flight loop (Part 12 of 16)
+                        \   * Main flight loop (Part 13 of 16)
+                        \   * Main flight loop (Part 14 of 16)
+                        \   * Main flight loop (Part 15 of 16)
+                        \   * Main flight loop (Part 16 of 16)
+                        \   * MAS1
+                        \   * MAS2
+                        \   * MAS3
+                        \   * MVEIT (Part 1 of 9)
+                        \   * MVEIT (Part 2 of 9)
+                        \   * MVEIT (Part 3 of 9)
+                        \   * MVEIT (Part 4 of 9)
+                        \   * MVEIT (Part 5 of 9)
+                        \   * MVEIT (Part 6 of 9)
+                        \   * MVEIT (Part 7 of 9)
+                        \   * MVEIT (Part 8 of 9)
+                        \   * MVEIT (Part 9 of 9)
+                        \   * MVT1
+                        \   * MVT3
+                        \   * MVS4
+                        \   * MVS5
+                        \   * MVT6
+                        \   * MV40
+
+                        \ --- End of moved code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -36254,6 +32854,3449 @@ ENDMACRO
                         \ fit on-screen
 
  RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: Main flight loop (Part 1 of 16)
+\       Type: Subroutine
+\   Category: Main loop
+\    Summary: Seed the random number generator
+\  Deep dive: Program flow of the main game loop
+\             Generating random numbers
+\
+\ ------------------------------------------------------------------------------
+\
+\ The main flight loop covers most of the flight-specific aspects of Elite. This
+\ section covers the following:
+\
+\   * Seed the random number generator
+\
+\   * Update the sound channel's duration counter to ensure sounds are allocated
+\     a minimum duration (unless they are stopped by a higher priority sound)
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   M%                  The entry point for the main flight loop
+\
+\ ******************************************************************************
+
+.M%
+
+ LDA K%                 \ We want to seed the random number generator with a
+                        \ pretty random number, so fetch the contents of K%,
+                        \ which is the x_lo coordinate of the planet. This value
+                        \ will be fairly unpredictable, so it's a pretty good
+                        \ candidate
+
+ STA RAND               \ Store the seed in the first byte of the four-byte
+                        \ random number seed that's stored in RAND
+
+                        \ The following processes each sound channel to ensure
+                        \ that sounds last for their minimum duration (see the
+                        \ SFX variable for more details)
+
+ LDA #0                 \ Set A = 0 so we can use it for resetting the sound
+                        \ channel's duration and priority values below
+
+ LDX #1                 \ Set X as a sound channel counter, starting with
+                        \ channel 1 and then doing channel 0
+
+.SFXL
+
+ DEC SFXDU,X            \ Decrement this sound channel's SFXDU duration value
+
+ BPL P%+8               \ If the duration is still positive, skip the following
+                        \ two instructions
+
+ STA SFXDU,X            \ The duration just reached zero, so the sound on this
+ STA SFXPR,X            \ channel has reached the end of its minimum duration,
+                        \ so we zero the channel's SFXDU duration and SFXPR
+                        \ priority values so any new sounds that need to be made
+                        \ will be made regardless of priority
+
+ DEX                    \ Decrement the sound channel
+
+ BPL SFXL               \ Loop back to process the next sound channel until we
+                        \ have done both
+
+\ ******************************************************************************
+\
+\       Name: Main flight loop (Part 2 of 16)
+\       Type: Subroutine
+\   Category: Main loop
+\    Summary: Calculate the alpha and beta angles from the current pitch and
+\             roll of our ship
+\  Deep dive: Program flow of the main game loop
+\             Pitching and rolling
+\
+\ ------------------------------------------------------------------------------
+\
+\ The main flight loop covers most of the flight-specific aspects of Elite. This
+\ section covers the following:
+\
+\   * Calculate the alpha and beta angles from the current pitch and roll
+\
+\ Here we take the current rate of pitch and roll, as set by the keyboard,
+\ and convert them into alpha and beta angles that we can use in the
+\ matrix functions to rotate space around our ship. The alpha angle covers
+\ roll, while the beta angle covers pitch (there is no yaw in this version of
+\ Elite). The angles are in radians, which allows us to use the small angle
+\ approximation when moving objects in the sky (see the MVEIT routine for more
+\ on this). Also, the signs of the two angles are stored separately, in both
+\ the sign and the flipped sign, as this makes calculations easier.
+\
+\ ******************************************************************************
+
+ LDX JSTX               \ Set X to the current rate of roll in JSTX
+
+ JSR cntr               \ Apply keyboard damping twice (if enabled) so the roll
+ JSR cntr               \ rate in X creeps towards the centre by 2
+
+                        \ The roll rate in JSTX increases if we press ">" (and
+                        \ the RL indicator on the dashboard goes to the right)
+                        \
+                        \ This rolls our ship to the right (clockwise), but we
+                        \ actually implement this by rolling everything else
+                        \ to the left (anti-clockwise), so a positive roll rate
+                        \ in JSTX translates to a negative roll angle alpha
+
+ TXA                    \ Set A and Y to the roll rate but with the sign bit
+ EOR #%10000000         \ flipped (i.e. set them to the sign we want for alpha)
+ TAY
+
+ AND #%10000000         \ Extract the flipped sign of the roll rate
+
+                        \ --- Mod: Code removed for flicker-free planets: ----->
+
+\JMP P%+11              \ This skips over the following block of bytes, which
+\                       \ appear to be unused; it isn't clear what they do
+\
+\EQUB &A1, &BB          \ These bytes appear to be unused
+\EQUB &80, &00
+\EQUB &90, &01
+\EQUB &D6, &F1
+
+                        \ --- End of removed code ----------------------------->
+
+ STA ALP2               \ Store the flipped sign of the roll rate in ALP2 (so
+                        \ ALP2 contains the sign of the roll angle alpha)
+
+ STX JSTX               \ Update JSTX with the damped value that's still in X
+
+ EOR #%10000000         \ Extract the correct sign of the roll rate and store
+ STA ALP2+1             \ in ALP2+1 (so ALP2+1 contains the flipped sign of the
+                        \ roll angle alpha)
+
+ TYA                    \ Set A to the roll rate but with the sign bit flipped
+
+ BPL P%+7               \ If the value of A is positive, skip the following
+                        \ three instructions
+
+ EOR #%11111111         \ A is negative, so change the sign of A using two's
+ CLC                    \ complement so that A is now positive and contains
+ ADC #1                 \ the absolute value of the roll rate, i.e. |JSTX|
+
+ LSR A                  \ Divide the (positive) roll rate in A by 4
+ LSR A
+
+ CMP #8                 \ If A >= 8, skip the following two instructions
+ BCS P%+4
+
+ LSR A                  \ A < 8, so halve A again
+
+ CLC                    \ This instruction has no effect, as we only get here
+                        \ if the C flag is clear (if it is set, we skip this
+                        \ instruction)
+
+ STA ALP1               \ Store A in ALP1, so we now have:
+                        \
+                        \   ALP1 = |JSTX| / 8    if |JSTX| < 32
+                        \
+                        \   ALP1 = |JSTX| / 4    if |JSTX| >= 32
+                        \
+                        \ This means that at lower roll rates, the roll angle is
+                        \ reduced closer to zero than at higher roll rates,
+                        \ which gives us finer control over the ship's roll at
+                        \ lower roll rates
+                        \
+                        \ Because JSTX is in the range -127 to +127, ALP1 is
+                        \ in the range 0 to 31
+
+ ORA ALP2               \ Store A in ALPHA, but with the sign set to ALP2 (so
+ STA ALPHA              \ ALPHA has a different sign to the actual roll rate)
+
+ LDX JSTY               \ Set X to the current rate of pitch in JSTY
+
+ JSR cntr               \ Apply keyboard damping so the pitch rate in X creeps
+                        \ towards the centre by 1
+
+ TXA                    \ Set A and Y to the pitch rate but with the sign bit
+ EOR #%10000000         \ flipped
+ TAY
+
+ AND #%10000000         \ Extract the flipped sign of the pitch rate into A
+
+ STX JSTY               \ Update JSTY with the damped value that's still in X
+
+ STA BET2+1             \ Store the flipped sign of the pitch rate in BET2+1
+
+ EOR #%10000000         \ Extract the correct sign of the pitch rate and store
+ STA BET2               \ it in BET2
+
+ TYA                    \ Set A to the pitch rate but with the sign bit flipped
+
+ BPL P%+4               \ If the value of A is positive, skip the following
+                        \ instruction
+
+ EOR #%11111111         \ A is negative, so flip the bits
+
+ ADC #4                 \ Add 4 to the (positive) pitch rate, so the maximum
+                        \ value is now up to 131 (rather than 127)
+
+ LSR A                  \ Divide the (positive) pitch rate in A by 16
+ LSR A
+ LSR A
+ LSR A
+
+ CMP #3                 \ If A >= 3, skip the following instruction
+ BCS P%+3
+
+ LSR A                  \ A < 3, so halve A again
+
+ STA BET1               \ Store A in BET1, so we now have:
+                        \
+                        \   BET1 = |JSTY| / 32    if |JSTY| < 48
+                        \
+                        \   BET1 = |JSTY| / 16    if |JSTY| >= 48
+                        \
+                        \ This means that at lower pitch rates, the pitch angle
+                        \ is reduced closer to zero than at higher pitch rates,
+                        \ which gives us finer control over the ship's pitch at
+                        \ lower pitch rates
+                        \
+                        \ Because JSTY is in the range -131 to +131, BET1 is in
+                        \ the range 0 to 8
+
+ ORA BET2               \ Store A in BETA, but with the sign set to BET2 (so
+ STA BETA               \ BETA has the same sign as the actual pitch rate)
+
+\ ******************************************************************************
+\
+\       Name: Main flight loop (Part 3 of 16)
+\       Type: Subroutine
+\   Category: Main loop
+\    Summary: Scan for flight keys and process the results
+\  Deep dive: Program flow of the main game loop
+\             The key logger
+\
+\ ------------------------------------------------------------------------------
+\
+\ The main flight loop covers most of the flight-specific aspects of Elite. This
+\ section covers the following:
+\
+\   * Scan for flight keys and process the results
+\
+\ Flight keys are logged in the key logger at location KY1 onwards, with a
+\ non-zero value in the relevant location indicating a key press.
+\
+\ The key presses that are processed are as follows:
+\
+\   * Space and "?" to speed up and slow down
+\   * "U", "T" and "M" to disarm, arm and fire missiles
+\   * "-" to fire an energy bomb
+\   * ESCAPE to launch an escape pod
+\   * "J" to initiate an in-system jump
+\   * "E" to deploy E.C.M. anti-missile countermeasures
+\   * "C" to use the docking computer
+\   * "A" to fire lasers
+\
+\ ******************************************************************************
+
+ LDA KY2                \ If Space is being pressed, keep going, otherwise jump
+ BEQ MA17               \ down to MA17 to skip the following
+
+ LDA DELTA              \ The "go faster" key is being pressed, so first we
+ CMP #40                \ fetch the current speed from DELTA into A, and if
+ BCS MA17               \ A >= 40, we are already going at full pelt, so jump
+                        \ down to MA17 to skip the following
+
+ INC DELTA              \ We can go a bit faster, so increment the speed in
+                        \ location DELTA
+
+.MA17
+
+ LDA KY1                \ If "?" is being pressed, keep going, otherwise jump
+ BEQ MA4                \ down to MA4 to skip the following
+
+ DEC DELTA              \ The "slow down" key is being pressed, so we decrement
+                        \ the current ship speed in DELTA
+
+ BNE MA4                \ If the speed is still greater than zero, jump to MA4
+
+ INC DELTA              \ Otherwise we just braked a little too hard, so bump
+                        \ the speed back up to the minimum value of 1
+
+.MA4
+
+ LDA KY15               \ If "U" is being pressed and the number of missiles
+ AND NOMSL              \ in NOMSL is non-zero, keep going, otherwise jump down
+ BEQ MA20               \ to MA20 to skip the following
+
+ JSR ABORT-2            \ The "disarm missiles" key is being pressed, so call
+                        \ ABORT-2 to disarm the missile and update the missile
+                        \ indicators on the dashboard to white squares (Y = &09)
+
+ LDA #40                \ Call the NOISE routine with A = 40 to make a low,
+ JSR NOISE              \ long beep to indicate the missile is now disarmed
+
+.MA31
+
+ LDA #0                 \ Set MSAR to 0 to indicate that no missiles are
+ STA MSAR               \ currently armed
+
+.MA20
+
+ LDA MSTG               \ If MSTG is positive (i.e. it does not have bit 7 set),
+ BPL MA25               \ then it indicates we already have a missile locked on
+                        \ a target (in which case MSTG contains the ship number
+                        \ of the target), so jump to MA25 to skip targeting. Or
+                        \ to put it another way, if MSTG = &FF, which means
+                        \ there is no current target lock, keep going
+
+ LDA KY14               \ If "T" is being pressed, keep going, otherwise jump
+ BEQ MA25               \ down to MA25 to skip the following
+
+ LDX NOMSL              \ If the number of missiles in NOMSL is zero, jump down
+ BEQ MA25               \ to MA25 to skip the following
+
+ STA MSAR               \ The "target missile" key is being pressed and we have
+                        \ at least one missile, so set MSAR = &FF to denote that
+                        \ our missile is currently armed (we know A has the
+                        \ value &FF, as we just loaded it from MSTG and checked
+                        \ that it was negative)
+
+ LDY #&0D               \ Change the leftmost missile indicator to a black box
+ JSR MSBAR              \ in a white square on the missile bar (this call
+                        \ changes the leftmost indicator because we set X to the
+                        \ number of missiles in NOMSL above, and the indicators
+                        \ are numbered from right to left, so X is the number of
+                        \ the leftmost indicator)
+
+.MA25
+
+ LDA KY16               \ If "M" is being pressed, keep going, otherwise jump
+ BEQ MA24               \ down to MA24 to skip the following
+
+ LDA MSTG               \ If MSTG = &FF then there is no target lock, so jump to
+ BMI MA64               \ MA64 to skip the following (also skipping the checks
+                        \ for "-", ESCAPE, "J" and "E")
+
+ JSR FRMIS              \ The "fire missile" key is being pressed and we have
+                        \ a missile lock, so call the FRMIS routine to fire
+                        \ the missile
+
+.MA24
+
+ LDA KY12               \ If "-" is being pressed, keep going, otherwise jump
+ BEQ MA76               \ down to MA76 to skip the following
+
+ ASL BOMB               \ The "energy bomb" key is being pressed, so double
+                        \ the value in BOMB. If we have an energy bomb fitted,
+                        \ BOMB will contain &7F (%01111111) before this shift
+                        \ and will contain &FE (%11111110) after the shift; if
+                        \ we don't have an energy bomb fitted, BOMB will still
+                        \ contain 0. The bomb explosion is dealt with in the
+                        \ MAL1 routine below - this just registers the fact that
+                        \ we've set the bomb ticking
+
+.MA76
+
+ LDA KY13               \ If ESCAPE is being pressed and we have an escape pod
+ AND ESCP               \ fitted, keep going, otherwise skip the next
+ BEQ P%+5               \ instruction
+
+ JMP ESCAPE             \ The button is being pressed to launch an escape pod
+                        \ and we have an escape pod fitted, so jump to ESCAPE to
+                        \ launch it, and exit the main flight loop using a tail
+                        \ call
+
+ LDA KY18               \ If "J" is being pressed, keep going, otherwise skip
+ BEQ P%+5               \ the next instruction
+
+ JSR WARP               \ Call the WARP routine to do an in-system jump
+
+ LDA KY17               \ If "E" is being pressed and we have an E.C.M. fitted,
+ AND ECM                \ keep going, otherwise jump down to MA64 to skip the
+ BEQ MA64               \ following
+
+ LDA ECMA               \ If ECMA is non-zero, that means an E.C.M. is already
+ BNE MA64               \ operating and is counting down (this can be either
+                        \ our E.C.M. or an opponent's), so jump down to MA64 to
+                        \ skip the following (as we can't have two E.C.M.
+                        \ systems operating at the same time)
+
+ DEC ECMP               \ The E.C.M. button is being pressed and nobody else
+                        \ is operating their E.C.M., so decrease the value of
+                        \ ECMP to make it non-zero, to denote that our E.C.M.
+                        \ is now on
+
+ JSR ECBLB2             \ Call ECBLB2 to light up the E.C.M. indicator bulb on
+                        \ the dashboard, set the E.C.M. countdown timer to 32,
+                        \ and start making the E.C.M. sound
+
+.MA64
+
+ LDA KY19               \ If "C" is being pressed, and we have a docking
+ AND DKCMP              \ computer fitted, and we are inside the space station's
+ AND SSPR               \ safe zone, keep going, otherwise jump down to MA68 to
+ BEQ MA68               \ skip the following
+
+ LDA K%+NI%+32          \ Fetch the AI counter (byte #32) of the second ship
+ BMI MA68               \ from the ship data workspace at K%, which is reserved
+                        \ for the space station. If byte #32 is negative,
+                        \ meaning the station is hostile, then jump down to
+                        \ MA68 to skip the following (so we can't use the
+                        \ docking computer to dock at a station that has turned
+                        \ against us)
+
+ JMP GOIN               \ The Docking Computer button has been pressed and
+                        \ we are allowed to dock at the station, so jump to
+                        \ GOIN to dock (or "go in"), and exit the main flight
+                        \ loop using a tail call
+
+.MA68
+
+ LDA #0                 \ Set LAS = 0, to switch the laser off while we do the
+ STA LAS                \ following logic
+
+ STA DELT4              \ Take the 16-bit value (DELTA 0) - i.e. a two-byte
+ LDA DELTA              \ number with DELTA as the high byte and 0 as the low
+ LSR A                  \ byte - and divide it by 4, storing the 16-bit result
+ ROR DELT4              \ in DELT4(1 0). This has the effect of storing the
+ LSR A                  \ current speed * 64 in the 16-bit location DELT4(1 0)
+ ROR DELT4
+ STA DELT4+1
+
+ LDA LASCT              \ If LASCT is zero, keep going, otherwise the laser is
+ BNE MA3                \ a pulse laser that is between pulses, so jump down to
+                        \ MA3 to skip the following
+
+ LDA KY7                \ If "A" is being pressed, keep going, otherwise jump
+ BEQ MA3                \ down to MA3 to skip the following
+
+ LDA GNTMP              \ If the laser temperature >= 242 then the laser has
+ CMP #242               \ overheated, so jump down to MA3 to skip the following
+ BCS MA3
+
+ LDX VIEW               \ If the current space view has a laser fitted (i.e. the
+ LDA LASER,X            \ laser power for this view is greater than zero), then
+ BEQ MA3                \ keep going, otherwise jump down to MA3 to skip the
+                        \ following
+
+                        \ If we get here, then the "fire" button is being
+                        \ pressed, our laser hasn't overheated and isn't already
+                        \ being fired, and we actually have a laser fitted to
+                        \ the current space view, so it's time to hit me with
+                        \ those laser beams
+
+ PHA                    \ Store the current view's laser power on the stack
+
+ AND #%01111111         \ Set LAS and LAS2 to bits 0-6 of the laser power
+ STA LAS
+ STA LAS2
+
+ LDA #0                 \ Call the NOISE routine with A = 0 to make the sound
+ JSR NOISE              \ of our laser firing
+
+ JSR LASLI              \ Call LASLI to draw the laser lines
+
+ PLA                    \ Restore the current view's laser power into A
+
+ BPL ma1                \ If the laser power has bit 7 set, then it's an "always
+                        \ on" laser rather than a pulsing laser, so keep going,
+                        \ otherwise jump down to ma1 to skip the following
+                        \ instruction
+
+ LDA #0                 \ This is an "always on" laser (i.e. a beam laser,
+                        \ as this version of Elite doesn't have military
+                        \ lasers), so set A = 0, which will be stored in LASCT
+                        \ to denote that this is not a pulsing laser
+
+.ma1
+
+ AND #%11111010         \ LASCT will be set to 0 for beam lasers, and to the
+ STA LASCT              \ laser power AND %11111010 for pulse lasers, which
+                        \ comes to 10 (as pulse lasers have a power of 15). See
+                        \ MA23 below for more on laser pulsing and LASCT
+
+\ ******************************************************************************
+\
+\       Name: Main flight loop (Part 4 of 16)
+\       Type: Subroutine
+\   Category: Main loop
+\    Summary: For each nearby ship: Copy the ship's data block from K% to the
+\             zero-page workspace at INWK
+\  Deep dive: Program flow of the main game loop
+\             Ship data blocks
+\
+\ ------------------------------------------------------------------------------
+\
+\ The main flight loop covers most of the flight-specific aspects of Elite. This
+\ section covers the following:
+\
+\   * Start looping through all the ships in the local bubble, and for each
+\     one:
+\
+\     * Copy the ship's data block from K% to INWK
+\
+\     * Set XX0 to point to the ship's blueprint (if this is a ship)
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   MAL1                Marks the beginning of the ship analysis loop, so we
+\                       can jump back here from part 12 of the main flight loop
+\                       to work our way through each ship in the local bubble.
+\                       We also jump back here when a ship is removed from the
+\                       bubble, so we can continue processing from the next ship
+\
+\ ******************************************************************************
+
+.MA3
+
+ LDX #0                 \ We're about to work our way through all the ships in
+                        \ our local bubble of universe, so set a counter in X,
+                        \ starting from 0, to refer to each ship slot in turn
+
+.MAL1
+
+ STX XSAV               \ Store the current slot number in XSAV
+
+ LDA FRIN,X             \ Fetch the contents of this slot into A. If it is 0
+ BNE P%+5               \ then this slot is empty and we have no more ships to
+ JMP MA18               \ process, so jump to MA18 below, otherwise A contains
+                        \ the type of ship that's in this slot, so skip over the
+                        \ JMP MA18 instruction and keep going
+
+ STA TYPE               \ Store the ship type in TYPE
+
+ JSR GINF               \ Call GINF to fetch the address of the ship data block
+                        \ for the ship in slot X and store it in INF. The data
+                        \ block is in the K% workspace, which is where all the
+                        \ ship data blocks are stored
+
+                        \ Next we want to copy the ship data block from INF to
+                        \ the zero-page workspace at INWK, so we can process it
+                        \ more efficiently
+
+ LDY #NI%-1             \ There are NI% bytes in each ship data block (and in
+                        \ the INWK workspace, so we set a counter in Y so we can
+                        \ loop through them
+
+.MAL2
+
+ LDA (INF),Y            \ Load the Y-th byte of INF and store it in the Y-th
+ STA INWK,Y             \ byte of INWK
+
+ DEY                    \ Decrement the loop counter
+
+ BPL MAL2               \ Loop back for the next byte until we have copied the
+                        \ last byte from INF to INWK
+
+ LDA TYPE               \ If the ship type is negative then this indicates a
+ BMI MA21               \ planet, so jump down to MA21, as the next bit sets
+                        \ up a pointer to the ship blueprint, and then checks
+                        \ for energy bomb damage, and neither of these apply
+                        \ to planets
+
+ ASL A                  \ Set Y = ship type * 2
+ TAY
+
+ LDA XX21-2,Y           \ The ship blueprints at XX21 start with a lookup
+ STA XX0                \ table that points to the individual ship blueprints,
+                        \ so this fetches the low byte of this particular ship
+                        \ type's blueprint and stores it in XX0
+
+ LDA XX21-1,Y           \ Fetch the high byte of this particular ship type's
+ STA XX0+1              \ blueprint and store it in XX0+1
+
+\ ******************************************************************************
+\
+\       Name: Main flight loop (Part 5 of 16)
+\       Type: Subroutine
+\   Category: Main loop
+\    Summary: For each nearby ship: If an energy bomb has been set off,
+\             potentially kill this ship
+\  Deep dive: Program flow of the main game loop
+\
+\ ------------------------------------------------------------------------------
+\
+\ The main flight loop covers most of the flight-specific aspects of Elite. This
+\ section covers the following:
+\
+\   * Continue looping through all the ships in the local bubble, and for each
+\     one:
+\
+\     * If an energy bomb has been set off and this ship can be killed, kill it
+\       and increase the kill tally
+\
+\ ******************************************************************************
+
+ LDA BOMB               \ If we set off our energy bomb (see MA24 above), then
+ BPL MA21               \ BOMB is now negative, so this skips to MA21 if our
+                        \ energy bomb is not going off
+
+ CPY #2*SST             \ If the ship in Y is the space station, jump to BA21
+ BEQ MA21               \ as energy bombs are useless against space stations
+
+ LDA INWK+31            \ If the ship we are checking has bit 5 set in its ship
+ AND #%00100000         \ byte #31, then it is already exploding, so jump to
+ BNE MA21               \ BA21 as ships can't explode more than once
+
+ LDA INWK+31            \ The energy bomb is killing this ship, so set bit 7 of
+ ORA #%10000000         \ the ship byte #31 to indicate that it has now been
+ STA INWK+31            \ killed
+
+ JSR EXNO2              \ Call EXNO2 to process the fact that we have killed a
+                        \ ship (so increase the kill tally, make an explosion
+                        \ sound and possibly display "RIGHT ON COMMANDER!")
+
+\ ******************************************************************************
+\
+\       Name: Main flight loop (Part 6 of 16)
+\       Type: Subroutine
+\   Category: Main loop
+\    Summary: For each nearby ship: Move the ship in space and copy the updated
+\             INWK data block back to K%
+\  Deep dive: Program flow of the main game loop
+\             Program flow of the ship-moving routine
+\             Ship data blocks
+\
+\ ------------------------------------------------------------------------------
+\
+\ The main flight loop covers most of the flight-specific aspects of Elite. This
+\ section covers the following:
+\
+\   * Continue looping through all the ships in the local bubble, and for each
+\     one:
+\
+\     * Move the ship in space
+\
+\     * Copy the updated ship's data block from INWK back to K%
+\
+\ ******************************************************************************
+
+.MA21
+
+ JSR MVEIT              \ Call MVEIT to move the ship we are processing in space
+
+                        \ Now that we are done processing this ship, we need to
+                        \ copy the ship data back from INWK to the correct place
+                        \ in the K% workspace. We already set INF in part 4 to
+                        \ point to the ship's data block in K%, so we can simply
+                        \ do the reverse of the copy we did before, this time
+                        \ copying from INWK to INF
+
+ LDY #NI%-1             \ Set a counter in Y so we can loop through the NI%
+                        \ bytes in the ship data block
+
+.MAL3
+
+ LDA INWK,Y             \ Load the Y-th byte of INWK and store it in the Y-th
+ STA (INF),Y            \ byte of INF
+
+ DEY                    \ Decrement the loop counter
+
+ BPL MAL3               \ Loop back for the next byte, until we have copied the
+                        \ last byte from INWK back to INF
+
+\ ******************************************************************************
+\
+\       Name: Main flight loop (Part 7 of 16)
+\       Type: Subroutine
+\   Category: Main loop
+\    Summary: For each nearby ship: Check whether we are docking, scooping or
+\             colliding with it
+\  Deep dive: Program flow of the main game loop
+\
+\ ------------------------------------------------------------------------------
+\
+\ The main flight loop covers most of the flight-specific aspects of Elite. This
+\ section covers the following:
+\
+\   * Continue looping through all the ships in the local bubble, and for each
+\     one:
+\
+\     * Check how close we are to this ship and work out if we are docking,
+\       scooping or colliding with it
+\
+\ ******************************************************************************
+
+ LDA INWK+31            \ Fetch the status of this ship from bits 5 (is ship
+ AND #%10100000         \ exploding?) and bit 7 (has ship been killed?) from
+                        \ ship byte #31 into A
+
+ JSR MAS4               \ Or this value with x_hi, y_hi and z_hi
+
+ BNE MA65               \ If this value is non-zero, then either the ship is
+                        \ far away (i.e. has a non-zero high byte in at least
+                        \ one of the three axes), or it is already exploding,
+                        \ or has been flagged as being killed - in which case
+                        \ jump to MA65 to skip the following, as we can't dock
+                        \ scoop or collide with it
+
+ LDA INWK               \ Set A = (x_lo OR y_lo OR z_lo), and if bit 7 of the
+ ORA INWK+3             \ result is set, the ship is still a fair distance
+ ORA INWK+6             \ away (further than 127 in at least one axis), so jump
+ BMI MA65               \ to MA65 to skip the following, as it's too far away to
+                        \ dock, scoop or collide with
+
+ LDX TYPE               \ If the current ship type is negative then it's the
+ BMI MA65               \ planet, so jump down to MA65 to skip the following,
+                        \ as we can't dock with it or scoop it
+
+ CPX #SST               \ If this ship is the space station, jump to ISDK to
+ BEQ ISDK               \ check whether we are docking with it
+
+ AND #%11000000         \ If bit 6 of (x_lo OR y_lo OR z_lo) is set, then the
+ BNE MA65               \ ship is still a reasonable distance away (further than
+                        \ 63 in at least one axis), so jump to MA65 to skip the
+                        \ following, as it's too far away to dock, scoop or
+                        \ collide with
+
+ CPX #MSL               \ If this ship is a missile, jump down to MA65 to skip
+ BEQ MA65               \ the following, as we can't scoop or dock with a
+                        \ missile, and it has its own dedicated collision
+                        \ checks in the TACTICS routine
+
+ CPX #OIL               \ If ship type >= OIL (i.e. it's a cargo canister or
+ BCS P%+5               \ escape pod), skip the JMP instruction and continue
+ JMP MA58               \ on, otherwise jump to MA58 to process a potential
+                        \ collision
+
+ LDA BST                \ If we have fuel scoops fitted then BST will be &FF,
+                        \ otherwise it will be 0
+
+ AND INWK+5             \ Ship byte #5 contains the y_sign of this ship, so a
+                        \ negative value here means the canister is below us,
+                        \ which means the result of the AND will be negative if
+                        \ the canister is below us and we have a fuel scoop
+                        \ fitted
+
+ BPL MA58               \ If the result is positive, then we either have no
+                        \ scoop or the canister is above us, and in both cases
+                        \ this means we can't scoop the item, so jump to MA58
+                        \ to process a collision
+
+\ ******************************************************************************
+\
+\       Name: Main flight loop (Part 8 of 16)
+\       Type: Subroutine
+\   Category: Main loop
+\    Summary: For each nearby ship: Process us potentially scooping this item
+\  Deep dive: Program flow of the main game loop
+\
+\ ------------------------------------------------------------------------------
+\
+\ The main flight loop covers most of the flight-specific aspects of Elite. This
+\ section covers the following:
+\
+\   * Continue looping through all the ships in the local bubble, and for each
+\     one:
+\
+\     * Process us potentially scooping this item
+\
+\ ******************************************************************************
+
+ LDA #3                 \ Set A to 3 to denote we may be scooping an escape pod
+
+ CPX #ESC               \ If this is not an escape pod, jump to oily to randomly
+ BNE oily               \ decide the canister's contents
+
+ BEQ slvy2              \ This is an escape pod, so jump to slvy2 with A set to
+                        \ 3, so we scoop up the escape pod as slaves
+
+.oily
+
+ JSR DORND              \ Set A and X to random numbers and reduce A to a
+ AND #7                 \ random number in the range 0-7
+
+.slvy2
+
+                        \ By the time we get here, we are scooping, and A
+                        \ contains the type of item we are scooping (a random
+                        \ number 0-7 if we are scooping a cargo canister, or 3
+                        \ if we are scooping an escape pod). These numbers
+                        \ correspond to the relevant market items (see QQ23
+                        \ for a list), so a cargo canister can contain
+                        \ anything from food to computers, while escape pods
+                        \ contain slaves
+
+ STA QQ29               \ Call tnpr with the scooped cargo type stored in QQ29
+ LDA #1                 \ and A set to 1, to work out whether we have room in
+ JSR tnpr               \ the hold for the scooped item (A is preserved by this
+                        \ call, and the C flag contains the result)
+
+ LDY #78                \ This instruction has no effect, so presumably it used
+                        \ to do something, but didn't get removed
+
+ BCS MA59               \ If the C flag is set then we have no room in the hold
+                        \ for the scooped item, so jump down to MA59 make a
+                        \ sound to indicate failure, before destroying the
+                        \ canister
+
+ LDY QQ29               \ Scooping was successful, so set Y to the type of
+                        \ item we just scooped, which we stored in QQ29 above
+
+ ADC QQ20,Y             \ Add A (which we set to 1 above) to the number of items
+ STA QQ20,Y             \ of type Y in the cargo hold, as we just successfully
+                        \ scooped one canister of type Y
+
+ TYA                    \ Print recursive token 48 + Y as an in-flight token,
+ ADC #208               \ which will be in the range 48 ("FOOD") to 64 ("ALIEN
+ JSR MESS               \ ITEMS"), so this prints the scooped item's name
+
+ JMP MA60               \ We are done scooping, so jump down to MA60 to set the
+                        \ kill flag on the canister, as it no longer exists in
+                        \ the local bubble
+
+.MA65
+
+ JMP MA26               \ If we get here, then the ship we are processing was
+                        \ too far away to be scooped, docked or collided with,
+                        \ so jump to MA26 to skip over the collision routines
+                        \ and move on to missile targeting
+
+\ ******************************************************************************
+\
+\       Name: Main flight loop (Part 9 of 16)
+\       Type: Subroutine
+\   Category: Main loop
+\    Summary: For each nearby ship: If it is a space station, check whether we
+\             are successfully docking with it
+\  Deep dive: Program flow of the main game loop
+\             Docking checks
+\
+\ ------------------------------------------------------------------------------
+\
+\ The main flight loop covers most of the flight-specific aspects of Elite. This
+\ section covers the following:
+\
+\   * Process docking with a space station
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   GOIN                We jump here from part 3 of the main flight loop if the
+\                       docking computer is activated by pressing "C"
+\
+\ ******************************************************************************
+
+.ISDK
+
+ LDA K%+NI%+32          \ 1. Fetch the AI counter (byte #32) of the second ship
+ BMI MA62               \ in the ship data workspace at K%, which is reserved
+                        \ for the space station, and if it's negative, i.e. bit
+                        \ 7 is set, meaning the station is hostile, jump down
+                        \ to MA62 to fail docking (so trying to dock at a
+                        \ station that we have annoyed does not end well)
+
+ LDA INWK+14            \ 2. If nosev_z_hi < 214, jump down to MA62 to fail
+ CMP #214               \ docking, as the angle of approach is greater than 26
+ BCC MA62               \ degrees
+
+ JSR SPS4               \ Call SPS4 to get the vector to the space station
+                        \ into XX15
+
+ LDA XX15+2             \ 3. Check the sign of the z-axis (bit 7 of XX15+2) and
+ BMI MA62               \ if it is negative, we are facing away from the
+                        \ station, so jump to MA62 to fail docking
+
+ CMP #89                \ 4. If z-axis < 89, jump to MA62 to fail docking, as
+ BCC MA62               \ we are not in the 22.0 degree safe cone of approach
+
+ LDA INWK+16            \ 5. If |roofv_x_hi| < 80, jump to MA62 to fail docking,
+ AND #%01111111         \ as the slot is more than 36.6 degrees from horizontal
+ CMP #80
+ BCC MA62
+
+.GOIN
+
+                        \ If we arrive here, either the docking computer has
+                        \ been activated, or we just docked successfully
+
+ LDA #0                 \ Set the on-screen hyperspace counter to 0
+ STA QQ22+1
+
+ LDA #8                 \ This instruction has no effect, so presumably it used
+                        \ to do something, and didn't get removed
+
+ JSR LAUN               \ Show the space station launch tunnel
+
+ JSR RES4               \ Reset the shields and energy banks, stardust and INWK
+                        \ workspace
+
+ JMP BAY                \ Go to the docking bay (i.e. show the Status Mode
+                        \ screen)
+
+.MA62
+
+                        \ If we arrive here, docking has just failed
+
+ LDA DELTA              \ If the ship's speed is < 5, jump to MA67 to register
+ CMP #5                 \ some damage, but not a huge amount
+ BCC MA67
+
+ JMP DEATH              \ Otherwise we have just crashed into the station, so
+                        \ process our death
+
+\ ******************************************************************************
+\
+\       Name: Main flight loop (Part 10 of 16)
+\       Type: Subroutine
+\   Category: Main loop
+\    Summary: For each nearby ship: Remove if scooped, or process collisions
+\  Deep dive: Program flow of the main game loop
+\
+\ ------------------------------------------------------------------------------
+\
+\ The main flight loop covers most of the flight-specific aspects of Elite. This
+\ section covers the following:
+\
+\   * Continue looping through all the ships in the local bubble, and for each
+\     one:
+\
+\     * Remove scooped item after both successful and failed scooping attempts
+\
+\     * Process collisions
+\
+\ ******************************************************************************
+
+.MA59
+
+                        \ If we get here then scooping failed
+
+ JSR EXNO3              \ Make the sound of the cargo canister being destroyed
+                        \ and fall through into MA60 to remove the canister
+                        \ from our local bubble
+
+.MA60
+
+                        \ If we get here then scooping was successful
+
+ ASL INWK+31            \ Set bit 7 of the scooped or destroyed item, to denote
+ SEC                    \ that it has been killed and should be removed from
+ ROR INWK+31            \ the local bubble
+
+.MA61
+
+ BNE MA26               \ Jump to MA26 to skip over the collision routines and
+                        \ to move on to missile targeting (this BNE is
+                        \ effectively a JMP as A will never be zero)
+
+.MA67
+
+                        \ If we get here then we have collided with something,
+                        \ but not fatally
+
+ LDA #1                 \ Set the speed in DELTA to 1 (i.e. a sudden stop)
+ STA DELTA
+
+ LDA #5                 \ Set the amount of damage in A to 5 (a small dent) and
+ BNE MA63               \ jump down to MA63 to process the damage (this BNE is
+                        \ effectively a JMP as A will never be zero)
+
+.MA58
+
+                        \ If we get here, we have collided with something in a
+                        \ potentially fatal way
+
+ ASL INWK+31            \ Set bit 7 of the ship we just collided with, to
+ SEC                    \ denote that it has been killed and should be removed
+ ROR INWK+31            \ from the local bubble
+
+ LDA INWK+35            \ Load A with the energy level of the ship we just hit
+
+ SEC                    \ Set the amount of damage in A to 128 + A / 2, so
+ ROR A                  \ this is quite a big dent, and colliding with higher
+                        \ energy ships will cause more damage
+
+.MA63
+
+ JSR OOPS               \ The amount of damage is in A, so call OOPS to reduce
+                        \ our shields, and if the shields are gone, there's a
+                        \ chance of cargo loss or even death
+
+ JSR EXNO3              \ Make the sound of colliding with the other ship and
+                        \ fall through into MA26 to try targeting a missile
+
+\ ******************************************************************************
+\
+\       Name: Main flight loop (Part 11 of 16)
+\       Type: Subroutine
+\   Category: Main loop
+\    Summary: For each nearby ship: Process missile lock and firing our laser
+\  Deep dive: Program flow of the main game loop
+\             Flipping axes between space views
+\
+\ ------------------------------------------------------------------------------
+\
+\ The main flight loop covers most of the flight-specific aspects of Elite. This
+\ section covers the following:
+\
+\   * Continue looping through all the ships in the local bubble, and for each
+\     one:
+\
+\     * If this is not the front space view, flip the axes of the ship's
+\        coordinates in INWK
+\
+\     * Process missile lock
+\
+\     * Process our laser firing
+\
+\ ******************************************************************************
+
+.MA26
+
+ LDA QQ11               \ If this is not a space view, jump to MA15 to skip
+ BNE MA15               \ missile and laser locking
+
+ JSR PLUT               \ Call PLUT to update the geometric axes in INWK to
+                        \ match the view (front, rear, left, right)
+
+ JSR HITCH              \ Call HITCH to see if this ship is in the crosshairs,
+ BCC MA8                \ in which case the C flag will be set (so if there is
+                        \ no missile or laser lock, we jump to MA8 to skip the
+                        \ following)
+
+ LDA MSAR               \ We have missile lock, so check whether the leftmost
+ BEQ MA47               \ missile is currently armed, and if not, jump to MA47
+                        \ to process laser fire, as we can't lock an unarmed
+                        \ missile
+
+ JSR BEEP               \ We have missile lock and an armed missile, so call
+                        \ the BEEP subroutine to make a short, high beep
+
+ LDX XSAV               \ Call ABORT2 to store the details of this missile
+ LDY #&11               \ lock, with the targeted ship's slot number in X
+ JSR ABORT2             \ (which we stored in XSAV at the start of this ship's
+                        \ loop at MAL1), and set the shape of the missile
+                        \ indicator to the value in Y (black "T" in white
+                        \ square = &11)
+
+.MA47
+
+                        \ If we get here then the ship is in our sights, but
+                        \ we didn't lock a missile, so let's see if we're
+                        \ firing the laser
+
+ LDA LAS                \ If we are firing the laser then LAS will contain the
+ BEQ MA8                \ laser power (which we set in MA68 above), so if this
+                        \ is zero, jump down to MA8 to skip the following
+
+ LDX #15                \ We are firing our laser and the ship in INWK is in
+ JSR EXNO               \ the crosshairs, so call EXNO to make the sound of
+                        \ us making a laser strike on another ship
+
+ LDA INWK+35            \ Fetch the hit ship's energy from byte #35 and subtract
+ SEC                    \ our current laser power, and if the result is greater
+ SBC LAS                \ than zero, the other ship has survived the hit, so
+ BCS MA14               \ jump down to MA14 to make it angry
+
+ LDA TYPE               \ Did we just hit the space station? If so, jump to
+ CMP #SST               \ MA14+2 to make the station hostile, skipping the
+ BEQ MA14+2             \ following as we can't destroy a space station
+
+ LDA INWK+31            \ Set bit 7 of the enemy ship's byte #31, to indicate
+ ORA #%10000000         \ that it has been killed
+ STA INWK+31
+
+ BCS MA8                \ If the enemy ship type is >= SST (i.e. missile,
+                        \ asteroid, canister or escape pod) then jump down
+                        \ to MA8
+
+ JSR DORND              \ Fetch a random number, and jump to oh if it is
+ BPL oh                 \ positive (50% chance)
+
+ LDY #0                 \ Fetch the first byte of the hit ship's blueprint,
+ AND (XX0),Y            \ which determines the maximum number of bits of
+                        \ debris shown when the ship is destroyed, and AND
+                        \ with the random number we just fetched
+
+ STA CNT                \ Store the result in CNT, so CNT contains a random
+                        \ number between 0 and the maximum number of bits of
+                        \ debris that this ship will release when destroyed
+
+.um
+
+ BEQ oh                 \ We're going to go round a loop using CNT as a counter
+                        \ so this checks whether the counter is zero and jumps
+                        \ to oh when it gets there (which might be straight
+                        \ away)
+
+ LDX #OIL               \ Call SFS1 to spawn a cargo canister from the now
+ LDA #0                 \ deceased parent ship, giving the spawned canister an
+ JSR SFS1               \ AI flag of 0 (no AI, no E.C.M., non-hostile)
+
+ DEC CNT                \ Decrease the loop counter
+
+ BPL um                 \ Jump back up to um (this BPL is effectively a JMP as
+                        \ CNT will never be negative)
+
+.oh
+
+ JSR EXNO2              \ Call EXNO2 to process the fact that we have killed a
+                        \ ship (so increase the kill tally, make an explosion
+                        \ sound and so on)
+
+.MA14
+
+ STA INWK+35            \ Store the hit ship's updated energy in ship byte #35
+
+ LDA TYPE               \ Call ANGRY to make this ship hostile, now that we
+ JSR ANGRY              \ have hit it
+
+\ ******************************************************************************
+\
+\       Name: Main flight loop (Part 12 of 16)
+\       Type: Subroutine
+\   Category: Main loop
+\    Summary: For each nearby ship: Draw the ship, remove if killed, loop back
+\  Deep dive: Program flow of the main game loop
+\             Drawing ships
+\
+\ ------------------------------------------------------------------------------
+\
+\ The main flight loop covers most of the flight-specific aspects of Elite. This
+\ section covers the following:
+\
+\   * Continue looping through all the ships in the local bubble, and for each
+\     one:
+\
+\     * Draw the ship
+\
+\     * Process removal of killed ships
+\
+\   * Loop back up to MAL1 to move onto the next ship in the local bubble
+\
+\ ******************************************************************************
+
+.MA8
+
+ JSR LL9                \ Call LL9 to draw the ship we're processing on-screen
+
+.MA15
+
+ LDY #35                \ Fetch the ship's energy from byte #35 and copy it to
+ LDA INWK+35            \ byte #35 in INF (so the ship's data in K% gets
+ STA (INF),Y            \ updated)
+
+ LDA INWK+31            \ If bit 7 of the ship's byte #31 is clear, then the
+ BPL MAC1               \ ship hasn't been killed by energy bomb, collision or
+                        \ laser fire, so jump to MAC1 to skip the following
+
+ AND #%00100000         \ If bit 5 of the ship's byte #31 is clear then the
+ BEQ NBOUN              \ ship is no longer exploding, so jump to NBOUN to skip
+                        \ the following
+
+ LDA TYPE               \ If the ship we just destroyed was a cop, keep going,
+ CMP #COPS              \ otherwise jump to q2 to skip the following
+ BNE q2
+
+ LDA FIST               \ We shot the sheriff, so update our FIST flag
+ ORA #64                \ ("fugitive/innocent status") to at least 64, which
+ STA FIST               \ will instantly make us a fugitive
+
+.q2
+
+ LDA DLY                \ If we already have an in-flight message on-screen (in
+ BNE KS1S               \ which case DLY > 0), jump to KS1S to skip showing an
+                        \ on-screen bounty for this kill
+
+ LDY #10                \ Fetch byte #10 of the ship's blueprint, which is the
+ LDA (XX0),Y            \ low byte of the bounty awarded when this ship is
+ BEQ KS1S               \ killed (in Cr * 10), and if it's zero jump to KS1S as
+                        \ there is no on-screen bounty to display
+
+ TAX                    \ Put the low byte of the bounty into X
+
+ INY                    \ Fetch byte #11 of the ship's blueprint, which is the
+ LDA (XX0),Y            \ high byte of the bounty awarded (in Cr * 10), and put
+ TAY                    \ it into Y
+
+ JSR MCASH              \ Call MCASH to add (Y X) to the cash pot
+
+ LDA #0                 \ Print control code 0 (current cash, right-aligned to
+ JSR MESS               \ width 9, then " CR", newline) as an in-flight message
+
+.KS1S
+
+ JMP KS1                \ Process the killing of this ship (which removes this
+                        \ ship from its slot and shuffles all the other ships
+                        \ down to close up the gap)
+
+.NBOUN
+
+.MAC1
+
+ LDA TYPE               \ If the ship we are processing is the planet, jump to
+ BMI MA27               \ MA27 to skip the following two instructions
+
+ JSR FAROF              \ If the ship we are processing is a long way away (its
+ BCC KS1S               \ distance in any one direction is > 224, jump to KS1S
+                        \ to remove the ship from our local bubble, as it's just
+                        \ left the building
+
+.MA27
+
+ LDY #31                \ Fetch the ship's explosion/killed state from byte #31
+ LDA INWK+31            \ and copy it to byte #31 in INF (so the ship's data in
+ STA (INF),Y            \ K% gets updated)
+
+ LDX XSAV               \ We're done processing this ship, so fetch the ship's
+                        \ slot number, which we saved in XSAV back at the start
+                        \ of the loop
+
+ INX                    \ Increment the slot number to move on to the next slot
+
+ JMP MAL1               \ And jump back up to the beginning of the loop to get
+                        \ the next ship in the local bubble for processing
+
+\ ******************************************************************************
+\
+\       Name: Main flight loop (Part 13 of 16)
+\       Type: Subroutine
+\   Category: Main loop
+\    Summary: Show energy bomb effect, charge shields and energy banks
+\  Deep dive: Program flow of the main game loop
+\             Scheduling tasks with the main loop counter
+\
+\ ------------------------------------------------------------------------------
+\
+\ The main flight loop covers most of the flight-specific aspects of Elite. This
+\ section covers the following:
+\
+\   * Show energy bomb effect (if applicable)
+\
+\   * Charge shields and energy banks (every 7 iterations of the main loop)
+\
+\ ******************************************************************************
+
+.MA18
+
+ LDA BOMB               \ If we set off our energy bomb (see MA24 above), then
+ BPL MA77               \ BOMB is now negative, so this skips to MA21 if our
+                        \ energy bomb is not going off
+
+ ASL BOMB               \ We set off our energy bomb, so rotate BOMB to the
+                        \ left by one place. BOMB was rotated left once already
+                        \ during this iteration of the main loop, back at MA24,
+                        \ so if this is the first pass it will already be
+                        \ %11111110, and this will shift it to %11111100 - so
+                        \ if we set off an energy bomb, it stays activated
+                        \ (BOMB > 0) for four iterations of the main loop
+
+.MA77
+
+ LDA MCNT               \ Fetch the main loop counter and calculate MCNT mod 8,
+ AND #7                 \ jumping to MA22 if it is non-zero (so the following
+ BNE MA22               \ code only runs every 8 iterations of the main loop)
+
+ LDX ENERGY             \ Fetch our ship's energy levels and skip to b if bit 7
+ BPL b                  \ is not set, i.e. only charge the shields from the
+                        \ energy banks if they are at more than 50% charge
+
+ LDX ASH                \ Call SHD to recharge our aft shield and update the
+ JSR SHD                \ shield status in ASH
+ STX ASH
+
+ LDX FSH                \ Call SHD to recharge our forward shield and update
+ JSR SHD                \ the shield status in FSH
+ STX FSH
+
+.b
+
+ SEC                    \ Set A = ENERGY + ENGY + 1, so our ship's energy
+ LDA ENGY               \ level goes up by 2 if we have an energy unit fitted,
+ ADC ENERGY             \ otherwise it goes up by 1
+
+ BCS P%+5               \ If the value of A did not overflow (the maximum
+ STA ENERGY             \ energy level is &FF), then store A in ENERGY
+
+\ ******************************************************************************
+\
+\       Name: Main flight loop (Part 14 of 16)
+\       Type: Subroutine
+\   Category: Main loop
+\    Summary: Spawn a space station if we are close enough to the planet
+\  Deep dive: Program flow of the main game loop
+\             Scheduling tasks with the main loop counter
+\             Ship data blocks
+\             The space station safe zone
+\
+\ ------------------------------------------------------------------------------
+\
+\ The main flight loop covers most of the flight-specific aspects of Elite. This
+\ section covers the following:
+\
+\   * Spawn a space station if we are close enough to the planet (every 32
+\     iterations of the main loop)
+\
+\ ******************************************************************************
+
+ LDA MCNT               \ Fetch the main loop counter and calculate MCNT mod 32,
+ AND #31                \ jumping to MA93 if it is on-zero (so the following
+ BNE MA93               \ code only runs every 32 iterations of the main loop)
+
+ LDA SSPR               \ If we are inside the space station safe zone, jump to
+ BNE MA23S              \ MA23S to skip the following, as we already have a
+                        \ space station and don't need another
+
+ TAY                    \ Set Y = A = 0 (A is 0 as we didn't branch with the
+                        \ previous BNE instruction)
+
+ JSR MAS2               \ Call MAS2 to calculate the largest distance to the
+ BNE MA23S              \ planet in any of the three axes, and if it's
+                        \ non-zero, jump to MA23S to skip the following, as we
+                        \ are too far from the planet to bump into a space
+                        \ station
+
+                        \ We now want to spawn a space station, so first we
+                        \ need to set up a ship data block for the station in
+                        \ INWK that we can then pass to NWSPS to add a new
+                        \ station to our bubble of universe. We do this by
+                        \ copying the planet data block from K% to INWK so we
+                        \ can work on it, but we only need the first 29 bytes,
+                        \ as we don't need to worry about bytes #29 to #35
+                        \ for planets (as they don't have rotation counters,
+                        \ AI, explosions, missiles, a ship line heap or energy
+                        \ levels)
+
+ LDX #28                \ So we set a counter in X to copy 29 bytes from K%+0
+                        \ to K%+28
+
+.MAL4
+
+ LDA K%,X               \ Load the X-th byte of K% and store in the X-th byte
+ STA INWK,X             \ of the INWK workspace
+
+ DEX                    \ Decrement the loop counter
+
+ BPL MAL4               \ Loop back for the next byte until we have copied the
+                        \ first 28 bytes of K% to INWK
+
+                        \ We now check the distance from our ship (at the
+                        \ origin) towards the point where we will spawn the
+                        \ space station if we are close enough
+                        \
+                        \ This point is calculated by starting at the planet's
+                        \ centre and adding 2 * nosev, which takes us to a point
+                        \ above the planet's surface, at an altitude that
+                        \ matches the planet's radius
+                        \
+                        \ This point pitches and rolls around the planet as the
+                        \ nosev vector rotates with the planet, and if our ship
+                        \ is within a distance of (192 0) from this point in all
+                        \ three axes, then we spawn the space station at this
+                        \ point, with the station's slot facing towards the
+                        \ planet, along the nosev vector
+                        \
+                        \ This works because in the following, we calculate the
+                        \ station's coordinates one axis at a time, and store
+                        \ the results in the INWK block, so by the time we have
+                        \ calculated and checked all three, the ship data block
+                        \ is set up with the correct spawning coordinates
+
+ INX                    \ Set X = 0 (as we ended the above loop with X as &FF)
+
+ LDY #9                 \ Call MAS1 with X = 0, Y = 9 to do the following:
+ JSR MAS1               \
+                        \   (x_sign x_hi x_lo) += (nosev_x_hi nosev_x_lo) * 2
+                        \
+                        \   A = |x_sign|
+
+ BNE MA23S              \ If A > 0, jump to MA23S to skip the following, as we
+                        \ are too far from the planet in the x-direction to
+                        \ bump into a space station
+
+ LDX #3                 \ Call MAS1 with X = 3, Y = 11 to do the following:
+ LDY #11                \
+ JSR MAS1               \   (y_sign y_hi y_lo) += (nosev_y_hi nosev_y_lo) * 2
+                        \
+                        \   A = |y_sign|
+
+ BNE MA23S              \ If A > 0, jump to MA23S to skip the following, as we
+                        \ are too far from the planet in the y-direction to
+                        \ bump into a space station
+
+ LDX #6                 \ Call MAS1 with X = 6, Y = 13 to do the following:
+ LDY #13                \
+ JSR MAS1               \   (z_sign z_hi z_lo) += (nosev_z_hi nosev_z_lo) * 2
+                        \
+                        \   A = |z_sign|
+
+ BNE MA23S              \ If A > 0, jump to MA23S to skip the following, as we
+                        \ are too far from the planet in the z-direction to
+                        \ bump into a space station
+
+ LDA #192               \ Call FAROF2 to compare x_hi, y_hi and z_hi with 192,
+ JSR FAROF2             \ which will set the C flag if all three are < 192, or
+                        \ clear the C flag if any of them are >= 192
+
+ BCC MA23S              \ Jump to MA23S if any one of x_hi, y_hi or z_hi are
+                        \ >= 192 (i.e. they must all be < 192 for us to be near
+                        \ enough to the planet to bump into a space station)
+
+ JSR NWSPS              \ Add a new space station to our local bubble of
+                        \ universe
+
+.MA23S
+
+ JMP MA23               \ Jump to MA23 to skip the following planet altitude
+                        \ checks
+
+\ ******************************************************************************
+\
+\       Name: Main flight loop (Part 15 of 16)
+\       Type: Subroutine
+\   Category: Main loop
+\    Summary: Perform altitude checks with the planet
+\  Deep dive: Program flow of the main game loop
+\             Scheduling tasks with the main loop counter
+\
+\ ------------------------------------------------------------------------------
+\
+\ The main flight loop covers most of the flight-specific aspects of Elite. This
+\ section covers the following:
+\
+\   * Perform an altitude check with the planet (every 32 iterations of the main
+\     loop, on iteration 10 of each 32)
+\
+\ ******************************************************************************
+
+.MA22
+
+ LDA MCNT               \ Fetch the main loop counter and calculate MCNT mod 32,
+ AND #31                \ which tells us the position of this loop in each block
+                        \ of 32 iterations
+
+.MA93
+
+ CMP #10                \ If this is the tenth iteration in this block of 32,
+ BNE MA29               \ do the following, otherwise jump to MA29 to skip the
+                        \ planet altitude check
+
+ LDA #50                \ If our energy bank status in ENERGY is >= 50, skip
+ CMP ENERGY             \ printing the following message (so the message is
+ BCC P%+6               \ only shown if our energy is low)
+
+ ASL A                  \ Print recursive token 100 ("ENERGY LOW{beep}") as an
+ JSR MESS               \ in-flight message
+
+ LDY #&FF               \ Set our altitude in ALTIT to &FF, the maximum
+ STY ALTIT
+
+ INY                    \ Set Y = 0
+
+ JSR m                  \ Call m to calculate the maximum distance to the
+                        \ planet in any of the three axes, returned in A
+
+ BNE MA23               \ If A > 0 then we are a fair distance away from the
+                        \ planet in at least one axis, so jump to MA23 to skip
+                        \ the rest of the altitude check
+
+ JSR MAS3               \ Set A = x_hi^2 + y_hi^2 + z_hi^2, so using Pythagoras
+                        \ we now know that A now contains the square of the
+                        \ distance between our ship (at the origin) and the
+                        \ centre of the planet at (x_hi, y_hi, z_hi)
+
+ BCS MA23               \ If the C flag was set by MAS3, then the result
+                        \ overflowed (was greater than &FF) and we are still a
+                        \ fair distance from the planet, so jump to MA23 as we
+                        \ haven't crashed into the planet
+
+ SBC #36                \ Subtract 36 from x_hi^2 + y_hi^2 + z_hi^2
+                        \
+                        \ When we do the 3D Pythagoras calculation, we only use
+                        \ the high bytes of the coordinates, so that's x_hi,
+                        \ y_hi and z_hi and
+                        \
+                        \ The planet radius is (0 96 0), as defined in the
+                        \ PLANET routine, so the high byte is 96
+                        \
+                        \ When we square the coordinates above and add them,
+                        \ the result gets divided by 256 (otherwise the result
+                        \ wouldn't fit into one byte), so if we do the same for
+                        \ the planet's radius, we get:
+                        \
+                        \   96 * 96 / 256 = 36
+                        \
+                        \ So for the planet, the equivalent figure to test the
+                        \ sum of the _hi bytes against is 36, so A now contains
+                        \ the high byte of our altitude above the planet
+                        \ surface, squared
+
+ BCC MA28               \ If A < 0 then jump to MA28 as we have crashed into
+                        \ the planet
+
+ STA R                  \ We are getting close to the planet, so we need to
+ JSR LL5                \ work out how close. We know from the above that A
+                        \ contains our altitude squared, so we store A in R
+                        \ and call LL5 to calculate:
+                        \
+                        \   Q = SQRT(R Q) = SQRT(A Q)
+                        \
+                        \ Interestingly, Q doesn't appear to be set to 0 for
+                        \ this calculation, so presumably this doesn't make a
+                        \ difference
+
+ LDA Q                  \ Store the result in ALTIT, our altitude
+ STA ALTIT
+
+ BNE MA23               \ If our altitude is non-zero then we haven't crashed,
+                        \ so jump to MA23 to skip to the next section
+
+.MA28
+
+ JMP DEATH              \ If we get here then we just crashed into the planet,
+                        \ so jump to DEATH to start the funeral preparations
+                        \ and return from the main flight loop using a tail call
+
+.MA29
+
+\ ******************************************************************************
+\
+\       Name: Main flight loop (Part 16 of 16)
+\       Type: Subroutine
+\   Category: Main loop
+\    Summary: Process laser pulsing, E.C.M. energy drain, call stardust routine
+\  Deep dive: Program flow of the main game loop
+\
+\ ------------------------------------------------------------------------------
+\
+\ The main flight loop covers most of the flight-specific aspects of Elite. This
+\ section covers the following:
+\
+\   * Process laser pulsing
+\
+\   * Process E.C.M. energy drain
+\
+\   * Jump to the stardust routine if we are in a space view
+\
+\   * Return from the main flight loop
+\
+\ ******************************************************************************
+
+.MA23
+
+ LDA LAS2               \ If the current view has no laser, jump to MA16 to skip
+ BEQ MA16               \ the following
+
+ LDA LASCT              \ If LASCT >= 8, jump to MA16 to skip the following, so
+ CMP #8                 \ for a pulse laser with a LASCT between 8 and 10, the
+ BCS MA16               \ laser stays on, but for a LASCT of 7 or less it gets
+                        \ turned off and stays off until LASCT reaches zero and
+                        \ the next pulse can start (if the fire button is still
+                        \ being pressed)
+                        \
+                        \ For pulse lasers, LASCT gets set to 10 in ma1 above,
+                        \ and it decrements by 4 on every iteration of the main
+                        \ game loop, so this means it pulses every fourth
+                        \ iteration, with the laser being off for the first
+                        \ three iterations, and on for the fourth iteration
+                        \
+                        \ If this is a beam laser, LASCT is 0 so we always keep
+                        \ going here. This means the laser doesn't pulse, but it
+                        \ does get drawn and removed every cycle, in a slightly
+                        \ different place each time, so the beams still flicker
+                        \ around the screen
+
+ JSR LASLI2             \ Redraw the existing laser lines, which has the effect
+                        \ of removing them from the screen
+
+ LDA #0                 \ Set LAS2 to 0 so if this is a pulse laser, it will
+ STA LAS2               \ skip over the above until the next pulse (this has no
+                        \ effect if this is a beam laser)
+
+.MA16
+
+ LDA ECMP               \ If our E.C.M is not on, skip to MA69, otherwise keep
+ BEQ MA69               \ going to drain some energy
+
+ JSR DENGY              \ Call DENGY to deplete our energy banks by 1
+
+ BEQ MA70               \ If we have no energy left, jump to MA70 to turn our
+                        \ E.C.M. off
+
+.MA69
+
+ LDA ECMA               \ If an E.C.M is going off (ours or an opponent's) then
+ BEQ MA66               \ keep going, otherwise skip to MA66
+
+ DEC ECMA               \ Decrement the E.C.M. countdown timer twice, and if it
+ DEC ECMA               \ has reached zero, keep going, otherwise skip to MA66
+ BNE MA66
+
+.MA70
+
+ JSR ECMOF              \ If we get here then either we have either run out of
+                        \ energy, or the E.C.M. timer has run down, so switch
+                        \ off the E.C.M.
+
+.MA66
+
+ LDA QQ11               \ If this is not a space view (i.e. QQ11 is non-zero)
+ BNE MA9                \ then jump to MA9 to return from the main flight loop
+                        \ (as MA9 is an RTS)
+
+ JMP STARS              \ This is a space view, so jump to the STARS routine to
+                        \ process the stardust, and return from the main flight
+                        \ loop using a tail call
+
+\ ******************************************************************************
+\
+\       Name: MAS1
+\       Type: Subroutine
+\   Category: Maths (Geometry)
+\    Summary: Add an orientation vector coordinate to an INWK coordinate
+\  Deep dive: The space station safe zone
+\
+\ ------------------------------------------------------------------------------
+\
+\ Add a doubled nosev vector coordinate, e.g. (nosev_y_hi nosev_y_lo) * 2, to
+\ an INWK coordinate, e.g. (x_sign x_hi x_lo), storing the result in the INWK
+\ coordinate. The axes used in each side of the addition are specified by the
+\ arguments X and Y.
+\
+\ In the comments below, we document the routine as if we are doing the
+\ following, i.e. if X = 0 and Y = 11:
+\
+\   (x_sign x_hi x_lo) = (x_sign x_hi x_lo) + (nosev_y_hi nosev_y_lo) * 2
+\
+\ as that way the variable names in the comments contain "x" and "y" to match
+\ the registers that specify the vector axis to use.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   The coordinate to add, as follows:
+\
+\                         * If X = 0, add (x_sign x_hi x_lo)
+\                         * If X = 3, add (y_sign y_hi y_lo)
+\                         * If X = 6, add (z_sign z_hi z_lo)
+\
+\   Y                   The vector to add, as follows:
+\
+\                         * If Y = 9,  add (nosev_x_hi nosev_x_lo)
+\                         * If Y = 11, add (nosev_y_hi nosev_y_lo)
+\                         * If Y = 13, add (nosev_z_hi nosev_z_lo)
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   A                   The highest byte of the result with the sign cleared
+\                       (e.g. |x_sign| when X = 0, etc.)
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   MA9                 Contains an RTS
+\
+\ ******************************************************************************
+
+.MAS1
+
+ LDA INWK,Y             \ Set K(2 1) = (nosev_y_hi nosev_y_lo) * 2
+ ASL A
+ STA K+1
+ LDA INWK+1,Y
+ ROL A
+ STA K+2
+
+ LDA #0                 \ Set K+3 bit 7 to the C flag, so the sign bit of the
+ ROR A                  \ above result goes into K+3
+ STA K+3
+
+ JSR MVT3               \ Add (x_sign x_hi x_lo) to K(3 2 1)
+
+ STA INWK+2,X           \ Store the sign of the result in x_sign
+
+ LDY K+1                \ Store K(2 1) in (x_hi x_lo)
+ STY INWK,X
+ LDY K+2
+ STY INWK+1,X
+
+ AND #%01111111         \ Set A to the sign byte with the sign cleared,
+                        \ i.e. |x_sign| when X = 0
+
+.MA9
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: MAS2
+\       Type: Subroutine
+\   Category: Maths (Geometry)
+\    Summary: Calculate a cap on the maximum distance to the planet
+\
+\ ------------------------------------------------------------------------------
+\
+\ Given a value in Y that points to the start of a ship data block as an offset
+\ from K%, calculate the following:
+\
+\   A = A OR x_sign OR y_sign OR z_sign
+\
+\ and clear the sign bit of the result. The K% workspace contains the ship data
+\ blocks, so the offset in Y must be 0 or a multiple of NI% (as each block in
+\ K% contains NI% bytes).
+\
+\ The result effectively contains a maximum cap of the three values (though it
+\ might not be one of the three input values - it's just guaranteed to be
+\ larger than all of them).
+\
+\ If Y = 0 and A = 0, then this calculates the maximum cap of the highest byte
+\ containing the distance to the planet, as K%+2 = x_sign, K%+5 = y_sign and
+\ K%+8 = z_sign (the first slot in the K% workspace represents the planet).
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   Y                   The offset from K% for the start of the ship data block
+\                       to use
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   A                   A OR K%+2+Y OR K%+5+Y OR K%+8+Y, with bit 7 cleared
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   m                   Do not include A in the calculation
+\
+\ ******************************************************************************
+
+.m
+
+ LDA #0                 \ Set A = 0 and fall through into MAS2 to calculate the
+                        \ OR of the three bytes at K%+2+Y, K%+5+Y and K%+8+Y
+
+.MAS2
+
+ ORA K%+2,Y             \ Set A = A OR x_sign OR y_sign OR z_sign
+ ORA K%+5,Y
+ ORA K%+8,Y
+
+ AND #%01111111         \ Clear bit 7 in A
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: MAS3
+\       Type: Subroutine
+\   Category: Maths (Arithmetic)
+\    Summary: Calculate A = x_hi^2 + y_hi^2 + z_hi^2 in the K% block
+\
+\ ------------------------------------------------------------------------------
+\
+\ Given a value in Y that points to the start of a ship data block as an offset
+\ from K%, calculate the following:
+\
+\   A = x_hi^2 + y_hi^2 + z_hi^2
+\
+\ returning A = &FF if the calculation overflows a one-byte result. The K%
+\ workspace contains the ship data blocks, so the offset in Y must be 0 or a
+\ multiple of NI% (as each block in K% contains NI% bytes).
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   Y                   The offset from K% for the start of the ship data block
+\                       to use
+\
+\ Returns
+\
+\   A                   A = x_hi^2 + y_hi^2 + z_hi^2
+\
+\                       A = &FF if the calculation overflows a one-byte result
+\
+\ ******************************************************************************
+
+.MAS3
+
+ LDA K%+1,Y             \ Set (A P) = x_hi * x_hi
+ JSR SQUA2
+
+ STA R                  \ Store A (high byte of result) in R
+
+ LDA K%+4,Y             \ Set (A P) = y_hi * y_hi
+ JSR SQUA2
+
+ ADC R                  \ Add A (high byte of second result) to R
+
+ BCS MA30               \ If the addition of the two high bytes caused a carry
+                        \ (i.e. they overflowed), jump to MA30 to return A = &FF
+
+ STA R                  \ Store A (sum of the two high bytes) in R
+
+ LDA K%+7,Y             \ Set (A P) = z_hi * z_hi
+ JSR SQUA2
+
+ ADC R                  \ Add A (high byte of third result) to R, so R now
+                        \ contains the sum of x_hi^2 + y_hi^2 + z_hi^2
+
+ BCC P%+4               \ If there is no carry, skip the following instruction
+                        \ to return straight from the subroutine
+
+.MA30
+
+ LDA #&FF               \ The calculation has overflowed, so set A = &FF
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: MVEIT (Part 1 of 9)
+\       Type: Subroutine
+\   Category: Moving
+\    Summary: Move current ship: Tidy the orientation vectors
+\  Deep dive: Program flow of the ship-moving routine
+\             Scheduling tasks with the main loop counter
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine has multiple stages. This stage does the following:
+\
+\   * Tidy the orientation vectors for one of the ship slots
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   INWK                The current ship/planet's data block
+\
+\   XSAV                The slot number of the current ship/planet
+\
+\   TYPE                The type of the current ship/planet
+\
+\ ******************************************************************************
+
+.MVEIT
+
+ LDA INWK+31            \ If bits 5 or 7 of ship byte #31 are set, jump to MV30
+ AND #%10100000         \ as the ship is either exploding or has been killed, so
+ BNE MV30               \ we don't need to tidy its orientation vectors or apply
+                        \ tactics
+
+ LDA MCNT               \ Fetch the main loop counter
+
+ EOR XSAV               \ Fetch the slot number of the ship we are moving, EOR
+ AND #15                \ with the loop counter and apply mod 15 to the result.
+ BNE MV3                \ The result will be zero when "counter mod 15" matches
+                        \ the slot number, so this makes sure we call TIDY 12
+                        \ times every 16 main loop iterations, like this:
+                        \
+                        \   Iteration 0, tidy the ship in slot 0
+                        \   Iteration 1, tidy the ship in slot 1
+                        \   Iteration 2, tidy the ship in slot 2
+                        \     ...
+                        \   Iteration 11, tidy the ship in slot 11
+                        \   Iteration 12, do nothing
+                        \   Iteration 13, do nothing
+                        \   Iteration 14, do nothing
+                        \   Iteration 15, do nothing
+                        \   Iteration 16, tidy the ship in slot 0
+                        \     ...
+                        \
+                        \ and so on
+
+ JSR TIDY               \ Call TIDY to tidy up the orientation vectors, to
+                        \ prevent the ship from getting elongated and out of
+                        \ shape due to the imprecise nature of trigonometry
+                        \ in assembly language
+
+\ ******************************************************************************
+\
+\       Name: MVEIT (Part 2 of 9)
+\       Type: Subroutine
+\   Category: Moving
+\    Summary: Move current ship: Call tactics routine, remove ship from scanner
+\  Deep dive: Scheduling tasks with the main loop counter
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine has multiple stages. This stage does the following:
+\
+\   * Apply tactics to ships with AI enabled (by calling the TACTICS routine)
+\
+\   * Remove the ship from the scanner, so we can move it
+\
+\ ******************************************************************************
+
+.MV3
+
+ LDX TYPE               \ If the type of the ship we are moving is positive,
+ BPL P%+5               \ i.e. it is not a planet (types 128 and 130), then
+                        \ skip the following instruction
+
+ JMP MV40               \ This item is the planet, so jump to MV40 to move it,
+                        \ which ends by jumping back into this routine at MV45
+                        \ (after all the rotation, tactics and scanner code,
+                        \ which we don't need to apply to planets)
+
+ LDA INWK+32            \ Fetch the ship's byte #32 (AI flag) into A
+
+ BPL MV30               \ If bit 7 of the AI flag is clear, then if this is a
+                        \ ship or missile it is dumb and has no AI, and if this
+                        \ is the space station it is not hostile, so in both
+                        \ cases skip the following as it has no tactics
+
+ CPX #MSL               \ If the ship is a missile, skip straight to MV26 to
+ BEQ MV26               \ call the TACTICS routine, as we do this every
+                        \ iteration of the main loop for missiles only
+
+ LDA MCNT               \ Fetch the main loop counter
+
+ EOR XSAV               \ Fetch the slot number of the ship we are moving, EOR
+ AND #7                 \ with the loop counter and apply mod 8 to the result.
+ BNE MV30               \ The result will be zero when "counter mod 8" matches
+                        \ the slot number mod 8, so this makes sure we call
+                        \ TACTICS 12 times every 8 main loop iterations, like
+                        \ this:
+                        \
+                        \   Iteration 0, apply tactics to slots 0 and 8
+                        \   Iteration 1, apply tactics to slots 1 and 9
+                        \   Iteration 2, apply tactics to slots 2 and 10
+                        \   Iteration 3, apply tactics to slots 3 and 11
+                        \   Iteration 4, apply tactics to slot 4
+                        \   Iteration 5, apply tactics to slot 5
+                        \   Iteration 6, apply tactics to slot 6
+                        \   Iteration 7, apply tactics to slot 7
+                        \   Iteration 8, apply tactics to slots 0 and 8
+                        \     ...
+                        \
+                        \ and so on
+
+.MV26
+
+ JSR TACTICS            \ Call TACTICS to apply AI tactics to this ship
+
+.MV30
+
+ JSR SCAN               \ Draw the ship on the scanner, which has the effect of
+                        \ removing it, as it's already at this point and hasn't
+                        \ yet moved
+
+\ ******************************************************************************
+\
+\       Name: MVEIT (Part 3 of 9)
+\       Type: Subroutine
+\   Category: Moving
+\    Summary: Move current ship: Move ship forward according to its speed
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine has multiple stages. This stage does the following:
+\
+\   * Move the ship forward (along the vector pointing in the direction of
+\     travel) according to its speed:
+\
+\     (x, y, z) += nosev_hi * speed / 64
+\
+\ ******************************************************************************
+
+ LDA INWK+27            \ Set Q = the ship's speed byte #27 * 4
+ ASL A
+ ASL A
+ STA Q
+
+ LDA INWK+10            \ Set A = |nosev_x_hi|
+ AND #%01111111
+
+ JSR FMLTU              \ Set R = A * Q / 256
+ STA R                  \       = |nosev_x_hi| * speed / 64
+
+ LDA INWK+10            \ If nosev_x_hi is positive, then:
+ LDX #0                 \
+ JSR MVT1-2             \   (x_sign x_hi x_lo) = (x_sign x_hi x_lo) + R
+                        \
+                        \ If nosev_x_hi is negative, then:
+                        \
+                        \   (x_sign x_hi x_lo) = (x_sign x_hi x_lo) - R
+                        \
+                        \ So in effect, this does:
+                        \
+                        \   (x_sign x_hi x_lo) += nosev_x_hi * speed / 64
+
+ LDA INWK+12            \ Set A = |nosev_y_hi|
+ AND #%01111111
+
+ JSR FMLTU              \ Set R = A * Q / 256
+ STA R                  \       = |nosev_y_hi| * speed / 64
+
+ LDA INWK+12            \ If nosev_y_hi is positive, then:
+ LDX #3                 \
+ JSR MVT1-2             \   (y_sign y_hi y_lo) = (y_sign y_hi y_lo) + R
+                        \
+                        \ If nosev_y_hi is negative, then:
+                        \
+                        \   (y_sign y_hi y_lo) = (y_sign y_hi y_lo) - R
+                        \
+                        \ So in effect, this does:
+                        \
+                        \   (y_sign y_hi y_lo) += nosev_y_hi * speed / 64
+
+ LDA INWK+14            \ Set A = |nosev_z_hi|
+ AND #%01111111
+
+ JSR FMLTU              \ Set R = A * Q / 256
+ STA R                  \       = |nosev_z_hi| * speed / 64
+
+ LDA INWK+14            \ If nosev_y_hi is positive, then:
+ LDX #6                 \
+ JSR MVT1-2             \   (z_sign z_hi z_lo) = (z_sign z_hi z_lo) + R
+                        \
+                        \ If nosev_z_hi is negative, then:
+                        \
+                        \   (z_sign z_hi z_lo) = (z_sign z_hi z_lo) - R
+                        \
+                        \ So in effect, this does:
+                        \
+                        \   (z_sign z_hi z_lo) += nosev_z_hi * speed / 64
+
+\ ******************************************************************************
+\
+\       Name: MVEIT (Part 4 of 9)
+\       Type: Subroutine
+\   Category: Moving
+\    Summary: Move current ship: Apply acceleration to ship's speed as a one-off
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine has multiple stages. This stage does the following:
+\
+\   * Apply acceleration to the ship's speed (if acceleration is non-zero),
+\     and then zero the acceleration as it's a one-off change
+\
+\ ******************************************************************************
+
+ LDA INWK+27            \ Set A = the ship's speed in byte #24 + the ship's
+ CLC                    \ acceleration in byte #28
+ ADC INWK+28
+
+ BPL P%+4               \ If the result is positive, skip the following
+                        \ instruction
+
+ LDA #0                 \ Set A to 0 to stop the speed from going negative
+
+ LDY #15                \ We now fetch byte #15 from the ship's blueprint, which
+                        \ contains the ship's maximum speed, so set Y = 15 to
+                        \ use as an index
+
+ CMP (XX0),Y            \ If A < the ship's maximum speed, skip the following
+ BCC P%+4               \ instruction
+
+ LDA (XX0),Y            \ Set A to the ship's maximum speed
+
+ STA INWK+27            \ We have now calculated the new ship's speed after
+                        \ accelerating and keeping the speed within the ship's
+                        \ limits, so store the updated speed in byte #27
+
+ LDA #0                 \ We have added the ship's acceleration, so we now set
+ STA INWK+28            \ it back to 0 in byte #28, as it's a one-off change
+
+\ ******************************************************************************
+\
+\       Name: MVEIT (Part 5 of 9)
+\       Type: Subroutine
+\   Category: Moving
+\    Summary: Move current ship: Rotate ship's location by our pitch and roll
+\  Deep dive: Rotating the universe
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine has multiple stages. This stage does the following:
+\
+\   * Rotate the ship's location in space by the amount of pitch and roll of
+\     our ship. See below for a deeper explanation of this routine
+\
+\ ******************************************************************************
+
+ LDX ALP1               \ Fetch the magnitude of the current roll into X, so
+                        \ if the roll angle is alpha, X contains |alpha|
+
+ LDA INWK               \ Set P = ~x_lo (i.e. with all its bits flipped) so that
+ EOR #%11111111         \ we can pass x_lo to MLTU2 below)
+ STA P
+
+ LDA INWK+1             \ Set A = x_hi
+
+ JSR MLTU2-2            \ Set (A P+1 P) = (A ~P) * X
+                        \               = (x_hi x_lo) * alpha
+
+ STA P+2                \ Store the high byte of the result in P+2, so we now
+                        \ have:
+                        \
+                        \ P(2 1 0) = (x_hi x_lo) * alpha
+
+ LDA ALP2+1             \ Fetch the flipped sign of the current roll angle alpha
+ EOR INWK+2             \ from ALP2+1 and EOR with byte #2 (x_sign), so if the
+                        \ flipped roll angle and x_sign have the same sign, A
+                        \ will be positive, else it will be negative. So A will
+                        \ contain the sign bit of x_sign * flipped alpha sign,
+                        \ which is the opposite to the sign of the above result,
+                        \ so we now have:
+                        \
+                        \ (A P+2 P+1) = - (x_sign x_hi x_lo) * alpha / 256
+
+ LDX #3                 \ Set (A P+2 P+1) = (y_sign y_hi y_lo) + (A P+2 P+1)
+ JSR MVT6               \                 = y - x * alpha / 256
+
+ STA K2+3               \ Set K2(3) = A = the sign of the result
+
+ LDA P+1                \ Set K2(1) = P+1, the low byte of the result
+ STA K2+1
+
+ EOR #%11111111         \ Set P = ~K2+1 (i.e. with all its bits flipped) so
+ STA P                  \ that we can pass K2+1 to MLTU2 below)
+
+ LDA P+2                \ Set K2(2) = A = P+2
+ STA K2+2
+
+                        \ So we now have result 1 above:
+                        \
+                        \ K2(3 2 1) = (A P+2 P+1)
+                        \           = y - x * alpha / 256
+
+ LDX BET1               \ Fetch the magnitude of the current pitch into X, so
+                        \ if the pitch angle is beta, X contains |beta|
+
+ JSR MLTU2-2            \ Set (A P+1 P) = (A ~P) * X
+                        \               = K2(2 1) * beta
+
+ STA P+2                \ Store the high byte of the result in P+2, so we now
+                        \ have:
+                        \
+                        \ P(2 1 0) = K2(2 1) * beta
+
+ LDA K2+3               \ Fetch the sign of the above result in K(3 2 1) from
+ EOR BET2               \ K2+3 and EOR with BET2, the sign of the current pitch
+                        \ rate, so if the pitch and K(3 2 1) have the same sign,
+                        \ A will be positive, else it will be negative. So A
+                        \ will contain the sign bit of K(3 2 1) * beta, which is
+                        \ the same as the sign of the above result, so we now
+                        \ have:
+                        \
+                        \ (A P+2 P+1) = K2(3 2 1) * beta / 256
+
+ LDX #6                 \ Set (A P+2 P+1) = (z_sign z_hi z_lo) + (A P+2 P+1)
+ JSR MVT6               \                 = z + K2 * beta / 256
+
+ STA INWK+8             \ Set z_sign = A = the sign of the result
+
+ LDA P+1                \ Set z_lo = P+1, the low byte of the result
+ STA INWK+6
+
+ EOR #%11111111         \ Set P = ~z_lo (i.e. with all its bits flipped) so that
+ STA P                  \ we can pass z_lo to MLTU2 below)
+
+ LDA P+2                \ Set z_hi = P+2
+ STA INWK+7
+
+                        \ So we now have result 2 above:
+                        \
+                        \ (z_sign z_hi z_lo) = (A P+2 P+1)
+                        \                    = z + K2 * beta / 256
+
+ JSR MLTU2              \ MLTU2 doesn't change Q, and Q was set to beta in
+                        \ the previous call to MLTU2, so this call does:
+                        \
+                        \ (A P+1 P) = (A ~P) * Q
+                        \           = (z_hi z_lo) * beta
+
+ STA P+2                \ Set P+2 = A = the high byte of the result, so we
+                        \ now have:
+                        \
+                        \ P(2 1 0) = (z_hi z_lo) * beta
+
+ LDA K2+3               \ Set y_sign = K2+3
+ STA INWK+5
+
+ EOR BET2               \ EOR y_sign with BET2, the sign of the current pitch
+ EOR INWK+8             \ rate, and z_sign. If the result is positive jump to
+ BPL MV43               \ MV43, otherwise this means beta * z and y have
+                        \ different signs, i.e. P(2 1) and K2(3 2 1) have
+                        \ different signs, so we need to add them in order to
+                        \ calculate K2(2 1) - P(2 1)
+
+ LDA P+1                \ Set (y_hi y_lo) = K2(2 1) + P(2 1)
+ ADC K2+1
+ STA INWK+3
+ LDA P+2
+ ADC K2+2
+ STA INWK+4
+
+ JMP MV44               \ Jump to MV44 to continue the calculation
+
+.MV43
+
+ LDA K2+1               \ Reversing the logic above, we need to subtract P(2 1)
+ SBC P+1                \ and K2(3 2 1) to calculate K2(2 1) - P(2 1), so this
+ STA INWK+3             \ sets (y_hi y_lo) = K2(2 1) - P(2 1)
+ LDA K2+2
+ SBC P+2
+ STA INWK+4
+
+ BCS MV44               \ If the above subtraction did not underflow, then
+                        \ jump to MV44, otherwise we need to negate the result
+
+ LDA #1                 \ Negate (y_sign y_hi y_lo) using two's complement,
+ SBC INWK+3             \ first doing the low bytes:
+ STA INWK+3             \
+                        \ y_lo = 1 - y_lo
+
+ LDA #0                 \ Then the high bytes:
+ SBC INWK+4             \
+ STA INWK+4             \ y_hi = 0 - y_hi
+
+ LDA INWK+5             \ And finally flip the sign in y_sign
+ EOR #%10000000
+ STA INWK+5
+
+.MV44
+
+                        \ So we now have result 3 above:
+                        \
+                        \ (y_sign y_hi y_lo) = K2(2 1) - P(2 1)
+                        \                    = K2 - beta * z
+
+ LDX ALP1               \ Fetch the magnitude of the current roll into X, so
+                        \ if the roll angle is alpha, X contains |alpha|
+
+ LDA INWK+3             \ Set P = ~y_lo (i.e. with all its bits flipped) so that
+ EOR #&FF               \ we can pass y_lo to MLTU2 below)
+ STA P
+
+ LDA INWK+4             \ Set A = y_hi
+
+ JSR MLTU2-2            \ Set (A P+1 P) = (A ~P) * X
+                        \               = (y_hi y_lo) * alpha
+
+ STA P+2                \ Store the high byte of the result in P+2, so we now
+                        \ have:
+                        \
+                        \ P(2 1 0) = (y_hi y_lo) * alpha
+
+ LDA ALP2               \ Fetch the correct sign of the current roll angle alpha
+ EOR INWK+5             \ from ALP2 and EOR with byte #5 (y_sign), so if the
+                        \ correct roll angle and y_sign have the same sign, A
+                        \ will be positive, else it will be negative. So A will
+                        \ contain the sign bit of x_sign * correct alpha sign,
+                        \ which is the same as the sign of the above result,
+                        \ so we now have:
+                        \
+                        \ (A P+2 P+1) = (y_sign y_hi y_lo) * alpha / 256
+
+ LDX #0                 \ Set (A P+2 P+1) = (x_sign x_hi x_lo) + (A P+2 P+1)
+ JSR MVT6               \                 = x + y * alpha / 256
+
+ STA INWK+2             \ Set x_sign = A = the sign of the result
+
+ LDA P+2                \ Set x_hi = P+2, the high byte of the result
+ STA INWK+1
+
+ LDA P+1                \ Set x_lo = P+1, the low byte of the result
+ STA INWK
+
+                        \ So we now have result 4 above:
+                        \
+                        \ x = x + alpha * y
+                        \
+                        \ and the rotation of (x, y, z) is done
+
+\ ******************************************************************************
+\
+\       Name: MVEIT (Part 6 of 9)
+\       Type: Subroutine
+\   Category: Moving
+\    Summary: Move current ship: Move the ship in space according to our speed
+\  Deep dive: A sense of scale
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine has multiple stages. This stage does the following:
+\
+\   * Move the ship in space according to our speed (we already moved it
+\     according to its own speed in part 3).
+\
+\ We do this by subtracting our speed (i.e. the distance we travel in this
+\ iteration of the loop) from the other ship's z-coordinate. We subtract because
+\ they appear to be "moving" in the opposite direction to us, and the whole
+\ MVEIT routine is about moving the other ships rather than us (even though we
+\ are the one doing the moving).
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   MV45                Rejoin the MVEIT routine after the rotation, tactics and
+\                       scanner code
+\
+\ ******************************************************************************
+
+.MV45
+
+ LDA DELTA              \ Set R to our speed in DELTA
+ STA R
+
+ LDA #%10000000         \ Set A to zeroes but with bit 7 set, so that (A R) is
+                        \ a 16-bit number containing -R, or -speed
+
+ LDX #6                 \ Set X to the z-axis so the call to MVT1 does this:
+ JSR MVT1               \
+                        \ (z_sign z_hi z_lo) = (z_sign z_hi z_lo) + (A R)
+                        \                    = (z_sign z_hi z_lo) - speed
+
+\ ******************************************************************************
+\
+\       Name: MVEIT (Part 7 of 9)
+\       Type: Subroutine
+\   Category: Moving
+\    Summary: Move current ship: Rotate ship's orientation vectors by pitch/roll
+\  Deep dive: Orientation vectors
+\             Pitching and rolling
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine has multiple stages. This stage does the following:
+\
+\   * Rotate the ship's orientation vectors according to our pitch and roll
+\
+\ As with the previous step, this is all about moving the other ships rather
+\ than us (even though we are the one doing the moving). So we rotate the
+\ current ship's orientation vectors (which defines its orientation in space),
+\ by the angles we are "moving" the rest of the sky through (alpha and beta, our
+\ roll and pitch), so the ship appears to us to be stationary while we rotate.
+\
+\ ******************************************************************************
+
+ LDY #9                 \ Apply our pitch and roll rotations to the current
+ JSR MVS4               \ ship's nosev vector
+
+ LDY #15                \ Apply our pitch and roll rotations to the current
+ JSR MVS4               \ ship's roofv vector
+
+ LDY #21                \ Apply our pitch and roll rotations to the current
+ JSR MVS4               \ ship's sidev vector
+
+\ ******************************************************************************
+\
+\       Name: MVEIT (Part 8 of 9)
+\       Type: Subroutine
+\   Category: Moving
+\    Summary: Move current ship: Rotate ship about itself by its own pitch/roll
+\  Deep dive: Orientation vectors
+\             Pitching and rolling by a fixed angle
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine has multiple stages. This stage does the following:
+\
+\   * If the ship we are processing is rolling or pitching itself, rotate it and
+\     apply damping if required
+\
+\ ******************************************************************************
+
+ LDA INWK+30            \ Fetch the ship's pitch counter and extract the sign
+ AND #%10000000         \ into RAT2
+ STA RAT2
+
+ LDA INWK+30            \ Fetch the ship's pitch counter and extract the value
+ AND #%01111111         \ without the sign bit into A
+
+ BEQ MV8                \ If the pitch counter is 0, then jump to MV8 to skip
+                        \ the following, as the ship is not pitching
+
+ CMP #%01111111         \ If bits 0-6 are set in the pitch counter (i.e. the
+                        \ ship's pitch is not damping down), then the C flag
+                        \ will be set by this instruction
+
+ SBC #0                 \ Set A = A - 0 - (1 - C), so if we are damping then we
+                        \ reduce A by 1, otherwise it is unchanged
+
+ ORA RAT2               \ Change bit 7 of A to the sign we saved in RAT2, so
+                        \ the updated pitch counter in A retains its sign
+
+ STA INWK+30            \ Store the updated pitch counter in byte #30
+
+ LDX #15                \ Rotate (roofv_x, nosev_x) by a small angle (pitch)
+ LDY #9
+ JSR MVS5
+
+ LDX #17                \ Rotate (roofv_y, nosev_y) by a small angle (pitch)
+ LDY #11
+ JSR MVS5
+
+ LDX #19                \ Rotate (roofv_z, nosev_z) by a small angle (pitch)
+ LDY #13
+ JSR MVS5
+
+.MV8
+
+ LDA INWK+29            \ Fetch the ship's roll counter and extract the sign
+ AND #%10000000         \ into RAT2
+ STA RAT2
+
+ LDA INWK+29            \ Fetch the ship's roll counter and extract the value
+ AND #%01111111         \ without the sign bit into A
+
+ BEQ MV5                \ If the roll counter is 0, then jump to MV5 to skip the
+                        \ following, as the ship is not rolling
+
+ CMP #%01111111         \ If bits 0-6 are set in the roll counter (i.e. the
+                        \ ship's roll is not damping down), then the C flag
+                        \ will be set by this instruction
+
+ SBC #0                 \ Set A = A - 0 - (1 - C), so if we are damping then we
+                        \ reduce A by 1, otherwise it is unchanged
+
+ ORA RAT2               \ Change bit 7 of A to the sign we saved in RAT2, so
+                        \ the updated roll counter in A retains its sign
+
+ STA INWK+29            \ Store the updated pitch counter in byte #29
+
+ LDX #15                \ Rotate (roofv_x, sidev_x) by a small angle (roll)
+ LDY #21
+ JSR MVS5
+
+ LDX #17                \ Rotate (roofv_y, sidev_y) by a small angle (roll)
+ LDY #23
+ JSR MVS5
+
+ LDX #19                \ Rotate (roofv_z, sidev_z) by a small angle (roll)
+ LDY #25
+ JSR MVS5
+
+\ ******************************************************************************
+\
+\       Name: MVEIT (Part 9 of 9)
+\       Type: Subroutine
+\   Category: Moving
+\    Summary: Move current ship: Redraw on scanner, if it hasn't been destroyed
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine has multiple stages. This stage does the following:
+\
+\   * If the ship is exploding or being removed, hide it on the scanner
+\
+\   * Otherwise redraw the ship on the scanner, now that it's been moved
+\
+\ ******************************************************************************
+
+.MV5
+
+ LDA INWK+31            \ Fetch the ship's exploding/killed state from byte #31
+
+ AND #%10100000         \ If we are exploding or removing this ship then jump to
+ BNE MVD1               \ MVD1 to remove it from the scanner permanently
+
+ LDA INWK+31            \ Set bit 4 to keep the ship visible on the scanner
+ ORA #%00010000
+ STA INWK+31
+
+ JMP SCAN               \ Display the ship on the scanner, returning from the
+                        \ subroutine using a tail call
+
+.MVD1
+
+ LDA INWK+31            \ Clear bit 4 to hide the ship on the scanner
+ AND #%11101111
+ STA INWK+31
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: MVT1
+\       Type: Subroutine
+\   Category: Moving
+\    Summary: Calculate (x_sign x_hi x_lo) = (x_sign x_hi x_lo) + (A R)
+\
+\ ------------------------------------------------------------------------------
+\
+\ Add the signed delta (A R) to a ship's coordinate, along the axis given in X.
+\ Mathematically speaking, this routine translates the ship along a single axis
+\ by a signed delta. Taking the example of X = 0, the x-axis, it does the
+\ following:
+\
+\   (x_sign x_hi x_lo) = (x_sign x_hi x_lo) + (A R)
+\
+\ (In practice, MVT1 is only ever called directly with A = 0 or 128, otherwise
+\ it is always called via MVT-2, which clears A apart from the sign bit. The
+\ routine is written to cope with a non-zero delta_hi, so it supports a full
+\ 16-bit delta, but it appears that delta_hi is only ever used to hold the
+\ sign of the delta.)
+\
+\ The comments below assume we are adding delta to the x-axis, though the axis
+\ is determined by the value of X.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   (A R)               The signed delta, so A = delta_hi and R = delta_lo
+\
+\   X                   Determines which coordinate axis of INWK to change:
+\
+\                         * X = 0 adds the delta to (x_lo, x_hi, x_sign)
+\
+\                         * X = 3 adds the delta to (y_lo, y_hi, y_sign)
+\
+\                         * X = 6 adds the delta to (z_lo, z_hi, z_sign)
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   MVT1-2              Clear bits 0-6 of A before entering MVT1
+\
+\ ******************************************************************************
+
+ AND #%10000000         \ Clear bits 0-6 of A
+
+.MVT1
+
+ ASL A                  \ Set the C flag to the sign bit of the delta, leaving
+                        \ delta_hi << 1 in A
+
+ STA S                  \ Set S = delta_hi << 1
+                        \
+                        \ This also clears bit 0 of S
+
+ LDA #0                 \ Set T = just the sign bit of delta (in bit 7)
+ ROR A
+ STA T
+
+ LSR S                  \ Set S = delta_hi >> 1
+                        \       = |delta_hi|
+                        \
+                        \ This also clear the C flag, as we know that bit 0 of
+                        \ S was clear before the LSR
+
+ EOR INWK+2,X           \ If T EOR x_sign has bit 7 set, then x_sign and delta
+ BMI MV10               \ have different signs, so jump to MV10
+
+                        \ At this point, we know x_sign and delta have the same
+                        \ sign, that sign is in T, and S contains |delta_hi|,
+                        \ so now we want to do:
+                        \
+                        \   (x_sign x_hi x_lo) = (x_sign x_hi x_lo) + (S R)
+                        \
+                        \ and then set the sign of the result to the same sign
+                        \ as x_sign and delta
+
+ LDA R                  \ First we add the low bytes, so:
+ ADC INWK,X             \
+ STA INWK,X             \   x_lo = x_lo + R
+
+ LDA S                  \ Then we add the high bytes:
+ ADC INWK+1,X           \
+ STA INWK+1,X           \   x_hi = x_hi + S
+
+ LDA INWK+2,X           \ And finally we add any carry into x_sign, and if the
+ ADC #0                 \ sign of x_sign and delta in T is negative, make sure
+ ORA T                  \ the result is negative (by OR'ing with T)
+ STA INWK+2,X
+
+ RTS                    \ Return from the subroutine
+
+.MV10
+
+                        \ If we get here, we know x_sign and delta have
+                        \ different signs, with delta's sign in T, and
+                        \ |delta_hi| in S, so now we want to do:
+                        \
+                        \   (x_sign x_hi x_lo) = (x_sign x_hi x_lo) - (S R)
+                        \
+                        \ and then set the sign of the result according to
+                        \ the signs of x_sign and delta
+
+ LDA INWK,X             \ First we subtract the low bytes, so:
+ SEC                    \
+ SBC R                  \   x_lo = x_lo - R
+ STA INWK,X
+
+ LDA INWK+1,X           \ Then we subtract the high bytes:
+ SBC S                  \
+ STA INWK+1,X           \   x_hi = x_hi - S
+
+ LDA INWK+2,X           \ And finally we subtract any borrow from bits 0-6 of
+ AND #%01111111         \ x_sign, and give the result the opposite sign bit to T
+ SBC #0                 \ (i.e. give it the sign of the original x_sign)
+ ORA #%10000000
+ EOR T
+ STA INWK+2,X
+
+ BCS MV11               \ If the C flag is set by the above SBC, then our sum
+                        \ above didn't underflow and is correct - to put it
+                        \ another way, (x_sign x_hi x_lo) >= (S R) so the result
+                        \ should indeed have the same sign as x_sign, so jump to
+                        \ MV11 to return from the subroutine
+
+                        \ Otherwise our subtraction underflowed because
+                        \ (x_sign x_hi x_lo) < (S R), so we now need to flip the
+                        \ subtraction around by using two's complement to this:
+                        \
+                        \   (S R) - (x_sign x_hi x_lo)
+                        \
+                        \ and then we need to give the result the same sign as
+                        \ (S R), the delta, as that's the dominant figure in the
+                        \ sum
+
+ LDA #1                 \ First we subtract the low bytes, so:
+ SBC INWK,X             \
+ STA INWK,X             \   x_lo = 1 - x_lo
+
+ LDA #0                 \ Then we subtract the high bytes:
+ SBC INWK+1,X           \
+ STA INWK+1,X           \   x_hi = 0 - x_hi
+
+ LDA #0                 \ And then we subtract the sign bytes:
+ SBC INWK+2,X           \
+                        \   x_sign = 0 - x_sign
+
+ AND #%01111111         \ Finally, we set the sign bit to the sign in T, the
+ ORA T                  \ sign of the original delta, as the delta is the
+ STA INWK+2,X           \ dominant figure in the sum
+
+.MV11
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: MVT3
+\       Type: Subroutine
+\   Category: Moving
+\    Summary: Calculate K(3 2 1) = (x_sign x_hi x_lo) + K(3 2 1)
+\
+\ ------------------------------------------------------------------------------
+\
+\ Add an INWK position coordinate - i.e. x, y or z - to K(3 2 1), like this:
+\
+\   K(3 2 1) = (x_sign x_hi x_lo) + K(3 2 1)
+\
+\ The INWK coordinate to add to K(3 2 1) is specified by X.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   The coordinate to add to K(3 2 1), as follows:
+\
+\                         * If X = 0, add (x_sign x_hi x_lo)
+\
+\                         * If X = 3, add (y_sign y_hi y_lo)
+\
+\                         * If X = 6, add (z_sign z_hi z_lo)
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   A                   Contains a copy of the high byte of the result, K+3
+\
+\   X                   X is preserved
+\
+\ ******************************************************************************
+
+.MVT3
+
+ LDA K+3                \ Set S = K+3
+ STA S
+
+ AND #%10000000         \ Set T = sign bit of K(3 2 1)
+ STA T
+
+ EOR INWK+2,X           \ If x_sign has a different sign to K(3 2 1), jump to
+ BMI MV13               \ MV13 to process the addition as a subtraction
+
+ LDA K+1                \ Set K(3 2 1) = K(3 2 1) + (x_sign x_hi x_lo)
+ CLC                    \ starting with the low bytes
+ ADC INWK,X
+ STA K+1
+
+ LDA K+2                \ Then the middle bytes
+ ADC INWK+1,X
+ STA K+2
+
+ LDA K+3                \ And finally the high bytes
+ ADC INWK+2,X
+
+ AND #%01111111         \ Setting the sign bit of K+3 to T, the original sign
+ ORA T                  \ of K(3 2 1)
+ STA K+3
+
+ RTS                    \ Return from the subroutine
+
+.MV13
+
+ LDA S                  \ Set S = |K+3| (i.e. K+3 with the sign bit cleared)
+ AND #%01111111
+ STA S
+
+ LDA INWK,X             \ Set K(3 2 1) = (x_sign x_hi x_lo) - K(3 2 1)
+ SEC                    \ starting with the low bytes
+ SBC K+1
+ STA K+1
+
+ LDA INWK+1,X           \ Then the middle bytes
+ SBC K+2
+ STA K+2
+
+ LDA INWK+2,X           \ And finally the high bytes, doing A = |x_sign| - |K+3|
+ AND #%01111111         \ and setting the C flag for testing below
+ SBC S
+
+ ORA #%10000000         \ Set the sign bit of K+3 to the opposite sign of T,
+ EOR T                  \ i.e. the opposite sign to the original K(3 2 1)
+ STA K+3
+
+ BCS MV14               \ If the C flag is set, i.e. |x_sign| >= |K+3|, then
+                        \ the sign of K(3 2 1). In this case, we want the
+                        \ result to have the same sign as the largest argument,
+                        \ which is (x_sign x_hi x_lo), which we know has the
+                        \ opposite sign to K(3 2 1), and that's what we just set
+                        \ the sign of K(3 2 1) to... so we can jump to MV14 to
+                        \ return from the subroutine
+
+ LDA #1                 \ We need to swap the sign of the result in K(3 2 1),
+ SBC K+1                \ which we do by calculating 0 - K(3 2 1), which we can
+ STA K+1                \ do with 1 - C - K(3 2 1), as we know the C flag is
+                        \ clear. We start with the low bytes
+
+ LDA #0                 \ Then the middle bytes
+ SBC K+2
+ STA K+2
+
+ LDA #0                 \ And finally the high bytes
+ SBC K+3
+
+ AND #%01111111         \ Set the sign bit of K+3 to the same sign as T,
+ ORA T                  \ i.e. the same sign as the original K(3 2 1), as
+ STA K+3                \ that's the largest argument
+
+.MV14
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: MVS4
+\       Type: Subroutine
+\   Category: Moving
+\    Summary: Apply pitch and roll to an orientation vector
+\  Deep dive: Orientation vectors
+\             Pitching and rolling
+\
+\ ------------------------------------------------------------------------------
+\
+\ Apply pitch and roll angles alpha and beta to the orientation vector in Y.
+\
+\ Specifically, this routine rotates a point (x, y, z) around the origin by
+\ pitch alpha and roll beta, using the small angle approximation to make the
+\ maths easier, and incorporating the Minsky circle algorithm to make the
+\ rotation more stable (though more elliptic).
+\
+\ If that paragraph makes sense to you, then you should probably be writing
+\ this commentary! For the rest of us, see the associated deep dives.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   Y                   Determines which of the INWK orientation vectors to
+\                       transform:
+\
+\                         * Y = 9 rotates nosev: (nosev_x, nosev_y, nosev_z)
+\
+\                         * Y = 15 rotates roofv: (roofv_x, roofv_y, roofv_z)
+\
+\                         * Y = 21 rotates sidev: (sidev_x, sidev_y, sidev_z)
+\
+\ ******************************************************************************
+
+.MVS4
+
+ LDA ALPHA              \ Set Q = alpha (the roll angle to rotate through)
+ STA Q
+
+ LDX INWK+2,Y           \ Set (S R) = nosev_y
+ STX R
+ LDX INWK+3,Y
+ STX S
+
+ LDX INWK,Y             \ These instructions have no effect as MAD overwrites
+ STX P                  \ X and P when called, but they set X = P = nosev_x_lo
+
+ LDA INWK+1,Y           \ Set A = -nosev_x_hi
+ EOR #%10000000
+
+ JSR MAD                \ Set (A X) = Q * A + (S R)
+ STA INWK+3,Y           \           = alpha * -nosev_x_hi + nosev_y
+ STX INWK+2,Y           \
+                        \ and store (A X) in nosev_y, so this does:
+                        \
+                        \ nosev_y = nosev_y - alpha * nosev_x_hi
+
+ STX P                  \ This instruction has no effect as MAD overwrites P,
+                        \ but it sets P = nosev_y_lo
+
+ LDX INWK,Y             \ Set (S R) = nosev_x
+ STX R
+ LDX INWK+1,Y
+ STX S
+
+ LDA INWK+3,Y           \ Set A = nosev_y_hi
+
+ JSR MAD                \ Set (A X) = Q * A + (S R)
+ STA INWK+1,Y           \           = alpha * nosev_y_hi + nosev_x
+ STX INWK,Y             \
+                        \ and store (A X) in nosev_x, so this does:
+                        \
+                        \ nosev_x = nosev_x + alpha * nosev_y_hi
+
+ STX P                  \ This instruction has no effect as MAD overwrites P,
+                        \ but it sets P = nosev_x_lo
+
+ LDA BETA               \ Set Q = beta (the pitch angle to rotate through)
+ STA Q
+
+ LDX INWK+2,Y           \ Set (S R) = nosev_y
+ STX R
+ LDX INWK+3,Y
+ STX S
+ LDX INWK+4,Y
+
+ STX P                  \ This instruction has no effect as MAD overwrites P,
+                        \ but it sets P = nosev_y
+
+ LDA INWK+5,Y           \ Set A = -nosev_z_hi
+ EOR #%10000000
+
+ JSR MAD                \ Set (A X) = Q * A + (S R)
+ STA INWK+3,Y           \           = beta * -nosev_z_hi + nosev_y
+ STX INWK+2,Y           \
+                        \ and store (A X) in nosev_y, so this does:
+                        \
+                        \ nosev_y = nosev_y - beta * nosev_z_hi
+
+ STX P                  \ This instruction has no effect as MAD overwrites P,
+                        \ but it sets P = nosev_y_lo
+
+ LDX INWK+4,Y           \ Set (S R) = nosev_z
+ STX R
+ LDX INWK+5,Y
+ STX S
+
+ LDA INWK+3,Y           \ Set A = nosev_y_hi
+
+ JSR MAD                \ Set (A X) = Q * A + (S R)
+ STA INWK+5,Y           \           = beta * nosev_y_hi + nosev_z
+ STX INWK+4,Y           \
+                        \ and store (A X) in nosev_z, so this does:
+                        \
+                        \ nosev_z = nosev_z + beta * nosev_y_hi
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: MVS5
+\       Type: Subroutine
+\   Category: Moving
+\    Summary: Apply a 3.6 degree pitch or roll to an orientation vector
+\  Deep dive: Orientation vectors
+\             Pitching and rolling by a fixed angle
+\
+\ ------------------------------------------------------------------------------
+\
+\ Pitch or roll a ship by a small, fixed amount (1/16 radians, or 3.6 degrees),
+\ in a specified direction, by rotating the orientation vectors. The vectors to
+\ rotate are given in X and Y, and the direction of the rotation is given in
+\ RAT2. The calculation is as follows:
+\
+\   * If the direction is positive:
+\
+\     X = X * (1 - 1/512) + Y / 16
+\     Y = Y * (1 - 1/512) - X / 16
+\
+\   * If the direction is negative:
+\
+\     X = X * (1 - 1/512) - Y / 16
+\     Y = Y * (1 - 1/512) + X / 16
+\
+\ So if X = 15 (roofv_x), Y = 21 (sidev_x) and RAT2 is positive, it does this:
+\
+\   roofv_x = roofv_x * (1 - 1/512)  + sidev_x / 16
+\   sidev_x = sidev_x * (1 - 1/512)  - roofv_x / 16
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   The first vector to rotate:
+\
+\                         * If X = 15, rotate roofv_x
+\
+\                         * If X = 17, rotate roofv_y
+\
+\                         * If X = 19, rotate roofv_z
+\
+\                         * If X = 21, rotate sidev_x
+\
+\                         * If X = 23, rotate sidev_y
+\
+\                         * If X = 25, rotate sidev_z
+\
+\   Y                   The second vector to rotate:
+\
+\                         * If Y = 9,  rotate nosev_x
+\
+\                         * If Y = 11, rotate nosev_y
+\
+\                         * If Y = 13, rotate nosev_z
+\
+\                         * If Y = 21, rotate sidev_x
+\
+\                         * If Y = 23, rotate sidev_y
+\
+\                         * If Y = 25, rotate sidev_z
+\
+\   RAT2                The direction of the pitch or roll to perform, positive
+\                       or negative (i.e. the sign of the roll or pitch counter
+\                       in bit 7)
+\
+\ ******************************************************************************
+
+.MVS5
+
+ LDA INWK+1,X           \ Fetch roofv_x_hi, clear the sign bit, divide by 2 and
+ AND #%01111111         \ store in T, so:
+ LSR A                  \
+ STA T                  \ T = |roofv_x_hi| / 2
+                        \   = |roofv_x| / 512
+                        \
+                        \ The above is true because:
+                        \
+                        \ |roofv_x| = |roofv_x_hi| * 256 + roofv_x_lo
+                        \
+                        \ so:
+                        \
+                        \ |roofv_x| / 512 = |roofv_x_hi| * 256 / 512
+                        \                    + roofv_x_lo / 512
+                        \                  = |roofv_x_hi| / 2
+
+ LDA INWK,X             \ Now we do the following subtraction:
+ SEC                    \
+ SBC T                  \ (S R) = (roofv_x_hi roofv_x_lo) - |roofv_x| / 512
+ STA R                  \       = (1 - 1/512) * roofv_x
+                        \
+                        \ by doing the low bytes first
+
+ LDA INWK+1,X           \ And then the high bytes (the high byte of the right
+ SBC #0                 \ side of the subtraction being 0)
+ STA S
+
+ LDA INWK,Y             \ Set P = nosev_x_lo
+ STA P
+
+ LDA INWK+1,Y           \ Fetch the sign of nosev_x_hi (bit 7) and store in T
+ AND #%10000000
+ STA T
+
+ LDA INWK+1,Y           \ Fetch nosev_x_hi into A and clear the sign bit, so
+ AND #%01111111         \ A = |nosev_x_hi|
+
+ LSR A                  \ Set (A P) = (A P) / 16
+ ROR P                  \           = |nosev_x_hi nosev_x_lo| / 16
+ LSR A                  \           = |nosev_x| / 16
+ ROR P
+ LSR A
+ ROR P
+ LSR A
+ ROR P
+
+ ORA T                  \ Set the sign of A to the sign in T (i.e. the sign of
+                        \ the original nosev_x), so now:
+                        \
+                        \ (A P) = nosev_x / 16
+
+ EOR RAT2               \ Give it the sign as if we multiplied by the direction
+                        \ by the pitch or roll direction
+
+ STX Q                  \ Store the value of X so it can be restored after the
+                        \ call to ADD
+
+ JSR ADD                \ (A X) = (A P) + (S R)
+                        \       = +/-nosev_x / 16 + (1 - 1/512) * roofv_x
+
+ STA K+1                \ Set K(1 0) = (1 - 1/512) * roofv_x +/- nosev_x / 16
+ STX K
+
+ LDX Q                  \ Restore the value of X from before the call to ADD
+
+ LDA INWK+1,Y           \ Fetch nosev_x_hi, clear the sign bit, divide by 2 and
+ AND #%01111111         \ store in T, so:
+ LSR A                  \
+ STA T                  \ T = |nosev_x_hi| / 2
+                        \   = |nosev_x| / 512
+
+ LDA INWK,Y             \ Now we do the following subtraction:
+ SEC                    \
+ SBC T                  \ (S R) = (nosev_x_hi nosev_x_lo) - |nosev_x| / 512
+ STA R                  \       = (1 - 1/512) * nosev_x
+                        \
+                        \ by doing the low bytes first
+
+ LDA INWK+1,Y           \ And then the high bytes (the high byte of the right
+ SBC #0                 \ side of the subtraction being 0)
+ STA S
+
+ LDA INWK,X             \ Set P = roofv_x_lo
+ STA P
+
+ LDA INWK+1,X           \ Fetch the sign of roofv_x_hi (bit 7) and store in T
+ AND #%10000000
+ STA T
+
+ LDA INWK+1,X           \ Fetch roofv_x_hi into A and clear the sign bit, so
+ AND #%01111111         \ A = |roofv_x_hi|
+
+ LSR A                  \ Set (A P) = (A P) / 16
+ ROR P                  \           = |roofv_x_hi roofv_x_lo| / 16
+ LSR A                  \           = |roofv_x| / 16
+ ROR P
+ LSR A
+ ROR P
+ LSR A
+ ROR P
+
+ ORA T                  \ Set the sign of A to the opposite sign to T (i.e. the
+ EOR #%10000000         \ sign of the original -roofv_x), so now:
+                        \
+                        \ (A P) = -roofv_x / 16
+
+ EOR RAT2               \ Give it the sign as if we multiplied by the direction
+                        \ by the pitch or roll direction
+
+ STX Q                  \ Store the value of X so it can be restored after the
+                        \ call to ADD
+
+ JSR ADD                \ (A X) = (A P) + (S R)
+                        \       = -/+roofv_x / 16 + (1 - 1/512) * nosev_x
+
+ STA INWK+1,Y           \ Set nosev_x = (1-1/512) * nosev_x -/+ roofv_x / 16
+ STX INWK,Y
+
+ LDX Q                  \ Restore the value of X from before the call to ADD
+
+ LDA K                  \ Set roofv_x = K(1 0)
+ STA INWK,X             \              = (1-1/512) * roofv_x +/- nosev_x / 16
+ LDA K+1
+ STA INWK+1,X
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: MVT6
+\       Type: Subroutine
+\   Category: Moving
+\    Summary: Calculate (A P+2 P+1) = (x_sign x_hi x_lo) + (A P+2 P+1)
+\
+\ ------------------------------------------------------------------------------
+\
+\ Do the following calculation, for the coordinate given by X (so this is what
+\ it does for the x-coordinate):
+\
+\   (A P+2 P+1) = (x_sign x_hi x_lo) + (A P+2 P+1)
+\
+\ A is a sign bit and is not included in the calculation, but bits 0-6 of A are
+\ preserved. Bit 7 is set to the sign of the result.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   The sign of P(2 1) in bit 7
+\
+\   P(2 1)              The 16-bit value we want to add the coordinate to
+\
+\   X                   The coordinate to add, as follows:
+\
+\                         * If X = 0, add to (x_sign x_hi x_lo)
+\
+\                         * If X = 3, add to (y_sign y_hi y_lo)
+\
+\                         * If X = 6, add to (z_sign z_hi z_lo)
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   A                   The sign of the result (in bit 7)
+\
+\ ******************************************************************************
+
+.MVT6
+
+ TAY                    \ Store argument A into Y, for later use
+
+ EOR INWK+2,X           \ Set A = A EOR x_sign
+
+ BMI MV50               \ If the sign is negative, i.e. A and x_sign have
+                        \ different signs, jump to MV50
+
+                        \ The signs are the same, so we can add the two
+                        \ arguments and keep the sign to get the result
+
+ LDA P+1                \ First we add the low bytes:
+ CLC                    \
+ ADC INWK,X             \   P+1 = P+1 + x_lo
+ STA P+1
+
+ LDA P+2                \ And then the high bytes:
+ ADC INWK+1,X           \
+ STA P+2                \   P+2 = P+2 + x_hi
+
+ TYA                    \ Restore the original A argument that we stored earlier
+                        \ so that we keep the original sign
+
+ RTS                    \ Return from the subroutine
+
+.MV50
+
+ LDA INWK,X             \ First we subtract the low bytes:
+ SEC                    \
+ SBC P+1                \   P+1 = x_lo - P+1
+ STA P+1
+
+ LDA INWK+1,X           \ And then the high bytes:
+ SBC P+2                \
+ STA P+2                \   P+2 = x_hi - P+2
+
+ BCC MV51               \ If the last subtraction underflowed, then the C flag
+                        \ will be clear and x_hi < P+2, so jump to MV51 to
+                        \ negate the result
+
+ TYA                    \ Restore the original A argument that we stored earlier
+ EOR #%10000000         \ but flip bit 7, which flips the sign. We do this
+                        \ because x_hi >= P+2 so we want the result to have the
+                        \ same sign as x_hi (as it's the dominant side in this
+                        \ calculation). The sign of x_hi is x_sign, and x_sign
+                        \ has the opposite sign to A, so we flip the sign in A
+                        \ to return the correct result
+
+ RTS                    \ Return from the subroutine
+
+.MV51
+
+ LDA #1                 \ Our subtraction underflowed, so we negate the result
+ SBC P+1                \ using two's complement, first with the low byte:
+ STA P+1                \
+                        \   P+1 = 1 - P+1
+
+ LDA #0                 \ And then the high byte:
+ SBC P+2                \
+ STA P+2                \   P+2 = 0 - P+2
+
+ TYA                    \ Restore the original A argument that we stored earlier
+                        \ as this is the correct sign for the result. This is
+                        \ because x_hi < P+2, so we want to return the same sign
+                        \ as P+2, the dominant side
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: MV40
+\       Type: Subroutine
+\   Category: Moving
+\    Summary: Rotate the planet's location in space by the amount of pitch and
+\             roll of our ship
+\  Deep dive: Rotating the universe
+\
+\ ------------------------------------------------------------------------------
+\
+\ We implement this using the same equations as in part 5 of MVEIT, where we
+\ rotated the current ship's location by our pitch and roll. Specifically, the
+\ calculation is as follows:
+\
+\   1. K2 = y - alpha * x
+\   2. z = z + beta * K2
+\   3. y = K2 - beta * z
+\   4. x = x + alpha * y
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   The type of the planet
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   MV40-1              Contains an RTS
+\
+\ ******************************************************************************
+
+.MV40
+
+ TXA                    \ If bit 0 of X is set, then this is 129, which is the
+ LSR A                  \ placeholder used to denote that there is no space
+ BCS MV40-1             \ station, so return from the subroutine (as MV40-1
+                        \ contains an RTS)
+
+ LDA ALPHA              \ Set Q = -ALPHA, so Q contains the angle we want to
+ EOR #%10000000         \ roll the planet through (i.e. in the opposite
+ STA Q                  \ direction to our ship's roll angle alpha)
+
+ LDA INWK               \ Set P(1 0) = (x_hi x_lo)
+ STA P
+ LDA INWK+1
+ STA P+1
+
+ LDA INWK+2             \ Set A = x_sign
+
+ JSR MULT3              \ Set K(3 2 1 0) = (A P+1 P) * Q
+                        \
+                        \ which also means:
+                        \
+                        \   K(3 2 1) = (A P+1 P) * Q / 256
+                        \            = x * -alpha / 256
+                        \            = - alpha * x / 256
+
+ LDX #3                 \ Set K(3 2 1) = (y_sign y_hi y_lo) + K(3 2 1)
+ JSR MVT3               \              = y - alpha * x / 256
+
+ LDA K+1                \ Set K2(2 1) = P(1 0) = K(2 1)
+ STA K2+1
+ STA P
+
+ LDA K+2                \ Set K2+2 = K+2
+ STA K2+2
+
+ STA P+1                \ Set P+1 = K+2
+
+ LDA BETA               \ Set Q = beta, the pitch angle of our ship
+ STA Q
+
+ LDA K+3                \ Set K+3 to K2+3, so now we have result 1 above:
+ STA K2+3               \
+                        \   K2(3 2 1) = K(3 2 1)
+                        \             = y - alpha * x / 256
+
+                        \ We also have:
+                        \
+                        \   A = K+3
+                        \
+                        \   P(1 0) = K(2 1)
+                        \
+                        \ so combined, these mean:
+                        \
+                        \   (A P+1 P) = K(3 2 1)
+                        \             = K2(3 2 1)
+
+ JSR MULT3              \ Set K(3 2 1 0) = (A P+1 P) * Q
+                        \
+                        \ which also means:
+                        \
+                        \   K(3 2 1) = (A P+1 P) * Q / 256
+                        \            = K2(3 2 1) * beta / 256
+                        \            = beta * K2 / 256
+
+ LDX #6                 \ K(3 2 1) = (z_sign z_hi z_lo) + K(3 2 1)
+ JSR MVT3               \          = z + beta * K2 / 256
+
+ LDA K+1                \ Set P = K+1
+ STA P
+
+ STA INWK+6             \ Set z_lo = K+1
+
+ LDA K+2                \ Set P+1 = K+2
+ STA P+1
+
+ STA INWK+7             \ Set z_hi = K+2
+
+ LDA K+3                \ Set A = z_sign = K+3, so now we have:
+ STA INWK+8             \
+                        \   (z_sign z_hi z_lo) = K(3 2 1)
+                        \                      = z + beta * K2 / 256
+
+                        \ So we now have result 2 above:
+                        \
+                        \   z = z + beta * K2
+
+ EOR #%10000000         \ Flip the sign bit of A to give A = -z_sign
+
+ JSR MULT3              \ Set K(3 2 1 0) = (A P+1 P) * Q
+                        \                = (-z_sign z_hi z_lo) * beta
+                        \                = -z * beta
+
+ LDA K+3                \ Set T to the sign bit of K(3 2 1 0), i.e. to the sign
+ AND #%10000000         \ bit of -z * beta
+ STA T
+
+ EOR K2+3               \ If K2(3 2 1 0) has a different sign to K(3 2 1 0),
+ BMI MV1                \ then EOR'ing them will produce a 1 in bit 7, so jump
+                        \ to MV1 to take this into account
+
+                        \ If we get here, K and K2 have the same sign, so we can
+                        \ add them together to get the result we're after, and
+                        \ then set the sign afterwards
+
+ LDA K                  \ We now do the following sum:
+ ADC K2                 \
+                        \   (A y_hi y_lo -) = K(3 2 1 0) + K2(3 2 1 0)
+                        \
+                        \ starting with the low bytes (which we don't keep)
+                        \
+                        \ The addition works because MULT3 clears the C flag
+
+ LDA K+1                \ We then do the middle bytes, which go into y_lo
+ ADC K2+1
+ STA INWK+3
+
+ LDA K+2                \ And then the high bytes, which go into y_hi
+ ADC K2+2
+ STA INWK+4
+
+ LDA K+3                \ And then the sign bytes into A, so overall we have the
+ ADC K2+3               \ following, if we drop the low bytes from the result:
+                        \
+                        \   (A y_hi y_lo) = (K + K2) / 256
+
+ JMP MV2                \ Jump to MV2 to skip the calculation for when K and K2
+                        \ have different signs
+
+.MV1
+
+ LDA K                  \ If we get here then K2 and K have different signs, so
+ SEC                    \ instead of adding, we need to subtract to get the
+ SBC K2                 \ result we want, like this:
+                        \
+                        \   (A y_hi y_lo -) = K(3 2 1 0) - K2(3 2 1 0)
+                        \
+                        \ starting with the low bytes (which we don't keep)
+
+ LDA K+1                \ We then do the middle bytes, which go into y_lo
+ SBC K2+1
+ STA INWK+3
+
+ LDA K+2                \ And then the high bytes, which go into y_hi
+ SBC K2+2
+ STA INWK+4
+
+ LDA K2+3               \ Now for the sign bytes, so first we extract the sign
+ AND #%01111111         \ byte from K2 without the sign bit, so P = |K2+3|
+ STA P
+
+ LDA K+3                \ And then we extract the sign byte from K without the
+ AND #%01111111         \ sign bit, so A = |K+3|
+
+ SBC P                  \ And finally we subtract the sign bytes, so P = A - P
+ STA P
+
+                        \ By now we have the following, if we drop the low bytes
+                        \ from the result:
+                        \
+                        \   (A y_hi y_lo) = (K - K2) / 256
+                        \
+                        \ so now we just need to make sure the sign of the
+                        \ result is correct
+
+ BCS MV2                \ If the C flag is set, then the last subtraction above
+                        \ didn't underflow and the result is correct, so jump to
+                        \ MV2 as we are done with this particular stage
+
+ LDA #1                 \ Otherwise the subtraction above underflowed, as K2 is
+ SBC INWK+3             \ the dominant part of the subtraction, so we need to
+ STA INWK+3             \ negate the result using two's complement, starting
+                        \ with the low bytes:
+                        \
+                        \   y_lo = 1 - y_lo
+
+ LDA #0                 \ And then the high bytes:
+ SBC INWK+4             \
+ STA INWK+4             \   y_hi = 0 - y_hi
+
+ LDA #0                 \ And finally the sign bytes:
+ SBC P                  \
+                        \   A = 0 - P
+
+ ORA #%10000000         \ We now force the sign bit to be negative, so that the
+                        \ final result below gets the opposite sign to K, which
+                        \ we want as K2 is the dominant part of the sum
+
+.MV2
+
+ EOR T                  \ T contains the sign bit of K, so if K is negative,
+                        \ this flips the sign of A
+
+ STA INWK+5             \ Store A in y_sign
+
+                        \ So we now have result 3 above:
+                        \
+                        \   y = K2 + K
+                        \     = K2 - beta * z
+
+ LDA ALPHA              \ Set A = alpha
+ STA Q
+
+ LDA INWK+3             \ Set P(1 0) = (y_hi y_lo)
+ STA P
+ LDA INWK+4
+ STA P+1
+
+ LDA INWK+5             \ Set A = y_sign
+
+ JSR MULT3              \ Set K(3 2 1 0) = (A P+1 P) * Q
+                        \                = (y_sign y_hi y_lo) * alpha
+                        \                = y * alpha
+
+ LDX #0                 \ Set K(3 2 1) = (x_sign x_hi x_lo) + K(3 2 1)
+ JSR MVT3               \              = x + y * alpha / 256
+
+ LDA K+1                \ Set (x_sign x_hi x_lo) = K(3 2 1)
+ STA INWK               \                        = x + y * alpha / 256
+ LDA K+2
+ STA INWK+1
+ LDA K+3
+ STA INWK+2
+
+                        \ So we now have result 4 above:
+                        \
+                        \   x = x + y * alpha
+
+ JMP MV45               \ We have now finished rotating the planet by our pitch
+                        \ and roll, so jump back into the MVEIT routine at MV45
+                        \ to apply all the other movements
 
 \ ******************************************************************************
 \
