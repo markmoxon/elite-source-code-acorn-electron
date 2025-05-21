@@ -3468,41 +3468,40 @@ ENDMACRO
 
 \LDA VIA+&05            \ On the surface, this code would appear to set bit 5 of
 \ORA #%00100000         \ the "interrupt clear and paging" register at SHEILA
-\STA VIA+&05            \ &05, to clear the RTC interrupt
+\STA VIA+&05            \ &05, to clear the RTC interrupt, and also set bit 6
+\                       \ to clear the screen interrupt, whichever is pending
 \                       \
+\                       \ However, SHEILA &05 is a read-only location, so the
+\                       \ LDA always returns &FF, which in turn means that this
+\                       \ code always sets SHEILA &05 to &FF, irrespective of
+\                       \ which interrupt got us here
+\                       \
+\                       \ This code therefore clears all interrupts (even NMI
+\                       \ interrupts) rather than just the RTC interrupt, by
+\                       \ setting bits 4 to 7, and it also pages out the BASIC
+\                       \ ROM by setting bits 0 to 3, though that doesn't have
+\                       \ any effect here
+\                       \
+\                       \ Interestingly, if the code worked as it was originally
+\                       \ intended and only cleared the RTC interrupt, then this
+\                       \ wouldn't necessarily have the desired effect, as we
+\                       \ don't check anywhere that this is actually the RTC
+\                       \ interrupt that we are processing; luckily, clearing
+\                       \ all interrupts will definitely clear the interrupt
+\                       \ that got us here, whatever it is, so this code still
+\                       \ does what we want
+\                       \
+\                       \ Given this, the LDA and ORA could be replaced by a
+\                       \ single LDA #&FF instruction to give us the same effect
+\                       \ but slightly more efficiently
 
                         \ --- And replaced by: -------------------------------->
 
- LDA &F4                \ On the surface, this code would appear to set bit 5 of
- ORA #%00110000         \ the "interrupt clear and paging" register at SHEILA
- STA VIA+&05            \ &05, to clear the RTC interrupt, and also set bit 6
-                        \ to clear the screen interrupt, whichever is pending
+ LDA &00F4              \ Set bits 5 and 6 of the "interrupt clear and paging"
+ ORA #%00110000         \ register at SHEILA &05, to clear the RTC interrupt
+ STA VIA+&05            \ and screen interrupt, whichever is pending
 
                         \ --- End of replacement ------------------------------>
-
-                        \ However, SHEILA &05 is a read-only location, so the
-                        \ LDA always returns &FF, which in turn means that this
-                        \ code always sets SHEILA &05 to &FF, irrespective of
-                        \ which interrupt got us here
-                        \
-                        \ This code therefore clears all interrupts (even NMI
-                        \ interrupts) rather than just the RTC interrupt, by
-                        \ setting bits 4 to 7, and it also pages out the BASIC
-                        \ ROM by setting bits 0 to 3, though that doesn't have
-                        \ any effect here
-                        \
-                        \ Interestingly, if the code worked as it was originally
-                        \ intended and only cleared the RTC interrupt, then this
-                        \ wouldn't necessarily have the desired effect, as we
-                        \ don't check anywhere that this is actually the RTC
-                        \ interrupt that we are processing; luckily, clearing
-                        \ all interrupts will definitely clear the interrupt
-                        \ that got us here, whatever it is, so this code still
-                        \ does what we want
-                        \
-                        \ Given this, the LDA and ORA could be replaced by a
-                        \ single LDA #&FF instruction to give us the same effect
-                        \ but slightly more efficiently
 
  LDA &FC                \ Restore the value of A from before the call to the
                         \ interrupt handler (the MOS stores the value of A in
@@ -3520,9 +3519,9 @@ ENDMACRO
                         \ from his sideways RAM version of Electron Elite
 
  LDA #HI(POSTIRQ)       \ Push on the stack what an RTI would expect so that the
- PHA                    \ RTI in the OS's IRQ handler takes us to POSTIRQ
- LDA #LO(POSTIRQ)
- PHA
+ PHA                    \ RTI in the OS's IRQ handler takes us to POSTIRQ (so
+ LDA #LO(POSTIRQ)       \ that's the status flags at the top of the stack, and
+ PHA                    \ then the return address of POSTIRQ)
  PHP
 
                         \ --- End of added code ------------------------------->
@@ -3537,14 +3536,16 @@ ENDMACRO
                         \ Thank you to haerfest for this code, which is borrowed
                         \ from his sideways RAM version of Electron Elite
 
- SEI
- PHA
- LDA &F4                \ Ensure the right ROM is paged in after an IRQ in case
- STA &FE05              \ the paging hardware behaves differently from the way
- PLA                    \ Electron OS 1.00 expects (e.g. ElkSD64/128)
- CLI
+ SEI                    \ Disable interrupts
 
- RTI                    \ Let's RTI once more
+ PHA                    \ Ensure that the correct ROM is paged in after an IRQ
+ LDA &00F4              \ in case the paging hardware behaves differently to the
+ STA VIA+&05            \ way that Electron OS 1.00 expects (e.g. ElkSD64/128)
+ PLA
+
+ CLI                    \ Enable interrupts again
+
+ RTI                    \ Return from interrupts
 
                         \ --- End of added code ------------------------------->
 
@@ -27728,11 +27729,11 @@ ENDIF
 
                         \ --- Mod: Code added for sideways RAM: --------------->
 
- LDA #12                \ Switch to the sideways RAM bank containing the game
- STA &F4                \ code by first switching to one of ROM 12 to 15, and
+ LDA #&0C               \ Switch to the sideways RAM bank containing the game
+ STA &00F4              \ code by first switching to one of ROM 12 to 15, and
  STA VIA+&05            \ then switching to the required bank (we stored the
  LDA S%                 \ bank number in S% in the loader)
- STA &F4
+ STA &00F4
  STA VIA+&05
 
                         \ --- End of added code ------------------------------->
@@ -30722,7 +30723,8 @@ ENDMACRO
                         \ --- Mod: Code moved for sideways RAM: --------------->
 
                         \ The following code has been moved into sideways RAM
-                        \ (see the ELITE ROM section at the end of the source)
+                        \ (see the ELITE SIDEWAYS RAM FILE section at the end of
+                        \ this source file)
 
 \ SHPPT
 \ LL5

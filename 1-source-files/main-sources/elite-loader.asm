@@ -1932,35 +1932,11 @@ ENDMACRO
 
 .ENTRY2
 
-                        \ --- Mod: Code added for sideways RAM: --------------->
-
- LDA #12                \ Switch to the sideways RAM bank in sramBankNumber by
- JSR VIA05              \ first switching to one of ROM 12 to 15, and then
- LDA sramBankNumber     \ switching to the required bank
- JSR VIA05
-
-                        \ ??? Need to add SRAM loader here, do in URL in the
-                        \ meantime
-
-                        \ --- End of added code ------------------------------->
-
-                        \ --- Mod: Code removed for sideways RAM: ------------->
-
-\LDX #LO(MESS1)         \ Set (Y X) to point to MESS1 ("LOAD EliteCo FFFF2000")
-\LDY #HI(MESS1)
-\
-\JSR OSCLI              \ Call OSCLI to run the OS command in MESS1, which loads
-\                       \ the main game code at location &2000
-
-                        \ --- And replaced by: -------------------------------->
-
- LDX #LO(MESS1)         \ Set (Y X) to point to MESS1 ("LOAD EliteCo FFFF1200")
+ LDX #LO(MESS1)         \ Set (Y X) to point to MESS1 ("LOAD EliteCo FFFF2000")
  LDY #HI(MESS1)
-
+ 
  JSR OSCLI              \ Call OSCLI to run the OS command in MESS1, which loads
-                        \ the main game code at location &1200
-
-                        \ --- End of replacement ------------------------------>
+                        \ the main game code at location &2000
 
  LDA #3                 \ Directly update &0258, the memory location associated
  STA &0258              \ with OSBYTE 200, so this is the same as calling OSBYTE
@@ -1994,6 +1970,12 @@ ENDMACRO
  STA &0D00              \ can claim the NMI workspace at &0D00 (the RTI makes
                         \ sure we return from any spurious NMIs that still call
                         \ this workspace)
+
+ LDA sramBankNumber     \ Store the bank number of the game code in sideways RAM
+ STA S%                 \ in the first byte of S%, which can be reused as the
+                        \ game code is no longer loading at the NMI address of
+                        \ &0D00, so we don't need it to contain an RTI
+                        \ instruction
 
                         \ --- End of replacement ------------------------------>
 
@@ -2032,15 +2014,13 @@ ENDMACRO
 \                       \ moved the number of pages in X (this also sets X to
 \                       \ &FF)
 
-                        \ --- End of removed code ----------------------------->
-
- SEI                    \ Disable all interrupts
-
-                        \ --- Mod: Code added for sideways RAM: --------------->
+                        \ --- And replaced by: -------------------------------->
 
  LDX #&FF               \ Set X for the TXS instruction below
 
-                        \ --- End of added code ------------------------------->
+                        \ --- End of replacement ------------------------------>
+
+ SEI                    \ Disable all interrupts
 
  TXS                    \ Set the stack pointer to &01FF, which is the standard
                         \ location for the 6502 stack, so this instruction
@@ -2081,22 +2061,12 @@ ENDMACRO
  LDA S%+13
  STA IRQ1V+1
 
-                        \ --- Mod: Code removed for sideways RAM: ------------->
+ LDA #%11111100         \ Clear all interrupts (bits 4-7) and de-select the
+ JSR VIA05              \ BASIC ROM (bits 0-3) by setting the interrupt clear
+                        \ and paging register at SHEILA &05
 
-\LDA #%11111100         \ Clear all interrupts (bits 4-7) and de-select the
-\JSR VIA05              \ BASIC ROM (bits 0-3) by setting the interrupt clear
-\                       \ and paging register at SHEILA &05
-\
-\LDA #%00001000         \ Select ROM 8 (the keyboard) by setting the interrupt
-\JSR VIA05              \ clear and paging register at SHEILA &05
-
-                        \ --- And replaced by: -------------------------------->
-
- LDA sramBankNumber     \ Clear all interrupts (bits 4-7) and select the bank of
- ORA #%11111000         \ code in sramBankNumber (bits 0-3) by setting the
- JSR VIA05              \ interrupt clear and paging register at SHEILA &05
-
-                        \ --- End of replacement ------------------------------>
+ LDA #%00001000         \ Select ROM 8 (the keyboard) by setting the interrupt
+ JSR VIA05              \ clear and paging register at SHEILA &05
 
  LDA #&60               \ Set the screen start address registers at SHEILA &02
  STA VIA+&02            \ and SHEILA &03 so screen memory starts at &7EC0. This
@@ -2105,16 +2075,6 @@ ENDMACRO
                         \ of mode 4 is &140 bytes), and then the rest of the
                         \ screen memory from &5800 to &7EBF cover the second
                         \ row and down
-
-                        \ --- Mod: Code added for sideways RAM: --------------->
-
- LDA sramBankNumber     \ Store the bank number of the game code in sideways RAM
- STA S%                 \ in the first byte of S%, which can be reused as the
-                        \ game code is no longer loading at the NMI address of
-                        \ &0D00, so we don't need it to contain an RTI
-                        \ instruction
-
-                        \ --- End of added code ------------------------------->
 
  CLI                    \ Re-enable interrupts
 

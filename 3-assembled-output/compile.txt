@@ -16694,72 +16694,69 @@ End macro FNE
      0B0C   10 10 10 10
      0B10   10
 .ENTRY2
-     0B11   A9 0C      LDA #&0C
-     0B13   20 A5 0B   JSR &0BA5
-     0B16   A5 87      LDA &87
-     0B18   20 A5 0B   JSR &0BA5
-     0B1B   A2 AB      LDX #&AB
-     0B1D   A0 0B      LDY #&0B
-     0B1F   20 F7 FF   JSR &FFF7
-     0B22   A9 03      LDA #&03
-     0B24   8D 58 02   STA &0258
-     0B27   A9 8F      LDA #&8F
-     0B29   A2 0C      LDX #&0C
-     0B2B   A0 FF      LDY #&FF
-     0B2D   20 F4 FF   JSR &FFF4
-     0B30   A9 40      LDA #&40
-     0B32   8D 00 0D   STA &0D00
-     0B35   78         SEI
-     0B36   A2 FF      LDX #&FF
-     0B38   9A         TXS
-     0B39   AD 10 02   LDA &0210
-     0B3C   8D 00 02   STA &0200
-     0B3F   AD 11 02   LDA &0211
-     0B42   8D 01 02   STA &0201
-     0B45   AD 28 02   LDA &0228
-     0B48   8D 04 12   STA &1204
-     0B4B   AD 29 02   LDA &0229
-     0B4E   8D 05 12   STA &1205
-     0B51   A9 10      LDA #&10
-     0B53   8D 28 02   STA &0228
-     0B56   A9 12      LDA #&12
-     0B58   8D 29 02   STA &0229
-     0B5B   AD 0E 12   LDA &120E
-     0B5E   8D 02 02   STA &0202
-     0B61   AD 0F 12   LDA &120F
-     0B64   8D 03 02   STA &0203
-     0B67   AD 0A 12   LDA &120A
-     0B6A   8D 0E 02   STA &020E
-     0B6D   AD 0B 12   LDA &120B
-     0B70   8D 0F 02   STA &020F
-     0B73   AD 04 02   LDA &0204
-     0B76   8D 02 12   STA &1202
-     0B79   AD 05 02   LDA &0205
-     0B7C   8D 03 12   STA &1203
-     0B7F   AD 0C 12   LDA &120C
-     0B82   8D 04 02   STA &0204
-     0B85   AD 0D 12   LDA &120D
-     0B88   8D 05 02   STA &0205
-     0B8B   A5 87      LDA &87
-     0B8D   09 F8      ORA #&F8
-     0B8F   20 A5 0B   JSR &0BA5
-     0B92   A9 60      LDA #&60
-     0B94   8D 02 FE   STA &FE02
-     0B97   A9 3F      LDA #&3F
-     0B99   8D 03 FE   STA &FE03
-     0B9C   A5 87      LDA &87
-     0B9E   8D 00 12   STA &1200
-     0BA1   58         CLI
-     0BA2   6C 08 12   JMP (&1208)
+     0B11   A2 A4      LDX #&A4
+     0B13   A0 0B      LDY #&0B
+     0B15   20 F7 FF   JSR &FFF7
+     0B18   A9 03      LDA #&03
+     0B1A   8D 58 02   STA &0258
+     0B1D   A9 8F      LDA #&8F
+     0B1F   A2 0C      LDX #&0C
+     0B21   A0 FF      LDY #&FF
+     0B23   20 F4 FF   JSR &FFF4
+     0B26   A9 40      LDA #&40
+     0B28   8D 00 0D   STA &0D00
+     0B2B   A5 87      LDA &87
+     0B2D   8D 00 12   STA &1200
+     0B30   A2 FF      LDX #&FF
+     0B32   78         SEI
+     0B33   9A         TXS
+     0B34   AD 10 02   LDA &0210
+     0B37   8D 00 02   STA &0200
+     0B3A   AD 11 02   LDA &0211
+     0B3D   8D 01 02   STA &0201
+     0B40   AD 28 02   LDA &0228
+     0B43   8D 04 12   STA &1204
+     0B46   AD 29 02   LDA &0229
+     0B49   8D 05 12   STA &1205
+     0B4C   A9 10      LDA #&10
+     0B4E   8D 28 02   STA &0228
+     0B51   A9 12      LDA #&12
+     0B53   8D 29 02   STA &0229
+     0B56   AD 0E 12   LDA &120E
+     0B59   8D 02 02   STA &0202
+     0B5C   AD 0F 12   LDA &120F
+     0B5F   8D 03 02   STA &0203
+     0B62   AD 0A 12   LDA &120A
+     0B65   8D 0E 02   STA &020E
+     0B68   AD 0B 12   LDA &120B
+     0B6B   8D 0F 02   STA &020F
+     0B6E   AD 04 02   LDA &0204
+     0B71   8D 02 12   STA &1202
+     0B74   AD 05 02   LDA &0205
+     0B77   8D 03 12   STA &1203
+     0B7A   AD 0C 12   LDA &120C
+     0B7D   8D 04 02   STA &0204
+     0B80   AD 0D 12   LDA &120D
+     0B83   8D 05 02   STA &0205
+     0B86   A9 FC      LDA #&FC
+     0B88   20 9E 0B   JSR &0B9E
+     0B8B   A9 08      LDA #&08
+     0B8D   20 9E 0B   JSR &0B9E
+     0B90   A9 60      LDA #&60
+     0B92   8D 02 FE   STA &FE02
+     0B95   A9 3F      LDA #&3F
+     0B97   8D 03 FE   STA &FE03
+     0B9A   58         CLI
+     0B9B   6C 08 12   JMP (&1208)
 .VIA05
-     0BA5   85 F4      STA &F4
-     0BA7   8D 05 FE   STA &FE05
-     0BAA   60         RTS
+     0B9E   85 F4      STA &F4
+     0BA0   8D 05 FE   STA &FE05
+     0BA3   60         RTS
 .MESS1
-     0BAB   4C 4F 41 ...
-     0BC0   0D
-     0BC1
-S.ELITEDA &4400  &56DB  &5200  &4400 
+     0BA4   4C 4F 41 ...
+     0BB9   0D
+     0BBA
+S.ELITEDA &4400  &56D4  &5200  &4400 
 Saving file '3-assembled-output/ELITEDA.bin'
 .readme
      0000   0A
@@ -16768,50 +16765,63 @@ Saving file '3-assembled-output/ELITEDA.bin'
      0029   0A
      002A   0D
      002B   41 63 6F ...
+     004F   0A
+     0050   0D
      0051   0A
      0052   0D
-     0053   0A
-     0054   0D
-     0055   56 65 72 ...
-     006C   0A
-     006D   0D
-     006E   56 61 72 ...
-     008E   0A
-     008F   0D
-     0090   50 72 6F ...
-     00B0   0A
-     00B1   0D
-     00B2   0A
-     00B3   0D
-     00B4   43 6F 6E ...
-     00DA   0A
-     00DB   0D
-     00DC   72 6F 75 ...
-     0101   0A
-     0102   0D
-     0103   62 61 63 ...
-     011B   0A
-     011C   0D
-     011D   0A
-     011E   0D
-     011F   43 6F 6E ...
-     0143   0A
-     0144   0D
-     0145   72 6F 75 ...
-     015B   0A
-     015C   0D
-     015D   0A
-     015E   0D
-     015F   53 65 65 ...
-     017F   0A
-     0180   0D
-     0181   0A
-     0182   0D
-     0183   42 75 69 ...
-     018A   32 30 32 ...
-     019D   0A
-     019E   0D
-     019F   2D 2D 2D ...
-     01C6   0A
-     01C7   0D
+     0053   46 6F 72 ...
+     0079   0A
+     007A   0D
+     007B   0A
+     007C   0D
+     007D   43 6F 6E ...
+     00A3   0A
+     00A4   0D
+     00A5   72 6F 75 ...
+     00CA   0A
+     00CB   0D
+     00CC   62 61 63 ...
+     00E4   0A
+     00E5   0D
+     00E6   0A
+     00E7   0D
+     00E8   43 6F 6E ...
+     010C   0A
+     010D   0D
+     010E   72 6F 75 ...
+     0124   0A
+     0125   0D
+     0126   0A
+     0127   0D
+     0128   42 61 73 ...
+     014C   0A
+     014D   0D
+     014E   6F 66 20 ...
+     0173   0A
+     0174   0D
+     0175   43 6F 70 ...
+     0191   0A
+     0192   0D
+     0193   0A
+     0194   0D
+     0195   53 69 64 ...
+     01B8   0A
+     01B9   0D
+     01BA   69 6E 73 ...
+     01D1   0A
+     01D2   0D
+     01D3   0A
+     01D4   0D
+     01D5   53 65 65 ...
+     01F5   0A
+     01F6   0D
+     01F7   0A
+     01F8   0D
+     01F9   42 75 69 ...
+     0200   32 30 32 ...
+     0213   0A
+     0214   0D
+     0215   2D 2D 2D ...
+     023C   0A
+     023D   0D
 Saving file '3-assembled-output/README.txt'

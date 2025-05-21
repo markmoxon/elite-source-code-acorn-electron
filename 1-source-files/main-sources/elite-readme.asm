@@ -39,28 +39,11 @@
  EQUB 10, 13
  EQUS "---------------------------------------"
  EQUB 10, 13
- EQUS "Acornsoft Elite (flicker-free version)"
+ EQUS "Acornsoft Elite (Compendium version)"
  EQUB 10, 13
  EQUB 10, 13
- EQUS "Version: Acorn Electron"
+ EQUS "For the Electron with 16K sideways RAM"
  EQUB 10, 13
-
-IF _IB_ACORNSOFT
-
- EQUS "Variant: Ian Bell's Acornsoft UEF"
- EQUB 10, 13
- EQUS "Product: Acornsoft SLG38 (TBC)"
- EQUB 10, 13
-
-ELIF _IB_SUPERIOR
-
- EQUS "Variant: Ian Bell's Superior UEF"
- EQUB 10, 13
- EQUS "Product: Superior Software (TBC)"
- EQUB 10, 13
-
-ENDIF
-
  EQUB 10, 13
  EQUS "Contains the flicker-free ship drawing"
  EQUB 10, 13
@@ -72,6 +55,18 @@ ENDIF
  EQUS "Contains flicker-free planet drawing"
  EQUB 10, 13
  EQUS "routines by Mark Moxon"
+ EQUB 10, 13
+ EQUB 10, 13
+ EQUS "Based on the Acornsoft SLG38 release"
+ EQUB 10, 13
+ EQUS "of Elite by Ian Bell and David Braben"
+ EQUB 10, 13
+ EQUS "Copyright (c) Acornsoft 1984"
+ EQUB 10, 13
+ EQUB 10, 13
+ EQUS "Sideways RAM detection, loading and"
+ EQUB 10, 13
+ EQUS "inspiration by haerfest"
  EQUB 10, 13
  EQUB 10, 13
  EQUS "See www.bbcelite.com for details"

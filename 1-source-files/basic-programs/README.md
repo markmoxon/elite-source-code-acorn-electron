@@ -6,6 +6,8 @@ This folder contains the BASIC programs from the original game disc for the Elec
 
 * [$.ELITE-disc.bin]($.ELITE-disc.bin) is the "mode 7" loader program for the disc version, which doesn't include a blank window
 
+* [load-rom.bas](load-rom.bas) is the sideways RAM detector and loader
+
 By default the disc version is included in the build, but this can be changed in the [elite-disc.asm](../main-sources/elite-disc.asm) source file.
 
 ---
