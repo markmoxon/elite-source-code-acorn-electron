@@ -3398,988 +3398,30 @@ ENDIF
 
  EQUB &03               \ The checksum value for the default commander, #75
 
-\ ******************************************************************************
-\
-\       Name: UNIV
-\       Type: Variable
-\   Category: Universe
-\    Summary: Table of pointers to the local universe's ship data blocks
-\  Deep dive: The local bubble of universe
-\             Ship data blocks
-\
-\ ******************************************************************************
+                        \ --- Mod: Code moved for sideways RAM: --------------->
 
-.UNIV
-
- FOR I%, 0, NOSH
-
-  EQUW K% + I% * NI%    \ Address of block no. I%, of size NI%, in workspace K%
-
- NEXT
-
-\ ******************************************************************************
-\
-\       Name: TWOS
-\       Type: Variable
-\   Category: Drawing pixels
-\    Summary: Ready-made single-pixel character row bytes for mode 4
-\  Deep dive: Drawing monochrome pixels on the BBC Micro
-\
-\ ------------------------------------------------------------------------------
-\
-\ Ready-made bytes for plotting one-pixel points in mode 4 (the top part of the
-\ split screen). See the PIXEL routine for details.
-\
-\ ******************************************************************************
-
-.TWOS
-
- EQUB %10000000
- EQUB %01000000
- EQUB %00100000
- EQUB %00010000
- EQUB %00001000
- EQUB %00000100
- EQUB %00000010
- EQUB %00000001
- EQUB %10000000
- EQUB %01000000
-
-\ ******************************************************************************
-\
-\       Name: CTWOS
-\       Type: Variable
-\   Category: Drawing pixels
-\    Summary: Ready-made double-pixel character row bytes for the mode 4
-\             dashboard
-\
-\ ------------------------------------------------------------------------------
-\
-\ Ready-made bytes for plotting two-pixel points in the mode 4 dashboard (the
-\ bottom part of the screen). The layout of the pixels is similar to the layout
-\ of four-colour mode 5 pixels, so the byte at position X contains a two-pixel
-\ mode 4 dot at position 2 * X (we do this so the same code can be used to
-\ create both the monochrome Electron dashboard and the four-colour mode 5
-\ dashboard in the other versions).
-\
-\ ******************************************************************************
-
-.CTWOS
-
- EQUB %11000000
- EQUB %00110000
- EQUB %00001100
- EQUB %00000011
-
-\ ******************************************************************************
-\
-\       Name: TWOS2
-\       Type: Variable
-\   Category: Drawing pixels
-\    Summary: Ready-made double-pixel character row bytes for mode 4
-\  Deep dive: Drawing monochrome pixels on the BBC Micro
-\
-\ ------------------------------------------------------------------------------
-\
-\ Ready-made bytes for plotting two-pixel dashes in mode 4 (the top part of the
-\ split screen). See the PIXEL routine for details.
-\
-\ ******************************************************************************
-
-.TWOS2
-
- EQUB %11000000
- EQUB %11000000
- EQUB %01100000
- EQUB %00110000
- EQUB %00011000
- EQUB %00001100
- EQUB %00000110
- EQUB %00000011
-
-\ ******************************************************************************
-\
-\       Name: LOIN (Part 1 of 7)
-\       Type: Subroutine
-\   Category: Drawing lines
-\    Summary: Draw a line: Calculate the line gradient in the form of deltas
-\  Deep dive: Bresenham's line algorithm
-\
-\ ------------------------------------------------------------------------------
-\
-\ This routine draws a line from (X1, Y1) to (X2, Y2). It has multiple stages.
-\ This stage calculates the line deltas.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   X1                  The screen x-coordinate of the start of the line
-\
-\   Y1                  The screen y-coordinate of the start of the line
-\
-\   X2                  The screen x-coordinate of the end of the line
-\
-\   Y2                  The screen y-coordinate of the end of the line
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   Y                   Y is preserved
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   LL30                LL30 is a synonym for LOIN and draws a line from
-\                       (X1, Y1) to (X2, Y2)
-\
-\ ******************************************************************************
-
-.LL30
-
- SKIP 0                 \ LL30 is a synonym for LOIN
+                        \ The following variables have been moved into sideways
+                        \ RAM (see the ELITE SIDEWAYS RAM FILE section at the
+                        \ end of this source file)
                         \
-                        \ In the BBC Micro cassette and disc versions of Elite,
-                        \ LL30 and LOIN are synonyms for the same routine,
-                        \ presumably because the two developers each had their
-                        \ own line routines to start with, and then chose one of
-                        \ them for the final game
-
-.LOIN
-
- STY YSAV               \ Store Y into YSAV, so we can preserve it across the
-                        \ call to this subroutine
-
- LDA #128               \ Set S = 128, which is the starting point for the
- STA S                  \ slope error (representing half a pixel)
-
- STA SC                 \ Set SC = 128 for use in the pixel calculations below
-
- ASL A                  \ Set SWAP = 0, as %10000000 << 1 = 0
- STA SWAP
-
- LDA X2                 \ Set A = X2 - X1
- SBC X1                 \       = delta_x
+                        \   * UNIV
+                        \   * TWOS
+                        \   * CTWOS
+                        \   * TWOS2
                         \
-                        \ This subtraction works as the ASL A above sets the C
-                        \ flag
-
- BCS LI1                \ If X2 > X1 then A is already positive and we can skip
-                        \ the next three instructions
-
- EOR #%11111111         \ Negate the result in A by flipping all the bits and
- ADC #1                 \ adding 1, i.e. using two's complement to make it
-                        \ positive
-
-.LI1
-
- STA P                  \ Store A in P, so P = |X2 - X1|, or |delta_x|
-
- SEC                    \ Set the C flag, ready for the subtraction below
-
- LDA Y2                 \ Set A = Y2 - Y1
- SBC Y1                 \       = delta_y
+                        \ The following routines have been moved into sideways
+                        \ RAM (see the ELITE SIDEWAYS RAM FILE section at the
+                        \ end of this source file)
                         \
-                        \ This subtraction works as we either set the C flag
-                        \ above, or we skipped that SEC instruction with a BCS
-
- BCS LI2                \ If Y2 > Y1 then A is already positive and we can skip
-                        \ the next two instructions
-
- EOR #%11111111         \ Negate the result in A by flipping all the bits and
- ADC #1                 \ adding 1, i.e. using two's complement to make it
-                        \ positive
-
-.LI2
-
- STA Q                  \ Store A in Q, so Q = |Y2 - Y1|, or |delta_y|
-
- CMP P                  \ If Q < P, jump to STPX to step along the x-axis, as
- BCC STPX               \ the line is closer to being horizontal than vertical
-
- JMP STPY               \ Otherwise Q >= P so jump to STPY to step along the
-                        \ y-axis, as the line is closer to being vertical than
-                        \ horizontal
-
-\ ******************************************************************************
-\
-\       Name: LOIN (Part 2 of 7)
-\       Type: Subroutine
-\   Category: Drawing lines
-\    Summary: Draw a line: Line has a shallow gradient, step right along x-axis
-\  Deep dive: Bresenham's line algorithm
-\
-\ ------------------------------------------------------------------------------
-\
-\ This routine draws a line from (X1, Y1) to (X2, Y2). It has multiple stages.
-\ If we get here, then:
-\
-\   * |delta_y| < |delta_x|
-\
-\   * The line is closer to being horizontal than vertical
-\
-\   * We are going to step right along the x-axis
-\
-\   * We potentially swap coordinates to make sure X1 < X2
-\
-\ ******************************************************************************
-
-.STPX
-
- LDX X1                 \ Set X = X1
-
- CPX X2                 \ If X1 < X2, jump down to LI3, as the coordinates are
- BCC LI3                \ already in the order that we want
-
- DEC SWAP               \ Otherwise decrement SWAP from 0 to &FF, to denote that
-                        \ we are swapping the coordinates around
-
- LDA X2                 \ Swap the values of X1 and X2
- STA X1
- STX X2
-
- TAX                    \ Set X = X1
-
- LDA Y2                 \ Swap the values of Y1 and Y2
- LDY Y1
- STA Y1
- STY Y2
-
-.LI3
-
-                        \ By this point we know the line is horizontal-ish and
-                        \ X1 < X2, so we're going from left to right as we go
-                        \ from X1 to X2
-
-                        \ We now calculate the address of the character block
-                        \ containing the pixel (X1, Y1) and put it in SC(1 0),
-                        \ as follows:
-                        \
-                        \   SC = &5800 + (Y1 div 8 * 256) + (Y1 div 8 * 64) + 32
-
- LDA Y1                 \ Set A to the y-coordinate in Y1
-
- LSR A                  \ Set A = A >> 3
- LSR A                  \       = y div 8
- LSR A                  \
-                        \ So A now contains the number of the character row
-                        \ that will contain the start of the line
-
- STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
-                        \                           = char row * 256
-
- LSR A                  \ Set (A SC) = (A SC) / 4
- ROR SC                 \            = (4 * ((char row * 64) + 32)) / 4
- LSR A                  \            = char row * 64 + 32
- ROR SC
-
- ADC SC+1               \ Set SC(1 0) = (A SC) + (SC+1 0) + &5800
- ADC #&58               \             = (char row * 64 + 32)
- STA SC+1               \               + char row * 256
-                        \               + &5800
-                        \
-                        \ which is what we want, so SC(1 0) contains the address
-                        \ of the first visible pixel on the character row
-                        \ containing the point (X1, Y1)
-
- TXA                    \ Each character block contains 8 pixel rows, so to get
- AND #%11111000         \ the address of the first byte in the character block
-                        \ that we need to draw into, as an offset from the start
-                        \ of the row, we clear bits 0-2
-
- ADC SC                 \ And add the result to SC(1 0) to get the character
- STA SC                 \ block on the row we want
-
- BCC P%+4               \ If the addition of the low bytes overflowed, increment
- INC SC+1               \ the high byte
-
-                        \ So SC(1 0) now contains the address of the first pixel
-                        \ in the character block containing the (X1, Y1), taking
-                        \ the screen borders into consideration
-
- LDA Y1                 \ Set Y = Y1 mod 8, which is the pixel row within the
- AND #7                 \ character block at which we want to draw the start of
- TAY                    \ our line (as each character block has 8 rows)
-
- TXA                    \ Set X = X1 mod 8, which is the horizontal pixel number
- AND #7                 \ within the character block where the line starts (as
- TAX                    \ each pixel line in the character block is 8 pixels
-                        \ wide)
-
- LDA TWOS,X             \ Fetch a one-pixel byte from TWOS where pixel X is set,
- STA R                  \ and store it in R
-
-                        \ The following calculates:
-                        \
-                        \   Q = Q / P
-                        \     = |delta_y| / |delta_x|
-                        \
-                        \ using the same shift-and-subtract algorithm that's
-                        \ documented in TIS2
-
- LDA Q                  \ Set A = |delta_y|
-
- LDX #%11111110         \ Set Q to have bits 1-7 set, so we can rotate through 7
- STX Q                  \ loop iterations, getting a 1 each time, and then
-                        \ getting a 0 on the 8th iteration... and we can also
-                        \ use Q to catch our result bits into bit 0 each time
-
-.LIL1
-
- ASL A                  \ Shift A to the left
-
- BCS LI4                \ If bit 7 of A was set, then jump straight to the
-                        \ subtraction
-
- CMP P                  \ If A < P, skip the following subtraction
- BCC LI5
-
-.LI4
-
- SBC P                  \ A >= P, so set A = A - P
-
- SEC                    \ Set the C flag to rotate into the result in Q
-
-.LI5
-
- ROL Q                  \ Rotate the counter in Q to the left, and catch the
-                        \ result bit into bit 0 (which will be a 0 if we didn't
-                        \ do the subtraction, or 1 if we did)
-
- BCS LIL1               \ If we still have set bits in Q, loop back to TIL2 to
-                        \ do the next iteration of 7
-
-                        \ We now have:
-                        \
-                        \   Q = A / P
-                        \     = |delta_y| / |delta_x|
-                        \
-                        \ and the C flag is clear
-
- LDX P                  \ Set X = P + 1
- INX                    \       = |delta_x| + 1
-                        \
-                        \ We add 1 so we can skip the first pixel plot if the
-                        \ line is being drawn with swapped coordinates
-
- LDA Y2                 \ Set A = Y2 - Y1 - 1 (as the C flag is clear following
- SBC Y1                 \ the above division)
-
- BCS DOWN               \ If Y2 >= Y1 - 1 then jump to DOWN, as we need to draw
-                        \ the line to the right and down
-
-\ ******************************************************************************
-\
-\       Name: LOIN (Part 3 of 7)
-\       Type: Subroutine
-\   Category: Drawing lines
-\    Summary: Draw a shallow line going right and up or left and down
-\  Deep dive: Bresenham's line algorithm
-\
-\ ------------------------------------------------------------------------------
-\
-\ This routine draws a line from (X1, Y1) to (X2, Y2). It has multiple stages.
-\ If we get here, then:
-\
-\   * The line is going right and up (no swap) or left and down (swap)
-\
-\   * X1 < X2 and Y1-1 > Y2
-\
-\   * Draw from (X1, Y1) at bottom left to (X2, Y2) at top right, omitting the
-\     first pixel
-\
-\ ******************************************************************************
-
- LDA SWAP               \ If SWAP > 0 then we swapped the coordinates above, so
- BNE LI6                \ jump down to LI6 to skip plotting the first pixel
-                        \
-                        \ This appears to be a bug that omits the last pixel
-                        \ of this type of shallow line, rather than the first
-                        \ pixel, which makes the treatment of this kind of line
-                        \ different to the other kinds of slope (they all have a
-                        \ BEQ instruction at this point, rather than a BNE)
-                        \
-                        \ The result is a rather messy line join when a shallow
-                        \ line that goes right and up or left and down joins a
-                        \ line with any of the other three types of slope
-                        \
-                        \ This bug was fixed in the advanced versions of Elite,
-                        \ where the BNE is replaced by a BEQ to bring it in line
-                        \ with the other three slopes
-
- DEX                    \ Decrement the counter in X because we're about to plot
-                        \ the first pixel
-
-.LIL2
-
-                        \ We now loop along the line from left to right, using X
-                        \ as a decreasing counter, and at each count we plot a
-                        \ single pixel using the pixel mask in R
-
- LDA R                  \ Fetch the pixel byte from R
-
- EOR (SC),Y             \ Store R into screen memory at SC(1 0), using EOR
- STA (SC),Y             \ logic so it merges with whatever is already on-screen
-
-.LI6
-
- LSR R                  \ Shift the single pixel in R to the right to step along
-                        \ the x-axis, so the next pixel we plot will be at the
-                        \ next x-coordinate along
-
- BCC LI7                \ If the pixel didn't fall out of the right end of R
-                        \ into the C flag, then jump to LI7
-
- ROR R                  \ Otherwise we need to move over to the next character
-                        \ block, so first rotate R right so the set C flag goes
-                        \ back into the left end, giving %10000000
-
- LDA SC                 \ Add 8 to SC, so SC(1 0) now points to the next
- ADC #8                 \ character along to the right
- STA SC
-
- BCC LI7                \ If the addition of the low bytes of SC overflowed,
- INC SC+1               \ increment the high byte
-
-.LI7
-
- LDA S                  \ Set S = S + Q to update the slope error
- ADC Q
- STA S
-
- BCC LIC2               \ If the addition didn't overflow, jump to LIC2
-
- DEY                    \ Otherwise we just overflowed, so decrement Y to move
-                        \ to the pixel line above
-
- BPL LIC2               \ If Y is positive we are still within the same
-                        \ character block, so skip to LIC2
-
-                        \ We now need to move up into the character block above,
-                        \ and each character row in screen memory takes up &140
-                        \ bytes (&100 for the visible part and &20 for each of
-                        \ the blank borders on the side of the screen), so
-                        \ that's what we need to subtract from SC(1 0)
-
- LDA SC                 \ Set SC(1 0) = SC(1 0) - &140
- SBC #&40               \
- STA SC                 \ Starting with the low bytes
-
- LDA SC+1               \ And then subtracting the high bytes
- SBC #&01
- STA SC+1
-
- LDY #7                 \ Set the pixel line to the last line in that character
-                        \ block
-
-.LIC2
-
- DEX                    \ Decrement the counter in X
-
- BNE LIL2               \ If we haven't yet reached the right end of the line,
-                        \ loop back to LIL2 to plot the next pixel along
-
- LDY YSAV               \ Restore Y from YSAV, so that it's preserved
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: LOIN (Part 4 of 7)
-\       Type: Subroutine
-\   Category: Drawing lines
-\    Summary: Draw a shallow line going right and down or left and up
-\  Deep dive: Bresenham's line algorithm
-\
-\ ------------------------------------------------------------------------------
-\
-\ This routine draws a line from (X1, Y1) to (X2, Y2). It has multiple stages.
-\ If we get here, then:
-\
-\   * The line is going right and down (no swap) or left and up (swap)
-\
-\   * X1 < X2 and Y1-1 <= Y2
-\
-\   * Draw from (X1, Y1) at top left to (X2, Y2) at bottom right, omitting the
-\     first pixel
-\
-\ ******************************************************************************
-
-.DOWN
-
- LDA SWAP               \ If SWAP = 0 then we didn't swap the coordinates above,
- BEQ LI9                \ so jump down to LI9 to skip plotting the first pixel
-
- DEX                    \ Decrement the counter in X because we're about to plot
-                        \ the first pixel
-
-.LIL3
-
-                        \ We now loop along the line from left to right, using X
-                        \ as a decreasing counter, and at each count we plot a
-                        \ single pixel using the pixel mask in R
-
- LDA R                  \ Fetch the pixel byte from R
-
- EOR (SC),Y             \ Store R into screen memory at SC(1 0), using EOR
- STA (SC),Y             \ logic so it merges with whatever is already on-screen
-
-.LI9
-
- LSR R                  \ Shift the single pixel in R to the right to step along
-                        \ the x-axis, so the next pixel we plot will be at the
-                        \ next x-coordinate along
-
- BCC LI10               \ If the pixel didn't fall out of the right end of R
-                        \ into the C flag, then jump to LI10
-
- ROR R                  \ Otherwise we need to move over to the next character
-                        \ block, so first rotate R right so the set C flag goes
-                        \ back into the left end, giving %10000000
-
- LDA SC                 \ Add 8 to SC, so SC(1 0) now points to the next
- ADC #8                 \ character along to the right
- STA SC
-
- BCC LI10               \ If the addition of the low bytes overflowed, increment
- INC SC+1               \ the high byte of SC(1 0)
-
-.LI10
-
- LDA S                  \ Set S = S + Q to update the slope error
- ADC Q
- STA S
-
- BCC LIC3               \ If the addition didn't overflow, jump to LIC3
-
- INY                    \ Otherwise we just overflowed, so increment Y to move
-                        \ to the pixel line below
-
- CPY #8                 \ If Y < 8 we are still within the same character block,
- BNE LIC3               \ so skip to LIC3
-
-                        \ We now need to move down into the character block
-                        \ below, and each character row in screen memory takes
-                        \ up &140 bytes (&100 for the visible part and &20 for
-                        \ each of the blank borders on the side of the screen),
-                        \ so that's what we need to add to SC(1 0)
-                        \
-                        \ We also know the C flag is set, as we didn't take the
-                        \ BCC above, so we can add &13F in order to get the
-                        \ correct result
-
- LDA SC                 \ Set SC(1 0) = SC(1 0) + &140
- ADC #&3F               \
- STA SC                 \ Starting with the low bytes
-
- LDA SC+1               \ And then adding the high bytes
- ADC #&01
- STA SC+1
-
- LDY #0                 \ Set the pixel line to the first line in that character
-                        \ block
-
-.LIC3
-
- DEX                    \ Decrement the counter in X
-
- BNE LIL3               \ If we haven't yet reached the right end of the line,
-                        \ loop back to LIL3 to plot the next pixel along
-
- LDY YSAV               \ Restore Y from YSAV, so that it's preserved
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: LOIN (Part 5 of 7)
-\       Type: Subroutine
-\   Category: Drawing lines
-\    Summary: Draw a line: Line has a steep gradient, step up along y-axis
-\  Deep dive: Bresenham's line algorithm
-\
-\ ------------------------------------------------------------------------------
-\
-\ This routine draws a line from (X1, Y1) to (X2, Y2). It has multiple stages.
-\ If we get here, then:
-\
-\   * |delta_y| >= |delta_x|
-\
-\   * The line is closer to being vertical than horizontal
-\
-\   * We are going to step up along the y-axis
-\
-\   * We potentially swap coordinates to make sure Y1 >= Y2
-\
-\ ******************************************************************************
-
-.STPY
-
- LDY Y1                 \ Set A = Y = Y1
- TYA
-
- LDX X1                 \ Set X = X1
-
- CPY Y2                 \ If Y1 >= Y2, jump down to LI15, as the coordinates are
- BCS LI15               \ already in the order that we want
-
- DEC SWAP               \ Otherwise decrement SWAP from 0 to &FF, to denote that
-                        \ we are swapping the coordinates around
-
- LDA X2                 \ Swap the values of X1 and X2
- STA X1
- STX X2
-
- TAX                    \ Set X = X1
-
- LDA Y2                 \ Swap the values of Y1 and Y2
- STA Y1
- STY Y2
-
- TAY                    \ Set Y = A = Y1
-
-.LI15
-
-                        \ By this point we know the line is vertical-ish and
-                        \ Y1 >= Y2, so we're going from top to bottom as we go
-                        \ from Y1 to Y2
-
-                        \ We now calculate the address of the character block
-                        \ containing the pixel (X1, Y1) and put it in SC(1 0),
-                        \ as follows:
-                        \
-                        \   SC = &5800 + (Y1 div 8 * 256) + (Y1 div 8 * 64) + 32
-
- LSR A                  \ Set A = A >> 3
- LSR A                  \       = y div 8
- LSR A                  \
-                        \ So A now contains the number of the character row
-                        \ that will contain the (X1, Y1) pixel
-
- STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
-                        \                           = char row * 256
-
- LSR A                  \ Set (A SC) = (A SC) / 4
- ROR SC                 \            = (4 * ((char row * 64) + 32)) / 4
- LSR A                  \            = char row * 64 + 32
- ROR SC
-
- ADC SC+1               \ Set SC(1 0) = (A SC) + (SC+1 0) + &5800
- ADC #&58               \             = (char row * 64 + 32)
- STA SC+1               \               + char row * 256
-                        \               + &5800
-                        \
-                        \ which is what we want, so SC(1 0) contains the address
-                        \ of the first visible pixel on the character row
-                        \ containing the point (X1, Y1)
-
- TXA                    \ Each character block contains 8 pixel rows, so to get
- AND #%11111000         \ the address of the first byte in the character block
-                        \ that we need to draw into, as an offset from the start
-                        \ of the row, we clear bits 0-2
-
- ADC SC                 \ And add the result to SC(1 0) to get the character
- STA SC                 \ block on the row we want
-
- BCC P%+4               \ If the addition of the low bytes overflowed, increment
- INC SC+1               \ the high byte
-
-                        \ So SC(1 0) now contains the address of the first pixel
-                        \ in the character block containing the (X1, Y1), taking
-                        \ the screen borders into consideration
-
- LDA Y1                 \ Set Y = Y1 mod 8, which is the pixel row within the
- AND #7                 \ character block at which we want to draw the start of
- TAY                    \ our line (as each character block has 8 rows)
-
- TXA                    \ Set X = X1 mod 8, which is the pixel column within the
- AND #7                 \ character block at which we want to draw the start of
- TAX                    \ our line (as each character block has 8 rows)
-
- LDA TWOS,X             \ Fetch a mode 4 one-pixel byte with the pixel position
- STA R                  \ at X and store it in R to act as a mask
-
-                        \ The following calculates:
-                        \
-                        \   P = P / Q
-                        \     = |delta_x| / |delta_y|
-                        \
-                        \ using the same shift-and-subtract algorithm
-                        \ documented in TIS2
-
- LDA P                  \ Set A = |delta_x|
-
- LDX #1                 \ Set Q to have bits 1-7 clear, so we can rotate through
- STX P                  \ 7 loop iterations, getting a 1 each time, and then
-                        \ getting a 1 on the 8th iteration... and we can also
-                        \ use P to catch our result bits into bit 0 each time
-
-.LIL4
-
- ASL A                  \ Shift A to the left
-
- BCS LI13               \ If bit 7 of A was set, then jump straight to the
-                        \ subtraction
-
- CMP Q                  \ If A < Q, skip the following subtraction
- BCC LI14
-
-.LI13
-
- SBC Q                  \ A >= Q, so set A = A - Q
-
- SEC                    \ Set the C flag to rotate into the result in Q
-
-.LI14
-
- ROL P                  \ Rotate the counter in P to the left, and catch the
-                        \ result bit into bit 0 (which will be a 0 if we didn't
-                        \ do the subtraction, or 1 if we did)
-
- BCC LIL4               \ If we still have set bits in P, loop back to TIL2 to
-                        \ do the next iteration of 7
-
-                        \ We now have:
-                        \
-                        \   P = A / Q
-                        \     = |delta_x| / |delta_y|
-                        \
-                        \ and the C flag is set
-
- LDX Q                  \ Set X = Q + 1
- INX                    \       = |delta_y| + 1
-                        \
-                        \ We add 1 so we can skip the first pixel plot if the
-                        \ line is being drawn with swapped coordinates
-
- LDA X2                 \ Set A = X2 - X1 (the C flag is set as we didn't take
- SBC X1                 \ the above BCC)
-
- BCC LFT                \ If X2 < X1 then jump to LFT, as we need to draw the
-                        \ line to the left and down
-
-\ ******************************************************************************
-\
-\       Name: LOIN (Part 6 of 7)
-\       Type: Subroutine
-\   Category: Drawing lines
-\    Summary: Draw a steep line going up and left or down and right
-\  Deep dive: Bresenham's line algorithm
-\
-\ ------------------------------------------------------------------------------
-\
-\ This routine draws a line from (X1, Y1) to (X2, Y2). It has multiple stages.
-\ If we get here, then:
-\
-\   * The line is going up and left (no swap) or down and right (swap)
-\
-\   * X1 < X2 and Y1 >= Y2
-\
-\   * Draw from (X1, Y1) at top left to (X2, Y2) at bottom right, omitting the
-\     first pixel
-\
-\ ******************************************************************************
-
- CLC                    \ Clear the C flag
-
- LDA SWAP               \ If SWAP = 0 then we didn't swap the coordinates above,
- BEQ LI17               \ so jump down to LI17 to skip plotting the first pixel
-
- DEX                    \ Decrement the counter in X because we're about to plot
-                        \ the first pixel
-
-.LIL5
-
-                        \ We now loop along the line from left to right, using X
-                        \ as a decreasing counter, and at each count we plot a
-                        \ single pixel using the pixel mask in R
-
- LDA R                  \ Fetch the pixel byte from R
-
- EOR (SC),Y             \ Store R into screen memory at SC(1 0), using EOR
- STA (SC),Y             \ logic so it merges with whatever is already on-screen
-
-.LI17
-
- DEY                    \ Decrement Y to step up along the y-axis
-
- BPL LI16               \ If Y is positive we are still within the same
-                        \ character block, so skip to LI16
-
-                        \ We now need to move up into the character block above,
-                        \ and each character row in screen memory takes up &140
-                        \ bytes (&100 for the visible part and &20 for each of
-                        \ the blank borders on the side of the screen), so
-                        \ that's what we need to subtract from SC(1 0)
-                        \
-                        \ We also know the C flag is clear, as we cleared it
-                        \ above, so we can subtract &13F in order to get the
-                        \ correct result
-
- LDA SC                 \ Set SC(1 0) = SC(1 0) - &140
- SBC #&3F               \
- STA SC                 \ Starting with the low bytes
-
- LDA SCH                \ And then subtracting the high bytes
- SBC #&01
- STA SCH
-
- LDY #7                 \ Set the pixel line to the last line in that character
-                        \ block
-
-.LI16
-
- LDA S                  \ Set S = S + P to update the slope error
- ADC P
- STA S
-
- BCC LIC5               \ If the addition didn't overflow, jump to LIC5
-
- LSR R                  \ Otherwise we just overflowed, so shift the single
-                        \ pixel in R to the right, so the next pixel we plot
-                        \ will be at the next x-coordinate along
-
- BCC LIC5               \ If the pixel didn't fall out of the right end of R
-                        \ into the C flag, then jump to LIC5
-
- ROR R                  \ Otherwise we need to move over to the next character
-                        \ block, so first rotate R right so the set C flag goes
-                        \ back into the left end, giving %10000000
-
- LDA SC                 \ Add 8 to SC, so SC(1 0) now points to the next
- ADC #8                 \ character along to the right
- STA SC
-
- BCC LIC5               \ If the addition of the low bytes of SC overflowed,
- INC SC+1               \ increment the high byte
-
- CLC                    \ Clear the C flag
-
-.LIC5
-
- DEX                    \ Decrement the counter in X
-
- BNE LIL5               \ If we haven't yet reached the right end of the line,
-                        \ loop back to LIL5 to plot the next pixel along
-
- LDY YSAV               \ Restore Y from YSAV, so that it's preserved
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: LOIN (Part 7 of 7)
-\       Type: Subroutine
-\   Category: Drawing lines
-\    Summary: Draw a steep line going up and right or down and left
-\  Deep dive: Bresenham's line algorithm
-\
-\ ------------------------------------------------------------------------------
-\
-\ This routine draws a line from (X1, Y1) to (X2, Y2). It has multiple stages.
-\ If we get here, then:
-\
-\   * The line is going up and right (no swap) or down and left (swap)
-\
-\   * X1 >= X2 and Y1 >= Y2
-\
-\   * Draw from (X1, Y1) at bottom left to (X2, Y2) at top right, omitting the
-\     first pixel
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   HL6                 Contains an RTS
-\
-\ ******************************************************************************
-
-.LFT
-
- LDA SWAP               \ If SWAP = 0 then we didn't swap the coordinates above,
- BEQ LI18               \ so jump down to LI18 to skip plotting the first pixel
-
- DEX                    \ Decrement the counter in X because we're about to plot
-                        \ the first pixel
-
-.LIL6
-
- LDA R                  \ Fetch the pixel byte from R
-
- EOR (SC),Y             \ Store R into screen memory at SC(1 0), using EOR
- STA (SC),Y             \ logic so it merges with whatever is already on-screen
-
-.LI18
-
- DEY                    \ Decrement Y to step up along the y-axis
-
- BPL LI19               \ If Y is positive we are still within the same
-                        \ character block, so skip to LI19
-
-                        \ We now need to move up into the character block above,
-                        \ and each character row in screen memory takes up &140
-                        \ bytes (&100 for the visible part and &20 for each of
-                        \ the blank borders on the side of the screen), so
-                        \ that's what we need to subtract from SC(1 0)
-                        \
-                        \ We also know the C flag is clear, as we call LFT with
-                        \ a BCC, so we can subtract &13F in order to get the
-                        \ correct result
-
- LDA SC                 \ Set SC(1 0) = SC(1 0) - &140
- SBC #&3F               \
- STA SC                 \ Starting with the low bytes
-
- LDA SCH                \ And then subtracting the high bytes
- SBC #&01
- STA SCH
-
- LDY #7                 \ Set the pixel line to the last line in that character
-                        \ block
-
-.LI19
-
- LDA S                  \ Set S = S + P to update the slope error
- ADC P
- STA S
-
- BCC LIC6               \ If the addition didn't overflow, jump to LIC6
-
- ASL R                  \ Otherwise we just overflowed, so shift the single
-                        \ pixel in R to the left, so the next pixel we plot
-                        \ will be at the previous x-coordinate
-
- BCC LIC6               \ If the pixel didn't fall out of the left end of R
-                        \ into the C flag, then jump to LIC6
-
- ROL R                  \ Otherwise we need to move over to the next character
-                        \ block, so first rotate R left so the set C flag goes
-                        \ back into the right end, giving %0000001
-
- LDA SC                 \ Subtract 7 from SC, so SC(1 0) now points to the
- SBC #7                 \ previous character along to the left
- STA SC
-
- BCS P%+4               \ If the subtraction of the low bytes of SC underflowed,
- DEC SCH                \ decrement the high byte
-
- CLC                    \ Clear the C flag so it doesn't affect the additions
-                        \ if we loop back
-
-.LIC6
-
- DEX                    \ Decrement the counter in X
-
- BNE LIL6               \ If we haven't yet reached the left end of the line,
-                        \ loop back to LIL6 to plot the next pixel along
-
- LDY YSAV               \ Restore Y from YSAV, so that it's preserved
-
-.HL6
-
- RTS                    \ Return from the subroutine
+                        \   * LOIN (Part 1 of 7)
+                        \   * LOIN (Part 2 of 7)
+                        \   * LOIN (Part 3 of 7)
+                        \   * LOIN (Part 4 of 7)
+                        \   * LOIN (Part 5 of 7)
+                        \   * LOIN (Part 6 of 7)
+                        \   * LOIN (Part 7 of 7)
+
+                        \ --- End of moved code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -4498,1627 +3540,39 @@ ENDIF
  LDX #254               \ Set X2 = 254, so (X2, Y2) = (254, A)
  STX X2
 
+                        \ --- Mod: Code removed for sideways RAM: ------------->
+
                         \ Fall through into HLOIN to draw a horizontal line from
                         \ (2, A) to (254, A) and return from the subroutine
 
-\ ******************************************************************************
-\
-\       Name: HLOIN
-\       Type: Subroutine
-\   Category: Drawing lines
-\    Summary: Draw a horizontal line from (X1, Y1) to (X2, Y1)
-\  Deep dive: Drawing monochrome pixels on the BBC Micro
-\
-\ ------------------------------------------------------------------------------
-\
-\ We do not draw a pixel at the right end of the line.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   Y                   Y is preserved
-\
-\ ******************************************************************************
-
-.HLOIN
-
- LDX Y1                 \ Set Y2 = Y1, so we can use the normal line-drawing
- STX Y2                 \ routine to draw a horizontal line
-
-.HL1
-
- JMP LL30               \ Draw a line from (X1, Y1) to (X2, Y2), which will be
-                        \ horizontal because we set Y2 to Y1 above
-
-\ ******************************************************************************
-\
-\       Name: PX3
-\       Type: Subroutine
-\   Category: Drawing pixels
-\    Summary: Plot a single pixel at (X, Y) within a character block
-\
-\ ------------------------------------------------------------------------------
-\
-\ This routine is called from PIXEL to set 1 pixel within a character block for
-\ a distant point (i.e. where the distance ZZ >= &90). See the PIXEL routine for
-\ details, as this routine is effectively part of PIXEL.
-\
-\ Arguments:
-\
-\   X                   The x-coordinate of the pixel within the character block
-\
-\   Y                   The y-coordinate of the pixel within the character block
-\
-\   SC(1 0)             The screen address of the character block
-\
-\   T1                  The value of Y to restore on exit, so Y is preserved by
-\                       the call to PIXEL
-\
-\ ******************************************************************************
-
-                        \ --- Mod: Code added for flicker-free planets: ------->
-
-.PX3
-
- LDA TWOS,X             \ Fetch a 1-pixel byte from TWOS and EOR it into SC+Y
- EOR (SC),Y
- STA (SC),Y
-
- LDY T1                 \ Restore Y from T1, so Y is preserved by the routine
-
- RTS                    \ Return from the subroutine
-
-                        \ --- End of added code ------------------------------->
-
-\ ******************************************************************************
-\
-\       Name: PIX1
-\       Type: Subroutine
-\   Category: Maths (Arithmetic)
-\    Summary: Calculate (YY+1 SYL+Y) = (A P) + (S R) and draw stardust particle
-\
-\ ------------------------------------------------------------------------------
-\
-\ Calculate the following:
-\
-\   (YY+1 SYL+Y) = (A P) + (S R)
-\
-\ and draw a stardust particle at (X1,Y1) with distance ZZ.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   (A P)               A is the angle ALPHA or BETA, P is always 0
-\
-\   (S R)               YY(1 0) or YY(1 0) + Q * A
-\
-\   Y                   Stardust particle number
-\
-\   X1                  The x-coordinate offset
-\
-\   Y1                  The y-coordinate offset
-\
-\   ZZ                  The distance of the point, with bigger distances drawing
-\                       smaller points:
-\
-\                         * ZZ < 80           Double-height four-pixel square
-\
-\                         * 80 <= ZZ <= 143   Single-height two-pixel dash
-\
-\                         * ZZ > 143          Single-height one-pixel dot
-\
-\ ******************************************************************************
-
-.PIX1
-
- JSR ADD                \ Set (A X) = (A P) + (S R)
-
- STA YY+1               \ Set YY+1 to A, the high byte of the result
-
- TXA                    \ Set SYL+Y to X, the low byte of the result
- STA SYL,Y
-
-                        \ Fall through into PIXEL2 to draw the stardust particle
-                        \ at (X1,Y1)
-
-\ ******************************************************************************
-\
-\       Name: PIXEL2
-\       Type: Subroutine
-\   Category: Drawing pixels
-\    Summary: Draw a stardust particle relative to the screen centre
-\
-\ ------------------------------------------------------------------------------
-\
-\ Draw a point (X1, Y1) from the middle of the screen with a size determined by
-\ a distance value. Used to draw stardust particles.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   X1                  The x-coordinate offset
-\
-\   Y1                  The y-coordinate offset (positive means up the screen
-\                       from the centre, negative means down the screen)
-\
-\   ZZ                  The distance of the point, with bigger distances drawing
-\                       smaller points:
-\
-\                         * ZZ < 80           Double-height four-pixel square
-\
-\                         * 80 <= ZZ <= 143   Single-height two-pixel dash
-\
-\                         * ZZ > 143          Single-height one-pixel dot
-\
-\ ******************************************************************************
-
-.PIXEL2
-
- LDA X1                 \ Fetch the x-coordinate offset into A
-
- BPL PX1                \ If the x-coordinate offset is positive, jump to PX1
-                        \ to skip the following negation
-
- EOR #%01111111         \ The x-coordinate offset is negative, so flip all the
- CLC                    \ bits apart from the sign bit and add 1, to convert it
- ADC #1                 \ from a sign-magnitude number to a signed number
-
-.PX1
-
- EOR #%10000000         \ Set X = X1 + 128
- TAX                    \
-                        \ So X is now the offset converted to an x-coordinate,
-                        \ centred on x-coordinate 128
-
- LDA Y1                 \ Fetch the y-coordinate offset into A and clear the
- AND #%01111111         \ sign bit, so A = |Y1|
-
- CMP #96                \ If |Y1| >= 96 then it's off the screen (as 96 is half
- BCS PX4                \ the screen height), so return from the subroutine (as
-                        \ PX4 contains an RTS)
-
- LDA Y1                 \ Fetch the y-coordinate offset into A
-
- BPL PX2                \ If the y-coordinate offset is positive, jump to PX2
-                        \ to skip the following negation
-
- EOR #%01111111         \ The y-coordinate offset is negative, so flip all the
- ADC #1                 \ bits apart from the sign bit and subtract 1, to negate
-                        \ it to a positive number, i.e. A is now |Y1|
-
-.PX2
-
- STA T                  \ Set A = #Y + 1 - Y1
- LDA #Y+1               \
- SBC T                  \ So if Y1 is positive we display the point up from the
-                        \ centre at y-coordinate 97, while a negative Y1 means
-                        \ down from the centre
-
-                        \ Fall through into PIXEL to draw the stardust at the
-                        \ screen coordinates in (X, A)
-
-\ ******************************************************************************
-\
-\       Name: PIXEL
-\       Type: Subroutine
-\   Category: Drawing pixels
-\    Summary: Draw a one-pixel dot, two-pixel dash or four-pixel square
-\  Deep dive: Drawing monochrome pixels on the BBC Micro
-\
-\ ------------------------------------------------------------------------------
-\
-\ Draw a point at screen coordinate (X, A) with the point size determined by the
-\ distance in ZZ. This applies to the top part of the screen (the space view).
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   X                   The screen x-coordinate of the point to draw
-\
-\   A                   The screen y-coordinate of the point to draw
-\
-\   ZZ                  The distance of the point, with bigger distances drawing
-\                       smaller points:
-\
-\                         * ZZ < 80           Double-height four-pixel square
-\
-\                         * 80 <= ZZ <= 143   Single-height two-pixel dash
-\
-\                         * ZZ > 143          Single-height one-pixel dot
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   Y                   Y is preserved
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   PX4                 Contains an RTS
-\
-\ ******************************************************************************
-
-.PIXEL
-
-                        \ We now calculate the address of the character block
-                        \ containing the pixel (X1, Y1) and put it in SC(1 0),
-                        \ as follows:
-                        \
-                        \   SC = &5800 + (Y1 div 8 * 256) + (Y1 div 8 * 64) + 32
-
- STY T1                 \ Store Y in T1 so we can restore it at the end of the
-                        \ subroutine
-
- LDY #128               \ Set SC = 128 for use in the calculation below
- STY SC
-
- TAY                    \ Copy A into Y, for use later
-
- LSR A                  \ Set A = A >> 3
- LSR A                  \       = y div 8
- LSR A                  \
-                        \ So A now contains the number of the character row
-                        \ that will contain the pixel we want to draw
-
- STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
-                        \                           = char row * 256
-
- LSR A                  \ Set (A SC) = (A SC) / 4
- ROR SC                 \            = (4 * ((char row * 64) + 32)) / 4
- LSR A                  \            = char row * 64 + 32
- ROR SC
-
- ADC SC+1               \ Set SC(1 0) = (A SC) + (SC+1 0) + &5800
- ADC #&58               \             = (char row * 64 + 32)
- STA SC+1               \               + char row * 256
-                        \               + &5800
-                        \
-                        \ which is what we want, so SC(1 0) contains the address
-                        \ of the first visible pixel on the character row
-                        \ containing the point (x, y)
-
- TXA                    \ Each character block contains 8 pixel rows, so to get
- AND #%11111000         \ the address of the first byte in the character block
-                        \ that we need to draw into, as an offset from the start
-                        \ of the row, we clear bits 0-2
-
- ADC SC                 \ And add the result to SC(1 0) to get the character
- STA SC                 \ block on the row we want
-
- BCC P%+4               \ If the addition of the low bytes overflowed, increment
- INC SC+1               \ the high byte
-
-                        \ So SC(1 0) now contains the address of the first pixel
-                        \ in the character block containing the (x, y), taking
-                        \ the screen borders into consideration
-
- TYA                    \ Set Y = Y mod 8, which is the pixel row within the
- AND #7                 \ character block at which we want to draw our pixel
- TAY                    \ (as each character block has 8 rows)
-
- TXA                    \ Set X = X mod 8, which is the horizontal pixel number
- AND #7                 \ within the character block where the pixel lies (as
- TAX                    \ each pixel line in the character block is 8 pixels
-                        \ wide)
-
-                        \ --- Mod: Code removed for flicker-free planets: ----->
-
-\LDA ZZ                 \ If distance in ZZ >= 144, then this point is a very
-\CMP #144               \ long way away, so jump to PX14 to fetch a two-pixel
-\BCS PX14               \ dash from TWOS2 and EOR it into SC+Y
-
                         \ --- And replaced by: -------------------------------->
 
- LDA ZZ                 \ If distance in ZZ >= 144, then this point is a very
- CMP #144               \ long way away, so jump to PX3 to fetch a 1-pixel point
- BCS PX3                \ from TWOS and EOR it into SC+Y
+ JMP HLOIN              \ Jump to HLOIN to draw a horizontal line from (2, A) to
+                        \ (254, A) and return from the subroutine
 
                         \ --- End of replacement ------------------------------>
 
- LDA TWOS2,X            \ Otherwise fetch a two-pixel dash from TWOS2 and EOR it
- EOR (SC),Y             \ into SC+Y
- STA (SC),Y
-
- LDA ZZ                 \ If distance in ZZ >= 80, then this point is a medium
- CMP #80                \ distance away, so jump to PX13 to stop drawing, as a
- BCS PX13               \ two-pixel dash is enough
-
-                        \ Otherwise we keep going to draw another 2 pixel point
-                        \ either above or below the one we just drew, to make a
-                        \ four-pixel square
-
- DEY                    \ Reduce Y by 1 to point to the pixel row above the one
- BPL PX14               \ we just plotted, and if it is still positive, jump to
-                        \ PX14 to draw our second two-pixel dash
-
- LDY #1                 \ Reducing Y by 1 made it negative, which means Y was
-                        \ 0 before we did the DEY above, so set Y to 1 to point
-                        \ to the pixel row after the one we just plotted
-
-.PX14
-
- LDA TWOS2,X            \ Fetch a two-pixel dash from TWOS2 and EOR it into this
- EOR (SC),Y             \ second row to make a four-pixel square
- STA (SC),Y
-
-.PX13
-
- LDY T1                 \ Restore Y from T1, so Y is preserved by the routine
-
-.PX4
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: BLINE
-\       Type: Subroutine
-\   Category: Drawing circles
-\    Summary: Draw a circle segment and add it to the ball line heap
-\  Deep dive: The ball line heap
-\             Drawing circles
-\
-\ ------------------------------------------------------------------------------
-\
-\ Draw a single segment of a circle, adding the point to the ball line heap.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   CNT                 The number of this segment
-\
-\   STP                 The step size for the circle
-\
-\   K6(1 0)             The x-coordinate of the new point on the circle, as
-\                       a screen coordinate
-\
-\   (T X)               The y-coordinate of the new point on the circle, as
-\                       an offset from the centre of the circle
-\
-\   FLAG                Set to &FF for the first call, so it sets up the first
-\                       point in the heap but waits until the second call before
-\                       drawing anything (as we need two points, i.e. two calls,
-\                       before we can draw a line)
-\
-\   K4(1 0)             Pixel y-coordinate of the centre of the circle
-\
-\   K5(1 0)             Screen x-coordinate of the previous point added to the
-\                       ball line heap (if this is not the first point)
-\
-\   K5(3 2)             Screen y-coordinate of the previous point added to the
-\                       ball line heap (if this is not the first point)
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   CNT                 CNT is updated to CNT + STP
-\
-\   A                   The new value of CNT
-\
-\   K5(1 0)             Screen x-coordinate of the point that we just added to
-\                       the ball line heap
-\
-\   K5(3 2)             Screen y-coordinate of the point that we just added to
-\                       the ball line heap
-\
-\   FLAG                Set to 0
-\
-\ ******************************************************************************
-
-.BLINE
-
- TXA                    \ Set K6(3 2) = (T X) + K4(1 0)
- ADC K4                 \             = y-coord of centre + y-coord of new point
- STA K6+2               \
- LDA K4+1               \ so K6(3 2) now contains the y-coordinate of the new
- ADC T                  \ point on the circle but as a screen coordinate, to go
- STA K6+3               \ along with the screen x-coordinate in K6(1 0)
-
- LDA FLAG               \ If FLAG = 0, jump down to BL1
- BEQ BL1
-
- INC FLAG               \ Flag is &FF so this is the first call to BLINE, so
-                        \ increment FLAG to set it to 0, as then the next time
-                        \ we call BLINE it can draw the first line, from this
-                        \ point to the next
-
-.BL5
-
-                        \ --- Mod: Code added for flicker-free planets: ------->
-
- JSR DrawPlanetLine     \ Draw the current line from the old planet
-
-                        \ --- End of added code ------------------------------->
-
-                        \ The following inserts a &FF marker into the LSY2 line
-                        \ heap to indicate that the next call to BLINE should
-                        \ store both the (X1, Y1) and (X2, Y2) points. We do
-                        \ this on the very first call to BLINE (when FLAG is
-                        \ &FF), and on subsequent calls if the segment does not
-                        \ fit on-screen, in which case we don't draw or store
-                        \ that segment, and we start a new segment with the next
-                        \ call to BLINE that does fit on-screen
-
- LDY LSP                \ If byte LSP-1 of LSY2 = &FF, jump to BL7 to tidy up
- LDA #&FF               \ and return from the subroutine, as the point that has
- CMP LSY2-1,Y           \ been passed to BLINE is the start of a segment, so all
- BEQ BL7                \ we need to do is save the coordinate in K5, without
-                        \ moving the pointer in LSP
-
- STA LSY2,Y             \ Otherwise we just tried to plot a segment but it
-                        \ didn't fit on-screen, so put the &FF marker into the
-                        \ heap for this point, so the next call to BLINE starts
-                        \ a new segment
-
- INC LSP                \ Increment LSP to point to the next point in the heap
-
- BNE BL7                \ Jump to BL7 to tidy up and return from the subroutine
-                        \ (this BNE is effectively a JMP, as LSP will never be
-                        \ zero)
-
-.BL1
-
- LDA K5                 \ Set XX15 = K5 = x_lo of previous point
- STA XX15
-
- LDA K5+1               \ Set XX15+1 = K5+1 = x_hi of previous point
- STA XX15+1
-
- LDA K5+2               \ Set XX15+2 = K5+2 = y_lo of previous point
- STA XX15+2
-
- LDA K5+3               \ Set XX15+3 = K5+3 = y_hi of previous point
- STA XX15+3
-
- LDA K6                 \ Set XX15+4 = x_lo of new point
- STA XX15+4
-
- LDA K6+1               \ Set XX15+5 = x_hi of new point
- STA XX15+5
-
- LDA K6+2               \ Set XX12 = y_lo of new point
- STA XX12
-
- LDA K6+3               \ Set XX12+1 = y_hi of new point
- STA XX12+1
-
- JSR LL145              \ Call LL145 to see if the new line segment needs to be
-                        \ clipped to fit on-screen, returning the clipped line's
-                        \ end-points in (X1, Y1) and (X2, Y2)
-
- BCS BL5                \ If the C flag is set then the line is not visible on
-                        \ screen anyway, so jump to BL5, to avoid drawing and
-                        \ storing this line
-
- LDA SWAP               \ If SWAP = 0, then we didn't have to swap the line
- BEQ BL9                \ coordinates around during the clipping process, so
-                        \ jump to BL9 to skip the following swap
-
- LDA X1                 \ Otherwise the coordinates were swapped by the call to
- LDY X2                 \ LL145 above, so we swap (X1, Y1) and (X2, Y2) back
- STA X2                 \ again
- STY X1
- LDA Y1
- LDY Y2
- STA Y2
- STY Y1
-
-.BL9
-
- LDY LSP                \ Set Y = LSP
-
- LDA LSY2-1,Y           \ If byte LSP-1 of LSY2 is not &FF, jump down to BL8
- CMP #&FF               \ to skip the following (X1, Y1) code
- BNE BL8
-
-                        \ Byte LSP-1 of LSY2 is &FF, which indicates that we
-                        \ need to store (X1, Y1) in the heap
-
-                        \ --- Mod: Code added for flicker-free planets: ------->
-
- JSR DrawPlanetLine     \ Draw the current line from the old planet
-
-                        \ --- End of added code ------------------------------->
-
- LDA X1                 \ Store X1 in the LSP-th byte of LSX2
- STA LSX2,Y
-
- LDA Y1                 \ Store Y1 in the LSP-th byte of LSY2
- STA LSY2,Y
-
- INY                    \ Increment Y to point to the next byte in LSX2/LSY2
-
-.BL8
-
-                        \ --- Mod: Code added for flicker-free planets: ------->
-
- LDA #&FF               \ Set bit 7 of K3+8 so we do not draw the current line
- STA K3+8               \ in the call to DrawPlanetLine, but store the
-                        \ coordinates so we we can check them below
-
- JSR DrawPlanetLine+4   \ Calculate the current line from the old heap, but do
-                        \ not draw it, but store the coordinates (X1, Y1) and
-                        \ (X2, Y2) in K3+4 to K3+7
-
-                        \ --- End of added code ------------------------------->
-
- LDA X2                 \ Store X2 in the LSP-th byte of LSX2
- STA LSX2,Y
-
- LDA Y2                 \ Store Y2 in the LSP-th byte of LSX2
- STA LSY2,Y
-
- INY                    \ Increment Y to point to the next byte in LSX2/LSY2
-
- STY LSP                \ Update LSP to point to the same as Y
-
-                        \ --- Mod: Code removed for flicker-free planets: ----->
-
-\JSR LOIN               \ Draw a line from (X1, Y1) to (X2, Y2)
-
-                        \ --- And replaced by: -------------------------------->
-
- JSR DrawNewPlanetLine  \ Draw a line from (X1, Y1) to (X2, Y2), but only if it
-                        \ is different to the old line in K3+4 to K3+7
-
-                        \ --- End of replacement ------------------------------>
-
- LDA XX13               \ If XX13 is non-zero, jump up to BL5 to add a &FF
- BNE BL5                \ marker to the end of the line heap. XX13 is non-zero
-                        \ after the call to the clipping routine LL145 above if
-                        \ the end of the line was clipped, meaning the next line
-                        \ sent to BLINE can't join onto the end but has to start
-                        \ a new segment, and that's what inserting the &FF
-                        \ marker does
-
-.BL7
-
- LDA K6                 \ Copy the data for this step point from K6(3 2 1 0)
- STA K5                 \ into K5(3 2 1 0), for use in the next call to BLINE:
- LDA K6+1               \
- STA K5+1               \   * K5(1 0) = screen x-coordinate of this point
- LDA K6+2               \
- STA K5+2               \   * K5(3 2) = screen y-coordinate of this point
- LDA K6+3               \
- STA K5+3               \ They now become the "previous point" in the next call
-
- LDA CNT                \ Set CNT = CNT + STP
- CLC
- ADC STP
- STA CNT
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: EraseRestOfPlanet
-\       Type: Subroutine
-\   Category: Drawing lines
-\    Summary: Draw all remaining lines in the ball line heap to erase the rest
-\             of the old planet
-\
-\ ******************************************************************************
-
-                        \ --- Mod: Code added for flicker-free planets: ------->
-
-.EraseRestOfPlanet
-
- LDY LSNUM              \ Set Y to the offset in LSNUM, which points to the part
-                        \ of the heap that we are overwriting with new points
-
- CPY LSNUM2             \ If LSNUM >= LSNUM2, then we have already redrawn all
- BCS eras1              \ of the lines from the old circle's ball line heap, so
-                        \ skip the following
-
- JSR DrawPlanetLine     \ Erase the next planet line from the ball line heap
-
- JMP EraseRestOfPlanet  \ Loop back for the next line in the ball line heap
-
-.eras1
-
- RTS                    \ Return from the subroutine
-
-                        \ --- End of added code ------------------------------->
-
-\ ******************************************************************************
-\
-\       Name: DrawPlanetLine
-\       Type: Subroutine
-\   Category: Drawing lines
-\    Summary: Draw a segment of the old planet from the ball line heap
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   DrawPlanetLine+4    If bit 7 of K3+8 is set, store the line coordinates in
-\                       K3+4 to K3+7 (X1, Y1, X2, Y2) and do not draw the line
-\
-\ ******************************************************************************
-
-                        \ --- Mod: Code added for flicker-free planets: ------->
-
-.DrawPlanetLine
-
- LDA #0                 \ Clear bit 7 of K3+8 so we draw the current line below
- STA K3+8
-
- LDA #0                 \ Clear bit 7 of K3+9 to indicate that there is no line
- STA K3+9               \ to draw (we may change this below)
-
- LDA LSNUM              \ If LSNUM = 1, then this is the first point from the
- CMP #2                 \ heap, so jump to plin3 to set the previous coordinate
- BCC plin3              \ and return from the subroutine
-
- LDA X1                 \ Save X1, X2, Y1, Y2 and Y on the stack
- PHA
- LDA Y1
- PHA
- LDA X2
- PHA
- LDA Y2
- PHA
- TYA
- PHA
-
- LDY LSNUM              \ Set Y to the offset in LSNUM, which points to the part
-                        \ of the heap that we are overwriting with new points
-
- CPY LSNUM2             \ If LSNUM >= LSNUM2, then we have already redrawn all
- BCS plin1              \ of the lines from the old circle's ball line heap, so
-                        \ jump to plin1 to return from the subroutine
-
-                        \ Otherwise we need to draw the line from the heap, to
-                        \ erase it from the screen
-
- LDA K3+2               \ Set X1 = K3+2 = screen x-coordinate of previous point
- STA X1                 \ from the old heap
-
- LDA K3+3               \ Set Y1 = K3+3 = screen y-coordinate of previous point
- STA Y1                 \ from the old heap
-
- LDA LSX2,Y             \ Set X2 to the y-coordinate from the LSNUM-th point in
- STA X2                 \ the heap
-
- STA K3+2               \ Store the x-coordinate of the point we are overwriting
-                        \ in K3+2, so we can use it on the next iteration
-
- LDA LSY2,Y             \ Set Y2 to the y-coordinate from the LSNUM-th point in
- STA Y2                 \ the heap
-
- STA K3+3               \ Store the y-coordinate of the point we are overwriting
-                        \ in K3+3, so we can use it on the next iteration
-
- INC LSNUM              \ Increment LSNUM to point to the next coordinate, so we
-                        \ work our way through the current heap
-
- LDA Y1                 \ If Y1 or Y2 = &FF then this indicates a break in the
- CMP #&FF               \ circle, so jump to plin1 to skip the following and
- BEQ plin1              \ return from the subroutine, asthere is no line to
- LDA Y2                 \ erase
- CMP #&FF
- BEQ plin1
-
- DEC K3+9               \ Decrement K3+9 to &FF to indicate that there is a line
-                        \ to draw
-
- BIT K3+8               \ If bit 7 of K3+8 is set, jump to plin2 to store the
- BMI plin2              \ line coordinates rather than drawing the line
-
- JSR LL30               \ The coordinates in (X1, Y1) and (X2, Y2) that we just
-                        \ pulled from the ball line heap point to a line that is
-                        \ still on-screen, so call LL30 to draw this line and
-                        \ erase it from the screen
-
-.plin1
-
- PLA                    \ Restore Y, X1, X2, Y1 and Y2 from the stack
- TAY
- PLA
- STA Y2
- PLA
- STA X2
- PLA
- STA Y1
- PLA
- STA X1
-
- RTS                    \ Return from the subroutine
-
-.plin2
-
- LDA X1                 \ Store X1, Y1, X2, Y2 in K3+4 to K3+7
- STA K3+4
- LDA Y1
- STA K3+5
- LDA X2
- STA K3+6
- LDA Y2
- STA K3+7
-
- JMP plin1              \ Jump to plin1 to return from the subroutine
-
-.plin3
-
- LDA LSX2+1             \ Store the heap's first coordinate in K3+2 and K3+3
- STA K3+2
- LDA LSY2+1
- STA K3+3
-
- INC LSNUM              \ Increment LSNUM to point to the next coordinate, so we
-                        \ work our way through the current heap
-
- RTS                    \ Return from the subroutine
-
-                        \ --- End of added code ------------------------------->
-
-\ ******************************************************************************
-\
-\       Name: DrawNewPlanetLine
-\       Type: Subroutine
-\   Category: Drawing lines
-\    Summary: Draw a ball line, but only if it is different to the old line
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   K3+4 to K3+7        The (X1, Y1) and (X2, Y2) coordinates of the old line
-\
-\ ******************************************************************************
-
-                        \ --- Mod: Code added for flicker-free planets: ------->
-
-.DrawNewPlanetLine
-
- BIT K3+9               \ If bit 7 of K3+9 is clear, then there is no old line
- BPL nlin2              \ to draw, so jump to nlin2 to draw the new line only
-
- LDA K3+4               \ If the old line equals the new line, jump to nlin3
- CMP X1                 \ to skip drawing both lines
- BNE nlin1
- LDA K3+5
- CMP Y1
- BNE nlin1
- LDA K3+6
- CMP X2
- BNE nlin1
- LDA K3+7
- CMP Y2
- BEQ nlin3
-
-.nlin1
-
-                        \ If we get here then the old line is different to the
-                        \ new line, so we draw them both
-
- JSR LL30               \ Draw the new line from (X1, Y1) to (X2, Y2)
-
- LDA K3+4               \ Set up the old line's coordinates
- STA X1
- LDA K3+5
- STA Y1
- LDA K3+6
- STA X2
- LDA K3+7
- STA Y2
-
-.nlin2
-
- JSR LL30               \ Draw the old line to erase it
-
-.nlin3
-
- RTS                    \ Return from the subroutine
-
-                        \ --- End of added code ------------------------------->
-
-\ ******************************************************************************
-\
-\       Name: FLIP
-\       Type: Subroutine
-\   Category: Stardust
-\    Summary: Reflect the stardust particles in the screen diagonal and redraw
-\             the stardust field
-\
-\ ------------------------------------------------------------------------------
-\
-\ Swap the x- and y-coordinates of all the stardust particles and draw the new
-\ set of particles. Called by LOOK1 when we switch views.
-\
-\ This is a quick way of making the stardust field in the new view feel
-\ different without having to generate a whole new field. If you look carefully
-\ at the stardust field when you switch views, you can just about see that the
-\ new field is a reflection of the previous field in the screen diagonal, i.e.
-\ in the line from bottom left to top right. This is the line where x = y when
-\ the origin is in the middle of the screen, and positive x and y are right and
-\ up, which is the coordinate system we use for stardust).
-\
-\ ******************************************************************************
-
-.FLIP
-
- LDY #NOST              \ Set Y to the number of stardust particles, so we can
-                        \ use it as a counter through all the stardust
-
-.FLL1
-
- LDX SY,Y               \ Copy the Y-th particle's y-coordinate from SY+Y into X
-
- LDA SX,Y               \ Copy the Y-th particle's x-coordinate from SX+Y into
- STA Y1                 \ both Y1 and the particle's y-coordinate
- STA SY,Y
-
- TXA                    \ Copy the Y-th particle's original y-coordinate into
- STA X1                 \ both X1 and the particle's x-coordinate, so the x- and
- STA SX,Y               \ y-coordinates are now swapped and (X1, Y1) contains
-                        \ the particle's new coordinates
-
- LDA SZ,Y               \ Fetch the Y-th particle's distance from SZ+Y into ZZ
- STA ZZ
-
- JSR PIXEL2             \ Draw a stardust particle at (X1,Y1) with distance ZZ
-
- DEY                    \ Decrement the counter to point to the next particle of
-                        \ stardust
-
- BNE FLL1               \ Loop back to FLL1 until we have moved all the stardust
-                        \ particles
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: STARS
-\       Type: Subroutine
-\   Category: Stardust
-\    Summary: The main routine for processing the stardust
-\
-\ ------------------------------------------------------------------------------
-\
-\ Called at the very end of the main flight loop.
-\
-\ ******************************************************************************
-
-.STARS
-
- LDX VIEW               \ Load the current view into X:
-                        \
-                        \   0 = front
-                        \   1 = rear
-                        \   2 = left
-                        \   3 = right
-
- BEQ STARS1             \ If this 0, jump to STARS1 to process the stardust for
-                        \ the front view
-
- DEX                    \ If this is view 2 or 3, jump to STARS2 (via ST11) to
- BNE ST11               \ process the stardust for the left or right views
-
- JMP STARS6             \ Otherwise this is the rear view, so jump to STARS6 to
-                        \ process the stardust for the rear view
-
-.ST11
-
- JMP STARS2             \ Jump to STARS2 for the left or right views, as it's
-                        \ too far for the branch instruction above
-
-\ ******************************************************************************
-\
-\       Name: STARS1
-\       Type: Subroutine
-\   Category: Stardust
-\    Summary: Process the stardust for the front view
-\  Deep dive: Stardust in the front view
-\
-\ ------------------------------------------------------------------------------
-\
-\ This moves the stardust towards us according to our speed (so the dust rushes
-\ past us), and applies our current pitch and roll to each particle of dust, so
-\ the stardust moves correctly when we steer our ship.
-\
-\ When a stardust particle rushes past us and falls off the side of the screen,
-\ its memory is recycled as a new particle that's positioned randomly on-screen.
-\
-\ These are the calculations referred to in the commentary:
-\
-\   1. q = 64 * speed / z_hi
-\   2. z = z - speed * 64
-\   3. y = y + |y_hi| * q
-\   4. x = x + |x_hi| * q
-\
-\   5. y = y + alpha * x / 256
-\   6. x = x - alpha * y / 256
-\
-\   7. x = x + 2 * (beta * y / 256) ^ 2
-\   8. y = y - beta * 256
-\
-\ For more information see the associated deep dive.
-\
-\ ******************************************************************************
-
-.STARS1
-
- LDY #NOST              \ Set Y to the number of stardust particles, so we can
-                        \ use it as a counter through all the stardust
-
-                        \ In the following, we're going to refer to the 16-bit
-                        \ space coordinates of the current particle of stardust
-                        \ (i.e. the Y-th particle) like this:
-                        \
-                        \   x = (x_hi x_lo)
-                        \   y = (y_hi y_lo)
-                        \   z = (z_hi z_lo)
-                        \
-                        \ These values are stored in (SX+Y SXL+Y), (SY+Y SYL+Y)
-                        \ and (SZ+Y SZL+Y) respectively
-
-.STL1
-
- JSR DV42               \ Call DV42 to set the following:
-                        \
-                        \   (P R) = 256 * DELTA / z_hi
-                        \         = 256 * speed / z_hi
-                        \
-                        \ The maximum value returned is P = 2 and R = 128 (see
-                        \ DV42 for an explanation)
-
- LDA R                  \ Set A = R, so now:
-                        \
-                        \   (P A) = 256 * speed / z_hi
-
- LSR P                  \ Rotate (P A) right by 2 places, which sets P = 0 (as P
- ROR A                  \ has a maximum value of 2) and leaves:
- LSR P                  \
- ROR A                  \   A = 64 * speed / z_hi
-
- ORA #1                 \ Make sure A is at least 1, and store it in Q, so we
- STA Q                  \ now have result 1 above:
-                        \
-                        \   Q = 64 * speed / z_hi
-
- LDA SZL,Y              \ We now calculate the following:
- SBC DELT4              \
- STA SZL,Y              \  (z_hi z_lo) = (z_hi z_lo) - DELT4(1 0)
-                        \
-                        \ starting with the low bytes
-
- LDA SZ,Y               \ And then we do the high bytes
- STA ZZ                 \
- SBC DELT4+1            \ We also set ZZ to the original value of z_hi, which we
- STA SZ,Y               \ use below to remove the existing particle
-                        \
-                        \ So now we have result 2 above:
-                        \
-                        \   z = z - DELT4(1 0)
-                        \     = z - speed * 64
-
- JSR MLU1               \ Call MLU1 to set:
-                        \
-                        \   Y1 = y_hi
-                        \
-                        \   (A P) = |y_hi| * Q
-                        \
-                        \ So Y1 contains the original value of y_hi, which we
-                        \ use below to remove the existing particle
-
-                        \ We now calculate:
-                        \
-                        \   (S R) = YY(1 0) = (A P) + y
-
- STA YY+1               \ First we do the low bytes with:
- LDA P                  \
- ADC SYL,Y              \   YY+1 = A
- STA YY                 \   R = YY = P + y_lo
- STA R                  \
-                        \ so we get this:
-                        \
-                        \   (? R) = YY(1 0) = (A P) + y_lo
-
- LDA Y1                 \ And then we do the high bytes with:
- ADC YY+1               \
- STA YY+1               \   S = YY+1 = y_hi + YY+1
- STA S                  \
-                        \ so we get our result:
-                        \
-                        \   (S R) = YY(1 0) = (A P) + (y_hi y_lo)
-                        \                   = |y_hi| * Q + y
-                        \
-                        \ which is result 3 above, and (S R) is set to the new
-                        \ value of y
-
- LDA SX,Y               \ Set X1 = A = x_hi
- STA X1                 \
-                        \ So X1 contains the original value of x_hi, which we
-                        \ use below to remove the existing particle
-
- JSR MLU2               \ Set (A P) = |x_hi| * Q
-
-                        \ We now calculate:
-                        \
-                        \   XX(1 0) = (A P) + x
-
- STA XX+1               \ First we do the low bytes:
- LDA P                  \
- ADC SXL,Y              \   XX(1 0) = (A P) + x_lo
- STA XX
-
- LDA X1                 \ And then we do the high bytes:
- ADC XX+1               \
- STA XX+1               \   XX(1 0) = XX(1 0) + (x_hi 0)
-                        \
-                        \ so we get our result:
-                        \
-                        \   XX(1 0) = (A P) + x
-                        \           = |x_hi| * Q + x
-                        \
-                        \ which is result 4 above, and we also have:
-                        \
-                        \   A = XX+1 = (|x_hi| * Q + x) / 256
-                        \
-                        \ i.e. A is the new value of x, divided by 256
-
- EOR ALP2+1             \ EOR with the flipped sign of the roll angle alpha, so
-                        \ A has the opposite sign to the flipped roll angle
-                        \ alpha, i.e. it gets the same sign as alpha
-
- JSR MLS1               \ Call MLS1 to calculate:
-                        \
-                        \   (A P) = A * ALP1
-                        \         = (x / 256) * alpha
-
- JSR ADD                \ Call ADD to calculate:
-                        \
-                        \   (A X) = (A P) + (S R)
-                        \         = (x / 256) * alpha + y
-                        \         = y + alpha * x / 256
-
- STA YY+1               \ Set YY(1 0) = (A X) to give:
- STX YY                 \
-                        \   YY(1 0) = y + alpha * x / 256
-                        \
-                        \ which is result 5 above, and we also have:
-                        \
-                        \   A = YY+1 = y + alpha * x / 256
-                        \
-                        \ i.e. A is the new value of y, divided by 256
-
- EOR ALP2               \ EOR A with the correct sign of the roll angle alpha,
-                        \ so A has the opposite sign to the roll angle alpha
-
- JSR MLS2               \ Call MLS2 to calculate:
-                        \
-                        \   (S R) = XX(1 0)
-                        \         = x
-                        \
-                        \   (A P) = A * ALP1
-                        \         = -y / 256 * alpha
-
- JSR ADD                \ Call ADD to calculate:
-                        \
-                        \   (A X) = (A P) + (S R)
-                        \         = -y / 256 * alpha + x
-
- STA XX+1               \ Set XX(1 0) = (A X), which gives us result 6 above:
- STX XX                 \
-                        \   x = x - alpha * y / 256
-
- LDX BET1               \ Fetch the pitch magnitude into X
-
- LDA YY+1               \ Set A to y_hi and set it to the flipped sign of beta
- EOR BET2+1
-
- JSR MULTS-2            \ Call MULTS-2 to calculate:
-                        \
-                        \   (A P) = X * A
-                        \         = -beta * y_hi
-
- STA Q                  \ Store the high byte of the result in Q, so:
-                        \
-                        \   Q = -beta * y_hi / 256
-
- JSR MUT2               \ Call MUT2 to calculate:
-                        \
-                        \   (S R) = XX(1 0) = x
-                        \
-                        \   (A P) = Q * A
-                        \         = (-beta * y_hi / 256) * (-beta * y_hi / 256)
-                        \         = (beta * y / 256) ^ 2
-
- ASL P                  \ Double (A P), store the top byte in A and set the C
- ROL A                  \ flag to bit 7 of the original A, so this does:
- STA T                  \
-                        \   (T P) = (A P) << 1
-                        \         = 2 * (beta * y / 256) ^ 2
-
- LDA #0                 \ Set bit 7 in A to the sign bit from the A in the
- ROR A                  \ calculation above and apply it to T, so we now have:
- ORA T                  \
-                        \   (A P) = (A P) * 2
-                        \         = 2 * (beta * y / 256) ^ 2
-                        \
-                        \ with the doubling retaining the sign of (A P)
-
- JSR ADD                \ Call ADD to calculate:
-                        \
-                        \   (A X) = (A P) + (S R)
-                        \         = 2 * (beta * y / 256) ^ 2 + x
-
- STA XX+1               \ Store the high byte A in XX+1
-
- TXA                    \ Store the low byte X in x_lo
- STA SXL,Y
-
-                        \ So (XX+1 x_lo) now contains:
-                        \
-                        \   x = x + 2 * (beta * y / 256) ^ 2
-                        \
-                        \ which is result 7 above
-
- LDA YY                 \ Set (S R) = YY(1 0) = y
- STA R
- LDA YY+1
- STA S
-
- LDA #0                 \ Set P = 0
- STA P
-
- LDA BETA               \ Set A = -beta, so:
- EOR #%10000000         \
-                        \   (A P) = (-beta 0)
-                        \         = -beta * 256
-
- JSR PIX1               \ Call PIX1 to calculate the following:
-                        \
-                        \   (YY+1 y_lo) = (A P) + (S R)
-                        \               = -beta * 256 + y
-                        \
-                        \ i.e. y = y - beta * 256, which is result 8 above
-                        \
-                        \ PIX1 also draws a particle at (X1, Y1) with distance
-                        \ ZZ, which will remove the old stardust particle, as we
-                        \ set X1, Y1 and ZZ to the original values for this
-                        \ particle during the calculations above
-
-                        \ We now have our newly moved stardust particle at
-                        \ x-coordinate (XX+1 x_lo) and y-coordinate (YY+1 y_lo)
-                        \ and distance z_hi, so we draw it if it's still on
-                        \ screen, otherwise we recycle it as a new bit of
-                        \ stardust and draw that
-
- LDA XX+1               \ Set X1 and x_hi to the high byte of XX in XX+1, so
- STA X1                 \ the new x-coordinate is in (x_hi x_lo) and the high
- STA SX,Y               \ byte is in X1
-
- AND #%01111111         \ If |x_hi| >= 120 then jump to KILL1 to recycle this
- CMP #120               \ particle, as it's gone off the side of the screen,
- BCS KILL1              \ and rejoin at STC1 with the new particle
-
- LDA YY+1               \ Set Y1 and y_hi to the high byte of YY in YY+1, so
- STA SY,Y               \ the new x-coordinate is in (y_hi y_lo) and the high
- STA Y1                 \ byte is in Y1
-
- AND #%01111111         \ If |y_hi| >= 120 then jump to KILL1 to recycle this
- CMP #120               \ particle, as it's gone off the top or bottom of the
- BCS KILL1              \ screen, and rejoin at STC1 with the new particle
-
- LDA SZ,Y               \ If z_hi < 16 then jump to KILL1 to recycle this
- CMP #16                \ particle, as it's so close that it's effectively gone
- BCC KILL1              \ past us, and rejoin at STC1 with the new particle
-
- STA ZZ                 \ Set ZZ to the z-coordinate in z_hi
-
-.STC1
-
- JSR PIXEL2             \ Draw a stardust particle at (X1,Y1) with distance ZZ,
-                        \ i.e. draw the newly moved particle at (x_hi, y_hi)
-                        \ with distance z_hi
-
- DEY                    \ Decrement the loop counter to point to the next
-                        \ stardust particle
-
- BEQ P%+5               \ If we have just done the last particle, skip the next
-                        \ instruction to return from the subroutine
-
- JMP STL1               \ We have more stardust to process, so jump back up to
-                        \ STL1 for the next particle
-
- RTS                    \ Return from the subroutine
-
-.KILL1
-
-                        \ Our particle of stardust just flew past us, so let's
-                        \ recycle that particle, starting it at a random
-                        \ position that isn't too close to the centre point
-
- JSR DORND              \ Set A and X to random numbers
-
- ORA #4                 \ Make sure A is at least 4 and store it in Y1 and y_hi,
- STA Y1                 \ so the new particle starts at least 4 pixels above or
- STA SY,Y               \ below the centre of the screen
-
- JSR DORND              \ Set A and X to random numbers
-
- ORA #8                 \ Make sure A is at least 8 and store it in X1 and x_hi,
- STA X1                 \ so the new particle starts at least 8 pixels either
- STA SX,Y               \ side of the centre of the screen
-
- JSR DORND              \ Set A and X to random numbers
-
- ORA #144               \ Make sure A is at least 144 and store it in ZZ and
- STA SZ,Y               \ z_hi so the new particle starts in the far distance
- STA ZZ
-
- LDA Y1                 \ Set A to the new value of y_hi. This has no effect as
-                        \ STC1 starts with a jump to PIXEL2, which starts with a
-                        \ LDA instruction
-
- JMP STC1               \ Jump up to STC1 to draw this new particle
-
-\ ******************************************************************************
-\
-\       Name: STARS6
-\       Type: Subroutine
-\   Category: Stardust
-\    Summary: Process the stardust for the rear view
-\  Deep dive: Stardust in the front view
-\
-\ ------------------------------------------------------------------------------
-\
-\ This routine is very similar to STARS1, which processes stardust for the front
-\ view. The main difference is that the direction of travel is reversed, so the
-\ signs in the calculations are different, as well as the order of the first
-\ batch of calculations.
-\
-\ When a stardust particle falls away into the far distance, it is removed from
-\ the screen and its memory is recycled as a new particle, positioned randomly
-\ along one of the four edges of the screen.
-\
-\ These are the calculations referred to in the commentary:
-\
-\   1. q = 64 * speed / z_hi
-\   2. z = z - speed * 64
-\   3. y = y + |y_hi| * q
-\   4. x = x + |x_hi| * q
-\
-\   5. y = y + alpha * x / 256
-\   6. x = x - alpha * y / 256
-\
-\   7. x = x + 2 * (beta * y / 256) ^ 2
-\   8. y = y - beta * 256
-\
-\ For more information see the associated deep dive.
-\
-\ ******************************************************************************
-
-.STARS6
-
- LDY #NOST              \ Set Y to the number of stardust particles, so we can
-                        \ use it as a counter through all the stardust
-
-.STL6
-
- JSR DV42               \ Call DV42 to set the following:
-                        \
-                        \   (P R) = 256 * DELTA / z_hi
-                        \         = 256 * speed / z_hi
-                        \
-                        \ The maximum value returned is P = 2 and R = 128 (see
-                        \ DV42 for an explanation)
-
- LDA R                  \ Set A = R, so now:
-                        \
-                        \   (P A) = 256 * speed / z_hi
-
- LSR P                  \ Rotate (P A) right by 2 places, which sets P = 0 (as P
- ROR A                  \ has a maximum value of 2) and leaves:
- LSR P                  \
- ROR A                  \   A = 64 * speed / z_hi
-
- ORA #1                 \ Make sure A is at least 1, and store it in Q, so we
- STA Q                  \ now have result 1 above:
-                        \
-                        \   Q = 64 * speed / z_hi
-
- LDA SX,Y               \ Set X1 = A = x_hi
- STA X1                 \
-                        \ So X1 contains the original value of x_hi, which we
-                        \ use below to remove the existing particle
-
- JSR MLU2               \ Set (A P) = |x_hi| * Q
-
-                        \ We now calculate:
-                        \
-                        \   XX(1 0) = x - (A P)
-
- STA XX+1               \ First we do the low bytes:
- LDA SXL,Y              \
- SBC P                  \   XX(1 0) = x_lo - (A P)
- STA XX
-
- LDA X1                 \ And then we do the high bytes:
- SBC XX+1               \
- STA XX+1               \   XX(1 0) = (x_hi 0) - XX(1 0)
-                        \
-                        \ so we get our result:
-                        \
-                        \   XX(1 0) = x - (A P)
-                        \           = x - |x_hi| * Q
-                        \
-                        \ which is result 2 above, and we also have:
-
- JSR MLU1               \ Call MLU1 to set:
-                        \
-                        \   Y1 = y_hi
-                        \
-                        \   (A P) = |y_hi| * Q
-                        \
-                        \ So Y1 contains the original value of y_hi, which we
-                        \ use below to remove the existing particle
-
-                        \ We now calculate:
-                        \
-                        \   (S R) = YY(1 0) = y - (A P)
-
- STA YY+1               \ First we do the low bytes with:
- LDA SYL,Y              \
- SBC P                  \   YY+1 = A
- STA YY                 \   R = YY = y_lo - P
- STA R                  \
-                        \ so we get this:
-                        \
-                        \   (? R) = YY(1 0) = y_lo - (A P)
-
- LDA Y1                 \ And then we do the high bytes with:
- SBC YY+1               \
- STA YY+1               \   S = YY+1 = y_hi - YY+1
- STA S                  \
-                        \ so we get our result:
-                        \
-                        \   (S R) = YY(1 0) = (y_hi y_lo) - (A P)
-                        \                   = y - |y_hi| * Q
-                        \
-                        \ which is result 3 above, and (S R) is set to the new
-                        \ value of y
-
- LDA SZL,Y              \ We now calculate the following:
- ADC DELT4              \
- STA SZL,Y              \  (z_hi z_lo) = (z_hi z_lo) + DELT4(1 0)
-                        \
-                        \ starting with the low bytes
-
- LDA SZ,Y               \ And then we do the high bytes
- STA ZZ                 \
- ADC DELT4+1            \ We also set ZZ to the original value of z_hi, which we
- STA SZ,Y               \ use below to remove the existing particle
-                        \
-                        \ So now we have result 4 above:
-                        \
-                        \   z = z + DELT4(1 0)
-                        \     = z + speed * 64
-
- LDA XX+1               \ EOR x with the correct sign of the roll angle alpha,
- EOR ALP2               \ so A has the opposite sign to the roll angle alpha
-
- JSR MLS1               \ Call MLS1 to calculate:
-                        \
-                        \   (A P) = A * ALP1
-                        \         = (-x / 256) * alpha
-
- JSR ADD                \ Call ADD to calculate:
-                        \
-                        \   (A X) = (A P) + (S R)
-                        \         = (-x / 256) * alpha + y
-                        \         = y - alpha * x / 256
-
- STA YY+1               \ Set YY(1 0) = (A X) to give:
- STX YY                 \
-                        \   YY(1 0) = y - alpha * x / 256
-                        \
-                        \ which is result 5 above, and we also have:
-                        \
-                        \   A = YY+1 = y - alpha * x / 256
-                        \
-                        \ i.e. A is the new value of y, divided by 256
-
- EOR ALP2+1             \ EOR with the flipped sign of the roll angle alpha, so
-                        \ A has the opposite sign to the flipped roll angle
-                        \ alpha, i.e. it gets the same sign as alpha
-
- JSR MLS2               \ Call MLS2 to calculate:
-                        \
-                        \   (S R) = XX(1 0)
-                        \         = x
-                        \
-                        \   (A P) = A * ALP1
-                        \         = y / 256 * alpha
-
- JSR ADD                \ Call ADD to calculate:
-                        \
-                        \   (A X) = (A P) + (S R)
-                        \         = y / 256 * alpha + x
-
- STA XX+1               \ Set XX(1 0) = (A X), which gives us result 6 above:
- STX XX                 \
-                        \   x = x + alpha * y / 256
-
- LDA YY+1               \ Set A to y_hi and set it to the flipped sign of beta
- EOR BET2+1
-
- LDX BET1               \ Fetch the pitch magnitude into X
-
- JSR MULTS-2            \ Call MULTS-2 to calculate:
-                        \
-                        \   (A P) = X * A
-                        \         = beta * y_hi
-
- STA Q                  \ Store the high byte of the result in Q, so:
-                        \
-                        \   Q = beta * y_hi / 256
-
- LDA XX+1               \ Set S = x_hi
- STA S
-
- EOR #%10000000         \ Flip the sign of A, so A now contains -x
-
- JSR MUT1               \ Call MUT1 to calculate:
-                        \
-                        \   R = XX = x_lo
-                        \
-                        \   (A P) = Q * A
-                        \         = (beta * y_hi / 256) * (-beta * y_hi / 256)
-                        \         = (-beta * y / 256) ^ 2
-
- ASL P                  \ Double (A P), store the top byte in A and set the C
- ROL A                  \ flag to bit 7 of the original A, so this does:
- STA T                  \
-                        \   (T P) = (A P) << 1
-                        \         = 2 * (-beta * y / 256) ^ 2
-
- LDA #0                 \ Set bit 7 in A to the sign bit from the A in the
- ROR A                  \ calculation above and apply it to T, so we now have:
- ORA T                  \
-                        \   (A P) = -2 * (beta * y / 256) ^ 2
-                        \
-                        \ with the doubling retaining the sign of (A P)
-
- JSR ADD                \ Call ADD to calculate:
-                        \
-                        \   (A X) = (A P) + (S R)
-                        \         = -2 * (beta * y / 256) ^ 2 + x
-
- STA XX+1               \ Store the high byte A in XX+1
-
- TXA                    \ Store the low byte X in x_lo
- STA SXL,Y
-
-                        \ So (XX+1 x_lo) now contains:
-                        \
-                        \   x = x - 2 * (beta * y / 256) ^ 2
-                        \
-                        \ which is result 7 above
-
- LDA YY                 \ Set (S R) = YY(1 0) = y
- STA R
- LDA YY+1
- STA S
-
- LDA #0                 \ Set P = 0
- STA P
-
- LDA BETA               \ Set A = beta, so (A P) = (beta 0) = beta * 256
-
- JSR PIX1               \ Call PIX1 to calculate the following:
-                        \
-                        \   (YY+1 y_lo) = (A P) + (S R)
-                        \               = beta * 256 + y
-                        \
-                        \ i.e. y = y + beta * 256, which is result 8 above
-                        \
-                        \ PIX1 also draws a particle at (X1, Y1) with distance
-                        \ ZZ, which will remove the old stardust particle, as we
-                        \ set X1, Y1 and ZZ to the original values for this
-                        \ particle during the calculations above
-
-                        \ We now have our newly moved stardust particle at
-                        \ x-coordinate (XX+1 x_lo) and y-coordinate (YY+1 y_lo)
-                        \ and distance z_hi, so we draw it if it's still on
-                        \ screen, otherwise we recycle it as a new bit of
-                        \ stardust and draw that
-
- LDA XX+1               \ Set X1 and x_hi to the high byte of XX in XX+1, so
- STA X1                 \ the new x-coordinate is in (x_hi x_lo) and the high
- STA SX,Y               \ byte is in X1
-
- LDA YY+1               \ Set Y1 and y_hi to the high byte of YY in YY+1, so
- STA SY,Y               \ the new x-coordinate is in (y_hi y_lo) and the high
- STA Y1                 \ byte is in Y1
-
- AND #%01111111         \ If |y_hi| >= 110 then jump to KILL6 to recycle this
- CMP #110               \ particle, as it's gone off the top or bottom of the
- BCS KILL6              \ screen, and rejoin at STC6 with the new particle
-
- LDA SZ,Y               \ If z_hi >= 160 then jump to KILL6 to recycle this
- CMP #160               \ particle, as it's so far away that it's too far to
- BCS KILL6              \ see, and rejoin at STC1 with the new particle
-
- STA ZZ                 \ Set ZZ to the z-coordinate in z_hi
-
-.STC6
-
- JSR PIXEL2             \ Draw a stardust particle at (X1,Y1) with distance ZZ,
-                        \ i.e. draw the newly moved particle at (x_hi, y_hi)
-                        \ with distance z_hi
-
- DEY                    \ Decrement the loop counter to point to the next
-                        \ stardust particle
-
- BEQ ST3                \ If we have just done the last particle, skip the next
-                        \ instruction to return from the subroutine
-
- JMP STL6               \ We have more stardust to process, so jump back up to
-                        \ STL6 for the next particle
-
-.ST3
-
- RTS                    \ Return from the subroutine
-
-.KILL6
-
- JSR DORND              \ Set A and X to random numbers
-
- AND #%01111111         \ Clear the sign bit of A to get |A|
-
- ADC #10                \ Make sure A is at least 10 and store it in z_hi and
- STA SZ,Y               \ ZZ, so the new particle starts close to us
- STA ZZ
-
- LSR A                  \ Divide A by 2 and randomly set the C flag
-
- BCS ST4                \ Jump to ST4 half the time
-
- LSR A                  \ Randomly set the C flag again
-
- LDA #252               \ Set A to either +126 or -126 (252 >> 1) depending on
- ROR A                  \ the C flag, as this is a sign-magnitude number with
-                        \ the C flag rotated into its sign bit
-
- STA X1                 \ Set x_hi and X1 to A, so this particle starts on
- STA SX,Y               \ either the left or right edge of the screen
-
- JSR DORND              \ Set A and X to random numbers
-
- STA Y1                 \ Set y_hi and Y1 to random numbers, so the particle
- STA SY,Y               \ starts anywhere along either the left or right edge
-
- JMP STC6               \ Jump up to STC6 to draw this new particle
-
-.ST4
-
- JSR DORND              \ Set A and X to random numbers
-
- STA X1                 \ Set x_hi and X1 to random numbers, so the particle
- STA SX,Y               \ starts anywhere along the x-axis
-
- LSR A                  \ Randomly set the C flag
-
- LDA #230               \ Set A to either +115 or -115 (230 >> 1) depending on
- ROR A                  \ the C flag, as this is a sign-magnitude number with
-                        \ the C flag rotated into its sign bit
-
- STA Y1                 \ Set y_hi and Y1 to A, so the particle starts anywhere
- STA SY,Y               \ along either the top or bottom edge of the screen
-
- BNE STC6               \ Jump up to STC6 to draw this new particle (this BNE is
-                        \ effectively a JMP as A will never be zero)
+                        \ --- Mod: Code moved for sideways RAM: --------------->
+
+                        \ The following routines have been moved into sideways
+                        \ RAM (see the ELITE SIDEWAYS RAM FILE section at the
+                        \ end of this source file)
+                        \
+                        \   * HLOIN
+                        \   * PX3
+                        \   * PIX1
+                        \   * PIXEL2
+                        \   * PIXEL
+                        \   * BLINE
+                        \   * EraseRestOfPlanet
+                        \   * DrawPlanetLine
+                        \   * DrawNewPlanetLine
+                        \   * FLIP
+                        \   * STARS
+                        \   * STARS1
+                        \   * STARS6
+
+                        \ --- End of moved code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -7281,540 +4735,20 @@ ENDIF
  JMP RR4                \ Jump to RR4 to restore the registers and return from
                         \ the subroutine using a tail call
 
-\ ******************************************************************************
-\
-\       Name: DIALS (Part 1 of 4)
-\       Type: Subroutine
-\   Category: Dashboard
-\    Summary: Update the dashboard: speed indicator
-\  Deep dive: The dashboard indicators
-\
-\ ------------------------------------------------------------------------------
-\
-\ This routine updates the dashboard. First we draw all the indicators in the
-\ right part of the dashboard, from top (speed) to bottom (energy banks), and
-\ then we move on to the left part, again drawing from top (forward shield) to
-\ bottom (altitude).
-\
-\ This first section starts us off with the speedometer in the top right.
-\
-\ ******************************************************************************
+                        \ --- Mod: Code moved for sideways RAM: --------------->
 
-.DIALS
-
- LDA #&F0               \ Set SC(1 0) = &76F0, which is the screen address for
- STA SC                 \ the character block containing the left end of the
- LDA #&76               \ top indicator in the right part of the dashboard, the
- STA SC+1               \ one showing our speed
-
- LDA DELTA              \ Fetch our ship's speed into A, in the range 0-40
-
- JSR DIL                \ Draw the speed indicator using a range of 0-31, and
-                        \ increment SC to point to the next indicator (the roll
-                        \ indicator)
-
-\ ******************************************************************************
-\
-\       Name: DIALS (Part 2 of 4)
-\       Type: Subroutine
-\   Category: Dashboard
-\    Summary: Update the dashboard: pitch and roll indicators
-\  Deep dive: The dashboard indicators
-\
-\ ******************************************************************************
-
- LDA #0                 \ Set R = P = 0 for the low bytes in the call to the ADD
- STA R                  \ routine below
- STA P
-
- LDA #8                 \ Set S = 8, which is the value of the centre of the
- STA S                  \ roll indicator
-
- LDA ALP1               \ Fetch the roll angle alpha as a value between 0 and
- LSR A                  \ 31, and divide by 4 to get a value of 0 to 7
- LSR A
-
- ORA ALP2               \ Apply the roll sign to the value, and flip the sign,
- EOR #%10000000         \ so it's now in the range -7 to +7, with a positive
-                        \ roll angle alpha giving a negative value in A
-
- JSR ADD                \ We now add A to S to give us a value in the range 1 to
-                        \ 15, which we can pass to DIL2 to draw the vertical
-                        \ bar on the indicator at this position. We use the ADD
-                        \ routine like this:
+                        \ The following routines have been moved into sideways
+                        \ RAM (see the ELITE SIDEWAYS RAM FILE section at the
+                        \ end of this source file)
                         \
-                        \ (A X) = (A 0) + (S 0)
-                        \
-                        \ and just take the high byte of the result. We use ADD
-                        \ rather than a normal ADC because ADD separates out the
-                        \ sign bit and does the arithmetic using absolute values
-                        \ and separate sign bits, which we want here rather than
-                        \ the two's complement that ADC uses
-
- JSR DIL2               \ Draw a vertical bar on the roll indicator at offset A
-                        \ and increment SC to point to the next indicator (the
-                        \ pitch indicator)
-
- LDA BETA               \ Fetch the pitch angle beta as a value between -8 and
-                        \ +8
-
- LDX BET1               \ Fetch the magnitude of the pitch angle beta, and if it
- BEQ P%+4               \ is 0 (i.e. we are not pitching), skip the next
-                        \ instruction
-
- SBC #1                 \ The pitch angle beta is non-zero, so set A = A - 1
-                        \ (the C flag is set by the call to DIL2 above, so we
-                        \ don't need to do a SEC). This gives us a value of A
-                        \ from -7 to +7 because these are magnitude-based
-                        \ numbers with sign bits, rather than two's complement
-                        \ numbers
-
- JSR ADD                \ We now add A to S to give us a value in the range 1 to
-                        \ 15, which we can pass to DIL2 to draw the vertical
-                        \ bar on the indicator at this position (see the JSR ADD
-                        \ above for more on this)
-
- JSR DIL2               \ Draw a vertical bar on the pitch indicator at offset A
-                        \ and increment SC to point to the next indicator (the
-                        \ four energy banks)
-
-\ ******************************************************************************
-\
-\       Name: DIALS (Part 3 of 4)
-\       Type: Subroutine
-\   Category: Dashboard
-\    Summary: Update the dashboard: four energy banks
-\  Deep dive: The dashboard indicators
-\
-\ ------------------------------------------------------------------------------
-\
-\ This and the next section only run once every four iterations of the main
-\ loop, so while the speed, pitch and roll indicators update every iteration,
-\ the other indicators update less often.
-\
-\ ******************************************************************************
-
- LDA MCNT               \ Fetch the main loop counter and calculate MCNT mod 4,
- AND #3                 \ jumping to rT9 if it is non-zero. rT9 contains an RTS,
- BNE rT9                \ so the following code only runs every 4 iterations of
-                        \ the main loop, otherwise we return from the subroutine
-
- LDY #0                 \ Set Y = 0, for use in various places below
-
- LDX #3                 \ Set up a counter in X so we can zero the four bytes at
-                        \ XX12, so we can then calculate each of the four energy
-                        \ banks' values before drawing them later
-
-.DLL23
-
- STY XX12,X             \ Set the X-th byte of XX12 to 0
-
- DEX                    \ Decrement the counter
-
- BPL DLL23              \ Loop back for the next byte until the four bytes at
-                        \ XX12 are all zeroed
-
- LDX #3                 \ Set up a counter in X to loop through the 4 energy
-                        \ bank indicators, so we can calculate each of the four
-                        \ energy banks' values and store them in XX12
-
- LDA ENERGY             \ Set A = Q = ENERGY / 2, so they are both now in the
- LSR A                  \ range 0-127 (so that's a maximum of 32 in each of the
-                        \ banks, and a maximum of 31 in the top bank)
-
- STA Q                  \ Set Q to A, so we can use Q to hold the remaining
-                        \ energy as we work our way through each bank, from the
-                        \ full ones at the bottom to the empty ones at the top
-
-.DLL24
-
- SEC                    \ Set A = A - 32 to reduce the energy count by a full
- SBC #32                \ bank
-
- BCC DLL26              \ If the C flag is clear then A < 16, so this bank is
-                        \ not full to the brim, and is therefore the last one
-                        \ with any energy in it, so jump to DLL26
-
- STA Q                  \ This bank is full, so update Q with the energy of the
-                        \ remaining banks
-
- LDA #32                \ Store this bank's level in XX12 as 32, as it is full,
- STA XX12,X             \ with XX12+3 for the bottom bank and XX12+0 for the top
-
- LDA Q                  \ Set A to the remaining energy level again
-
- DEX                    \ Decrement X to point to the next bank, i.e. the one
-                        \ above the bank we just processed
-
- BPL DLL24              \ Loop back to DLL24 until we have either processed all
-                        \ four banks, or jumped out early to DLL26 if the top
-                        \ banks have no charge
-
- BMI DLL9               \ Jump to DLL9 as we have processed all four banks (this
-                        \ BMI is effectively a JMP as A will never be positive)
-
-.DLL26
-
- LDA Q                  \ If we get here then the bank we just checked is not
- STA XX12,X             \ fully charged, so store its value in XX12 (using Q,
-                        \ which contains the energy of the remaining banks -
-                        \ i.e. this one)
-
-                        \ Now that we have the four energy bank values in XX12,
-                        \ we can draw them, starting with the top bank in XX12
-                        \ and looping down to the bottom bank in XX12+3, using Y
-                        \ as a loop counter, which was set to 0 above
-
-.DLL9
-
- LDA XX12,Y             \ Fetch the value of the Y-th indicator, starting from
-                        \ the top
-
- STY P                  \ Store the indicator number in P for retrieval later
-
- JSR DIL                \ Draw the energy bank using a range of 0-15, and
-                        \ increment SC to point to the next indicator (the
-                        \ next energy bank down)
-
- LDY P                  \ Restore the indicator number into Y
-
- INY                    \ Increment the indicator number
-
- CPY #4                 \ Check to see if we have drawn the last energy bank
-
- BNE DLL9               \ Loop back to DLL9 if we have more banks to draw,
-                        \ otherwise we are done
-
-\ ******************************************************************************
-\
-\       Name: DIALS (Part 4 of 4)
-\       Type: Subroutine
-\   Category: Dashboard
-\    Summary: Update the dashboard: shields, fuel, laser & cabin temp, altitude
-\  Deep dive: The dashboard indicators
-\
-\ ******************************************************************************
-
- LDA #&76               \ Set SC(1 0) = &7630, which is the screen address for
- STA SC+1               \ the character block containing the left end of the
- LDA #&30               \ top indicator in the left part of the dashboard, the
- STA SC                 \ one showing the forward shield
-
- LDA FSH                \ Draw the forward shield indicator using a range of
- JSR DILX               \ 0-255, and increment SC to point to the next indicator
-                        \ (the aft shield)
-
- LDA ASH                \ Draw the aft shield indicator using a range of 0-255,
- JSR DILX               \ and increment SC to point to the next indicator (the
-                        \ fuel level)
-
- LDA QQ14               \ Draw the fuel level indicator using a range of 0-63,
- JSR DILX+2             \ and increment SC to point to the next indicator (the
-                        \ cabin temperature)
-
- SEC                    \ Call NEXTR with the C flag set to move the screen
- JSR NEXTR              \ address in SC(1 0) down by one character row
-
- LDA GNTMP              \ Draw the laser temperature indicator using a range of
- JSR DILX               \ 0-255, and increment SC to point to the next indicator
-                        \ (the altitude)
-
- LDA #240               \ Set T1 to 240, which would set the threshold at which
- STA T1                 \ we change the altitude indicator's colour in the other
-                        \ versions, but it has no effect here, as the Electron
-                        \ version doesn't support indicator colour changes
-
- STA K+1                \ This sets K+1 to 240, which would set the colour to
-                        \ show for low values in the other versions, but it has
-                        \ no effect here, as the Electron version doesn't
-                        \ support indicator colour changes
-
- LDA ALTIT              \ Draw the altitude indicator using a range of 0-255
- JSR DILX
-
- JMP COMPAS             \ We have now drawn all the indicators, so jump to
-                        \ COMPAS to draw the compass, returning from the
-                        \ subroutine using a tail call
-
-\ ******************************************************************************
-\
-\       Name: DILX
-\       Type: Subroutine
-\   Category: Dashboard
-\    Summary: Update a bar-based indicator on the dashboard
-\  Deep dive: The dashboard indicators
-\
-\ ------------------------------------------------------------------------------
-\
-\ The range of values shown on the indicator depends on which entry point is
-\ called. For the default entry point of DILX, the range is 0-255 (as the value
-\ passed in A is one byte). The other entry points are shown below.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   A                   The value to be shown on the indicator (so the larger
-\                       the value, the longer the bar)
-\
-\   SC(1 0)             The screen address of the first character block in the
-\                       indicator
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   DILX+2              The range of the indicator is 0-64 (for the fuel
-\                       indicator)
-\
-\   DIL-1               The range of the indicator is 0-32 (for the speed
-\                       indicator)
-\
-\   DIL                 The range of the indicator is 0-16 (for the energy
-\                       banks)
-\
-\ ******************************************************************************
-
-.DILX
-
- LSR A                  \ If we call DILX, we set A = A / 16, so A is 0-15
- LSR A
-
- LSR A                  \ If we call DIL-1, we set A = A / 2, so A is 0-15
-
-.DIL
-
-                        \ If we call DIL, we leave A alone, so A is 0-15
-
- STA Q                  \ Store the indicator value in Q, now reduced to 0-15,
-                        \ which is the length of the indicator to draw in pixels
-
- LDX #&FF               \ Set R = &FF, to use as a mask for drawing each row of
- STX R                  \ each character block of the bar, starting with a full
-                        \ character's width of 4 pixels
-
- LDY #2                 \ We want to start drawing the indicator on the third
-                        \ line in this character row, so set Y to point to that
-                        \ row's offset
-
- LDX #3                 \ Set up a counter in X for the width of the indicator,
-                        \ which is 4 characters (each of which is 4 pixels wide,
-                        \ to give a total width of 16 pixels)
-
-.DL1
-
- LDA Q                  \ Fetch the indicator value (0-15) from Q into A
-
- CMP #8                 \ If Q < 8, then we need to draw the end cap of the
- BCC DL2                \ indicator, which is less than a full character's
-                        \ width, so jump down to DL2 to do this
-
- SBC #8                 \ Otherwise we can draw an eight-pixel wide block, so
- STA Q                  \ subtract 8 from Q so it contains the amount of the
-                        \ indicator that's left to draw after this character
-
- LDA R                  \ Fetch the shape of the indicator row that we need to
-                        \ display from R, so we can use it as a mask when
-                        \ painting the indicator. It will be &FF at this point
-                        \ (i.e. a full four-pixel row)
-
-.DL5
-
- STA (SC),Y             \ Draw the shape of the mask on pixel row Y of the
-                        \ character block we are processing
-
- INY                    \ Draw the next pixel row, incrementing Y
- STA (SC),Y
-
- INY                    \ And draw the third pixel row, incrementing Y
- STA (SC),Y
-
- TYA                    \ Add 6 to Y, so Y is now 8 more than when we started
- CLC                    \ this loop iteration, so Y now points to the address
- ADC #6                 \ of the first line of the indicator bar in the next
-                        \ character block (as each character is 8 bytes of
-                        \ screen memory)
-
- BCC P%+4               \ If the addition of the low bytes of SC overflowed,
- INC SC+1               \ increment the high byte
-
- TAY                    \ Transfer the updated value (Y + 6) back into Y
-
- DEX                    \ Decrement the loop counter for the next character
-                        \ block along in the indicator
-
- BMI DL6                \ If we just drew the last character block then we are
-                        \ done drawing, so jump down to DL6 to finish off
-
- BPL DL1                \ Loop back to DL1 to draw the next character block of
-                        \ the indicator (this BPL is effectively a JMP as A will
-                        \ never be negative following the previous BMI)
-
-.DL2
-
- EOR #7                 \ If we get here then we are drawing the indicator's
- STA Q                  \ end cap, so Q is < 8, and this EOR flips the bits, so
-                        \ instead of containing the number of indicator columns
-                        \ we need to fill in on the left side of the cap's
-                        \ character block, Q now contains the number of blank
-                        \ columns there should be on the right side of the cap's
-                        \ character block
-
- LDA R                  \ Fetch the current mask from R, which will be &FF at
-                        \ this point, so we need to turn Q of the columns on the
-                        \ right side of the mask to black to get the correct end
-                        \ cap shape for the indicator
-
-.DL3
-
- ASL A                  \ Shift the mask left so bit 0 is cleared
-
- DEC Q                  \ Decrement the counter for the number of columns to
-                        \ blank out
-
- BPL DL3                \ If we still have columns to blank out in the mask,
-                        \ loop back to DL3 until the mask is correct for the
-                        \ end cap
-
- PHA                    \ Store the mask byte on the stack while we use the
-                        \ accumulator for a bit
-
- LDA #0                 \ Change the mask so no bits are set, so the characters
- STA R                  \ after the one we're about to draw will be all blank
-
- LDA #99                \ Set Q to a high number (99, why not) so we will keep
- STA Q                  \ drawing blank characters until we reach the end of
-                        \ the indicator row
-
- PLA                    \ Restore the mask byte from the stack so we can use it
-                        \ to draw the end cap of the indicator
-
- JMP DL5                \ Jump back up to DL5 to draw the mask byte on-screen
-
-.DL6
-
- SEC                    \ Jump to NEXTR with the C flag set to move the screen
- JMP NEXTR              \ address in SC(1 0) down by one character row,
-                        \ returning from the subroutine using a tail call
-
-\ ******************************************************************************
-\
-\       Name: DIL2
-\       Type: Subroutine
-\   Category: Dashboard
-\    Summary: Update the roll or pitch indicator on the dashboard
-\  Deep dive: The dashboard indicators
-\
-\ ------------------------------------------------------------------------------
-\
-\ The indicator can show a vertical bar in 16 positions, with a value of 8
-\ showing the bar in the middle of the indicator.
-\
-\ In practice this routine is only ever called with A in the range 1 to 15, so
-\ the vertical bar never appears in the leftmost position (though it does appear
-\ in the rightmost).
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   A                   The offset of the vertical bar to show in the indicator,
-\                       from 0 at the far left, to 8 in the middle, and 15 at
-\                       the far right
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   C flag              The C flag is set
-\
-\ ******************************************************************************
-
-.DIL2
-
- LDY #1                 \ We want to start drawing the vertical indicator bar on
-                        \ the second line in the indicator's character block, so
-                        \ set Y to point to that row's offset
-
- STA Q                  \ Store the offset of the vertical bar to draw in Q
-
-                        \ We are now going to work our way along the indicator
-                        \ on the dashboard, from left to right, working our way
-                        \ along one character block at a time. Y will be used as
-                        \ a pixel row counter to work our way through the
-                        \ character blocks, so each time we draw a character
-                        \ block, we will increment Y by 8 to move on to the next
-                        \ block (as each character block contains 8 rows)
-
-.DLL10
-
- SEC                    \ Set A = Q - 4, so that A contains the offset of the
- LDA Q                  \ vertical bar from the start of this character block
- SBC #4
-
- BCS DLL11              \ If Q >= 4 then the character block we are drawing does
-                        \ not contain the vertical indicator bar, so jump to
-                        \ DLL11 to draw a blank character block
-
- LDA #&FF               \ Set A to a high number (and &FF is as high as they go)
-
- LDX Q                  \ Set X to the offset of the vertical bar, which we know
-                        \ is within this character block
-
- STA Q                  \ Set Q to a high number (&FF, why not) so we will keep
-                        \ drawing blank characters after this one until we reach
-                        \ the end of the indicator row
-
- LDA CTWOS,X            \ CTWOS is a table of ready-made two-pixel mode 4 bytes,
-                        \ similar to the TWOS and TWOS2 tables, but laid out in
-                        \ a similar way to the mode 5 pixel bytes in the other
-                        \ versions (see the PIXEL routine for details of how
-                        \ they work). This fetches a two-pixel mode 4 byte with
-                        \ the pixel position at 2 * X, so the pixel is at the
-                        \ offset that we want for our vertical bar
-
- BNE DLL12              \ Jump to DLL12 to skip the code for drawing a blank,
-                        \ and move on to drawing the indicator (this BNE is
-                        \ effectively a JMP as A is always non-zero)
-
-.DLL11
-
-                        \ If we get here then we want to draw a blank for this
-                        \ character block
-
- STA Q                  \ Update Q with the new offset of the vertical bar, so
-                        \ it becomes the offset after the character block we
-                        \ are about to draw
-
- LDA #0                 \ Change the mask so no bits are set, so all of the
-                        \ character blocks we display from now on will be blank
-.DLL12
-
- STA (SC),Y             \ Draw the shape of the mask on pixel row Y of the
-                        \ character block we are processing
-
- INY                    \ Draw the next pixel row, incrementing Y
- STA (SC),Y
-
- INY                    \ And draw the third pixel row, incrementing Y
- STA (SC),Y
-
- INY                    \ And draw the fourth pixel row, incrementing Y
- STA (SC),Y
-
- TYA                    \ Add 5 to Y, so Y is now 8 more than when we started
- CLC                    \ this loop iteration, so Y now points to the address
- ADC #5                 \ of the first line of the indicator bar in the next
- TAY                    \ character block (as each character is 8 bytes of
-                        \ screen memory)
-
- CPY #30                \ If Y < 30 then we still have some more character
- BCC DLL10              \ blocks to draw, so loop back to DLL10 to display the
-                        \ next one along
-
- JMP NEXTR              \ Jump to NEXTR with the C flag set to move the screen
-                        \ address in SC(1 0) down by one character row,
-                        \ returning from the subroutine using a tail call
+                        \   * DIALS (Part 1 of 4)
+                        \   * DIALS (Part 2 of 4)
+                        \   * DIALS (Part 3 of 4)
+                        \   * DIALS (Part 4 of 4)
+                        \   * DILX
+                        \   * DIL2
+
+                        \ --- End of moved code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -36297,6 +33231,3156 @@ ENDMACRO
  JMP MV45               \ We have now finished rotating the planet by our pitch
                         \ and roll, so jump back into the MVEIT routine at MV45
                         \ to apply all the other movements
+
+\ ******************************************************************************
+\
+\       Name: UNIV
+\       Type: Variable
+\   Category: Universe
+\    Summary: Table of pointers to the local universe's ship data blocks
+\  Deep dive: The local bubble of universe
+\             Ship data blocks
+\
+\ ******************************************************************************
+
+.UNIV
+
+ FOR I%, 0, NOSH
+
+  EQUW K% + I% * NI%    \ Address of block no. I%, of size NI%, in workspace K%
+
+ NEXT
+
+\ ******************************************************************************
+\
+\       Name: TWOS
+\       Type: Variable
+\   Category: Drawing pixels
+\    Summary: Ready-made single-pixel character row bytes for mode 4
+\  Deep dive: Drawing monochrome pixels on the BBC Micro
+\
+\ ------------------------------------------------------------------------------
+\
+\ Ready-made bytes for plotting one-pixel points in mode 4 (the top part of the
+\ split screen). See the PIXEL routine for details.
+\
+\ ******************************************************************************
+
+.TWOS
+
+ EQUB %10000000
+ EQUB %01000000
+ EQUB %00100000
+ EQUB %00010000
+ EQUB %00001000
+ EQUB %00000100
+ EQUB %00000010
+ EQUB %00000001
+ EQUB %10000000
+ EQUB %01000000
+
+\ ******************************************************************************
+\
+\       Name: CTWOS
+\       Type: Variable
+\   Category: Drawing pixels
+\    Summary: Ready-made double-pixel character row bytes for the mode 4
+\             dashboard
+\
+\ ------------------------------------------------------------------------------
+\
+\ Ready-made bytes for plotting two-pixel points in the mode 4 dashboard (the
+\ bottom part of the screen). The layout of the pixels is similar to the layout
+\ of four-colour mode 5 pixels, so the byte at position X contains a two-pixel
+\ mode 4 dot at position 2 * X (we do this so the same code can be used to
+\ create both the monochrome Electron dashboard and the four-colour mode 5
+\ dashboard in the other versions).
+\
+\ ******************************************************************************
+
+.CTWOS
+
+ EQUB %11000000
+ EQUB %00110000
+ EQUB %00001100
+ EQUB %00000011
+
+\ ******************************************************************************
+\
+\       Name: TWOS2
+\       Type: Variable
+\   Category: Drawing pixels
+\    Summary: Ready-made double-pixel character row bytes for mode 4
+\  Deep dive: Drawing monochrome pixels on the BBC Micro
+\
+\ ------------------------------------------------------------------------------
+\
+\ Ready-made bytes for plotting two-pixel dashes in mode 4 (the top part of the
+\ split screen). See the PIXEL routine for details.
+\
+\ ******************************************************************************
+
+.TWOS2
+
+ EQUB %11000000
+ EQUB %11000000
+ EQUB %01100000
+ EQUB %00110000
+ EQUB %00011000
+ EQUB %00001100
+ EQUB %00000110
+ EQUB %00000011
+
+\ ******************************************************************************
+\
+\       Name: LOIN (Part 1 of 7)
+\       Type: Subroutine
+\   Category: Drawing lines
+\    Summary: Draw a line: Calculate the line gradient in the form of deltas
+\  Deep dive: Bresenham's line algorithm
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine draws a line from (X1, Y1) to (X2, Y2). It has multiple stages.
+\ This stage calculates the line deltas.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X1                  The screen x-coordinate of the start of the line
+\
+\   Y1                  The screen y-coordinate of the start of the line
+\
+\   X2                  The screen x-coordinate of the end of the line
+\
+\   Y2                  The screen y-coordinate of the end of the line
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   Y                   Y is preserved
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   LL30                LL30 is a synonym for LOIN and draws a line from
+\                       (X1, Y1) to (X2, Y2)
+\
+\ ******************************************************************************
+
+.LL30
+
+ SKIP 0                 \ LL30 is a synonym for LOIN
+                        \
+                        \ In the BBC Micro cassette and disc versions of Elite,
+                        \ LL30 and LOIN are synonyms for the same routine,
+                        \ presumably because the two developers each had their
+                        \ own line routines to start with, and then chose one of
+                        \ them for the final game
+
+.LOIN
+
+ STY YSAV               \ Store Y into YSAV, so we can preserve it across the
+                        \ call to this subroutine
+
+ LDA #128               \ Set S = 128, which is the starting point for the
+ STA S                  \ slope error (representing half a pixel)
+
+ STA SC                 \ Set SC = 128 for use in the pixel calculations below
+
+ ASL A                  \ Set SWAP = 0, as %10000000 << 1 = 0
+ STA SWAP
+
+ LDA X2                 \ Set A = X2 - X1
+ SBC X1                 \       = delta_x
+                        \
+                        \ This subtraction works as the ASL A above sets the C
+                        \ flag
+
+ BCS LI1                \ If X2 > X1 then A is already positive and we can skip
+                        \ the next three instructions
+
+ EOR #%11111111         \ Negate the result in A by flipping all the bits and
+ ADC #1                 \ adding 1, i.e. using two's complement to make it
+                        \ positive
+
+.LI1
+
+ STA P                  \ Store A in P, so P = |X2 - X1|, or |delta_x|
+
+ SEC                    \ Set the C flag, ready for the subtraction below
+
+ LDA Y2                 \ Set A = Y2 - Y1
+ SBC Y1                 \       = delta_y
+                        \
+                        \ This subtraction works as we either set the C flag
+                        \ above, or we skipped that SEC instruction with a BCS
+
+ BCS LI2                \ If Y2 > Y1 then A is already positive and we can skip
+                        \ the next two instructions
+
+ EOR #%11111111         \ Negate the result in A by flipping all the bits and
+ ADC #1                 \ adding 1, i.e. using two's complement to make it
+                        \ positive
+
+.LI2
+
+ STA Q                  \ Store A in Q, so Q = |Y2 - Y1|, or |delta_y|
+
+ CMP P                  \ If Q < P, jump to STPX to step along the x-axis, as
+ BCC STPX               \ the line is closer to being horizontal than vertical
+
+ JMP STPY               \ Otherwise Q >= P so jump to STPY to step along the
+                        \ y-axis, as the line is closer to being vertical than
+                        \ horizontal
+
+\ ******************************************************************************
+\
+\       Name: LOIN (Part 2 of 7)
+\       Type: Subroutine
+\   Category: Drawing lines
+\    Summary: Draw a line: Line has a shallow gradient, step right along x-axis
+\  Deep dive: Bresenham's line algorithm
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine draws a line from (X1, Y1) to (X2, Y2). It has multiple stages.
+\ If we get here, then:
+\
+\   * |delta_y| < |delta_x|
+\
+\   * The line is closer to being horizontal than vertical
+\
+\   * We are going to step right along the x-axis
+\
+\   * We potentially swap coordinates to make sure X1 < X2
+\
+\ ******************************************************************************
+
+.STPX
+
+ LDX X1                 \ Set X = X1
+
+ CPX X2                 \ If X1 < X2, jump down to LI3, as the coordinates are
+ BCC LI3                \ already in the order that we want
+
+ DEC SWAP               \ Otherwise decrement SWAP from 0 to &FF, to denote that
+                        \ we are swapping the coordinates around
+
+ LDA X2                 \ Swap the values of X1 and X2
+ STA X1
+ STX X2
+
+ TAX                    \ Set X = X1
+
+ LDA Y2                 \ Swap the values of Y1 and Y2
+ LDY Y1
+ STA Y1
+ STY Y2
+
+.LI3
+
+                        \ By this point we know the line is horizontal-ish and
+                        \ X1 < X2, so we're going from left to right as we go
+                        \ from X1 to X2
+
+                        \ We now calculate the address of the character block
+                        \ containing the pixel (X1, Y1) and put it in SC(1 0),
+                        \ as follows:
+                        \
+                        \   SC = &5800 + (Y1 div 8 * 256) + (Y1 div 8 * 64) + 32
+
+ LDA Y1                 \ Set A to the y-coordinate in Y1
+
+ LSR A                  \ Set A = A >> 3
+ LSR A                  \       = y div 8
+ LSR A                  \
+                        \ So A now contains the number of the character row
+                        \ that will contain the start of the line
+
+ STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
+                        \                           = char row * 256
+
+ LSR A                  \ Set (A SC) = (A SC) / 4
+ ROR SC                 \            = (4 * ((char row * 64) + 32)) / 4
+ LSR A                  \            = char row * 64 + 32
+ ROR SC
+
+ ADC SC+1               \ Set SC(1 0) = (A SC) + (SC+1 0) + &5800
+ ADC #&58               \             = (char row * 64 + 32)
+ STA SC+1               \               + char row * 256
+                        \               + &5800
+                        \
+                        \ which is what we want, so SC(1 0) contains the address
+                        \ of the first visible pixel on the character row
+                        \ containing the point (X1, Y1)
+
+ TXA                    \ Each character block contains 8 pixel rows, so to get
+ AND #%11111000         \ the address of the first byte in the character block
+                        \ that we need to draw into, as an offset from the start
+                        \ of the row, we clear bits 0-2
+
+ ADC SC                 \ And add the result to SC(1 0) to get the character
+ STA SC                 \ block on the row we want
+
+ BCC P%+4               \ If the addition of the low bytes overflowed, increment
+ INC SC+1               \ the high byte
+
+                        \ So SC(1 0) now contains the address of the first pixel
+                        \ in the character block containing the (X1, Y1), taking
+                        \ the screen borders into consideration
+
+ LDA Y1                 \ Set Y = Y1 mod 8, which is the pixel row within the
+ AND #7                 \ character block at which we want to draw the start of
+ TAY                    \ our line (as each character block has 8 rows)
+
+ TXA                    \ Set X = X1 mod 8, which is the horizontal pixel number
+ AND #7                 \ within the character block where the line starts (as
+ TAX                    \ each pixel line in the character block is 8 pixels
+                        \ wide)
+
+ LDA TWOS,X             \ Fetch a one-pixel byte from TWOS where pixel X is set,
+ STA R                  \ and store it in R
+
+                        \ The following calculates:
+                        \
+                        \   Q = Q / P
+                        \     = |delta_y| / |delta_x|
+                        \
+                        \ using the same shift-and-subtract algorithm that's
+                        \ documented in TIS2
+
+ LDA Q                  \ Set A = |delta_y|
+
+ LDX #%11111110         \ Set Q to have bits 1-7 set, so we can rotate through 7
+ STX Q                  \ loop iterations, getting a 1 each time, and then
+                        \ getting a 0 on the 8th iteration... and we can also
+                        \ use Q to catch our result bits into bit 0 each time
+
+.LIL1
+
+ ASL A                  \ Shift A to the left
+
+ BCS LI4                \ If bit 7 of A was set, then jump straight to the
+                        \ subtraction
+
+ CMP P                  \ If A < P, skip the following subtraction
+ BCC LI5
+
+.LI4
+
+ SBC P                  \ A >= P, so set A = A - P
+
+ SEC                    \ Set the C flag to rotate into the result in Q
+
+.LI5
+
+ ROL Q                  \ Rotate the counter in Q to the left, and catch the
+                        \ result bit into bit 0 (which will be a 0 if we didn't
+                        \ do the subtraction, or 1 if we did)
+
+ BCS LIL1               \ If we still have set bits in Q, loop back to TIL2 to
+                        \ do the next iteration of 7
+
+                        \ We now have:
+                        \
+                        \   Q = A / P
+                        \     = |delta_y| / |delta_x|
+                        \
+                        \ and the C flag is clear
+
+ LDX P                  \ Set X = P + 1
+ INX                    \       = |delta_x| + 1
+                        \
+                        \ We add 1 so we can skip the first pixel plot if the
+                        \ line is being drawn with swapped coordinates
+
+ LDA Y2                 \ Set A = Y2 - Y1 - 1 (as the C flag is clear following
+ SBC Y1                 \ the above division)
+
+ BCS DOWN               \ If Y2 >= Y1 - 1 then jump to DOWN, as we need to draw
+                        \ the line to the right and down
+
+\ ******************************************************************************
+\
+\       Name: LOIN (Part 3 of 7)
+\       Type: Subroutine
+\   Category: Drawing lines
+\    Summary: Draw a shallow line going right and up or left and down
+\  Deep dive: Bresenham's line algorithm
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine draws a line from (X1, Y1) to (X2, Y2). It has multiple stages.
+\ If we get here, then:
+\
+\   * The line is going right and up (no swap) or left and down (swap)
+\
+\   * X1 < X2 and Y1-1 > Y2
+\
+\   * Draw from (X1, Y1) at bottom left to (X2, Y2) at top right, omitting the
+\     first pixel
+\
+\ ******************************************************************************
+
+ LDA SWAP               \ If SWAP > 0 then we swapped the coordinates above, so
+ BNE LI6                \ jump down to LI6 to skip plotting the first pixel
+                        \
+                        \ This appears to be a bug that omits the last pixel
+                        \ of this type of shallow line, rather than the first
+                        \ pixel, which makes the treatment of this kind of line
+                        \ different to the other kinds of slope (they all have a
+                        \ BEQ instruction at this point, rather than a BNE)
+                        \
+                        \ The result is a rather messy line join when a shallow
+                        \ line that goes right and up or left and down joins a
+                        \ line with any of the other three types of slope
+                        \
+                        \ This bug was fixed in the advanced versions of Elite,
+                        \ where the BNE is replaced by a BEQ to bring it in line
+                        \ with the other three slopes
+
+ DEX                    \ Decrement the counter in X because we're about to plot
+                        \ the first pixel
+
+.LIL2
+
+                        \ We now loop along the line from left to right, using X
+                        \ as a decreasing counter, and at each count we plot a
+                        \ single pixel using the pixel mask in R
+
+ LDA R                  \ Fetch the pixel byte from R
+
+ EOR (SC),Y             \ Store R into screen memory at SC(1 0), using EOR
+ STA (SC),Y             \ logic so it merges with whatever is already on-screen
+
+.LI6
+
+ LSR R                  \ Shift the single pixel in R to the right to step along
+                        \ the x-axis, so the next pixel we plot will be at the
+                        \ next x-coordinate along
+
+ BCC LI7                \ If the pixel didn't fall out of the right end of R
+                        \ into the C flag, then jump to LI7
+
+ ROR R                  \ Otherwise we need to move over to the next character
+                        \ block, so first rotate R right so the set C flag goes
+                        \ back into the left end, giving %10000000
+
+ LDA SC                 \ Add 8 to SC, so SC(1 0) now points to the next
+ ADC #8                 \ character along to the right
+ STA SC
+
+ BCC LI7                \ If the addition of the low bytes of SC overflowed,
+ INC SC+1               \ increment the high byte
+
+.LI7
+
+ LDA S                  \ Set S = S + Q to update the slope error
+ ADC Q
+ STA S
+
+ BCC LIC2               \ If the addition didn't overflow, jump to LIC2
+
+ DEY                    \ Otherwise we just overflowed, so decrement Y to move
+                        \ to the pixel line above
+
+ BPL LIC2               \ If Y is positive we are still within the same
+                        \ character block, so skip to LIC2
+
+                        \ We now need to move up into the character block above,
+                        \ and each character row in screen memory takes up &140
+                        \ bytes (&100 for the visible part and &20 for each of
+                        \ the blank borders on the side of the screen), so
+                        \ that's what we need to subtract from SC(1 0)
+
+ LDA SC                 \ Set SC(1 0) = SC(1 0) - &140
+ SBC #&40               \
+ STA SC                 \ Starting with the low bytes
+
+ LDA SC+1               \ And then subtracting the high bytes
+ SBC #&01
+ STA SC+1
+
+ LDY #7                 \ Set the pixel line to the last line in that character
+                        \ block
+
+.LIC2
+
+ DEX                    \ Decrement the counter in X
+
+ BNE LIL2               \ If we haven't yet reached the right end of the line,
+                        \ loop back to LIL2 to plot the next pixel along
+
+ LDY YSAV               \ Restore Y from YSAV, so that it's preserved
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: LOIN (Part 4 of 7)
+\       Type: Subroutine
+\   Category: Drawing lines
+\    Summary: Draw a shallow line going right and down or left and up
+\  Deep dive: Bresenham's line algorithm
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine draws a line from (X1, Y1) to (X2, Y2). It has multiple stages.
+\ If we get here, then:
+\
+\   * The line is going right and down (no swap) or left and up (swap)
+\
+\   * X1 < X2 and Y1-1 <= Y2
+\
+\   * Draw from (X1, Y1) at top left to (X2, Y2) at bottom right, omitting the
+\     first pixel
+\
+\ ******************************************************************************
+
+.DOWN
+
+ LDA SWAP               \ If SWAP = 0 then we didn't swap the coordinates above,
+ BEQ LI9                \ so jump down to LI9 to skip plotting the first pixel
+
+ DEX                    \ Decrement the counter in X because we're about to plot
+                        \ the first pixel
+
+.LIL3
+
+                        \ We now loop along the line from left to right, using X
+                        \ as a decreasing counter, and at each count we plot a
+                        \ single pixel using the pixel mask in R
+
+ LDA R                  \ Fetch the pixel byte from R
+
+ EOR (SC),Y             \ Store R into screen memory at SC(1 0), using EOR
+ STA (SC),Y             \ logic so it merges with whatever is already on-screen
+
+.LI9
+
+ LSR R                  \ Shift the single pixel in R to the right to step along
+                        \ the x-axis, so the next pixel we plot will be at the
+                        \ next x-coordinate along
+
+ BCC LI10               \ If the pixel didn't fall out of the right end of R
+                        \ into the C flag, then jump to LI10
+
+ ROR R                  \ Otherwise we need to move over to the next character
+                        \ block, so first rotate R right so the set C flag goes
+                        \ back into the left end, giving %10000000
+
+ LDA SC                 \ Add 8 to SC, so SC(1 0) now points to the next
+ ADC #8                 \ character along to the right
+ STA SC
+
+ BCC LI10               \ If the addition of the low bytes overflowed, increment
+ INC SC+1               \ the high byte of SC(1 0)
+
+.LI10
+
+ LDA S                  \ Set S = S + Q to update the slope error
+ ADC Q
+ STA S
+
+ BCC LIC3               \ If the addition didn't overflow, jump to LIC3
+
+ INY                    \ Otherwise we just overflowed, so increment Y to move
+                        \ to the pixel line below
+
+ CPY #8                 \ If Y < 8 we are still within the same character block,
+ BNE LIC3               \ so skip to LIC3
+
+                        \ We now need to move down into the character block
+                        \ below, and each character row in screen memory takes
+                        \ up &140 bytes (&100 for the visible part and &20 for
+                        \ each of the blank borders on the side of the screen),
+                        \ so that's what we need to add to SC(1 0)
+                        \
+                        \ We also know the C flag is set, as we didn't take the
+                        \ BCC above, so we can add &13F in order to get the
+                        \ correct result
+
+ LDA SC                 \ Set SC(1 0) = SC(1 0) + &140
+ ADC #&3F               \
+ STA SC                 \ Starting with the low bytes
+
+ LDA SC+1               \ And then adding the high bytes
+ ADC #&01
+ STA SC+1
+
+ LDY #0                 \ Set the pixel line to the first line in that character
+                        \ block
+
+.LIC3
+
+ DEX                    \ Decrement the counter in X
+
+ BNE LIL3               \ If we haven't yet reached the right end of the line,
+                        \ loop back to LIL3 to plot the next pixel along
+
+ LDY YSAV               \ Restore Y from YSAV, so that it's preserved
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: LOIN (Part 5 of 7)
+\       Type: Subroutine
+\   Category: Drawing lines
+\    Summary: Draw a line: Line has a steep gradient, step up along y-axis
+\  Deep dive: Bresenham's line algorithm
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine draws a line from (X1, Y1) to (X2, Y2). It has multiple stages.
+\ If we get here, then:
+\
+\   * |delta_y| >= |delta_x|
+\
+\   * The line is closer to being vertical than horizontal
+\
+\   * We are going to step up along the y-axis
+\
+\   * We potentially swap coordinates to make sure Y1 >= Y2
+\
+\ ******************************************************************************
+
+.STPY
+
+ LDY Y1                 \ Set A = Y = Y1
+ TYA
+
+ LDX X1                 \ Set X = X1
+
+ CPY Y2                 \ If Y1 >= Y2, jump down to LI15, as the coordinates are
+ BCS LI15               \ already in the order that we want
+
+ DEC SWAP               \ Otherwise decrement SWAP from 0 to &FF, to denote that
+                        \ we are swapping the coordinates around
+
+ LDA X2                 \ Swap the values of X1 and X2
+ STA X1
+ STX X2
+
+ TAX                    \ Set X = X1
+
+ LDA Y2                 \ Swap the values of Y1 and Y2
+ STA Y1
+ STY Y2
+
+ TAY                    \ Set Y = A = Y1
+
+.LI15
+
+                        \ By this point we know the line is vertical-ish and
+                        \ Y1 >= Y2, so we're going from top to bottom as we go
+                        \ from Y1 to Y2
+
+                        \ We now calculate the address of the character block
+                        \ containing the pixel (X1, Y1) and put it in SC(1 0),
+                        \ as follows:
+                        \
+                        \   SC = &5800 + (Y1 div 8 * 256) + (Y1 div 8 * 64) + 32
+
+ LSR A                  \ Set A = A >> 3
+ LSR A                  \       = y div 8
+ LSR A                  \
+                        \ So A now contains the number of the character row
+                        \ that will contain the (X1, Y1) pixel
+
+ STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
+                        \                           = char row * 256
+
+ LSR A                  \ Set (A SC) = (A SC) / 4
+ ROR SC                 \            = (4 * ((char row * 64) + 32)) / 4
+ LSR A                  \            = char row * 64 + 32
+ ROR SC
+
+ ADC SC+1               \ Set SC(1 0) = (A SC) + (SC+1 0) + &5800
+ ADC #&58               \             = (char row * 64 + 32)
+ STA SC+1               \               + char row * 256
+                        \               + &5800
+                        \
+                        \ which is what we want, so SC(1 0) contains the address
+                        \ of the first visible pixel on the character row
+                        \ containing the point (X1, Y1)
+
+ TXA                    \ Each character block contains 8 pixel rows, so to get
+ AND #%11111000         \ the address of the first byte in the character block
+                        \ that we need to draw into, as an offset from the start
+                        \ of the row, we clear bits 0-2
+
+ ADC SC                 \ And add the result to SC(1 0) to get the character
+ STA SC                 \ block on the row we want
+
+ BCC P%+4               \ If the addition of the low bytes overflowed, increment
+ INC SC+1               \ the high byte
+
+                        \ So SC(1 0) now contains the address of the first pixel
+                        \ in the character block containing the (X1, Y1), taking
+                        \ the screen borders into consideration
+
+ LDA Y1                 \ Set Y = Y1 mod 8, which is the pixel row within the
+ AND #7                 \ character block at which we want to draw the start of
+ TAY                    \ our line (as each character block has 8 rows)
+
+ TXA                    \ Set X = X1 mod 8, which is the pixel column within the
+ AND #7                 \ character block at which we want to draw the start of
+ TAX                    \ our line (as each character block has 8 rows)
+
+ LDA TWOS,X             \ Fetch a mode 4 one-pixel byte with the pixel position
+ STA R                  \ at X and store it in R to act as a mask
+
+                        \ The following calculates:
+                        \
+                        \   P = P / Q
+                        \     = |delta_x| / |delta_y|
+                        \
+                        \ using the same shift-and-subtract algorithm
+                        \ documented in TIS2
+
+ LDA P                  \ Set A = |delta_x|
+
+ LDX #1                 \ Set Q to have bits 1-7 clear, so we can rotate through
+ STX P                  \ 7 loop iterations, getting a 1 each time, and then
+                        \ getting a 1 on the 8th iteration... and we can also
+                        \ use P to catch our result bits into bit 0 each time
+
+.LIL4
+
+ ASL A                  \ Shift A to the left
+
+ BCS LI13               \ If bit 7 of A was set, then jump straight to the
+                        \ subtraction
+
+ CMP Q                  \ If A < Q, skip the following subtraction
+ BCC LI14
+
+.LI13
+
+ SBC Q                  \ A >= Q, so set A = A - Q
+
+ SEC                    \ Set the C flag to rotate into the result in Q
+
+.LI14
+
+ ROL P                  \ Rotate the counter in P to the left, and catch the
+                        \ result bit into bit 0 (which will be a 0 if we didn't
+                        \ do the subtraction, or 1 if we did)
+
+ BCC LIL4               \ If we still have set bits in P, loop back to TIL2 to
+                        \ do the next iteration of 7
+
+                        \ We now have:
+                        \
+                        \   P = A / Q
+                        \     = |delta_x| / |delta_y|
+                        \
+                        \ and the C flag is set
+
+ LDX Q                  \ Set X = Q + 1
+ INX                    \       = |delta_y| + 1
+                        \
+                        \ We add 1 so we can skip the first pixel plot if the
+                        \ line is being drawn with swapped coordinates
+
+ LDA X2                 \ Set A = X2 - X1 (the C flag is set as we didn't take
+ SBC X1                 \ the above BCC)
+
+ BCC LFT                \ If X2 < X1 then jump to LFT, as we need to draw the
+                        \ line to the left and down
+
+\ ******************************************************************************
+\
+\       Name: LOIN (Part 6 of 7)
+\       Type: Subroutine
+\   Category: Drawing lines
+\    Summary: Draw a steep line going up and left or down and right
+\  Deep dive: Bresenham's line algorithm
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine draws a line from (X1, Y1) to (X2, Y2). It has multiple stages.
+\ If we get here, then:
+\
+\   * The line is going up and left (no swap) or down and right (swap)
+\
+\   * X1 < X2 and Y1 >= Y2
+\
+\   * Draw from (X1, Y1) at top left to (X2, Y2) at bottom right, omitting the
+\     first pixel
+\
+\ ******************************************************************************
+
+ CLC                    \ Clear the C flag
+
+ LDA SWAP               \ If SWAP = 0 then we didn't swap the coordinates above,
+ BEQ LI17               \ so jump down to LI17 to skip plotting the first pixel
+
+ DEX                    \ Decrement the counter in X because we're about to plot
+                        \ the first pixel
+
+.LIL5
+
+                        \ We now loop along the line from left to right, using X
+                        \ as a decreasing counter, and at each count we plot a
+                        \ single pixel using the pixel mask in R
+
+ LDA R                  \ Fetch the pixel byte from R
+
+ EOR (SC),Y             \ Store R into screen memory at SC(1 0), using EOR
+ STA (SC),Y             \ logic so it merges with whatever is already on-screen
+
+.LI17
+
+ DEY                    \ Decrement Y to step up along the y-axis
+
+ BPL LI16               \ If Y is positive we are still within the same
+                        \ character block, so skip to LI16
+
+                        \ We now need to move up into the character block above,
+                        \ and each character row in screen memory takes up &140
+                        \ bytes (&100 for the visible part and &20 for each of
+                        \ the blank borders on the side of the screen), so
+                        \ that's what we need to subtract from SC(1 0)
+                        \
+                        \ We also know the C flag is clear, as we cleared it
+                        \ above, so we can subtract &13F in order to get the
+                        \ correct result
+
+ LDA SC                 \ Set SC(1 0) = SC(1 0) - &140
+ SBC #&3F               \
+ STA SC                 \ Starting with the low bytes
+
+ LDA SCH                \ And then subtracting the high bytes
+ SBC #&01
+ STA SCH
+
+ LDY #7                 \ Set the pixel line to the last line in that character
+                        \ block
+
+.LI16
+
+ LDA S                  \ Set S = S + P to update the slope error
+ ADC P
+ STA S
+
+ BCC LIC5               \ If the addition didn't overflow, jump to LIC5
+
+ LSR R                  \ Otherwise we just overflowed, so shift the single
+                        \ pixel in R to the right, so the next pixel we plot
+                        \ will be at the next x-coordinate along
+
+ BCC LIC5               \ If the pixel didn't fall out of the right end of R
+                        \ into the C flag, then jump to LIC5
+
+ ROR R                  \ Otherwise we need to move over to the next character
+                        \ block, so first rotate R right so the set C flag goes
+                        \ back into the left end, giving %10000000
+
+ LDA SC                 \ Add 8 to SC, so SC(1 0) now points to the next
+ ADC #8                 \ character along to the right
+ STA SC
+
+ BCC LIC5               \ If the addition of the low bytes of SC overflowed,
+ INC SC+1               \ increment the high byte
+
+ CLC                    \ Clear the C flag
+
+.LIC5
+
+ DEX                    \ Decrement the counter in X
+
+ BNE LIL5               \ If we haven't yet reached the right end of the line,
+                        \ loop back to LIL5 to plot the next pixel along
+
+ LDY YSAV               \ Restore Y from YSAV, so that it's preserved
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: LOIN (Part 7 of 7)
+\       Type: Subroutine
+\   Category: Drawing lines
+\    Summary: Draw a steep line going up and right or down and left
+\  Deep dive: Bresenham's line algorithm
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine draws a line from (X1, Y1) to (X2, Y2). It has multiple stages.
+\ If we get here, then:
+\
+\   * The line is going up and right (no swap) or down and left (swap)
+\
+\   * X1 >= X2 and Y1 >= Y2
+\
+\   * Draw from (X1, Y1) at bottom left to (X2, Y2) at top right, omitting the
+\     first pixel
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   HL6                 Contains an RTS
+\
+\ ******************************************************************************
+
+.LFT
+
+ LDA SWAP               \ If SWAP = 0 then we didn't swap the coordinates above,
+ BEQ LI18               \ so jump down to LI18 to skip plotting the first pixel
+
+ DEX                    \ Decrement the counter in X because we're about to plot
+                        \ the first pixel
+
+.LIL6
+
+ LDA R                  \ Fetch the pixel byte from R
+
+ EOR (SC),Y             \ Store R into screen memory at SC(1 0), using EOR
+ STA (SC),Y             \ logic so it merges with whatever is already on-screen
+
+.LI18
+
+ DEY                    \ Decrement Y to step up along the y-axis
+
+ BPL LI19               \ If Y is positive we are still within the same
+                        \ character block, so skip to LI19
+
+                        \ We now need to move up into the character block above,
+                        \ and each character row in screen memory takes up &140
+                        \ bytes (&100 for the visible part and &20 for each of
+                        \ the blank borders on the side of the screen), so
+                        \ that's what we need to subtract from SC(1 0)
+                        \
+                        \ We also know the C flag is clear, as we call LFT with
+                        \ a BCC, so we can subtract &13F in order to get the
+                        \ correct result
+
+ LDA SC                 \ Set SC(1 0) = SC(1 0) - &140
+ SBC #&3F               \
+ STA SC                 \ Starting with the low bytes
+
+ LDA SCH                \ And then subtracting the high bytes
+ SBC #&01
+ STA SCH
+
+ LDY #7                 \ Set the pixel line to the last line in that character
+                        \ block
+
+.LI19
+
+ LDA S                  \ Set S = S + P to update the slope error
+ ADC P
+ STA S
+
+ BCC LIC6               \ If the addition didn't overflow, jump to LIC6
+
+ ASL R                  \ Otherwise we just overflowed, so shift the single
+                        \ pixel in R to the left, so the next pixel we plot
+                        \ will be at the previous x-coordinate
+
+ BCC LIC6               \ If the pixel didn't fall out of the left end of R
+                        \ into the C flag, then jump to LIC6
+
+ ROL R                  \ Otherwise we need to move over to the next character
+                        \ block, so first rotate R left so the set C flag goes
+                        \ back into the right end, giving %0000001
+
+ LDA SC                 \ Subtract 7 from SC, so SC(1 0) now points to the
+ SBC #7                 \ previous character along to the left
+ STA SC
+
+ BCS P%+4               \ If the subtraction of the low bytes of SC underflowed,
+ DEC SCH                \ decrement the high byte
+
+ CLC                    \ Clear the C flag so it doesn't affect the additions
+                        \ if we loop back
+
+.LIC6
+
+ DEX                    \ Decrement the counter in X
+
+ BNE LIL6               \ If we haven't yet reached the left end of the line,
+                        \ loop back to LIL6 to plot the next pixel along
+
+ LDY YSAV               \ Restore Y from YSAV, so that it's preserved
+
+.HL6
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: HLOIN
+\       Type: Subroutine
+\   Category: Drawing lines
+\    Summary: Draw a horizontal line from (X1, Y1) to (X2, Y1)
+\  Deep dive: Drawing monochrome pixels on the BBC Micro
+\
+\ ------------------------------------------------------------------------------
+\
+\ We do not draw a pixel at the right end of the line.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   Y                   Y is preserved
+\
+\ ******************************************************************************
+
+.HLOIN
+
+ LDX Y1                 \ Set Y2 = Y1, so we can use the normal line-drawing
+ STX Y2                 \ routine to draw a horizontal line
+
+.HL1
+
+ JMP LL30               \ Draw a line from (X1, Y1) to (X2, Y2), which will be
+                        \ horizontal because we set Y2 to Y1 above
+
+\ ******************************************************************************
+\
+\       Name: PX3
+\       Type: Subroutine
+\   Category: Drawing pixels
+\    Summary: Plot a single pixel at (X, Y) within a character block
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine is called from PIXEL to set 1 pixel within a character block for
+\ a distant point (i.e. where the distance ZZ >= &90). See the PIXEL routine for
+\ details, as this routine is effectively part of PIXEL.
+\
+\ Arguments:
+\
+\   X                   The x-coordinate of the pixel within the character block
+\
+\   Y                   The y-coordinate of the pixel within the character block
+\
+\   SC(1 0)             The screen address of the character block
+\
+\   T1                  The value of Y to restore on exit, so Y is preserved by
+\                       the call to PIXEL
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for flicker-free planets: ------->
+
+.PX3
+
+ LDA TWOS,X             \ Fetch a 1-pixel byte from TWOS and EOR it into SC+Y
+ EOR (SC),Y
+ STA (SC),Y
+
+ LDY T1                 \ Restore Y from T1, so Y is preserved by the routine
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: PIX1
+\       Type: Subroutine
+\   Category: Maths (Arithmetic)
+\    Summary: Calculate (YY+1 SYL+Y) = (A P) + (S R) and draw stardust particle
+\
+\ ------------------------------------------------------------------------------
+\
+\ Calculate the following:
+\
+\   (YY+1 SYL+Y) = (A P) + (S R)
+\
+\ and draw a stardust particle at (X1,Y1) with distance ZZ.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   (A P)               A is the angle ALPHA or BETA, P is always 0
+\
+\   (S R)               YY(1 0) or YY(1 0) + Q * A
+\
+\   Y                   Stardust particle number
+\
+\   X1                  The x-coordinate offset
+\
+\   Y1                  The y-coordinate offset
+\
+\   ZZ                  The distance of the point, with bigger distances drawing
+\                       smaller points:
+\
+\                         * ZZ < 80           Double-height four-pixel square
+\
+\                         * 80 <= ZZ <= 143   Single-height two-pixel dash
+\
+\                         * ZZ > 143          Single-height one-pixel dot
+\
+\ ******************************************************************************
+
+.PIX1
+
+ JSR ADD                \ Set (A X) = (A P) + (S R)
+
+ STA YY+1               \ Set YY+1 to A, the high byte of the result
+
+ TXA                    \ Set SYL+Y to X, the low byte of the result
+ STA SYL,Y
+
+                        \ Fall through into PIXEL2 to draw the stardust particle
+                        \ at (X1,Y1)
+
+\ ******************************************************************************
+\
+\       Name: PIXEL2
+\       Type: Subroutine
+\   Category: Drawing pixels
+\    Summary: Draw a stardust particle relative to the screen centre
+\
+\ ------------------------------------------------------------------------------
+\
+\ Draw a point (X1, Y1) from the middle of the screen with a size determined by
+\ a distance value. Used to draw stardust particles.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X1                  The x-coordinate offset
+\
+\   Y1                  The y-coordinate offset (positive means up the screen
+\                       from the centre, negative means down the screen)
+\
+\   ZZ                  The distance of the point, with bigger distances drawing
+\                       smaller points:
+\
+\                         * ZZ < 80           Double-height four-pixel square
+\
+\                         * 80 <= ZZ <= 143   Single-height two-pixel dash
+\
+\                         * ZZ > 143          Single-height one-pixel dot
+\
+\ ******************************************************************************
+
+.PIXEL2
+
+ LDA X1                 \ Fetch the x-coordinate offset into A
+
+ BPL PX1                \ If the x-coordinate offset is positive, jump to PX1
+                        \ to skip the following negation
+
+ EOR #%01111111         \ The x-coordinate offset is negative, so flip all the
+ CLC                    \ bits apart from the sign bit and add 1, to convert it
+ ADC #1                 \ from a sign-magnitude number to a signed number
+
+.PX1
+
+ EOR #%10000000         \ Set X = X1 + 128
+ TAX                    \
+                        \ So X is now the offset converted to an x-coordinate,
+                        \ centred on x-coordinate 128
+
+ LDA Y1                 \ Fetch the y-coordinate offset into A and clear the
+ AND #%01111111         \ sign bit, so A = |Y1|
+
+ CMP #96                \ If |Y1| >= 96 then it's off the screen (as 96 is half
+ BCS PX4                \ the screen height), so return from the subroutine (as
+                        \ PX4 contains an RTS)
+
+ LDA Y1                 \ Fetch the y-coordinate offset into A
+
+ BPL PX2                \ If the y-coordinate offset is positive, jump to PX2
+                        \ to skip the following negation
+
+ EOR #%01111111         \ The y-coordinate offset is negative, so flip all the
+ ADC #1                 \ bits apart from the sign bit and subtract 1, to negate
+                        \ it to a positive number, i.e. A is now |Y1|
+
+.PX2
+
+ STA T                  \ Set A = #Y + 1 - Y1
+ LDA #Y+1               \
+ SBC T                  \ So if Y1 is positive we display the point up from the
+                        \ centre at y-coordinate 97, while a negative Y1 means
+                        \ down from the centre
+
+                        \ Fall through into PIXEL to draw the stardust at the
+                        \ screen coordinates in (X, A)
+
+\ ******************************************************************************
+\
+\       Name: PIXEL
+\       Type: Subroutine
+\   Category: Drawing pixels
+\    Summary: Draw a one-pixel dot, two-pixel dash or four-pixel square
+\  Deep dive: Drawing monochrome pixels on the BBC Micro
+\
+\ ------------------------------------------------------------------------------
+\
+\ Draw a point at screen coordinate (X, A) with the point size determined by the
+\ distance in ZZ. This applies to the top part of the screen (the space view).
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   The screen x-coordinate of the point to draw
+\
+\   A                   The screen y-coordinate of the point to draw
+\
+\   ZZ                  The distance of the point, with bigger distances drawing
+\                       smaller points:
+\
+\                         * ZZ < 80           Double-height four-pixel square
+\
+\                         * 80 <= ZZ <= 143   Single-height two-pixel dash
+\
+\                         * ZZ > 143          Single-height one-pixel dot
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   Y                   Y is preserved
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   PX4                 Contains an RTS
+\
+\ ******************************************************************************
+
+.PIXEL
+
+                        \ We now calculate the address of the character block
+                        \ containing the pixel (X1, Y1) and put it in SC(1 0),
+                        \ as follows:
+                        \
+                        \   SC = &5800 + (Y1 div 8 * 256) + (Y1 div 8 * 64) + 32
+
+ STY T1                 \ Store Y in T1 so we can restore it at the end of the
+                        \ subroutine
+
+ LDY #128               \ Set SC = 128 for use in the calculation below
+ STY SC
+
+ TAY                    \ Copy A into Y, for use later
+
+ LSR A                  \ Set A = A >> 3
+ LSR A                  \       = y div 8
+ LSR A                  \
+                        \ So A now contains the number of the character row
+                        \ that will contain the pixel we want to draw
+
+ STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
+                        \                           = char row * 256
+
+ LSR A                  \ Set (A SC) = (A SC) / 4
+ ROR SC                 \            = (4 * ((char row * 64) + 32)) / 4
+ LSR A                  \            = char row * 64 + 32
+ ROR SC
+
+ ADC SC+1               \ Set SC(1 0) = (A SC) + (SC+1 0) + &5800
+ ADC #&58               \             = (char row * 64 + 32)
+ STA SC+1               \               + char row * 256
+                        \               + &5800
+                        \
+                        \ which is what we want, so SC(1 0) contains the address
+                        \ of the first visible pixel on the character row
+                        \ containing the point (x, y)
+
+ TXA                    \ Each character block contains 8 pixel rows, so to get
+ AND #%11111000         \ the address of the first byte in the character block
+                        \ that we need to draw into, as an offset from the start
+                        \ of the row, we clear bits 0-2
+
+ ADC SC                 \ And add the result to SC(1 0) to get the character
+ STA SC                 \ block on the row we want
+
+ BCC P%+4               \ If the addition of the low bytes overflowed, increment
+ INC SC+1               \ the high byte
+
+                        \ So SC(1 0) now contains the address of the first pixel
+                        \ in the character block containing the (x, y), taking
+                        \ the screen borders into consideration
+
+ TYA                    \ Set Y = Y mod 8, which is the pixel row within the
+ AND #7                 \ character block at which we want to draw our pixel
+ TAY                    \ (as each character block has 8 rows)
+
+ TXA                    \ Set X = X mod 8, which is the horizontal pixel number
+ AND #7                 \ within the character block where the pixel lies (as
+ TAX                    \ each pixel line in the character block is 8 pixels
+                        \ wide)
+
+                        \ --- Mod: Code removed for flicker-free planets: ----->
+
+\LDA ZZ                 \ If distance in ZZ >= 144, then this point is a very
+\CMP #144               \ long way away, so jump to PX14 to fetch a two-pixel
+\BCS PX14               \ dash from TWOS2 and EOR it into SC+Y
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDA ZZ                 \ If distance in ZZ >= 144, then this point is a very
+ CMP #144               \ long way away, so jump to PX3 to fetch a 1-pixel point
+ BCS PX3                \ from TWOS and EOR it into SC+Y
+
+                        \ --- End of replacement ------------------------------>
+
+ LDA TWOS2,X            \ Otherwise fetch a two-pixel dash from TWOS2 and EOR it
+ EOR (SC),Y             \ into SC+Y
+ STA (SC),Y
+
+ LDA ZZ                 \ If distance in ZZ >= 80, then this point is a medium
+ CMP #80                \ distance away, so jump to PX13 to stop drawing, as a
+ BCS PX13               \ two-pixel dash is enough
+
+                        \ Otherwise we keep going to draw another 2 pixel point
+                        \ either above or below the one we just drew, to make a
+                        \ four-pixel square
+
+ DEY                    \ Reduce Y by 1 to point to the pixel row above the one
+ BPL PX14               \ we just plotted, and if it is still positive, jump to
+                        \ PX14 to draw our second two-pixel dash
+
+ LDY #1                 \ Reducing Y by 1 made it negative, which means Y was
+                        \ 0 before we did the DEY above, so set Y to 1 to point
+                        \ to the pixel row after the one we just plotted
+
+.PX14
+
+ LDA TWOS2,X            \ Fetch a two-pixel dash from TWOS2 and EOR it into this
+ EOR (SC),Y             \ second row to make a four-pixel square
+ STA (SC),Y
+
+.PX13
+
+ LDY T1                 \ Restore Y from T1, so Y is preserved by the routine
+
+.PX4
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: BLINE
+\       Type: Subroutine
+\   Category: Drawing circles
+\    Summary: Draw a circle segment and add it to the ball line heap
+\  Deep dive: The ball line heap
+\             Drawing circles
+\
+\ ------------------------------------------------------------------------------
+\
+\ Draw a single segment of a circle, adding the point to the ball line heap.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   CNT                 The number of this segment
+\
+\   STP                 The step size for the circle
+\
+\   K6(1 0)             The x-coordinate of the new point on the circle, as
+\                       a screen coordinate
+\
+\   (T X)               The y-coordinate of the new point on the circle, as
+\                       an offset from the centre of the circle
+\
+\   FLAG                Set to &FF for the first call, so it sets up the first
+\                       point in the heap but waits until the second call before
+\                       drawing anything (as we need two points, i.e. two calls,
+\                       before we can draw a line)
+\
+\   K4(1 0)             Pixel y-coordinate of the centre of the circle
+\
+\   K5(1 0)             Screen x-coordinate of the previous point added to the
+\                       ball line heap (if this is not the first point)
+\
+\   K5(3 2)             Screen y-coordinate of the previous point added to the
+\                       ball line heap (if this is not the first point)
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   CNT                 CNT is updated to CNT + STP
+\
+\   A                   The new value of CNT
+\
+\   K5(1 0)             Screen x-coordinate of the point that we just added to
+\                       the ball line heap
+\
+\   K5(3 2)             Screen y-coordinate of the point that we just added to
+\                       the ball line heap
+\
+\   FLAG                Set to 0
+\
+\ ******************************************************************************
+
+.BLINE
+
+ TXA                    \ Set K6(3 2) = (T X) + K4(1 0)
+ ADC K4                 \             = y-coord of centre + y-coord of new point
+ STA K6+2               \
+ LDA K4+1               \ so K6(3 2) now contains the y-coordinate of the new
+ ADC T                  \ point on the circle but as a screen coordinate, to go
+ STA K6+3               \ along with the screen x-coordinate in K6(1 0)
+
+ LDA FLAG               \ If FLAG = 0, jump down to BL1
+ BEQ BL1
+
+ INC FLAG               \ Flag is &FF so this is the first call to BLINE, so
+                        \ increment FLAG to set it to 0, as then the next time
+                        \ we call BLINE it can draw the first line, from this
+                        \ point to the next
+
+.BL5
+
+                        \ --- Mod: Code added for flicker-free planets: ------->
+
+ JSR DrawPlanetLine     \ Draw the current line from the old planet
+
+                        \ --- End of added code ------------------------------->
+
+                        \ The following inserts a &FF marker into the LSY2 line
+                        \ heap to indicate that the next call to BLINE should
+                        \ store both the (X1, Y1) and (X2, Y2) points. We do
+                        \ this on the very first call to BLINE (when FLAG is
+                        \ &FF), and on subsequent calls if the segment does not
+                        \ fit on-screen, in which case we don't draw or store
+                        \ that segment, and we start a new segment with the next
+                        \ call to BLINE that does fit on-screen
+
+ LDY LSP                \ If byte LSP-1 of LSY2 = &FF, jump to BL7 to tidy up
+ LDA #&FF               \ and return from the subroutine, as the point that has
+ CMP LSY2-1,Y           \ been passed to BLINE is the start of a segment, so all
+ BEQ BL7                \ we need to do is save the coordinate in K5, without
+                        \ moving the pointer in LSP
+
+ STA LSY2,Y             \ Otherwise we just tried to plot a segment but it
+                        \ didn't fit on-screen, so put the &FF marker into the
+                        \ heap for this point, so the next call to BLINE starts
+                        \ a new segment
+
+ INC LSP                \ Increment LSP to point to the next point in the heap
+
+ BNE BL7                \ Jump to BL7 to tidy up and return from the subroutine
+                        \ (this BNE is effectively a JMP, as LSP will never be
+                        \ zero)
+
+.BL1
+
+ LDA K5                 \ Set XX15 = K5 = x_lo of previous point
+ STA XX15
+
+ LDA K5+1               \ Set XX15+1 = K5+1 = x_hi of previous point
+ STA XX15+1
+
+ LDA K5+2               \ Set XX15+2 = K5+2 = y_lo of previous point
+ STA XX15+2
+
+ LDA K5+3               \ Set XX15+3 = K5+3 = y_hi of previous point
+ STA XX15+3
+
+ LDA K6                 \ Set XX15+4 = x_lo of new point
+ STA XX15+4
+
+ LDA K6+1               \ Set XX15+5 = x_hi of new point
+ STA XX15+5
+
+ LDA K6+2               \ Set XX12 = y_lo of new point
+ STA XX12
+
+ LDA K6+3               \ Set XX12+1 = y_hi of new point
+ STA XX12+1
+
+ JSR LL145              \ Call LL145 to see if the new line segment needs to be
+                        \ clipped to fit on-screen, returning the clipped line's
+                        \ end-points in (X1, Y1) and (X2, Y2)
+
+ BCS BL5                \ If the C flag is set then the line is not visible on
+                        \ screen anyway, so jump to BL5, to avoid drawing and
+                        \ storing this line
+
+ LDA SWAP               \ If SWAP = 0, then we didn't have to swap the line
+ BEQ BL9                \ coordinates around during the clipping process, so
+                        \ jump to BL9 to skip the following swap
+
+ LDA X1                 \ Otherwise the coordinates were swapped by the call to
+ LDY X2                 \ LL145 above, so we swap (X1, Y1) and (X2, Y2) back
+ STA X2                 \ again
+ STY X1
+ LDA Y1
+ LDY Y2
+ STA Y2
+ STY Y1
+
+.BL9
+
+ LDY LSP                \ Set Y = LSP
+
+ LDA LSY2-1,Y           \ If byte LSP-1 of LSY2 is not &FF, jump down to BL8
+ CMP #&FF               \ to skip the following (X1, Y1) code
+ BNE BL8
+
+                        \ Byte LSP-1 of LSY2 is &FF, which indicates that we
+                        \ need to store (X1, Y1) in the heap
+
+                        \ --- Mod: Code added for flicker-free planets: ------->
+
+ JSR DrawPlanetLine     \ Draw the current line from the old planet
+
+                        \ --- End of added code ------------------------------->
+
+ LDA X1                 \ Store X1 in the LSP-th byte of LSX2
+ STA LSX2,Y
+
+ LDA Y1                 \ Store Y1 in the LSP-th byte of LSY2
+ STA LSY2,Y
+
+ INY                    \ Increment Y to point to the next byte in LSX2/LSY2
+
+.BL8
+
+                        \ --- Mod: Code added for flicker-free planets: ------->
+
+ LDA #&FF               \ Set bit 7 of K3+8 so we do not draw the current line
+ STA K3+8               \ in the call to DrawPlanetLine, but store the
+                        \ coordinates so we we can check them below
+
+ JSR DrawPlanetLine+4   \ Calculate the current line from the old heap, but do
+                        \ not draw it, but store the coordinates (X1, Y1) and
+                        \ (X2, Y2) in K3+4 to K3+7
+
+                        \ --- End of added code ------------------------------->
+
+ LDA X2                 \ Store X2 in the LSP-th byte of LSX2
+ STA LSX2,Y
+
+ LDA Y2                 \ Store Y2 in the LSP-th byte of LSX2
+ STA LSY2,Y
+
+ INY                    \ Increment Y to point to the next byte in LSX2/LSY2
+
+ STY LSP                \ Update LSP to point to the same as Y
+
+                        \ --- Mod: Code removed for flicker-free planets: ----->
+
+\JSR LOIN               \ Draw a line from (X1, Y1) to (X2, Y2)
+
+                        \ --- And replaced by: -------------------------------->
+
+ JSR DrawNewPlanetLine  \ Draw a line from (X1, Y1) to (X2, Y2), but only if it
+                        \ is different to the old line in K3+4 to K3+7
+
+                        \ --- End of replacement ------------------------------>
+
+ LDA XX13               \ If XX13 is non-zero, jump up to BL5 to add a &FF
+ BNE BL5                \ marker to the end of the line heap. XX13 is non-zero
+                        \ after the call to the clipping routine LL145 above if
+                        \ the end of the line was clipped, meaning the next line
+                        \ sent to BLINE can't join onto the end but has to start
+                        \ a new segment, and that's what inserting the &FF
+                        \ marker does
+
+.BL7
+
+ LDA K6                 \ Copy the data for this step point from K6(3 2 1 0)
+ STA K5                 \ into K5(3 2 1 0), for use in the next call to BLINE:
+ LDA K6+1               \
+ STA K5+1               \   * K5(1 0) = screen x-coordinate of this point
+ LDA K6+2               \
+ STA K5+2               \   * K5(3 2) = screen y-coordinate of this point
+ LDA K6+3               \
+ STA K5+3               \ They now become the "previous point" in the next call
+
+ LDA CNT                \ Set CNT = CNT + STP
+ CLC
+ ADC STP
+ STA CNT
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: EraseRestOfPlanet
+\       Type: Subroutine
+\   Category: Drawing lines
+\    Summary: Draw all remaining lines in the ball line heap to erase the rest
+\             of the old planet
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for flicker-free planets: ------->
+
+.EraseRestOfPlanet
+
+ LDY LSNUM              \ Set Y to the offset in LSNUM, which points to the part
+                        \ of the heap that we are overwriting with new points
+
+ CPY LSNUM2             \ If LSNUM >= LSNUM2, then we have already redrawn all
+ BCS eras1              \ of the lines from the old circle's ball line heap, so
+                        \ skip the following
+
+ JSR DrawPlanetLine     \ Erase the next planet line from the ball line heap
+
+ JMP EraseRestOfPlanet  \ Loop back for the next line in the ball line heap
+
+.eras1
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: DrawPlanetLine
+\       Type: Subroutine
+\   Category: Drawing lines
+\    Summary: Draw a segment of the old planet from the ball line heap
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   DrawPlanetLine+4    If bit 7 of K3+8 is set, store the line coordinates in
+\                       K3+4 to K3+7 (X1, Y1, X2, Y2) and do not draw the line
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for flicker-free planets: ------->
+
+.DrawPlanetLine
+
+ LDA #0                 \ Clear bit 7 of K3+8 so we draw the current line below
+ STA K3+8
+
+ LDA #0                 \ Clear bit 7 of K3+9 to indicate that there is no line
+ STA K3+9               \ to draw (we may change this below)
+
+ LDA LSNUM              \ If LSNUM = 1, then this is the first point from the
+ CMP #2                 \ heap, so jump to plin3 to set the previous coordinate
+ BCC plin3              \ and return from the subroutine
+
+ LDA X1                 \ Save X1, X2, Y1, Y2 and Y on the stack
+ PHA
+ LDA Y1
+ PHA
+ LDA X2
+ PHA
+ LDA Y2
+ PHA
+ TYA
+ PHA
+
+ LDY LSNUM              \ Set Y to the offset in LSNUM, which points to the part
+                        \ of the heap that we are overwriting with new points
+
+ CPY LSNUM2             \ If LSNUM >= LSNUM2, then we have already redrawn all
+ BCS plin1              \ of the lines from the old circle's ball line heap, so
+                        \ jump to plin1 to return from the subroutine
+
+                        \ Otherwise we need to draw the line from the heap, to
+                        \ erase it from the screen
+
+ LDA K3+2               \ Set X1 = K3+2 = screen x-coordinate of previous point
+ STA X1                 \ from the old heap
+
+ LDA K3+3               \ Set Y1 = K3+3 = screen y-coordinate of previous point
+ STA Y1                 \ from the old heap
+
+ LDA LSX2,Y             \ Set X2 to the y-coordinate from the LSNUM-th point in
+ STA X2                 \ the heap
+
+ STA K3+2               \ Store the x-coordinate of the point we are overwriting
+                        \ in K3+2, so we can use it on the next iteration
+
+ LDA LSY2,Y             \ Set Y2 to the y-coordinate from the LSNUM-th point in
+ STA Y2                 \ the heap
+
+ STA K3+3               \ Store the y-coordinate of the point we are overwriting
+                        \ in K3+3, so we can use it on the next iteration
+
+ INC LSNUM              \ Increment LSNUM to point to the next coordinate, so we
+                        \ work our way through the current heap
+
+ LDA Y1                 \ If Y1 or Y2 = &FF then this indicates a break in the
+ CMP #&FF               \ circle, so jump to plin1 to skip the following and
+ BEQ plin1              \ return from the subroutine, asthere is no line to
+ LDA Y2                 \ erase
+ CMP #&FF
+ BEQ plin1
+
+ DEC K3+9               \ Decrement K3+9 to &FF to indicate that there is a line
+                        \ to draw
+
+ BIT K3+8               \ If bit 7 of K3+8 is set, jump to plin2 to store the
+ BMI plin2              \ line coordinates rather than drawing the line
+
+ JSR LL30               \ The coordinates in (X1, Y1) and (X2, Y2) that we just
+                        \ pulled from the ball line heap point to a line that is
+                        \ still on-screen, so call LL30 to draw this line and
+                        \ erase it from the screen
+
+.plin1
+
+ PLA                    \ Restore Y, X1, X2, Y1 and Y2 from the stack
+ TAY
+ PLA
+ STA Y2
+ PLA
+ STA X2
+ PLA
+ STA Y1
+ PLA
+ STA X1
+
+ RTS                    \ Return from the subroutine
+
+.plin2
+
+ LDA X1                 \ Store X1, Y1, X2, Y2 in K3+4 to K3+7
+ STA K3+4
+ LDA Y1
+ STA K3+5
+ LDA X2
+ STA K3+6
+ LDA Y2
+ STA K3+7
+
+ JMP plin1              \ Jump to plin1 to return from the subroutine
+
+.plin3
+
+ LDA LSX2+1             \ Store the heap's first coordinate in K3+2 and K3+3
+ STA K3+2
+ LDA LSY2+1
+ STA K3+3
+
+ INC LSNUM              \ Increment LSNUM to point to the next coordinate, so we
+                        \ work our way through the current heap
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: DrawNewPlanetLine
+\       Type: Subroutine
+\   Category: Drawing lines
+\    Summary: Draw a ball line, but only if it is different to the old line
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   K3+4 to K3+7        The (X1, Y1) and (X2, Y2) coordinates of the old line
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for flicker-free planets: ------->
+
+.DrawNewPlanetLine
+
+ BIT K3+9               \ If bit 7 of K3+9 is clear, then there is no old line
+ BPL nlin2              \ to draw, so jump to nlin2 to draw the new line only
+
+ LDA K3+4               \ If the old line equals the new line, jump to nlin3
+ CMP X1                 \ to skip drawing both lines
+ BNE nlin1
+ LDA K3+5
+ CMP Y1
+ BNE nlin1
+ LDA K3+6
+ CMP X2
+ BNE nlin1
+ LDA K3+7
+ CMP Y2
+ BEQ nlin3
+
+.nlin1
+
+                        \ If we get here then the old line is different to the
+                        \ new line, so we draw them both
+
+ JSR LL30               \ Draw the new line from (X1, Y1) to (X2, Y2)
+
+ LDA K3+4               \ Set up the old line's coordinates
+ STA X1
+ LDA K3+5
+ STA Y1
+ LDA K3+6
+ STA X2
+ LDA K3+7
+ STA Y2
+
+.nlin2
+
+ JSR LL30               \ Draw the old line to erase it
+
+.nlin3
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: FLIP
+\       Type: Subroutine
+\   Category: Stardust
+\    Summary: Reflect the stardust particles in the screen diagonal and redraw
+\             the stardust field
+\
+\ ------------------------------------------------------------------------------
+\
+\ Swap the x- and y-coordinates of all the stardust particles and draw the new
+\ set of particles. Called by LOOK1 when we switch views.
+\
+\ This is a quick way of making the stardust field in the new view feel
+\ different without having to generate a whole new field. If you look carefully
+\ at the stardust field when you switch views, you can just about see that the
+\ new field is a reflection of the previous field in the screen diagonal, i.e.
+\ in the line from bottom left to top right. This is the line where x = y when
+\ the origin is in the middle of the screen, and positive x and y are right and
+\ up, which is the coordinate system we use for stardust).
+\
+\ ******************************************************************************
+
+.FLIP
+
+ LDY #NOST              \ Set Y to the number of stardust particles, so we can
+                        \ use it as a counter through all the stardust
+
+.FLL1
+
+ LDX SY,Y               \ Copy the Y-th particle's y-coordinate from SY+Y into X
+
+ LDA SX,Y               \ Copy the Y-th particle's x-coordinate from SX+Y into
+ STA Y1                 \ both Y1 and the particle's y-coordinate
+ STA SY,Y
+
+ TXA                    \ Copy the Y-th particle's original y-coordinate into
+ STA X1                 \ both X1 and the particle's x-coordinate, so the x- and
+ STA SX,Y               \ y-coordinates are now swapped and (X1, Y1) contains
+                        \ the particle's new coordinates
+
+ LDA SZ,Y               \ Fetch the Y-th particle's distance from SZ+Y into ZZ
+ STA ZZ
+
+ JSR PIXEL2             \ Draw a stardust particle at (X1,Y1) with distance ZZ
+
+ DEY                    \ Decrement the counter to point to the next particle of
+                        \ stardust
+
+ BNE FLL1               \ Loop back to FLL1 until we have moved all the stardust
+                        \ particles
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: STARS
+\       Type: Subroutine
+\   Category: Stardust
+\    Summary: The main routine for processing the stardust
+\
+\ ------------------------------------------------------------------------------
+\
+\ Called at the very end of the main flight loop.
+\
+\ ******************************************************************************
+
+.STARS
+
+ LDX VIEW               \ Load the current view into X:
+                        \
+                        \   0 = front
+                        \   1 = rear
+                        \   2 = left
+                        \   3 = right
+
+ BEQ STARS1             \ If this 0, jump to STARS1 to process the stardust for
+                        \ the front view
+
+ DEX                    \ If this is view 2 or 3, jump to STARS2 (via ST11) to
+ BNE ST11               \ process the stardust for the left or right views
+
+ JMP STARS6             \ Otherwise this is the rear view, so jump to STARS6 to
+                        \ process the stardust for the rear view
+
+.ST11
+
+ JMP STARS2             \ Jump to STARS2 for the left or right views, as it's
+                        \ too far for the branch instruction above
+
+\ ******************************************************************************
+\
+\       Name: STARS1
+\       Type: Subroutine
+\   Category: Stardust
+\    Summary: Process the stardust for the front view
+\  Deep dive: Stardust in the front view
+\
+\ ------------------------------------------------------------------------------
+\
+\ This moves the stardust towards us according to our speed (so the dust rushes
+\ past us), and applies our current pitch and roll to each particle of dust, so
+\ the stardust moves correctly when we steer our ship.
+\
+\ When a stardust particle rushes past us and falls off the side of the screen,
+\ its memory is recycled as a new particle that's positioned randomly on-screen.
+\
+\ These are the calculations referred to in the commentary:
+\
+\   1. q = 64 * speed / z_hi
+\   2. z = z - speed * 64
+\   3. y = y + |y_hi| * q
+\   4. x = x + |x_hi| * q
+\
+\   5. y = y + alpha * x / 256
+\   6. x = x - alpha * y / 256
+\
+\   7. x = x + 2 * (beta * y / 256) ^ 2
+\   8. y = y - beta * 256
+\
+\ For more information see the associated deep dive.
+\
+\ ******************************************************************************
+
+.STARS1
+
+ LDY #NOST              \ Set Y to the number of stardust particles, so we can
+                        \ use it as a counter through all the stardust
+
+                        \ In the following, we're going to refer to the 16-bit
+                        \ space coordinates of the current particle of stardust
+                        \ (i.e. the Y-th particle) like this:
+                        \
+                        \   x = (x_hi x_lo)
+                        \   y = (y_hi y_lo)
+                        \   z = (z_hi z_lo)
+                        \
+                        \ These values are stored in (SX+Y SXL+Y), (SY+Y SYL+Y)
+                        \ and (SZ+Y SZL+Y) respectively
+
+.STL1
+
+ JSR DV42               \ Call DV42 to set the following:
+                        \
+                        \   (P R) = 256 * DELTA / z_hi
+                        \         = 256 * speed / z_hi
+                        \
+                        \ The maximum value returned is P = 2 and R = 128 (see
+                        \ DV42 for an explanation)
+
+ LDA R                  \ Set A = R, so now:
+                        \
+                        \   (P A) = 256 * speed / z_hi
+
+ LSR P                  \ Rotate (P A) right by 2 places, which sets P = 0 (as P
+ ROR A                  \ has a maximum value of 2) and leaves:
+ LSR P                  \
+ ROR A                  \   A = 64 * speed / z_hi
+
+ ORA #1                 \ Make sure A is at least 1, and store it in Q, so we
+ STA Q                  \ now have result 1 above:
+                        \
+                        \   Q = 64 * speed / z_hi
+
+ LDA SZL,Y              \ We now calculate the following:
+ SBC DELT4              \
+ STA SZL,Y              \  (z_hi z_lo) = (z_hi z_lo) - DELT4(1 0)
+                        \
+                        \ starting with the low bytes
+
+ LDA SZ,Y               \ And then we do the high bytes
+ STA ZZ                 \
+ SBC DELT4+1            \ We also set ZZ to the original value of z_hi, which we
+ STA SZ,Y               \ use below to remove the existing particle
+                        \
+                        \ So now we have result 2 above:
+                        \
+                        \   z = z - DELT4(1 0)
+                        \     = z - speed * 64
+
+ JSR MLU1               \ Call MLU1 to set:
+                        \
+                        \   Y1 = y_hi
+                        \
+                        \   (A P) = |y_hi| * Q
+                        \
+                        \ So Y1 contains the original value of y_hi, which we
+                        \ use below to remove the existing particle
+
+                        \ We now calculate:
+                        \
+                        \   (S R) = YY(1 0) = (A P) + y
+
+ STA YY+1               \ First we do the low bytes with:
+ LDA P                  \
+ ADC SYL,Y              \   YY+1 = A
+ STA YY                 \   R = YY = P + y_lo
+ STA R                  \
+                        \ so we get this:
+                        \
+                        \   (? R) = YY(1 0) = (A P) + y_lo
+
+ LDA Y1                 \ And then we do the high bytes with:
+ ADC YY+1               \
+ STA YY+1               \   S = YY+1 = y_hi + YY+1
+ STA S                  \
+                        \ so we get our result:
+                        \
+                        \   (S R) = YY(1 0) = (A P) + (y_hi y_lo)
+                        \                   = |y_hi| * Q + y
+                        \
+                        \ which is result 3 above, and (S R) is set to the new
+                        \ value of y
+
+ LDA SX,Y               \ Set X1 = A = x_hi
+ STA X1                 \
+                        \ So X1 contains the original value of x_hi, which we
+                        \ use below to remove the existing particle
+
+ JSR MLU2               \ Set (A P) = |x_hi| * Q
+
+                        \ We now calculate:
+                        \
+                        \   XX(1 0) = (A P) + x
+
+ STA XX+1               \ First we do the low bytes:
+ LDA P                  \
+ ADC SXL,Y              \   XX(1 0) = (A P) + x_lo
+ STA XX
+
+ LDA X1                 \ And then we do the high bytes:
+ ADC XX+1               \
+ STA XX+1               \   XX(1 0) = XX(1 0) + (x_hi 0)
+                        \
+                        \ so we get our result:
+                        \
+                        \   XX(1 0) = (A P) + x
+                        \           = |x_hi| * Q + x
+                        \
+                        \ which is result 4 above, and we also have:
+                        \
+                        \   A = XX+1 = (|x_hi| * Q + x) / 256
+                        \
+                        \ i.e. A is the new value of x, divided by 256
+
+ EOR ALP2+1             \ EOR with the flipped sign of the roll angle alpha, so
+                        \ A has the opposite sign to the flipped roll angle
+                        \ alpha, i.e. it gets the same sign as alpha
+
+ JSR MLS1               \ Call MLS1 to calculate:
+                        \
+                        \   (A P) = A * ALP1
+                        \         = (x / 256) * alpha
+
+ JSR ADD                \ Call ADD to calculate:
+                        \
+                        \   (A X) = (A P) + (S R)
+                        \         = (x / 256) * alpha + y
+                        \         = y + alpha * x / 256
+
+ STA YY+1               \ Set YY(1 0) = (A X) to give:
+ STX YY                 \
+                        \   YY(1 0) = y + alpha * x / 256
+                        \
+                        \ which is result 5 above, and we also have:
+                        \
+                        \   A = YY+1 = y + alpha * x / 256
+                        \
+                        \ i.e. A is the new value of y, divided by 256
+
+ EOR ALP2               \ EOR A with the correct sign of the roll angle alpha,
+                        \ so A has the opposite sign to the roll angle alpha
+
+ JSR MLS2               \ Call MLS2 to calculate:
+                        \
+                        \   (S R) = XX(1 0)
+                        \         = x
+                        \
+                        \   (A P) = A * ALP1
+                        \         = -y / 256 * alpha
+
+ JSR ADD                \ Call ADD to calculate:
+                        \
+                        \   (A X) = (A P) + (S R)
+                        \         = -y / 256 * alpha + x
+
+ STA XX+1               \ Set XX(1 0) = (A X), which gives us result 6 above:
+ STX XX                 \
+                        \   x = x - alpha * y / 256
+
+ LDX BET1               \ Fetch the pitch magnitude into X
+
+ LDA YY+1               \ Set A to y_hi and set it to the flipped sign of beta
+ EOR BET2+1
+
+ JSR MULTS-2            \ Call MULTS-2 to calculate:
+                        \
+                        \   (A P) = X * A
+                        \         = -beta * y_hi
+
+ STA Q                  \ Store the high byte of the result in Q, so:
+                        \
+                        \   Q = -beta * y_hi / 256
+
+ JSR MUT2               \ Call MUT2 to calculate:
+                        \
+                        \   (S R) = XX(1 0) = x
+                        \
+                        \   (A P) = Q * A
+                        \         = (-beta * y_hi / 256) * (-beta * y_hi / 256)
+                        \         = (beta * y / 256) ^ 2
+
+ ASL P                  \ Double (A P), store the top byte in A and set the C
+ ROL A                  \ flag to bit 7 of the original A, so this does:
+ STA T                  \
+                        \   (T P) = (A P) << 1
+                        \         = 2 * (beta * y / 256) ^ 2
+
+ LDA #0                 \ Set bit 7 in A to the sign bit from the A in the
+ ROR A                  \ calculation above and apply it to T, so we now have:
+ ORA T                  \
+                        \   (A P) = (A P) * 2
+                        \         = 2 * (beta * y / 256) ^ 2
+                        \
+                        \ with the doubling retaining the sign of (A P)
+
+ JSR ADD                \ Call ADD to calculate:
+                        \
+                        \   (A X) = (A P) + (S R)
+                        \         = 2 * (beta * y / 256) ^ 2 + x
+
+ STA XX+1               \ Store the high byte A in XX+1
+
+ TXA                    \ Store the low byte X in x_lo
+ STA SXL,Y
+
+                        \ So (XX+1 x_lo) now contains:
+                        \
+                        \   x = x + 2 * (beta * y / 256) ^ 2
+                        \
+                        \ which is result 7 above
+
+ LDA YY                 \ Set (S R) = YY(1 0) = y
+ STA R
+ LDA YY+1
+ STA S
+
+ LDA #0                 \ Set P = 0
+ STA P
+
+ LDA BETA               \ Set A = -beta, so:
+ EOR #%10000000         \
+                        \   (A P) = (-beta 0)
+                        \         = -beta * 256
+
+ JSR PIX1               \ Call PIX1 to calculate the following:
+                        \
+                        \   (YY+1 y_lo) = (A P) + (S R)
+                        \               = -beta * 256 + y
+                        \
+                        \ i.e. y = y - beta * 256, which is result 8 above
+                        \
+                        \ PIX1 also draws a particle at (X1, Y1) with distance
+                        \ ZZ, which will remove the old stardust particle, as we
+                        \ set X1, Y1 and ZZ to the original values for this
+                        \ particle during the calculations above
+
+                        \ We now have our newly moved stardust particle at
+                        \ x-coordinate (XX+1 x_lo) and y-coordinate (YY+1 y_lo)
+                        \ and distance z_hi, so we draw it if it's still on
+                        \ screen, otherwise we recycle it as a new bit of
+                        \ stardust and draw that
+
+ LDA XX+1               \ Set X1 and x_hi to the high byte of XX in XX+1, so
+ STA X1                 \ the new x-coordinate is in (x_hi x_lo) and the high
+ STA SX,Y               \ byte is in X1
+
+ AND #%01111111         \ If |x_hi| >= 120 then jump to KILL1 to recycle this
+ CMP #120               \ particle, as it's gone off the side of the screen,
+ BCS KILL1              \ and rejoin at STC1 with the new particle
+
+ LDA YY+1               \ Set Y1 and y_hi to the high byte of YY in YY+1, so
+ STA SY,Y               \ the new x-coordinate is in (y_hi y_lo) and the high
+ STA Y1                 \ byte is in Y1
+
+ AND #%01111111         \ If |y_hi| >= 120 then jump to KILL1 to recycle this
+ CMP #120               \ particle, as it's gone off the top or bottom of the
+ BCS KILL1              \ screen, and rejoin at STC1 with the new particle
+
+ LDA SZ,Y               \ If z_hi < 16 then jump to KILL1 to recycle this
+ CMP #16                \ particle, as it's so close that it's effectively gone
+ BCC KILL1              \ past us, and rejoin at STC1 with the new particle
+
+ STA ZZ                 \ Set ZZ to the z-coordinate in z_hi
+
+.STC1
+
+ JSR PIXEL2             \ Draw a stardust particle at (X1,Y1) with distance ZZ,
+                        \ i.e. draw the newly moved particle at (x_hi, y_hi)
+                        \ with distance z_hi
+
+ DEY                    \ Decrement the loop counter to point to the next
+                        \ stardust particle
+
+ BEQ P%+5               \ If we have just done the last particle, skip the next
+                        \ instruction to return from the subroutine
+
+ JMP STL1               \ We have more stardust to process, so jump back up to
+                        \ STL1 for the next particle
+
+ RTS                    \ Return from the subroutine
+
+.KILL1
+
+                        \ Our particle of stardust just flew past us, so let's
+                        \ recycle that particle, starting it at a random
+                        \ position that isn't too close to the centre point
+
+ JSR DORND              \ Set A and X to random numbers
+
+ ORA #4                 \ Make sure A is at least 4 and store it in Y1 and y_hi,
+ STA Y1                 \ so the new particle starts at least 4 pixels above or
+ STA SY,Y               \ below the centre of the screen
+
+ JSR DORND              \ Set A and X to random numbers
+
+ ORA #8                 \ Make sure A is at least 8 and store it in X1 and x_hi,
+ STA X1                 \ so the new particle starts at least 8 pixels either
+ STA SX,Y               \ side of the centre of the screen
+
+ JSR DORND              \ Set A and X to random numbers
+
+ ORA #144               \ Make sure A is at least 144 and store it in ZZ and
+ STA SZ,Y               \ z_hi so the new particle starts in the far distance
+ STA ZZ
+
+ LDA Y1                 \ Set A to the new value of y_hi. This has no effect as
+                        \ STC1 starts with a jump to PIXEL2, which starts with a
+                        \ LDA instruction
+
+ JMP STC1               \ Jump up to STC1 to draw this new particle
+
+\ ******************************************************************************
+\
+\       Name: STARS6
+\       Type: Subroutine
+\   Category: Stardust
+\    Summary: Process the stardust for the rear view
+\  Deep dive: Stardust in the front view
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine is very similar to STARS1, which processes stardust for the front
+\ view. The main difference is that the direction of travel is reversed, so the
+\ signs in the calculations are different, as well as the order of the first
+\ batch of calculations.
+\
+\ When a stardust particle falls away into the far distance, it is removed from
+\ the screen and its memory is recycled as a new particle, positioned randomly
+\ along one of the four edges of the screen.
+\
+\ These are the calculations referred to in the commentary:
+\
+\   1. q = 64 * speed / z_hi
+\   2. z = z - speed * 64
+\   3. y = y + |y_hi| * q
+\   4. x = x + |x_hi| * q
+\
+\   5. y = y + alpha * x / 256
+\   6. x = x - alpha * y / 256
+\
+\   7. x = x + 2 * (beta * y / 256) ^ 2
+\   8. y = y - beta * 256
+\
+\ For more information see the associated deep dive.
+\
+\ ******************************************************************************
+
+.STARS6
+
+ LDY #NOST              \ Set Y to the number of stardust particles, so we can
+                        \ use it as a counter through all the stardust
+
+.STL6
+
+ JSR DV42               \ Call DV42 to set the following:
+                        \
+                        \   (P R) = 256 * DELTA / z_hi
+                        \         = 256 * speed / z_hi
+                        \
+                        \ The maximum value returned is P = 2 and R = 128 (see
+                        \ DV42 for an explanation)
+
+ LDA R                  \ Set A = R, so now:
+                        \
+                        \   (P A) = 256 * speed / z_hi
+
+ LSR P                  \ Rotate (P A) right by 2 places, which sets P = 0 (as P
+ ROR A                  \ has a maximum value of 2) and leaves:
+ LSR P                  \
+ ROR A                  \   A = 64 * speed / z_hi
+
+ ORA #1                 \ Make sure A is at least 1, and store it in Q, so we
+ STA Q                  \ now have result 1 above:
+                        \
+                        \   Q = 64 * speed / z_hi
+
+ LDA SX,Y               \ Set X1 = A = x_hi
+ STA X1                 \
+                        \ So X1 contains the original value of x_hi, which we
+                        \ use below to remove the existing particle
+
+ JSR MLU2               \ Set (A P) = |x_hi| * Q
+
+                        \ We now calculate:
+                        \
+                        \   XX(1 0) = x - (A P)
+
+ STA XX+1               \ First we do the low bytes:
+ LDA SXL,Y              \
+ SBC P                  \   XX(1 0) = x_lo - (A P)
+ STA XX
+
+ LDA X1                 \ And then we do the high bytes:
+ SBC XX+1               \
+ STA XX+1               \   XX(1 0) = (x_hi 0) - XX(1 0)
+                        \
+                        \ so we get our result:
+                        \
+                        \   XX(1 0) = x - (A P)
+                        \           = x - |x_hi| * Q
+                        \
+                        \ which is result 2 above, and we also have:
+
+ JSR MLU1               \ Call MLU1 to set:
+                        \
+                        \   Y1 = y_hi
+                        \
+                        \   (A P) = |y_hi| * Q
+                        \
+                        \ So Y1 contains the original value of y_hi, which we
+                        \ use below to remove the existing particle
+
+                        \ We now calculate:
+                        \
+                        \   (S R) = YY(1 0) = y - (A P)
+
+ STA YY+1               \ First we do the low bytes with:
+ LDA SYL,Y              \
+ SBC P                  \   YY+1 = A
+ STA YY                 \   R = YY = y_lo - P
+ STA R                  \
+                        \ so we get this:
+                        \
+                        \   (? R) = YY(1 0) = y_lo - (A P)
+
+ LDA Y1                 \ And then we do the high bytes with:
+ SBC YY+1               \
+ STA YY+1               \   S = YY+1 = y_hi - YY+1
+ STA S                  \
+                        \ so we get our result:
+                        \
+                        \   (S R) = YY(1 0) = (y_hi y_lo) - (A P)
+                        \                   = y - |y_hi| * Q
+                        \
+                        \ which is result 3 above, and (S R) is set to the new
+                        \ value of y
+
+ LDA SZL,Y              \ We now calculate the following:
+ ADC DELT4              \
+ STA SZL,Y              \  (z_hi z_lo) = (z_hi z_lo) + DELT4(1 0)
+                        \
+                        \ starting with the low bytes
+
+ LDA SZ,Y               \ And then we do the high bytes
+ STA ZZ                 \
+ ADC DELT4+1            \ We also set ZZ to the original value of z_hi, which we
+ STA SZ,Y               \ use below to remove the existing particle
+                        \
+                        \ So now we have result 4 above:
+                        \
+                        \   z = z + DELT4(1 0)
+                        \     = z + speed * 64
+
+ LDA XX+1               \ EOR x with the correct sign of the roll angle alpha,
+ EOR ALP2               \ so A has the opposite sign to the roll angle alpha
+
+ JSR MLS1               \ Call MLS1 to calculate:
+                        \
+                        \   (A P) = A * ALP1
+                        \         = (-x / 256) * alpha
+
+ JSR ADD                \ Call ADD to calculate:
+                        \
+                        \   (A X) = (A P) + (S R)
+                        \         = (-x / 256) * alpha + y
+                        \         = y - alpha * x / 256
+
+ STA YY+1               \ Set YY(1 0) = (A X) to give:
+ STX YY                 \
+                        \   YY(1 0) = y - alpha * x / 256
+                        \
+                        \ which is result 5 above, and we also have:
+                        \
+                        \   A = YY+1 = y - alpha * x / 256
+                        \
+                        \ i.e. A is the new value of y, divided by 256
+
+ EOR ALP2+1             \ EOR with the flipped sign of the roll angle alpha, so
+                        \ A has the opposite sign to the flipped roll angle
+                        \ alpha, i.e. it gets the same sign as alpha
+
+ JSR MLS2               \ Call MLS2 to calculate:
+                        \
+                        \   (S R) = XX(1 0)
+                        \         = x
+                        \
+                        \   (A P) = A * ALP1
+                        \         = y / 256 * alpha
+
+ JSR ADD                \ Call ADD to calculate:
+                        \
+                        \   (A X) = (A P) + (S R)
+                        \         = y / 256 * alpha + x
+
+ STA XX+1               \ Set XX(1 0) = (A X), which gives us result 6 above:
+ STX XX                 \
+                        \   x = x + alpha * y / 256
+
+ LDA YY+1               \ Set A to y_hi and set it to the flipped sign of beta
+ EOR BET2+1
+
+ LDX BET1               \ Fetch the pitch magnitude into X
+
+ JSR MULTS-2            \ Call MULTS-2 to calculate:
+                        \
+                        \   (A P) = X * A
+                        \         = beta * y_hi
+
+ STA Q                  \ Store the high byte of the result in Q, so:
+                        \
+                        \   Q = beta * y_hi / 256
+
+ LDA XX+1               \ Set S = x_hi
+ STA S
+
+ EOR #%10000000         \ Flip the sign of A, so A now contains -x
+
+ JSR MUT1               \ Call MUT1 to calculate:
+                        \
+                        \   R = XX = x_lo
+                        \
+                        \   (A P) = Q * A
+                        \         = (beta * y_hi / 256) * (-beta * y_hi / 256)
+                        \         = (-beta * y / 256) ^ 2
+
+ ASL P                  \ Double (A P), store the top byte in A and set the C
+ ROL A                  \ flag to bit 7 of the original A, so this does:
+ STA T                  \
+                        \   (T P) = (A P) << 1
+                        \         = 2 * (-beta * y / 256) ^ 2
+
+ LDA #0                 \ Set bit 7 in A to the sign bit from the A in the
+ ROR A                  \ calculation above and apply it to T, so we now have:
+ ORA T                  \
+                        \   (A P) = -2 * (beta * y / 256) ^ 2
+                        \
+                        \ with the doubling retaining the sign of (A P)
+
+ JSR ADD                \ Call ADD to calculate:
+                        \
+                        \   (A X) = (A P) + (S R)
+                        \         = -2 * (beta * y / 256) ^ 2 + x
+
+ STA XX+1               \ Store the high byte A in XX+1
+
+ TXA                    \ Store the low byte X in x_lo
+ STA SXL,Y
+
+                        \ So (XX+1 x_lo) now contains:
+                        \
+                        \   x = x - 2 * (beta * y / 256) ^ 2
+                        \
+                        \ which is result 7 above
+
+ LDA YY                 \ Set (S R) = YY(1 0) = y
+ STA R
+ LDA YY+1
+ STA S
+
+ LDA #0                 \ Set P = 0
+ STA P
+
+ LDA BETA               \ Set A = beta, so (A P) = (beta 0) = beta * 256
+
+ JSR PIX1               \ Call PIX1 to calculate the following:
+                        \
+                        \   (YY+1 y_lo) = (A P) + (S R)
+                        \               = beta * 256 + y
+                        \
+                        \ i.e. y = y + beta * 256, which is result 8 above
+                        \
+                        \ PIX1 also draws a particle at (X1, Y1) with distance
+                        \ ZZ, which will remove the old stardust particle, as we
+                        \ set X1, Y1 and ZZ to the original values for this
+                        \ particle during the calculations above
+
+                        \ We now have our newly moved stardust particle at
+                        \ x-coordinate (XX+1 x_lo) and y-coordinate (YY+1 y_lo)
+                        \ and distance z_hi, so we draw it if it's still on
+                        \ screen, otherwise we recycle it as a new bit of
+                        \ stardust and draw that
+
+ LDA XX+1               \ Set X1 and x_hi to the high byte of XX in XX+1, so
+ STA X1                 \ the new x-coordinate is in (x_hi x_lo) and the high
+ STA SX,Y               \ byte is in X1
+
+ LDA YY+1               \ Set Y1 and y_hi to the high byte of YY in YY+1, so
+ STA SY,Y               \ the new x-coordinate is in (y_hi y_lo) and the high
+ STA Y1                 \ byte is in Y1
+
+ AND #%01111111         \ If |y_hi| >= 110 then jump to KILL6 to recycle this
+ CMP #110               \ particle, as it's gone off the top or bottom of the
+ BCS KILL6              \ screen, and rejoin at STC6 with the new particle
+
+ LDA SZ,Y               \ If z_hi >= 160 then jump to KILL6 to recycle this
+ CMP #160               \ particle, as it's so far away that it's too far to
+ BCS KILL6              \ see, and rejoin at STC1 with the new particle
+
+ STA ZZ                 \ Set ZZ to the z-coordinate in z_hi
+
+.STC6
+
+ JSR PIXEL2             \ Draw a stardust particle at (X1,Y1) with distance ZZ,
+                        \ i.e. draw the newly moved particle at (x_hi, y_hi)
+                        \ with distance z_hi
+
+ DEY                    \ Decrement the loop counter to point to the next
+                        \ stardust particle
+
+ BEQ ST3                \ If we have just done the last particle, skip the next
+                        \ instruction to return from the subroutine
+
+ JMP STL6               \ We have more stardust to process, so jump back up to
+                        \ STL6 for the next particle
+
+.ST3
+
+ RTS                    \ Return from the subroutine
+
+.KILL6
+
+ JSR DORND              \ Set A and X to random numbers
+
+ AND #%01111111         \ Clear the sign bit of A to get |A|
+
+ ADC #10                \ Make sure A is at least 10 and store it in z_hi and
+ STA SZ,Y               \ ZZ, so the new particle starts close to us
+ STA ZZ
+
+ LSR A                  \ Divide A by 2 and randomly set the C flag
+
+ BCS ST4                \ Jump to ST4 half the time
+
+ LSR A                  \ Randomly set the C flag again
+
+ LDA #252               \ Set A to either +126 or -126 (252 >> 1) depending on
+ ROR A                  \ the C flag, as this is a sign-magnitude number with
+                        \ the C flag rotated into its sign bit
+
+ STA X1                 \ Set x_hi and X1 to A, so this particle starts on
+ STA SX,Y               \ either the left or right edge of the screen
+
+ JSR DORND              \ Set A and X to random numbers
+
+ STA Y1                 \ Set y_hi and Y1 to random numbers, so the particle
+ STA SY,Y               \ starts anywhere along either the left or right edge
+
+ JMP STC6               \ Jump up to STC6 to draw this new particle
+
+.ST4
+
+ JSR DORND              \ Set A and X to random numbers
+
+ STA X1                 \ Set x_hi and X1 to random numbers, so the particle
+ STA SX,Y               \ starts anywhere along the x-axis
+
+ LSR A                  \ Randomly set the C flag
+
+ LDA #230               \ Set A to either +115 or -115 (230 >> 1) depending on
+ ROR A                  \ the C flag, as this is a sign-magnitude number with
+                        \ the C flag rotated into its sign bit
+
+ STA Y1                 \ Set y_hi and Y1 to A, so the particle starts anywhere
+ STA SY,Y               \ along either the top or bottom edge of the screen
+
+ BNE STC6               \ Jump up to STC6 to draw this new particle (this BNE is
+                        \ effectively a JMP as A will never be zero)
+
+\ ******************************************************************************
+\
+\       Name: DIALS (Part 1 of 4)
+\       Type: Subroutine
+\   Category: Dashboard
+\    Summary: Update the dashboard: speed indicator
+\  Deep dive: The dashboard indicators
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine updates the dashboard. First we draw all the indicators in the
+\ right part of the dashboard, from top (speed) to bottom (energy banks), and
+\ then we move on to the left part, again drawing from top (forward shield) to
+\ bottom (altitude).
+\
+\ This first section starts us off with the speedometer in the top right.
+\
+\ ******************************************************************************
+
+.DIALS
+
+ LDA #&F0               \ Set SC(1 0) = &76F0, which is the screen address for
+ STA SC                 \ the character block containing the left end of the
+ LDA #&76               \ top indicator in the right part of the dashboard, the
+ STA SC+1               \ one showing our speed
+
+ LDA DELTA              \ Fetch our ship's speed into A, in the range 0-40
+
+ JSR DIL                \ Draw the speed indicator using a range of 0-31, and
+                        \ increment SC to point to the next indicator (the roll
+                        \ indicator)
+
+\ ******************************************************************************
+\
+\       Name: DIALS (Part 2 of 4)
+\       Type: Subroutine
+\   Category: Dashboard
+\    Summary: Update the dashboard: pitch and roll indicators
+\  Deep dive: The dashboard indicators
+\
+\ ******************************************************************************
+
+ LDA #0                 \ Set R = P = 0 for the low bytes in the call to the ADD
+ STA R                  \ routine below
+ STA P
+
+ LDA #8                 \ Set S = 8, which is the value of the centre of the
+ STA S                  \ roll indicator
+
+ LDA ALP1               \ Fetch the roll angle alpha as a value between 0 and
+ LSR A                  \ 31, and divide by 4 to get a value of 0 to 7
+ LSR A
+
+ ORA ALP2               \ Apply the roll sign to the value, and flip the sign,
+ EOR #%10000000         \ so it's now in the range -7 to +7, with a positive
+                        \ roll angle alpha giving a negative value in A
+
+ JSR ADD                \ We now add A to S to give us a value in the range 1 to
+                        \ 15, which we can pass to DIL2 to draw the vertical
+                        \ bar on the indicator at this position. We use the ADD
+                        \ routine like this:
+                        \
+                        \ (A X) = (A 0) + (S 0)
+                        \
+                        \ and just take the high byte of the result. We use ADD
+                        \ rather than a normal ADC because ADD separates out the
+                        \ sign bit and does the arithmetic using absolute values
+                        \ and separate sign bits, which we want here rather than
+                        \ the two's complement that ADC uses
+
+ JSR DIL2               \ Draw a vertical bar on the roll indicator at offset A
+                        \ and increment SC to point to the next indicator (the
+                        \ pitch indicator)
+
+ LDA BETA               \ Fetch the pitch angle beta as a value between -8 and
+                        \ +8
+
+ LDX BET1               \ Fetch the magnitude of the pitch angle beta, and if it
+ BEQ P%+4               \ is 0 (i.e. we are not pitching), skip the next
+                        \ instruction
+
+ SBC #1                 \ The pitch angle beta is non-zero, so set A = A - 1
+                        \ (the C flag is set by the call to DIL2 above, so we
+                        \ don't need to do a SEC). This gives us a value of A
+                        \ from -7 to +7 because these are magnitude-based
+                        \ numbers with sign bits, rather than two's complement
+                        \ numbers
+
+ JSR ADD                \ We now add A to S to give us a value in the range 1 to
+                        \ 15, which we can pass to DIL2 to draw the vertical
+                        \ bar on the indicator at this position (see the JSR ADD
+                        \ above for more on this)
+
+ JSR DIL2               \ Draw a vertical bar on the pitch indicator at offset A
+                        \ and increment SC to point to the next indicator (the
+                        \ four energy banks)
+
+\ ******************************************************************************
+\
+\       Name: DIALS (Part 3 of 4)
+\       Type: Subroutine
+\   Category: Dashboard
+\    Summary: Update the dashboard: four energy banks
+\  Deep dive: The dashboard indicators
+\
+\ ------------------------------------------------------------------------------
+\
+\ This and the next section only run once every four iterations of the main
+\ loop, so while the speed, pitch and roll indicators update every iteration,
+\ the other indicators update less often.
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code removed for sideways RAM: ------------->
+
+\LDA MCNT               \ Fetch the main loop counter and calculate MCNT mod 4,
+\AND #3                 \ jumping to rT9 if it is non-zero. rT9 contains an RTS,
+\BNE rT9                \ so the following code only runs every 4 iterations of
+\                       \ the main loop, otherwise we return from the subroutine
+
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDA MCNT               \ Fetch the main loop counter and calculate MCNT mod 4,
+ AND #3                 \ returning from the subroutine if it is non-zero,
+ BEQ P%+3               \ so the following code only runs every 4 iterations of
+ RTS                    \ the main loop, otherwise we return from the subroutine
+
+                        \ --- End of replacement ------------------------------>
+
+
+ LDY #0                 \ Set Y = 0, for use in various places below
+
+ LDX #3                 \ Set up a counter in X so we can zero the four bytes at
+                        \ XX12, so we can then calculate each of the four energy
+                        \ banks' values before drawing them later
+
+.DLL23
+
+ STY XX12,X             \ Set the X-th byte of XX12 to 0
+
+ DEX                    \ Decrement the counter
+
+ BPL DLL23              \ Loop back for the next byte until the four bytes at
+                        \ XX12 are all zeroed
+
+ LDX #3                 \ Set up a counter in X to loop through the 4 energy
+                        \ bank indicators, so we can calculate each of the four
+                        \ energy banks' values and store them in XX12
+
+ LDA ENERGY             \ Set A = Q = ENERGY / 2, so they are both now in the
+ LSR A                  \ range 0-127 (so that's a maximum of 32 in each of the
+                        \ banks, and a maximum of 31 in the top bank)
+
+ STA Q                  \ Set Q to A, so we can use Q to hold the remaining
+                        \ energy as we work our way through each bank, from the
+                        \ full ones at the bottom to the empty ones at the top
+
+.DLL24
+
+ SEC                    \ Set A = A - 32 to reduce the energy count by a full
+ SBC #32                \ bank
+
+ BCC DLL26              \ If the C flag is clear then A < 16, so this bank is
+                        \ not full to the brim, and is therefore the last one
+                        \ with any energy in it, so jump to DLL26
+
+ STA Q                  \ This bank is full, so update Q with the energy of the
+                        \ remaining banks
+
+ LDA #32                \ Store this bank's level in XX12 as 32, as it is full,
+ STA XX12,X             \ with XX12+3 for the bottom bank and XX12+0 for the top
+
+ LDA Q                  \ Set A to the remaining energy level again
+
+ DEX                    \ Decrement X to point to the next bank, i.e. the one
+                        \ above the bank we just processed
+
+ BPL DLL24              \ Loop back to DLL24 until we have either processed all
+                        \ four banks, or jumped out early to DLL26 if the top
+                        \ banks have no charge
+
+ BMI DLL9               \ Jump to DLL9 as we have processed all four banks (this
+                        \ BMI is effectively a JMP as A will never be positive)
+
+.DLL26
+
+ LDA Q                  \ If we get here then the bank we just checked is not
+ STA XX12,X             \ fully charged, so store its value in XX12 (using Q,
+                        \ which contains the energy of the remaining banks -
+                        \ i.e. this one)
+
+                        \ Now that we have the four energy bank values in XX12,
+                        \ we can draw them, starting with the top bank in XX12
+                        \ and looping down to the bottom bank in XX12+3, using Y
+                        \ as a loop counter, which was set to 0 above
+
+.DLL9
+
+ LDA XX12,Y             \ Fetch the value of the Y-th indicator, starting from
+                        \ the top
+
+ STY P                  \ Store the indicator number in P for retrieval later
+
+ JSR DIL                \ Draw the energy bank using a range of 0-15, and
+                        \ increment SC to point to the next indicator (the
+                        \ next energy bank down)
+
+ LDY P                  \ Restore the indicator number into Y
+
+ INY                    \ Increment the indicator number
+
+ CPY #4                 \ Check to see if we have drawn the last energy bank
+
+ BNE DLL9               \ Loop back to DLL9 if we have more banks to draw,
+                        \ otherwise we are done
+
+\ ******************************************************************************
+\
+\       Name: DIALS (Part 4 of 4)
+\       Type: Subroutine
+\   Category: Dashboard
+\    Summary: Update the dashboard: shields, fuel, laser & cabin temp, altitude
+\  Deep dive: The dashboard indicators
+\
+\ ******************************************************************************
+
+ LDA #&76               \ Set SC(1 0) = &7630, which is the screen address for
+ STA SC+1               \ the character block containing the left end of the
+ LDA #&30               \ top indicator in the left part of the dashboard, the
+ STA SC                 \ one showing the forward shield
+
+ LDA FSH                \ Draw the forward shield indicator using a range of
+ JSR DILX               \ 0-255, and increment SC to point to the next indicator
+                        \ (the aft shield)
+
+ LDA ASH                \ Draw the aft shield indicator using a range of 0-255,
+ JSR DILX               \ and increment SC to point to the next indicator (the
+                        \ fuel level)
+
+ LDA QQ14               \ Draw the fuel level indicator using a range of 0-63,
+ JSR DILX+2             \ and increment SC to point to the next indicator (the
+                        \ cabin temperature)
+
+ SEC                    \ Call NEXTR with the C flag set to move the screen
+ JSR NEXTR              \ address in SC(1 0) down by one character row
+
+ LDA GNTMP              \ Draw the laser temperature indicator using a range of
+ JSR DILX               \ 0-255, and increment SC to point to the next indicator
+                        \ (the altitude)
+
+ LDA #240               \ Set T1 to 240, which would set the threshold at which
+ STA T1                 \ we change the altitude indicator's colour in the other
+                        \ versions, but it has no effect here, as the Electron
+                        \ version doesn't support indicator colour changes
+
+ STA K+1                \ This sets K+1 to 240, which would set the colour to
+                        \ show for low values in the other versions, but it has
+                        \ no effect here, as the Electron version doesn't
+                        \ support indicator colour changes
+
+ LDA ALTIT              \ Draw the altitude indicator using a range of 0-255
+ JSR DILX
+
+ JMP COMPAS             \ We have now drawn all the indicators, so jump to
+                        \ COMPAS to draw the compass, returning from the
+                        \ subroutine using a tail call
+
+\ ******************************************************************************
+\
+\       Name: DILX
+\       Type: Subroutine
+\   Category: Dashboard
+\    Summary: Update a bar-based indicator on the dashboard
+\  Deep dive: The dashboard indicators
+\
+\ ------------------------------------------------------------------------------
+\
+\ The range of values shown on the indicator depends on which entry point is
+\ called. For the default entry point of DILX, the range is 0-255 (as the value
+\ passed in A is one byte). The other entry points are shown below.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   The value to be shown on the indicator (so the larger
+\                       the value, the longer the bar)
+\
+\   SC(1 0)             The screen address of the first character block in the
+\                       indicator
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   DILX+2              The range of the indicator is 0-64 (for the fuel
+\                       indicator)
+\
+\   DIL-1               The range of the indicator is 0-32 (for the speed
+\                       indicator)
+\
+\   DIL                 The range of the indicator is 0-16 (for the energy
+\                       banks)
+\
+\ ******************************************************************************
+
+.DILX
+
+ LSR A                  \ If we call DILX, we set A = A / 16, so A is 0-15
+ LSR A
+
+ LSR A                  \ If we call DIL-1, we set A = A / 2, so A is 0-15
+
+.DIL
+
+                        \ If we call DIL, we leave A alone, so A is 0-15
+
+ STA Q                  \ Store the indicator value in Q, now reduced to 0-15,
+                        \ which is the length of the indicator to draw in pixels
+
+ LDX #&FF               \ Set R = &FF, to use as a mask for drawing each row of
+ STX R                  \ each character block of the bar, starting with a full
+                        \ character's width of 4 pixels
+
+ LDY #2                 \ We want to start drawing the indicator on the third
+                        \ line in this character row, so set Y to point to that
+                        \ row's offset
+
+ LDX #3                 \ Set up a counter in X for the width of the indicator,
+                        \ which is 4 characters (each of which is 4 pixels wide,
+                        \ to give a total width of 16 pixels)
+
+.DL1
+
+ LDA Q                  \ Fetch the indicator value (0-15) from Q into A
+
+ CMP #8                 \ If Q < 8, then we need to draw the end cap of the
+ BCC DL2                \ indicator, which is less than a full character's
+                        \ width, so jump down to DL2 to do this
+
+ SBC #8                 \ Otherwise we can draw an eight-pixel wide block, so
+ STA Q                  \ subtract 8 from Q so it contains the amount of the
+                        \ indicator that's left to draw after this character
+
+ LDA R                  \ Fetch the shape of the indicator row that we need to
+                        \ display from R, so we can use it as a mask when
+                        \ painting the indicator. It will be &FF at this point
+                        \ (i.e. a full four-pixel row)
+
+.DL5
+
+ STA (SC),Y             \ Draw the shape of the mask on pixel row Y of the
+                        \ character block we are processing
+
+ INY                    \ Draw the next pixel row, incrementing Y
+ STA (SC),Y
+
+ INY                    \ And draw the third pixel row, incrementing Y
+ STA (SC),Y
+
+ TYA                    \ Add 6 to Y, so Y is now 8 more than when we started
+ CLC                    \ this loop iteration, so Y now points to the address
+ ADC #6                 \ of the first line of the indicator bar in the next
+                        \ character block (as each character is 8 bytes of
+                        \ screen memory)
+
+ BCC P%+4               \ If the addition of the low bytes of SC overflowed,
+ INC SC+1               \ increment the high byte
+
+ TAY                    \ Transfer the updated value (Y + 6) back into Y
+
+ DEX                    \ Decrement the loop counter for the next character
+                        \ block along in the indicator
+
+ BMI DL6                \ If we just drew the last character block then we are
+                        \ done drawing, so jump down to DL6 to finish off
+
+ BPL DL1                \ Loop back to DL1 to draw the next character block of
+                        \ the indicator (this BPL is effectively a JMP as A will
+                        \ never be negative following the previous BMI)
+
+.DL2
+
+ EOR #7                 \ If we get here then we are drawing the indicator's
+ STA Q                  \ end cap, so Q is < 8, and this EOR flips the bits, so
+                        \ instead of containing the number of indicator columns
+                        \ we need to fill in on the left side of the cap's
+                        \ character block, Q now contains the number of blank
+                        \ columns there should be on the right side of the cap's
+                        \ character block
+
+ LDA R                  \ Fetch the current mask from R, which will be &FF at
+                        \ this point, so we need to turn Q of the columns on the
+                        \ right side of the mask to black to get the correct end
+                        \ cap shape for the indicator
+
+.DL3
+
+ ASL A                  \ Shift the mask left so bit 0 is cleared
+
+ DEC Q                  \ Decrement the counter for the number of columns to
+                        \ blank out
+
+ BPL DL3                \ If we still have columns to blank out in the mask,
+                        \ loop back to DL3 until the mask is correct for the
+                        \ end cap
+
+ PHA                    \ Store the mask byte on the stack while we use the
+                        \ accumulator for a bit
+
+ LDA #0                 \ Change the mask so no bits are set, so the characters
+ STA R                  \ after the one we're about to draw will be all blank
+
+ LDA #99                \ Set Q to a high number (99, why not) so we will keep
+ STA Q                  \ drawing blank characters until we reach the end of
+                        \ the indicator row
+
+ PLA                    \ Restore the mask byte from the stack so we can use it
+                        \ to draw the end cap of the indicator
+
+ JMP DL5                \ Jump back up to DL5 to draw the mask byte on-screen
+
+.DL6
+
+ SEC                    \ Jump to NEXTR with the C flag set to move the screen
+ JMP NEXTR              \ address in SC(1 0) down by one character row,
+                        \ returning from the subroutine using a tail call
+
+\ ******************************************************************************
+\
+\       Name: DIL2
+\       Type: Subroutine
+\   Category: Dashboard
+\    Summary: Update the roll or pitch indicator on the dashboard
+\  Deep dive: The dashboard indicators
+\
+\ ------------------------------------------------------------------------------
+\
+\ The indicator can show a vertical bar in 16 positions, with a value of 8
+\ showing the bar in the middle of the indicator.
+\
+\ In practice this routine is only ever called with A in the range 1 to 15, so
+\ the vertical bar never appears in the leftmost position (though it does appear
+\ in the rightmost).
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   The offset of the vertical bar to show in the indicator,
+\                       from 0 at the far left, to 8 in the middle, and 15 at
+\                       the far right
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   C flag              The C flag is set
+\
+\ ******************************************************************************
+
+.DIL2
+
+ LDY #1                 \ We want to start drawing the vertical indicator bar on
+                        \ the second line in the indicator's character block, so
+                        \ set Y to point to that row's offset
+
+ STA Q                  \ Store the offset of the vertical bar to draw in Q
+
+                        \ We are now going to work our way along the indicator
+                        \ on the dashboard, from left to right, working our way
+                        \ along one character block at a time. Y will be used as
+                        \ a pixel row counter to work our way through the
+                        \ character blocks, so each time we draw a character
+                        \ block, we will increment Y by 8 to move on to the next
+                        \ block (as each character block contains 8 rows)
+
+.DLL10
+
+ SEC                    \ Set A = Q - 4, so that A contains the offset of the
+ LDA Q                  \ vertical bar from the start of this character block
+ SBC #4
+
+ BCS DLL11              \ If Q >= 4 then the character block we are drawing does
+                        \ not contain the vertical indicator bar, so jump to
+                        \ DLL11 to draw a blank character block
+
+ LDA #&FF               \ Set A to a high number (and &FF is as high as they go)
+
+ LDX Q                  \ Set X to the offset of the vertical bar, which we know
+                        \ is within this character block
+
+ STA Q                  \ Set Q to a high number (&FF, why not) so we will keep
+                        \ drawing blank characters after this one until we reach
+                        \ the end of the indicator row
+
+ LDA CTWOS,X            \ CTWOS is a table of ready-made two-pixel mode 4 bytes,
+                        \ similar to the TWOS and TWOS2 tables, but laid out in
+                        \ a similar way to the mode 5 pixel bytes in the other
+                        \ versions (see the PIXEL routine for details of how
+                        \ they work). This fetches a two-pixel mode 4 byte with
+                        \ the pixel position at 2 * X, so the pixel is at the
+                        \ offset that we want for our vertical bar
+
+ BNE DLL12              \ Jump to DLL12 to skip the code for drawing a blank,
+                        \ and move on to drawing the indicator (this BNE is
+                        \ effectively a JMP as A is always non-zero)
+
+.DLL11
+
+                        \ If we get here then we want to draw a blank for this
+                        \ character block
+
+ STA Q                  \ Update Q with the new offset of the vertical bar, so
+                        \ it becomes the offset after the character block we
+                        \ are about to draw
+
+ LDA #0                 \ Change the mask so no bits are set, so all of the
+                        \ character blocks we display from now on will be blank
+.DLL12
+
+ STA (SC),Y             \ Draw the shape of the mask on pixel row Y of the
+                        \ character block we are processing
+
+ INY                    \ Draw the next pixel row, incrementing Y
+ STA (SC),Y
+
+ INY                    \ And draw the third pixel row, incrementing Y
+ STA (SC),Y
+
+ INY                    \ And draw the fourth pixel row, incrementing Y
+ STA (SC),Y
+
+ TYA                    \ Add 5 to Y, so Y is now 8 more than when we started
+ CLC                    \ this loop iteration, so Y now points to the address
+ ADC #5                 \ of the first line of the indicator bar in the next
+ TAY                    \ character block (as each character is 8 bytes of
+                        \ screen memory)
+
+ CPY #30                \ If Y < 30 then we still have some more character
+ BCC DLL10              \ blocks to draw, so loop back to DLL10 to display the
+                        \ next one along
+
+ JMP NEXTR              \ Jump to NEXTR with the C flag set to move the screen
+                        \ address in SC(1 0) down by one character row,
+                        \ returning from the subroutine using a tail call
 
 \ ******************************************************************************
 \
