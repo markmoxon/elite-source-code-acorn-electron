@@ -1934,7 +1934,7 @@ ENDMACRO
 
  LDX #LO(MESS1)         \ Set (Y X) to point to MESS1 ("LOAD EliteCo FFFF2000")
  LDY #HI(MESS1)
- 
+
  JSR OSCLI              \ Call OSCLI to run the OS command in MESS1, which loads
                         \ the main game code at location &2000
 
