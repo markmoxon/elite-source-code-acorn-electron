@@ -11894,386 +11894,15 @@ ENDIF
 
  RTS                    \ Return from the subroutine
 
-\ ******************************************************************************
-\
-\       Name: DOEXP
-\       Type: Subroutine
-\   Category: Drawing ships
-\    Summary: Draw an exploding ship
-\  Deep dive: Drawing explosion clouds
-\             Generating random numbers
-\
-\ ******************************************************************************
+                        \ --- Mod: Code moved for sideways RAM: --------------->
 
-.EX2
-
- LDA INWK+31            \ Set bits 5 and 7 of the ship's byte #31 to denote that
- ORA #%10100000         \ the ship is exploding and has been killed
- STA INWK+31
-
- RTS                    \ Return from the subroutine
-
-.DOEXP
-
- LDA INWK+31            \ If bit 6 of the ship's byte #31 is clear, then the
- AND #%01000000         \ ship is not already exploding so there is no existing
- BEQ P%+5               \ explosion cloud to remove, so skip the following
-                        \ instruction
-
- JSR PTCLS              \ Call PTCLS to remove the existing cloud by drawing it
-                        \ again
-
- LDA INWK+6             \ Set T = z_lo
- STA T
-
- LDA INWK+7             \ Set A = z_hi, so (A T) = z
-
- CMP #32                \ If z_hi < 32, skip the next two instructions
- BCC P%+6
-
- LDA #&FE               \ Set A = 254 and jump to yy (this BNE is effectively a
- BNE yy                 \ JMP, as A is never zero)
-
- ASL T                  \ Shift (A T) left twice
- ROL A
- ASL T
- ROL A
-
- SEC                    \ And then shift A left once more, inserting a 1 into
- ROL A                  \ bit 0
-
-                        \ Overall, the above multiplies A by 8 and makes sure it
-                        \ is at least 1, to leave a one-byte distance in A. We
-                        \ can use this as the distance for our cloud, to ensure
-                        \ that the explosion cloud is visible even for ships
-                        \ that blow up a long way away
-
-.yy
-
- STA Q                  \ Store the distance to the explosion in Q
-
- LDY #1                 \ Fetch byte #1 of the ship line heap, which contains
- LDA (XX19),Y           \ the cloud counter
-
- ADC #4                 \ Add 4 to the cloud counter, so it ticks onwards every
-                        \ we redraw it
-
- BCS EX2                \ If the addition overflowed, jump up to EX2 to update
-                        \ the explosion flags and return from the subroutine
-
- STA (XX19),Y           \ Store the updated cloud counter in byte #1 of the ship
-                        \ line heap
-
- JSR DVID4              \ Calculate the following:
+                        \ The following routines have been moved into sideways
+                        \ RAM (see the ELITE SIDEWAYS RAM FILE section at the
+                        \ end of this source file)
                         \
-                        \   (P R) = 256 * A / Q
-                        \         = 256 * cloud counter / distance
-                        \
-                        \ We are going to use this as our cloud size, so the
-                        \ further away the cloud, the smaller it is, and as the
-                        \ cloud counter ticks onward, the cloud expands
+                        \   * DOEXP
 
- LDA P                  \ Set A = P, so we now have:
-                        \
-                        \   (A R) = 256 * cloud counter / distance
-
- CMP #&1C               \ If A < 28, skip the next two instructions
- BCC P%+6
-
- LDA #&FE               \ Set A = 254 and skip the following (this BNE is
- BNE LABEL_1            \ effectively a JMP as A is never zero)
-
- ASL R                  \ Shift (A R) left three times to multiply by 8
- ROL A
- ASL R
- ROL A
- ASL R
- ROL A
-
-                        \ Overall, the above multiplies (A R) by 8 to leave a
-                        \ one-byte cloud size in A, given by the following:
-                        \
-                        \   A = 8 * cloud counter / distance
-
-.LABEL_1
-
- DEY                    \ Decrement Y to 0
-
- STA (XX19),Y           \ Store the cloud size in byte #0 of the ship line heap
-
- LDA INWK+31            \ Clear bit 6 of the ship's byte #31 to denote that the
- AND #%10111111         \ explosion has not yet been drawn
- STA INWK+31
-
- AND #%00001000         \ If bit 3 of the ship's byte #31 is clear, then nothing
- BEQ TT48               \ is being drawn on-screen for this ship anyway, so
-                        \ return from the subroutine (as TT48 contains an RTS)
-
- LDY #2                 \ Otherwise it's time to draw an explosion cloud, so
- LDA (XX19),Y           \ fetch byte #2 of the ship line heap into Y, which we
- TAY                    \ set to the explosion count for this ship (i.e. the
-                        \ number of vertices used as origins for explosion
-                        \ clouds)
-                        \
-                        \ The explosion count is stored as 4 * n + 6, where n is
-                        \ the number of vertices, so the following loop copies
-                        \ the coordinates of the first n vertices from the heap
-                        \ at XX3, which is where we stored all the visible
-                        \ vertex coordinates in part 8 of the LL9 routine, and
-                        \ sticks them in the ship line heap pointed to by XX19,
-                        \ starting at byte #7 (so it leaves the first 6 bytes of
-                        \ the ship line heap alone)
-
-.EXL1
-
- LDA XX3-7,Y            \ Copy byte Y-7 from the XX3 heap, into the Y-th byte of
- STA (XX19),Y           \ the ship line heap
-
- DEY                    \ Decrement the loop counter
-
- CPY #6                 \ Keep copying vertex coordinates into the ship line
- BNE EXL1               \ heap until Y = 6 (which will copy n vertices, where n
-                        \ is the number of vertices we should be exploding)
-
- LDA INWK+31            \ Set bit 6 of the ship's byte #31 to denote that the
- ORA #%01000000         \ explosion has been drawn (as it's about to be)
- STA INWK+31
-
-.PTCLS
-
-                        \ This part of the routine actually draws the explosion
-                        \ cloud
-
- LDY #0                 \ Fetch byte #0 of the ship line heap, which contains
- LDA (XX19),Y           \ the cloud size we stored above, and store it in Q
- STA Q
-
- INY                    \ Increment the index in Y to point to byte #1
-
- LDA (XX19),Y           \ Fetch byte #1 of the ship line heap, which contains
-                        \ the cloud counter. We are now going to process this
-                        \ into the number of particles in each vertex's cloud
-
- BPL P%+4               \ If the cloud counter < 128, then we are in the first
-                        \ half of the cloud's existence, so skip the next
-                        \ instruction
-
- EOR #&FF               \ Flip the value of A so that in the second half of the
-                        \ cloud's existence, A counts down instead of up
-
- LSR A                  \ Divide A by 16 so that is has a maximum value of 7
- LSR A
- LSR A
- LSR A
-
- ORA #1                 \ Make sure A is at least 1 and store it in U, to
- STA U                  \ give us the number of particles in the explosion for
-                        \ each vertex
-
- INY                    \ Increment the index in Y to point to byte #2
-
- LDA (XX19),Y           \ Fetch byte #2 of the ship line heap, which contains
- STA TGT                \ the explosion count for this ship (i.e. the number of
-                        \ vertices used as origins for explosion clouds) and
-                        \ store it in TGT
-
- LDA RAND+1             \ Fetch the current random number seed in RAND+1 and
- PHA                    \ store it on the stack, so we can re-randomise the
-                        \ seeds when we are done
-
- LDY #6                 \ Set Y = 6 to point to the byte before the first vertex
-                        \ coordinate we stored on the ship line heap above (we
-                        \ increment it below so it points to the first vertex)
-
-.EXL5
-
- LDX #3                 \ We are about to fetch a pair of coordinates from the
-                        \ ship line heap, so set a counter in X for 4 bytes
-
-.EXL3
-
- INY                    \ Increment the index in Y so it points to the next byte
-                        \ from the coordinate we are copying
-
- LDA (XX19),Y           \ Copy the Y-th byte from the ship line heap to the X-th
- STA K3,X               \ byte of K3
-
- DEX                    \ Decrement the X index
-
- BPL EXL3               \ Loop back to EXL3 until we have copied all four bytes
-
-                        \ The above loop copies the vertex coordinates from the
-                        \ ship line heap to K3, reversing them as we go, so it
-                        \ sets the following:
-                        \
-                        \   K3+3 = x_lo
-                        \   K3+2 = x_hi
-                        \   K3+1 = y_lo
-                        \   K3+0 = y_hi
-
- STY CNT                \ Set CNT to the index that points to the next vertex on
-                        \ the ship line heap
-
- LDY #2                 \ Set Y = 2, which we will use to point to bytes #3 to
-                        \ #6, after incrementing it
-
-                        \ This next loop copies bytes #3 to #6 from the ship
-                        \ line heap into the four random number seeds in RAND to
-                        \ RAND+3, EOR'ing them with the vertex index so they are
-                        \ different for every vertex. This enables us to
-                        \ generate random numbers for drawing each vertex that
-                        \ are random but repeatable, which we need when we
-                        \ redraw the cloud to remove it
-                        \
-                        \ Note that we haven't actually set the values of bytes
-                        \ #3 to #6 in the ship line heap, so we have no idea
-                        \ what they are, we just use what's already there. But
-                        \ the fact that those bytes are stored for this ship
-                        \ means we can repeat the random generation of the
-                        \ cloud, which is the important bit
-
-.EXL2
-
- INY                    \ Increment the index in Y so it points to the next
-                        \ random number seed to copy
-
- LDA (XX19),Y           \ Fetch the Y-th byte from the ship line heap
-
- EOR CNT                \ EOR with the vertex index, so the seeds are different
-                        \ for each vertex
-
- STA &FFFD,Y            \ Y is going from 3 to 6, so this stores the four bytes
-                        \ in memory locations &00, &01, &02 and &03, which are
-                        \ the memory locations of RAND through RAND+3
-
- CPY #6                 \ Loop back to EXL2 until Y = 6, which means we have
- BNE EXL2               \ copied four bytes
-
- LDY U                  \ Set Y to the number of particles in the explosion for
-                        \ each vertex, which we stored in U above. We will now
-                        \ use this as a loop counter to iterate through all the
-                        \ particles in the explosion
-
-.EXL4
-
- JSR DORND2             \ Set ZZ to a random number, making sure the C flag
- STA ZZ                 \ doesn't affect the outcome
-
- LDA K3+1               \ Set (A R) = (y_hi y_lo)
- STA R                  \           = y
- LDA K3
-
- JSR EXS1               \ Set (A X) = (A R) +/- random * cloud size
-                        \           = y +/- random * cloud size
-
- BNE EX11               \ If A is non-zero, the particle is off-screen as the
-                        \ coordinate is bigger than 255), so jump to EX11 to do
-                        \ the next particle
-
- CPX #2*Y-1             \ If X > the y-coordinate of the bottom of the screen,
- BCS EX11               \ the particle is off the bottom of the screen, so jump
-                        \ to EX11 to do the next particle
-
-                        \ Otherwise X contains a random y-coordinate within the
-                        \ cloud
-
- STX Y1                 \ Set Y1 = our random y-coordinate within the cloud
-
- LDA K3+3               \ Set (A R) = (x_hi x_lo)
- STA R
- LDA K3+2
-
- JSR EXS1               \ Set (A X) = (A R) +/- random * cloud size
-                        \           = x +/- random * cloud size
-
- BNE EX4                \ If A is non-zero, the particle is off-screen as the
-                        \ coordinate is bigger than 255), so jump to EX4 to do
-                        \ the next particle
-
-                        \ Otherwise X contains a random x-coordinate within the
-                        \ cloud
-
- LDA Y1                 \ Set A = our random y-coordinate within the cloud
-
- JSR PIXEL              \ Draw a point at screen coordinate (X, A) with the
-                        \ point size determined by the distance in ZZ
-
-.EX4
-
- DEY                    \ Decrement the loop counter for the next particle
-
- BPL EXL4               \ Loop back to EXL4 until we have done all the particles
-                        \ in the cloud
-
- LDY CNT                \ Set Y to the index that points to the next vertex on
-                        \ the ship line heap
-
- CPY TGT                \ If Y < TGT, which we set to the explosion count for
- BCC EXL5               \ this ship (i.e. the number of vertices used as origins
-                        \ for explosion clouds), loop back to EXL5 to do a cloud
-                        \ for the next vertex
-
- PLA                    \ Restore the current random number seed to RAND+1 that
- STA RAND+1             \ we stored at the start of the routine
-
- LDA K%+6               \ Store the z_lo coordinate for the planet (which will
- STA RAND+3             \ be pretty random) in the RAND+3 seed
-
- RTS                    \ Return from the subroutine
-
-.EX11
-
- JSR DORND2             \ Set A and X to random numbers, making sure the C flag
-                        \ doesn't affect the outcome
-
- JMP EX4                \ We just skipped a particle, so jump up to EX4 to do
-                        \ the next one
-
-.EXS1
-
-                        \ This routine calculates the following:
-                        \
-                        \   (A X) = (A R) +/- random * cloud size
-                        \
-                        \ returning with the flags set for the high byte in A
-
- STA S                  \ Store A in S so we can use it later
-
- JSR DORND2             \ Set A and X to random numbers, making sure the C flag
-                        \ doesn't affect the outcome
-
- ROL A                  \ Set A = A * 2
-
- BCS EX5                \ If bit 7 of A was set (50% chance), jump to EX5
-
- JSR FMLTU              \ Set A = A * Q / 256
-                        \       = random << 1 * projected cloud size / 256
-
- ADC R                  \ Set (A X) = (S R) + A
- TAX                    \           = (S R) + random * projected cloud size
-                        \
-                        \ where S contains the argument A, starting with the low
-                        \ bytes
-
- LDA S                  \ And then the high bytes
- ADC #0
-
- RTS                    \ Return from the subroutine
-
-.EX5
-
- JSR FMLTU              \ Set T = A * Q / 256
- STA T                  \       = random << 1 * projected cloud size / 256
-
- LDA R                  \ Set (A X) = (S R) - T
- SBC T                  \
- TAX                    \ where S contains the argument A, starting with the low
-                        \ bytes
-
- LDA S                  \ And then the high bytes
- SBC #0
-
- RTS                    \ Return from the subroutine
+                        \ --- End of moved code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -12584,413 +12213,22 @@ ENDIF
 
  RTS                    \ Return from the subroutine
 
-\ ******************************************************************************
-\
-\       Name: COMPAS
-\       Type: Subroutine
-\   Category: Dashboard
-\    Summary: Update the compass
-\
-\ ******************************************************************************
+                        \ --- Mod: Code moved for sideways RAM: --------------->
 
-.COMPAS
-
- JSR DOT                \ Call DOT to redraw (i.e. remove) the current compass
-                        \ dot
-
- LDA SSPR               \ If we are inside the space station safe zone, jump to
- BNE SP1                \ SP1 to draw the space station on the compass
-
- JSR SPS1               \ Otherwise we need to draw the planet on the compass,
-                        \ so first call SPS1 to calculate the vector to the
-                        \ planet and store it in XX15
-
- JMP SP2                \ Jump to SP2 to draw XX15 on the compass, returning
-                        \ from the subroutine using a tail call
-
-\ ******************************************************************************
-\
-\       Name: SPS2
-\       Type: Subroutine
-\   Category: Maths (Arithmetic)
-\    Summary: Calculate (Y X) = A / 10
-\
-\ ------------------------------------------------------------------------------
-\
-\ Calculate the following, where A is a sign-magnitude 8-bit integer and the
-\ result is a signed 16-bit integer:
-\
-\   (Y X) = A / 10
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   C flag              The C flag is cleared
-\
-\ ******************************************************************************
-
-.SPS2
-
- ASL A                  \ Set X = |A| * 2, and set the C flag to the sign bit of
- TAX                    \ A
-
- LDA #0                 \ Set Y to have the sign bit from A in bit 7, with the
- ROR A                  \ rest of its bits zeroed, so Y now contains the sign of
- TAY                    \ the original argument
-
- LDA #20                \ Set Q = 20
- STA Q
-
- TXA                    \ Copy X into A, so A now contains the argument A * 2
-
- JSR DVID4              \ Calculate the following:
+                        \ The following routines have been moved into sideways
+                        \ RAM (see the ELITE SIDEWAYS RAM FILE section at the
+                        \ end of this source file)
                         \
-                        \   P = A / Q
-                        \     = |argument A| * 2 / 20
-                        \     = |argument A| / 10
-
- LDX P                  \ Set X to the result
-
- TYA                    \ If the sign of the original argument A is negative,
- BMI LL163              \ jump to LL163 to flip the sign of the result
-
- LDY #0                 \ Set the high byte of the result to 0, as the result is
-                        \ positive
-
- RTS                    \ Return from the subroutine
-
-.LL163
-
- LDY #&FF               \ The result is negative, so set the high byte to &FF
-
- TXA                    \ Flip the low byte and add 1 to get the negated low
- EOR #&FF               \ byte, using two's complement
- TAX
- INX
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: SPS4
-\       Type: Subroutine
-\   Category: Maths (Geometry)
-\    Summary: Calculate the vector to the space station
-\
-\ ------------------------------------------------------------------------------
-\
-\ Calculate the vector between our ship and the space station and store it in
-\ XX15.
-\
-\ ******************************************************************************
-
-.SPS4
-
- LDX #8                 \ First we need to copy the space station's coordinates
-                        \ into K3, so set a counter to copy the first 9 bytes
-                        \ (the three-byte x, y and z coordinates) from the
-                        \ station's data block at K% + NI% into K3
-
-.SPL1
-
- LDA K%+NI%,X           \ Copy the X-th byte from the station's data block at
- STA K3,X               \ K% + NI% to the X-th byte of K3
-
- DEX                    \ Decrement the loop counter
-
- BPL SPL1               \ Loop back to SPL1 until we have copied all 9 bytes
-
- JMP TAS2               \ Call TAS2 to build XX15 from K3, returning from the
-                        \ subroutine using a tail call
-
-\ ******************************************************************************
-\
-\       Name: SP1
-\       Type: Subroutine
-\   Category: Dashboard
-\    Summary: Draw the space station on the compass
-\
-\ ******************************************************************************
-
-.SP1
-
- JSR SPS4               \ Call SPS4 to calculate the vector to the space station
-                        \ and store it in XX15
-
-                        \ Fall through into SP2 to draw XX15 on the compass
-
-\ ******************************************************************************
-\
-\       Name: SP2
-\       Type: Subroutine
-\   Category: Dashboard
-\    Summary: Draw a dot on the compass, given the planet/station vector
-\
-\ ------------------------------------------------------------------------------
-\
-\ Draw a dot on the compass to represent the planet or station, whose normalised
-\ vector is in XX15.
-\
-\   XX15 to XX15+2      The normalised vector to the planet or space station,
-\                       stored as x in XX15, y in XX15+1 and z in XX15+2
-\
-\ ******************************************************************************
-
-.SP2
-
- LDA XX15               \ Set A to the x-coordinate of the planet or station to
-                        \ show on the compass, which will be in the range -96 to
-                        \ +96 as the vector has been normalised
-
- JSR SPS2               \ Set (Y X) = A / 10, so X will be from -9 to +9, which
-                        \ is the x-offset from the centre of the compass of the
-                        \ dot we want to draw. Returns with the C flag clear
-
- TXA                    \ Set COMX = 193 + X, as 184 is the pixel x-coordinate
- ADC #193               \ of the leftmost edge of the compass, and X can be -9,
- STA COMX               \ which would be 193 - 9 = 184. This also means that the
-                        \ highest value for COMX is 193 + 9 = 202, and given
-                        \ that the compass dot is two pixels wide, this means
-                        \ the compass dot can overlap the left edge of the
-                        \ compass, but not the right edge
-
- LDA XX15+1             \ Set A to the y-coordinate of the planet or station to
-                        \ show on the compass, which will be in the range -96 to
-                        \ +96 as the vector has been normalised
-
- JSR SPS2               \ Set (Y X) = A / 10, so X will be from -9 to +9, which
-                        \ is the x-offset from the centre of the compass of the
-                        \ dot we want to draw. Returns with the C flag clear
-
- STX T                  \ Set COMY = 204 - X, as 203 is the pixel y-coordinate
- LDA #204               \ of the centre of the compass, the C flag is clear,
- SBC T                  \ and the y-axis needs to be flipped around (because
- STA COMY               \ when the planet or station is above us, and the
-                        \ vector is therefore positive, we want to show the dot
-                        \ higher up on the compass, which has a smaller pixel
-                        \ y-coordinate). So this calculation does this:
-                        \
-                        \   COMY = 204 - X - (1 - 0) = 203 - X
-
- LDA #&F0               \ Set A to &F0, the value we pass to DOT for drawing a
-                        \ two-pixel high dot, for when the planet or station
-                        \ in the compass is in front of us
-
- LDX XX15+2             \ If the z-coordinate of the XX15 vector is positive,
- BPL P%+4               \ skip the following instruction
-
- LDA #&FF               \ The z-coordinate of XX15 is negative, so the planet or
-                        \ station is behind us and the compass dot should be a
-                        \ single-height dash, so set A to &FF for the call to
-                        \ DOT below
-
- STA COMC               \ Store the compass shape in COMC
-
-                        \ Fall through into DOT to draw the dot on the compass
-
-\ ******************************************************************************
-\
-\       Name: DOT
-\       Type: Subroutine
-\   Category: Dashboard
-\    Summary: Draw a dash on the compass
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   COMX                The screen pixel x-coordinate of the dash
-\
-\   COMY                The screen pixel y-coordinate of the dash
-\
-\   COMC                The thickness of the dash:
-\
-\                         * &F0 = a double-height dash in white, for when the
-\                           object in the compass is in front of us
-\
-\                         * &FF = a single-height dash in white, for when the
-\                           object in the compass is behind us
-\
-\ ******************************************************************************
-
-.DOT
-
- LDA COMY               \ Set Y1 = COMY, the y-coordinate of the dash
- STA Y1
-
- LDA COMX               \ Set X1 = COMX, the x-coordinate of the dash
- STA X1
-
- LDA COMC               \ Set A = COMC, the thickness of the dash
-
- CMP #&F0               \ If COMC is &F0 then the planet/station is in front of
- BNE CPIX2              \ us and we want to draw a double-height dash, so if it
-                        \ isn't &F0 jump to CPIX2 to draw a single-height dash
-
-                        \ Otherwise fall through into CPIX4 to draw a double-
-                        \ height dash
-
-\ ******************************************************************************
-\
-\       Name: CPIX4
-\       Type: Subroutine
-\   Category: Drawing pixels
-\    Summary: Draw a double-height dot on the dashboard
-\
-\ ------------------------------------------------------------------------------
-\
-\ Draw a double-height mode 4 dot (2 pixels high, 4 pixels wide).
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   X1                  The screen pixel x-coordinate of the bottom-left corner
-\                       of the dot
-\
-\   Y1                  The screen pixel y-coordinate of the bottom-left corner
-\                       of the dot
-\
-\ ******************************************************************************
-
-.CPIX4
-
- JSR CPIX2              \ Call CPIX2 to draw a single-height dash at (X1, Y1)
-
- DEC Y1                 \ Decrement Y1
-
-                        \ Fall through into CPIX2 to draw a second single-height
-                        \ dash on the pixel row above the first one, to create a
-                        \ double-height dot
-
-\ ******************************************************************************
-\
-\       Name: CPIX2
-\       Type: Subroutine
-\   Category: Drawing pixels
-\    Summary: Draw a single-height dash on the dashboard
-\  Deep dive: Drawing pixels in the Electron version
-\
-\ ------------------------------------------------------------------------------
-\
-\ Draw a single-height mode 4 dash (1 pixel high, 4 pixels wide).
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   X1                  The screen pixel x-coordinate of the dash
-\
-\   Y1                  The screen pixel y-coordinate of the dash
-\
-\ ******************************************************************************
-
-.CPIX2
-
- LDY #128               \ Set SC = 128 for use in the calculation below
- STY SC
-
- LDA Y1                 \ Fetch the y-coordinate into A
-
-                        \ We now calculate the address of the character block
-                        \ containing the pixel (x, y) and put it in SC(1 0), as
-                        \ follows:
-                        \
-                        \   SC = &5800 + (y div 8 * 256) + (y div 8 * 64) + 32
-
- LSR A                  \ Set A = A >> 3
- LSR A                  \       = y div 8
- LSR A                  \
-                        \ So A now contains the number of the character row
-                        \ that will contain the pixel we want to draw
-
-                        \ Also, as SC = 128, we have:
-                        \
-                        \   (A SC) = (A 128)
-                        \          = (A * 256) + 128
-                        \          = 4 * ((A * 64) + 32)
-                        \          = 4 * ((char row * 64) + 32)
-
- STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
-                        \                           = char row * 256
-
- LSR A                  \ Set (A SC) = (A SC) / 4
- ROR SC                 \            = (4 * ((char row * 64) + 32)) / 4
- LSR A                  \            = char row * 64 + 32
- ROR SC
-
- ADC SC+1               \ Set SC(1 0) = (A SC) + (SC+1 0) + &5800
- ADC #&58               \             = (char row * 64 + 32)
- STA SC+1               \               + char row * 256
-                        \               + &5800
-                        \
-                        \ which is what we want, so SC(1 0) contains the address
-                        \ of the first visible pixel on the character row
-                        \ containing the point (x, y)
-
- LDA X1                 \ Each character block contains 8 pixel rows, so to get
- AND #%11111000         \ the address of the first byte in the character block
-                        \ that we need to draw into, as an offset from the start
-                        \ of the row, we clear bits 0-2
-
- ADC SC                 \ And add the result to SC(1 0) to get the character
- STA SC                 \ block on the row we want
-
- BCC P%+4               \ If the addition of the low bytes overflowed, increment
- INC SC+1               \ the high byte
-
-                        \ So SC(1 0) now contains the address of the first pixel
-                        \ in the character block containing the (x, y), taking
-                        \ the screen borders into consideration
-
- LDA Y1                 \ Set Y to the y-coordinate mod 8, which will be the
- AND #7                 \ number of the pixel row we need to draw within the
- TAY                    \ character block
-
- LDA X1                 \ Set X to X1 mod 8, which will be the pixel number
- AND #7                 \ within the character row we need to draw
- TAX
-
- LDA TWOS,X             \ Fetch a mode 4 one-pixel byte with the pixel position
-                        \ at X
-
- EOR (SC),Y             \ Draw the pixel on-screen using EOR logic, so we can
- STA (SC),Y             \ remove it later without ruining the background that's
-                        \ already on-screen
-
- JSR P%+3               \ Run the following code twice, incrementing X each
-                        \ time, so we draw a two-pixel dash
-
- INX                    \ Increment X to get the next pixel along
-
- LDA TWOS,X             \ Fetch a mode 4 one-pixel byte with the pixel position
-                        \ at X
-
- BPL CP1                \ The CTWOS table is followed by the TWOS2 table, whose
-                        \ first entry is %11000000, so if we have not just
-                        \ fetched that value, then the right pixel of the dash
-                        \ is in the same character block as the left pixel, so
-                        \ jump to CP1 to draw it
-
- LDA SC                 \ Otherwise the left pixel we drew was at the last
- CLC                    \ position of four in this character block, so we add
- ADC #8                 \ 8 to the screen address to move onto the next block
- STA SC                 \ along (as there are 8 bytes in a character block)
-
- BCC P%+4               \ If the addition we just did overflowed, then increment
- INC SC+1               \ the high byte of SC(1 0), as this means we just moved
-                        \ into the right half of the screen row
-
- LDA TWOS,X             \ Re-fetch the mode 4 one-pixel byte from before, as we
-                        \ just overwrote A
-
-.CP1
-
- EOR (SC),Y             \ Draw the dash's right pixel according to the mask in
- STA (SC),Y             \ A, using EOR logic, just as above
-
- RTS                    \ Return from the subroutine
+                        \   * COMPAS
+                        \   * SPS2
+                        \   * SPS4
+                        \   * SP1
+                        \   * SP2
+                        \   * DOT
+                        \   * CPIX4
+                        \   * CPIX2
+
+                        \ --- End of moved code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -13092,89 +12330,16 @@ ENDIF
  JMP OUCH               \ And jump to OUCH to take damage and return from the
                         \ subroutine using a tail call
 
-\ ******************************************************************************
-\
-\       Name: SPS3
-\       Type: Subroutine
-\   Category: Maths (Geometry)
-\    Summary: Copy a space coordinate from the K% block into K3
-\
-\ ------------------------------------------------------------------------------
-\
-\ Copy one of the planet's coordinates into the corresponding location in the
-\ temporary variable K3. The high byte and absolute value of the sign byte are
-\ copied into the first two K3 bytes, and the sign of the sign byte is copied
-\ into the highest K3 byte.
-\
-\ The comments below are written for copying the planet's x-coordinate into
-\ K3(2 1 0).
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   X                   Determines which coordinate to copy, and to where:
-\
-\                         * X = 0 copies (x_sign, x_hi) into K3(2 1 0)
-\
-\                         * X = 3 copies (y_sign, y_hi) into K3(5 4 3)
-\
-\                         * X = 6 copies (z_sign, z_hi) into K3(8 7 6)
-\
-\ ******************************************************************************
+                        \ --- Mod: Code moved for sideways RAM: --------------->
 
-.SPS3
+                        \ The following routines have been moved into sideways
+                        \ RAM (see the ELITE SIDEWAYS RAM FILE section at the
+                        \ end of this source file)
+                        \
+                        \   * SPS3
+                        \   * GINF
 
- LDA K%+1,X             \ Copy x_hi into K3+X
- STA K3,X
-
- LDA K%+2,X             \ Set A = Y = x_sign
- TAY
-
- AND #%01111111         \ Set K3+1 = |x_sign|
- STA K3+1,X
-
- TYA                    \ Set K3+2 = the sign of x_sign
- AND #%10000000
- STA K3+2,X
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: GINF
-\       Type: Subroutine
-\   Category: Universe
-\    Summary: Fetch the address of a ship's data block into INF
-\
-\ ------------------------------------------------------------------------------
-\
-\ Get the address of the data block for ship slot X and store it in INF. This
-\ address is fetched from the UNIV table, which stores the addresses of the 13
-\ ship data blocks in workspace K%.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   X                   The ship slot number for which we want the data block
-\                       address
-\
-\ ******************************************************************************
-
-.GINF
-
- TXA                    \ Set Y = X * 2
- ASL A
- TAY
-
- LDA UNIV,Y             \ Get the high byte of the address of the X-th ship
- STA INF                \ from UNIV and store it in INF
-
- LDA UNIV+1,Y           \ Get the low byte of the address of the X-th ship
- STA INF+1              \ from UNIV and store it in INF
-
- RTS                    \ Return from the subroutine
+                        \ --- End of moved code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -13894,961 +13059,25 @@ ENDIF
  EQUB %11101100
  EQUB %11111100
 
-\ ******************************************************************************
-\
-\       Name: PROJ
-\       Type: Subroutine
-\   Category: Maths (Geometry)
-\    Summary: Project the current ship or planet onto the screen
-\  Deep dive: Extended screen coordinates
-\
-\ ------------------------------------------------------------------------------
-\
-\ Project the current ship's location or the planet onto the screen, either
-\ returning the screen coordinates of the projection (if it's on-screen), or
-\ returning an error via the C flag.
-\
-\ In this context, "on-screen" means that the point is projected into the
-\ following range:
-\
-\   centre of screen - 1024 < x < centre of screen + 1024
-\   centre of screen - 1024 < y < centre of screen + 1024
-\
-\ This is to cater for ships (and, more likely, planets) whose centres are
-\ off-screen but whose edges may still be visible.
-\
-\ The projection calculation is:
-\
-\   K3(1 0) = #X + x / z
-\   K4(1 0) = #Y + y / z
-\
-\ where #X and #Y are the pixel x-coordinate and y-coordinate of the centre of
-\ the screen.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   INWK                The ship data block for the ship to project on-screen
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   K3(1 0)             The x-coordinate of the ship's projection on-screen
-\
-\   K4(1 0)             The y-coordinate of the ship's projection on-screen
-\
-\   C flag              Set if the ship's projection doesn't fit on the screen,
-\                       clear if it does project onto the screen
-\
-\   A                   Contains K4+1, the high byte of the y-coordinate
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   RTS2                Contains an RTS
-\
-\ ******************************************************************************
+                        \ --- Mod: Code moved for sideways RAM: --------------->
 
-.PROJ
-
- LDA INWK               \ Set P(1 0) = (x_hi x_lo)
- STA P                  \            = x
- LDA INWK+1
- STA P+1
-
- LDA INWK+2             \ Set A = x_sign
-
- JSR PLS6               \ Call PLS6 to calculate:
+                        \ The following routines have been moved into sideways
+                        \ RAM (see the ELITE SIDEWAYS RAM FILE section at the
+                        \ end of this source file)
                         \
-                        \   (X K) = (A P+1 P) / (z_sign z_hi z_lo)
-                        \         = (x_sign x_hi x_lo) / (z_sign z_hi z_lo)
-                        \         = x / z
-
- BCS PL2-1              \ If the C flag is set then the result overflowed and
-                        \ the coordinate doesn't fit on the screen, so return
-                        \ from the subroutine with the C flag set (as PL2-1
-                        \ contains an RTS)
-
- LDA K                  \ Set K3(1 0) = (X K) + #X
- ADC #X                 \             = #X + x / z
- STA K3                 \
-                        \ first doing the low bytes
-
- TXA                    \ And then the high bytes. #X is the x-coordinate of
- ADC #0                 \ the centre of the space view, so this converts the
- STA K3+1               \ space x-coordinate into a screen x-coordinate
-
- LDA INWK+3             \ Set P(1 0) = (y_hi y_lo)
- STA P
- LDA INWK+4
- STA P+1
-
- LDA INWK+5             \ Set A = -y_sign
- EOR #%10000000
-
- JSR PLS6               \ Call PLS6 to calculate:
-                        \
-                        \   (X K) = (A P+1 P) / (z_sign z_hi z_lo)
-                        \         = -(y_sign y_hi y_lo) / (z_sign z_hi z_lo)
-                        \         = -y / z
-
- BCS PL2-1              \ If the C flag is set then the result overflowed and
-                        \ the coordinate doesn't fit on the screen, so return
-                        \ from the subroutine with the C flag set (as PL2-1
-                        \ contains an RTS)
-
- LDA K                  \ Set K4(1 0) = (X K) + #Y
- ADC #Y                 \             = #Y - y / z
- STA K4                 \
-                        \ first doing the low bytes
-
- TXA                    \ And then the high bytes. #Y is the y-coordinate of
- ADC #0                 \ the centre of the space view, so this converts the
- STA K4+1               \ space x-coordinate into a screen y-coordinate
-
- CLC                    \ Clear the C flag to indicate success
-
-.RTS2
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: PL2
-\       Type: Subroutine
-\   Category: Drawing planets
-\    Summary: Remove the planet from the screen
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   PL2-1               Contains an RTS
-\
-\ ******************************************************************************
-
-.PL2
-
- JMP WPLS2              \ This is the planet, so jump to WPLS2 to remove it from
-                        \ screen, returning from the subroutine using a tail
-                        \ call
-
-\ ******************************************************************************
-\
-\       Name: PLANET
-\       Type: Subroutine
-\   Category: Drawing planets
-\    Summary: Draw the planet
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   INWK                The planet's ship data block
-\
-\ ******************************************************************************
-
-.PLANET
-
- LDA TYPE               \ If bit 0 of the ship type is set, then this is 129,
- LSR A                  \ which is the placeholder used to denote there is no
- BCS PL2-1              \ space station, so return from the subroutine (as PL2-1
-                        \ contains an RTS)
-
- LDA INWK+8             \ Set A = z_sign (the highest byte in the planet's
-                        \ coordinates)
-
- BMI PL2                \ If A is negative then the planet is behind us, so
-                        \ jump to PL2 to remove it from the screen, returning
-                        \ from the subroutine using a tail call
-
- CMP #48                \ If A >= 48 then the planet is too far away to be
- BCS PL2                \ seen, so jump to PL2 to remove it from the screen,
-                        \ returning from the subroutine using a tail call
-
- ORA INWK+7             \ Set A to 0 if both z_sign and z_hi are 0
-
- BEQ PL2                \ If both z_sign and z_hi are 0, then the planet/sun is
-                        \ too close to be shown, so jump to PL2 to remove it
-                        \ from the screen, returning from the subroutine using a
-                        \ tail call
-
- JSR PROJ               \ Project the planet onto the screen, returning the
-                        \ centre's coordinates in K3(1 0) and K4(1 0)
-
- BCS PL2                \ If the C flag is set by PROJ then the planet is
-                        \ not visible on-screen, so jump to PL2 to remove it
-                        \ from the screen, returning from the subroutine using
-                        \ a tail call
-
- LDA #96                \ Set (A P+1 P) = (0 96 0) = 24576
- STA P+1                \
- LDA #0                 \ This represents the planet's radius at a distance
- STA P                  \ of z = 1
-
- JSR DVID3B2            \ Call DVID3B2 to calculate:
-                        \
-                        \   K(3 2 1 0) = (A P+1 P) / (z_sign z_hi z_lo)
-                        \              = (0 96 0) / z
-                        \              = 24576 / z
-                        \
-                        \ so K now contains the planet's radius, reduced by
-                        \ the actual distance to the planet. We know that
-                        \ K+3 and K+2 will be 0, as the number we are dividing,
-                        \ (0 96 0), fits into the two bottom bytes, so the
-                        \ result is actually in K(1 0)
-
- LDA K+1                \ If the high byte of the reduced radius is zero, jump
- BEQ PL82               \ to PL82, as K contains the radius on its own
-
- LDA #248               \ Otherwise set K = 248, to round up the radius in
- STA K                  \ K(1 0) to the nearest integer (if we consider the low
-                        \ byte to be the fractional part)
-
-.PL82
-
-                        \ --- Mod: Code removed for flicker-free planets: ----->
-
-\JSR WPLS2              \ Call WPLS2 to remove the planet from the screen
-\
-\JMP CIRCLE             \ Jump to CIRCLE to draw the planet (which is just a
-\                       \ simple circle) and return from the subroutine using
-\                       \ a tail call
-
-                        \ --- And replaced by: -------------------------------->
-
- JSR CIRCLE             \ Call CIRCLE to draw the planet's new circle
-
- BCS PL2                \ If the call to CIRCLE returned with the C flag set,
-                        \ then the circle does not fit on-screen, so jump to
-                        \ PL2 to remove the planet from the screen and return
-                        \ from the subroutine
-
- JMP EraseRestOfPlanet  \ We have drawn the new circle, so now we need to erase
-                        \ any lines that are left in the ball line heap, before
-                        \ returning from the subroutine using a tail call
-
-                        \ --- End of replacement ------------------------------>
-
-\ ******************************************************************************
-\
-\       Name: CIRCLE
-\       Type: Subroutine
-\   Category: Drawing circles
-\    Summary: Draw a circle for the planet
-\  Deep dive: Drawing circles
-\
-\ ------------------------------------------------------------------------------
-\
-\ Draw a circle with the centre at (K3, K4) and radius K. Used to draw the
-\ planet's main outline.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   K                   The planet's radius
-\
-\   K3(1 0)             Pixel x-coordinate of the centre of the planet
-\
-\   K4(1 0)             Pixel y-coordinate of the centre of the planet
-\
-\ ******************************************************************************
-
-.CIRCLE
-
- JSR CHKON              \ Call CHKON to check whether the circle fits on-screen
-
- BCS RTS2               \ If CHKON set the C flag then the circle does not fit
-                        \ on-screen, so return from the subroutine (as RTS2
-                        \ contains an RTS)
-
- LDA #0                 \ Set LSX2 = 0 to indicate that the ball line heap is
- STA LSX2               \ not empty, as we are about to fill it
-
- LDX K                  \ Set X = K = radius
-
- LDA #8                 \ Set A = 8
-
-                        \ --- Mod: Code removed for flicker-free planets: ----->
-
-\CPX #9                 \ If the radius < 9, skip to PL89
-\BCC PL89
-\
-\LSR A                  \ Halve A so A = 4
-
-                        \ --- And replaced by: -------------------------------->
-
- CPX #8                 \ If the radius < 8, skip to PL89
- BCC PL89
-
- LSR A                  \ Halve A so A = 4
-
- CPX #60                \ If the radius < 60, skip to PL89
- BCC PL89
-
- LSR A                  \ Halve A so A = 2
-
-                        \ --- End of replacement ------------------------------>
-
-.PL89
-
- STA STP                \ Set STP = A. STP is the step size for the circle, so
-                        \ the above sets a smaller step size for bigger circles
-
-                        \ Fall through into CIRCLE2 to draw the circle with the
-                        \ correct step size
-
-\ ******************************************************************************
-\
-\       Name: CIRCLE2
-\       Type: Subroutine
-\   Category: Drawing circles
-\    Summary: Draw a circle (for the planet or chart)
-\  Deep dive: Drawing circles
-\
-\ ------------------------------------------------------------------------------
-\
-\ Draw a circle with the centre at (K3, K4) and radius K. Used to draw the
-\ planet and the chart circles.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   STP                 The step size for the circle
-\
-\   K                   The circle's radius
-\
-\   K3(1 0)             Pixel x-coordinate of the centre of the circle
-\
-\   K4(1 0)             Pixel y-coordinate of the centre of the circle
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   C flag              The C flag is cleared
-\
-\ ******************************************************************************
-
-.CIRCLE2
-
-                        \ --- Mod: Code added for flicker-free planets: ------->
-
-                        \ We now set things up for flicker-free circle plotting,
-                        \ by setting the following:
-                        \
-                        \   LSNUM = offset to the first coordinate in the ball
-                        \           line heap
-                        \
-                        \   LSNUM2 = the number of bytes in the heap for the
-                        \            circle that's currently on-screen (or 0 if
-                        \            there is no ship currently on-screen)
-
- LDX #0                 \ Set LSNUM = 0, to point to the offset before the first
- STX LSNUM              \ set of circle coordinates in the ball line heap
-
- LDX LSP                \ Set LSNUM2 to the last byte of the ball line heap
- STX LSNUM2
-
- LDX #1                 \ Set LSP = 1 to reset the ball line heap pointer
- STX LSP
-
-                        \ --- End of added code ------------------------------->
-
- LDX #&FF               \ Set FLAG = &FF to reset the ball line heap in the call
- STX FLAG               \ to the BLINE routine below
-
- INX                    \ Set CNT = 0, our counter that goes up to 64, counting
- STX CNT                \ segments in our circle
-
-.PLL3
-
- LDA CNT                \ Set A = CNT
-
- JSR FMLTU2             \ Call FMLTU2 to calculate:
-                        \
-                        \   A = K * sin(A)
-                        \     = K * sin(CNT)
-
- LDX #0                 \ Set T = 0, so we have the following:
- STX T                  \
-                        \   (T A) = K * sin(CNT)
-                        \
-                        \ which is the x-coordinate of the circle for this count
-
- LDX CNT                \ If CNT < 33 then jump to PL37, as this is the right
- CPX #33                \ half of the circle and the sign of the x-coordinate is
- BCC PL37               \ correct
-
- EOR #%11111111         \ This is the left half of the circle, so we want to
- ADC #0                 \ flip the sign of the x-coordinate in (T A) using two's
- TAX                    \ complement, so we start with the low byte and store it
-                        \ in X (the ADC adds 1 as we know the C flag is set)
-
- LDA #&FF               \ And then we flip the high byte in T
- ADC #0
- STA T
-
- TXA                    \ Finally, we restore the low byte from X, so we have
-                        \ now negated the x-coordinate in (T A)
-
- CLC                    \ Clear the C flag so we can do some more addition below
-
-.PL37
-
- ADC K3                 \ We now calculate the following:
- STA K6                 \
-                        \   K6(1 0) = (T A) + K3(1 0)
-                        \
-                        \ to add the coordinates of the centre to our circle
-                        \ point, starting with the low bytes
-
- LDA K3+1               \ And then doing the high bytes, so we now have:
- ADC T                  \
- STA K6+1               \   K6(1 0) = K * sin(CNT) + K3(1 0)
-                        \
-                        \ which is the result we want for the x-coordinate
-
- LDA CNT                \ Set A = CNT + 16
- CLC
- ADC #16
-
- JSR FMLTU2             \ Call FMLTU2 to calculate:
-                        \
-                        \   A = K * sin(A)
-                        \     = K * sin(CNT + 16)
-                        \     = K * cos(CNT)
-
- TAX                    \ Set X = A
-                        \       = K * cos(CNT)
-
- LDA #0                 \ Set T = 0, so we have the following:
- STA T                  \
-                        \   (T X) = K * cos(CNT)
-                        \
-                        \ which is the y-coordinate of the circle for this count
-
- LDA CNT                \ Set A = (CNT + 15) mod 64
- ADC #15
- AND #63
-
- CMP #33                \ If A < 33 (i.e. CNT is 0-16 or 48-64) then jump to
- BCC PL38               \ PL38, as this is the bottom half of the circle and the
-                        \ sign of the y-coordinate is correct
-
- TXA                    \ This is the top half of the circle, so we want to
- EOR #%11111111         \ flip the sign of the y-coordinate in (T X) using two's
- ADC #0                 \ complement, so we start with the low byte in X (the
- TAX                    \ ADC adds 1 as we know the C flag is set)
-
- LDA #&FF               \ And then we flip the high byte in T, so we have
- ADC #0                 \ now negated the y-coordinate in (T X)
- STA T
-
- CLC                    \ Clear the C flag so the addition at the start of BLINE
-                        \ will work
-
-.PL38
-
- JSR BLINE              \ Call BLINE to draw this segment, which also increases
-                        \ CNT by STP, the step size
-
- CMP #65                \ If CNT >= 65 then skip the next instruction
- BCS P%+5
-
- JMP PLL3               \ Jump back for the next segment
-
- CLC                    \ Clear the C flag to indicate success
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: WPLS2
-\       Type: Subroutine
-\   Category: Drawing planets
-\    Summary: Remove the planet from the screen
-\  Deep dive: The ball line heap
-\
-\ ------------------------------------------------------------------------------
-\
-\ We do this by redrawing it using the lines stored in the ball line heap when
-\ the planet was originally drawn by the BLINE routine.
-\
-\ ******************************************************************************
-
-.WPLS2
-
- LDY LSX2               \ If LSX2 is non-zero (which indicates the ball line
- BNE WP1                \ heap is empty), jump to WP1 to reset the line heap
-                        \ without redrawing the planet
-
-                        \ --- Mod: Code removed for flicker-free planets: ----->
-
-\                       \ Otherwise Y is now 0, so we can use it as a counter to
-\                       \ loop through the lines in the line heap, redrawing
-\                       \ each one to remove the planet from the screen, before
-\                       \ resetting the line heap once we are done
-\
-\.WPL1
-\
-\CPY LSP                \ If Y >= LSP then we have reached the end of the line
-\BCS WP1                \ heap and have finished redrawing the planet (as LSP
-\                       \ points to the end of the heap), so jump to WP1 to
-\                       \ reset the line heap, returning from the subroutine
-\                       \ using a tail call
-\
-\LDA LSY2,Y             \ Set A to the y-coordinate of the current heap entry
-\
-\CMP #&FF               \ If the y-coordinate is &FF, this indicates that the
-\BEQ WP2                \ next point in the heap denotes the start of a line
-\                       \ segment, so jump to WP2 to put it into (X1, Y1)
-\
-\STA Y2                 \ Set (X2, Y2) to the x- and y-coordinates from the
-\LDA LSX2,Y             \ heap
-\STA X2
-\
-\JSR LOIN               \ Draw a line from (X1, Y1) to (X2, Y2)
-\
-\INY                    \ Increment the loop counter to point to the next point
-\
-\LDA SWAP               \ If SWAP is non-zero then we swapped the coordinates
-\BNE WPL1               \ when filling the heap in BLINE, so loop back WPL1
-\                       \ for the next point in the heap
-\
-\LDA X2                 \ Swap (X1, Y1) and (X2, Y2), so the next segment will
-\STA X1                 \ be drawn from the current (X2, Y2) to the next point
-\LDA Y2                 \ in the heap
-\STA Y1
-\
-\JMP WPL1               \ Loop back to WPL1 for the next point in the heap
-\
-\.WP2
-\
-\INY                    \ Increment the loop counter to point to the next point
-\
-\LDA LSX2,Y             \ Set (X1, Y1) to the x- and y-coordinates from the
-\STA X1                 \ heap
-\LDA LSY2,Y
-\STA Y1
-\
-\INY                    \ Increment the loop counter to point to the next point
-\
-\JMP WPL1               \ Loop back to WPL1 for the next point in the heap
-
-                        \ --- And replaced by: -------------------------------->
-
- STY LSNUM              \ Reset LSNUM to the start of the ball line heap (we can
-                        \ set this to 0 rather than 1 to take advantage of the
-                        \ fact that Y is 0 - the effect is the same)
-
- LDA LSP                \ Set LSNUM2 to the end of the ball line heap
- STA LSNUM2
-
- JSR EraseRestOfPlanet  \ Draw the contents of the ball line heap to erase the
-                        \ old planet
-
-                        \ --- End of replacement ------------------------------>
-
-\ ******************************************************************************
-\
-\       Name: WP1
-\       Type: Subroutine
-\   Category: Drawing planets
-\    Summary: Reset the ball line heap
-\
-\ ******************************************************************************
-
-.WP1
-
- LDA #1                 \ Set LSP = 1 to reset the ball line heap pointer
- STA LSP
-
- LDA #&FF               \ Set LSX2 = &FF to indicate the ball line heap is empty
- STA LSX2
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: CHKON
-\       Type: Subroutine
-\   Category: Drawing circles
-\    Summary: Check whether any part of a circle appears on the extended screen
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   K                   The circle's radius
-\
-\   K3(1 0)             Pixel x-coordinate of the centre of the circle
-\
-\   K4(1 0)             Pixel y-coordinate of the centre of the circle
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   C flag              Clear if any part of the circle appears on-screen, set
-\                       if none of the circle appears on-screen
-\
-\   (A X)               Minimum y-coordinate of the circle on-screen (i.e. the
-\                       y-coordinate of the top edge of the circle)
-\
-\   P(2 1)              Maximum y-coordinate of the circle on-screen (i.e. the
-\                       y-coordinate of the bottom edge of the circle)
-\
-\ ******************************************************************************
-
-.CHKON
-
- LDA K3                 \ Set A = K3 + K
- CLC
- ADC K
-
- LDA K3+1               \ Set A = K3+1 + 0 + any carry from above, so this
- ADC #0                 \ effectively sets A to the high byte of K3(1 0) + K:
-                        \
-                        \   (A ?) = K3(1 0) + K
-                        \
-                        \ so A is the high byte of the x-coordinate of the right
-                        \ edge of the circle
-
- BMI PL21               \ If A is negative then the right edge of the circle is
-                        \ to the left of the screen, so jump to PL21 to set the
-                        \ C flag and return from the subroutine, as the whole
-                        \ circle is off-screen to the left
-
- LDA K3                 \ Set A = K3 - K
- SEC
- SBC K
-
- LDA K3+1               \ Set A = K3+1 - 0 - any carry from above, so this
- SBC #0                 \ effectively sets A to the high byte of K3(1 0) - K:
-                        \
-                        \   (A ?) = K3(1 0) - K
-                        \
-                        \ so A is the high byte of the x-coordinate of the left
-                        \ edge of the circle
-
- BMI PL31               \ If A is negative then the left edge of the circle is
-                        \ to the left of the screen, and we already know the
-                        \ right edge is either on-screen or off-screen to the
-                        \ right, so skip to PL31 to move on to the y-coordinate
-                        \ checks, as at least part of the circle is on-screen in
-                        \ terms of the x-axis
-
- BNE PL21               \ If A is non-zero, then the left edge of the circle is
-                        \ to the right of the screen, so jump to PL21 to set the
-                        \ C flag and return from the subroutine, as the whole
-                        \ circle is off-screen to the right
-
-.PL31
-
- LDA K4                 \ Set P+1 = K4 + K
- CLC
- ADC K
- STA P+1
-
- LDA K4+1               \ Set A = K4+1 + 0 + any carry from above, so this
- ADC #0                 \ does the following:
-                        \
-                        \   (A P+1) = K4(1 0) + K
-                        \
-                        \ so A is the high byte of the y-coordinate of the
-                        \ bottom edge of the circle
-
- BMI PL21               \ If A is negative then the bottom edge of the circle is
-                        \ above the top of the screen, so jump to PL21 to set
-                        \ the C flag and return from the subroutine, as the
-                        \ whole circle is off-screen to the top
-
- STA P+2                \ Store the high byte in P+2, so now we have:
-                        \
-                        \   P(2 1) = K4(1 0) + K
-                        \
-                        \ i.e. the maximum y-coordinate of the circle on-screen
-                        \ (which we return)
-
- LDA K4                 \ Set X = K4 - K
- SEC
- SBC K
- TAX
-
- LDA K4+1               \ Set A = K4+1 - 0 - any carry from above, so this
- SBC #0                 \ does the following:
-                        \
-                        \   (A X) = K4(1 0) - K
-                        \
-                        \ so A is the high byte of the y-coordinate of the top
-                        \ edge of the circle
-
- BMI PL44               \ If A is negative then the top edge of the circle is
-                        \ above the top of the screen, and we already know the
-                        \ bottom edge is either on-screen or below the bottom
-                        \ of the screen, so skip to PL44 to clear the C flag and
-                        \ return from the subroutine using a tail call, as part
-                        \ of the circle definitely appears on-screen
-
- BNE PL21               \ If A is non-zero, then the top edge of the circle is
-                        \ below the bottom of the screen, so jump to PL21 to set
-                        \ the C flag and return from the subroutine, as the
-                        \ whole circle is off-screen to the bottom
-
- CPX #2*Y-1             \ If we get here then A is zero, which means the top
-                        \ edge of the circle is within the screen boundary, so
-                        \ now we need to check whether it is in the space view
-                        \ (in which case it is on-screen) or the dashboard (in
-                        \ which case the top of the circle is hidden by the
-                        \ dashboard, so the circle isn't on-screen). We do this
-                        \ by checking the low byte of the result in X against
-                        \ 2 * #Y - 1, and returning the C flag from this
-                        \ comparison. The constant #Y is the y-coordinate of the
-                        \ mid-point of the space view, so 2 * #Y - 1, the
-                        \ y-coordinate of the bottom pixel row of the space
-                        \ view. So this does the following:
-                        \
-                        \   * The C flag is set if coordinate (A X) is below the
-                        \     bottom row of the space view, i.e. the top edge of
-                        \     the circle is hidden by the dashboard
-                        \
-                        \   * The C flag is clear if coordinate (A X) is above
-                        \     the bottom row of the space view, i.e. the top
-                        \     edge of the circle is on-screen
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: PL21
-\       Type: Subroutine
-\   Category: Drawing planets
-\    Summary: Return from a planet-drawing routine with a failure flag
-\
-\ ------------------------------------------------------------------------------
-\
-\ Set the C flag and return from the subroutine. This is used to return from a
-\ planet-drawing routine with the C flag indicating an overflow in the
-\ calculation.
-\
-\ ******************************************************************************
-
-.PL21
-
- SEC                    \ Set the C flag to indicate an overflow
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: PLS6
-\       Type: Subroutine
-\   Category: Drawing planets
-\    Summary: Calculate (X K) = (A P+1 P) / (z_sign z_hi z_lo)
-\
-\ ------------------------------------------------------------------------------
-\
-\ Calculate the following:
-\
-\   (X K) = (A P+1 P) / (z_sign z_hi z_lo)
-\
-\ returning an overflow in the C flag if the result is >= 1024.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   INWK                The planet's ship data block
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   C flag              Set if the result >= 1024, clear otherwise
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   PL44                Clear the C flag and return from the subroutine
-\
-\ ******************************************************************************
-
-.PLS6
-
- JSR DVID3B2            \ Call DVID3B2 to calculate:
-                        \
-                        \   K(3 2 1 0) = (A P+1 P) / (z_sign z_hi z_lo)
-
- LDA K+3                \ Set A = |K+3| OR K+2
- AND #%01111111
- ORA K+2
-
- BNE PL21               \ If A is non-zero then the two high bytes of K(3 2 1 0)
-                        \ are non-zero, so jump to PL21 to set the C flag and
-                        \ return from the subroutine
-
-                        \ We can now just consider K(1 0), as we know the top
-                        \ two bytes of K(3 2 1 0) are both 0
-
- LDX K+1                \ Set X = K+1, so now (X K) contains the result in
-                        \ K(1 0), which is the format we want to return the
-                        \ result in
-
- CPX #4                 \ If the high byte of K(1 0) >= 4 then the result is
- BCS PL6                \ >= 1024, so return from the subroutine with the C flag
-                        \ set to indicate an overflow (as PL6 contains an RTS)
-
- LDA K+3                \ Fetch the sign of the result from K+3 (which we know
-                        \ has zeroes in bits 0-6, so this just fetches the sign)
-
- BPL PL6                \ If the sign bit is clear and the result is positive,
-                        \ then the result is already correct, so return from
-                        \ the subroutine with the C flag clear to indicate
-                        \ success (as PL6 contains an RTS)
-
- LDA K                  \ Otherwise we need to negate the result, which we do
- EOR #%11111111         \ using two's complement, starting with the low byte:
- ADC #1                 \
- STA K                  \   K = ~K + 1
-
- TXA                    \ And then the high byte:
- EOR #%11111111         \
- ADC #0                 \   X = ~X
- TAX
-
-.PL44
-
- CLC                    \ Clear the C flag to indicate success
-
-.PL6
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: TT17
-\       Type: Subroutine
-\   Category: Keyboard
-\    Summary: Scan the keyboard for cursor key movement
-\
-\ ------------------------------------------------------------------------------
-\
-\ Scan the keyboard for cursor key movement, and return the result as deltas
-\ (changes) in x- and y-coordinates as follows:
-\
-\   * X and Y are integers between -1 and +1 depending on which keys are pressed
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   A                   The key pressed, if the arrow keys were used
-\
-\   X                   Change in the x-coordinate according to the cursor keys
-\                       being pressed, as an integer (see above)
-\
-\   Y                   Change in the y-coordinate according to the cursor keys
-\                       being pressed, as an integer (see above)
-\
-\ ******************************************************************************
-
-.TT17
-
- JSR DOKEY              \ Scan the keyboard for flight controls and pause keys,
-                        \ and update the key logger, setting KL to the key
-                        \ pressed
-
-                        \ --- Mod: Code removed for flicker-free planets: ----->
-
-\LDX JSTK               \ If the joystick is not configured, jump down to TJ1,
-\BEQ TJ1                \ otherwise keep going... though as the DOKEY routine
-\                       \ doesn't read the ADC channels in the Electron version,
-\                       \ this doesn't actually work, but instead moves the
-\                       \ crosshairs in an uncontrollable way, so this is
-\                       \ presumably a bug
-\
-\LDA JSTX               \ Fetch the joystick roll, ranging from 1 to 255 with
-\                       \ 128 as the centre point
-\
-\EOR #&FF               \ Flip the sign so A = -JSTX, because the joystick roll
-\                       \ works in the opposite way to moving a cursor on-screen
-\                       \ in terms of left and right
-\
-\JSR TJS1               \ Call TJS1 just below to set A to a value between -2
-\                       \ and +2 depending on the joystick roll value (moving
-\                       \ the stick sideways)
-\
-\TYA                    \ Copy Y to A
-\
-\TAX                    \ Copy A to X, so X contains the joystick roll value
-\
-\LDA JSTY               \ Fetch the joystick pitch, ranging from 1 to 255 with
-\                       \ 128 as the centre point, and fall through into TJS1 to
-\                       \ set Y to the joystick pitch value (moving the stick up
-\                       \ and down)
-\
-\.TJS1
-\
-\TAY                    \ Store A in Y
-\
-\LDA #0                 \ Set the result, A = 0
-\
-\CPY #16                \ If Y >= 16 set the C flag, so A = A - 1
-\SBC #0
-\
-\CPY #64                \ If Y >= 64 set the C flag, so A = A - 1
-\SBC #0
-\
-\CPY #192               \ If Y >= 192 set the C flag, so A = A + 1
-\ADC #0
-\
-\CPY #224               \ If Y >= 224 set the C flag, so A = A + 1
-\ADC #0
-\
-\TAY                    \ Copy the value of A into Y
-\
-\LDA KL                 \ Set A to the value of KL (the key pressed)
-\
-\RTS                    \ Return from the subroutine
-\
-\.TJ1
-
-                        \ --- And replaced by: -------------------------------->
-
- LDX #0                 \ Set X = 0
-
-                        \ --- End of replacement ------------------------------>
-
- LDA KL                 \ Set A to the value of KL (the key pressed)
-
- LDY #0                 \ Set the result, Y = 0 (and we know that X is 0 as well
-                        \ as we jumped to TJ1 from above following a LDX and a
-                        \ BEQ)
-
- CMP #&18               \ If left arrow was pressed, set X = X - 1
- BNE P%+3
- DEX
-
- CMP #&78               \ If right arrow was pressed, set X = X + 1
- BNE P%+3
- INX
-
- CMP #&39               \ If up arrow was pressed, set Y = Y + 1
- BNE P%+3
- INY
-
- CMP #&28               \ If down arrow was pressed, set Y = Y - 1
- BNE P%+3
- DEY
-
- RTS                    \ Return from the subroutine
+                        \   * PROJ
+                        \   * PL2
+                        \   * PLANET
+                        \   * CIRCLE
+                        \   * CIRCLE2
+                        \   * WPLS2
+                        \   * WP1
+                        \   * CHKON
+                        \   * PL21
+                        \   * PLS6
+                        \   * TT17
+
+                        \ --- End of moved code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -17233,17 +15462,232 @@ ENDIF
                         \ Fall through into KYTB to return from the subroutine,
                         \ as the first byte of KYTB is an RTS
 
-                        \ --- Mod: Code moved for sideways RAM: --------------->
+\ ******************************************************************************
+\
+\       Name: KYTB
+\       Type: Variable
+\   Category: Keyboard
+\    Summary: Lookup table for in-flight keyboard controls
+\  Deep dive: The key logger
+\
+\ ------------------------------------------------------------------------------
+\
+\ Keyboard table for in-flight controls. This table contains the internal key
+\ codes for the flight keys (see page 40 of the "Acorn Electron Advanced User
+\ Guide" by Holmes and Dickens for a list of internal key numbers).
+\
+\ The pitch, roll, speed and laser keys (i.e. the seven primary flight
+\ control keys) have bit 7 set, so they have 128 added to their internal
+\ values. This doesn't appear to be used anywhere.
+\
+\ Note that KYTB actually points to the byte before the start of the table, so
+\ the offset of the first key value is 1 (i.e. KYTB+1), not 0.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   KYTB                Contains an RTS
+\
+\ ******************************************************************************
 
-                        \ The following routines have been moved into sideways
-                        \ RAM (see the ELITE SIDEWAYS RAM FILE section at the
-                        \ end of this source file)
-                        \
-                        \   * KYTB
-                        \   * DKS4
-                        \   * DKS2
+.KYTB
 
-                        \ --- End of moved code ------------------------------->
+ RTS                    \ Return from the subroutine (used as an entry point and
+                        \ a fall-through from above)
+
+                        \ These are the primary flight controls (pitch, roll,
+                        \ speed and lasers):
+
+ EQUB &68 + 128         \ ?         KYTB+1      Slow down
+ EQUB &62 + 128         \ Space     KYTB+2      Speed up
+ EQUB &66 + 128         \ <         KYTB+3      Roll left
+ EQUB &67 + 128         \ >         KYTB+4      Roll right
+ EQUB &42 + 128         \ X         KYTB+5      Pull up
+ EQUB &51 + 128         \ S         KYTB+6      Pitch down
+ EQUB &41 + 128         \ A         KYTB+7      Fire lasers
+
+                        \ These are the secondary flight controls:
+
+ EQUB &17               \ -         KYTB+8      Energy bomb
+ EQUB &70               \ ESCAPE    KYTB+9      Launch escape pod
+ EQUB &23               \ T         KYTB+10     Arm missile
+ EQUB &35               \ U         KYTB+11     Unarm missile
+ EQUB &65               \ M         KYTB+12     Fire missile
+ EQUB &22               \ E         KYTB+13     E.C.M.
+ EQUB &45               \ J         KYTB+14     In-system jump
+ EQUB &52               \ C         KYTB+15     Docking computer
+
+\ ******************************************************************************
+\
+\       Name: DKS4
+\       Type: Subroutine
+\   Category: Keyboard
+\    Summary: Scan the keyboard to see if a specific key is being pressed
+\  Deep dive: The key logger
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   The internal number of the key to check (see page 40 of
+\                       the "Acorn Electron Advanced User Guide" by Holmes and
+\                       Dickens for a list of internal key numbers)
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   A                   If the key in A is being pressed, A contains the
+\                       original argument A, but with bit 7 set (i.e. A + 128).
+\                       If the key in A is not being pressed, the value in A is
+\                       unchanged
+\
+\   X                   Contains the same as A
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   CAPSL               Scan the keyboard to see if CAPS LOCK is being pressed
+\
+\ ******************************************************************************
+
+.KSCAN
+
+                        \ This routine is called from below, and performs the
+                        \ actual keyboard scan
+
+ SEC                    \ Set the C flag and clear the V flag, so when we call
+ CLV                    \ KEYV, it scans the keyboard just like OSBYTE 121
+
+ SEI                    \ Disable interrupts
+
+ JMP (S%+4)             \ Jump to the original value of KEYV, which is stored in
+                        \ S%+4. Because we set the C and V flags as above, this
+                        \ will scan the keyboard like OSBYTE 121, which expects
+                        \ X to be set to the internal key number to scan for,
+                        \ EOR'd with %10000000. Unlike OSBYTE 121, a direct call
+                        \ to KEYV will return a negative value in both A and X
+                        \ if that key is being pressed
+
+.CAPSL
+
+ LDX #&40               \ Set X to the internal key number for CAPS LOCK, and
+                        \ fall through into DKS4 to check whether it is being
+                        \ pressed
+
+.DKS4
+
+ TYA                    \ Store Y on the stack so we can retrieve it when we
+ PHA                    \ return from the subroutine, thus preserving Y
+
+ TXA                    \ Store the key number to check in X on the stack so
+ PHA                    \ we can retrieve it below
+
+ ORA #%10000000         \ Set bit 7 of the key to check for and transfer the
+ TAX                    \ value to X
+
+ JSR KSCAN              \ Call KSCAN to check whether the key in X is being
+                        \ pressed, which returns a negative value in A and X
+                        \ if it is
+
+ CLI                    \ Enable interrupts again (as they are disabled in
+                        \ KSCAN)
+
+ TAX                    \ Set X to the result of the key press call above
+
+ PLA                    \ Fetch the original argument value of X from the stack
+ AND #%01111111         \ into A, and clear bit 7
+
+ CPX #%10000000         \ If bit 7 of the result of the key press check above is
+ BCC P%+4               \ set, then the key in X is being pressed, so skip the
+                        \ next instruction
+
+ ORA #%10000000         \ The key in X isn't being pressed, so set bit 7 of A
+
+ TAX                    \ By this point, A contains the key number we wanted to
+                        \ check for, with bit 7 set if the key is being pressed
+                        \ and clear otherwise, which is what we want to return
+                        \ from the subroutine, but first we need to restore the
+                        \ value of Y from the stack, so we store the result A in
+                        \ X while we do that
+
+ PLA                    \ Restore the value Y that we stored on the stack, so it
+ TAY                    \ gets preserved across calls to the subroutine
+
+ TXA                    \ And we now retrieve the result that we stored in X
+                        \ back into A, so we can return it
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: DKS2
+\       Type: Subroutine
+\   Category: Keyboard
+\    Summary: Read the joystick position
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine is never called in the Electron version, as the Electron doesn't
+\ have ADC channels as standard and doesn't support joysticks (though a lot of
+\ the joystick code from the other versions is still present, it just isn't
+\ called).
+\
+\ Return the value of ADC channel in X (used to read the joystick). The value
+\ will be inverted if the game has been configured to reverse both joystick
+\ channels (which can be done by pausing the game and pressing J).
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   The ADC channel to read:
+\
+\                         * 1 = joystick X
+\
+\                         * 2 = joystick Y
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   (A X)               The 16-bit value read from channel X, with the value
+\                       inverted if the game has been configured to reverse the
+\                       joystick
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   DKS2-1              Contains an RTS
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code removed for flicker-free ships: ------->
+
+\.DKS2
+\
+\LDA #128               \ Call OSBYTE with A = 128 to fetch the 16-bit value
+\JSR OSBYTE             \ from ADC channel X, returning (Y X), i.e. the high
+\                       \ byte in Y and the low byte in X
+\                       \
+\                       \   * Channel 1 is the x-axis: 0 = right, 65520 = left
+\                       \
+\                       \   * Channel 2 is the y-axis: 0 = down,  65520 = up
+\
+\TYA                    \ Copy Y to A, so the result is now in (A X)
+\
+\EOR JSTE               \ The high byte A is now EOR'd with the value in
+\                       \ location JSTE, which contains &FF if both joystick
+\                       \ channels are reversed and 0 otherwise (so A now
+\                       \ contains the high byte but inverted, if that's what
+\                       \ the current settings say)
+\
+\RTS                    \ Return from the subroutine
+
+                        \ --- End of removed code ----------------------------->
 
 \ ******************************************************************************
 \
@@ -17325,17 +15769,261 @@ ENDIF
 
  RTS                    \ Return from the subroutine
 
-                        \ --- Mod: Code moved for sideways RAM: --------------->
+\ ******************************************************************************
+\
+\       Name: U%
+\       Type: Subroutine
+\   Category: Keyboard
+\    Summary: Clear the key logger
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   A                   A is set to 0
+\
+\   Y                   Y is set to 0
+\
+\ ******************************************************************************
 
-                        \ The following routines have been moved into sideways
-                        \ RAM (see the ELITE SIDEWAYS RAM FILE section at the
-                        \ end of this source file)
-                        \
-                        \   * U%
-                        \   * DOKEY
-                        \   * DK4
+.U%
 
-                        \ --- End of moved code ------------------------------->
+ LDA #0                 \ Set A to 0, as this means "key not pressed" in the
+                        \ key logger at KL
+
+ LDY #15                \ We want to clear the 15 key logger locations from
+                        \ KY1 to KY19, so set a counter in Y
+
+.DKL3
+
+ STA KL,Y               \ Store 0 in the Y-th byte of the key logger
+
+ DEY                    \ Decrement the counter
+
+ BNE DKL3               \ And loop back for the next key, until we have just
+                        \ KL+1. We don't want to clear the first key logger
+                        \ location at KL, as the keyboard table at KYTB starts
+                        \ with offset 1, not 0, so KL is not technically part of
+                        \ the key logger (it's actually used for logging keys
+                        \ that don't appear in the keyboard table, and which
+                        \ therefore don't use the key logger)
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: DOKEY
+\       Type: Subroutine
+\   Category: Keyboard
+\    Summary: Scan for the seven primary flight controls
+\  Deep dive: The key logger
+\             The docking computer
+\
+\ ------------------------------------------------------------------------------
+\
+\ Scan for the seven primary flight controls, pause and configuration keys, and
+\ secondary flight controls, and update the key logger and pitch and roll rates
+\ accordingly.
+\
+\ Unlike the other versions of Elite, the Electron version doesn't actually read
+\ the joystick values from the ADC channels, so although you can configure
+\ joysticks using the "K" option when paused, they won't have any effect. All
+\ the other joystick code is present, though, so perhaps the intention was to
+\ support joysticks at some point?
+\
+\ ******************************************************************************
+
+.DOKEY
+
+ JSR U%                 \ Call U% to clear the key logger
+
+ LDY #7                 \ We're going to work our way through the primary flight
+                        \ control keys (pitch, roll, speed and laser), so set a
+                        \ counter in Y so we can loop through all 7
+
+.DKL2
+
+ LDX KYTB,Y             \ Call DKS4 to see if the KYTB key at offset Y is being
+ JSR DKS4               \ pressed
+
+ BPL P%+6               \ If the key isn't being pressed, skip the following two
+                        \ instructions
+
+ LDX #&FF               \ Set the key logger for this key to indicate it's being
+ STX KL,Y               \ pressed
+
+ DEY                    \ Decrement the loop counter
+
+ BNE DKL2               \ Loop back for the next key, working our way from A at
+                        \ KYTB+7 down to ? at KYTB+1
+
+ LDX JSTX               \ Set X = JSTX, the current roll rate (as shown in the
+                        \ RL indicator on the dashboard)
+
+ LDA #7                 \ Set A to 7, which is the amount we want to alter the
+                        \ roll rate by if the roll keys are being pressed
+
+ LDY KL+3               \ If the "<" key is being pressed, then call the BUMP2
+ BEQ P%+5               \ routine to increase the roll rate in X by A
+ JSR BUMP2
+
+ LDY KL+4               \ If the ">" key is being pressed, then call the REDU2
+ BEQ P%+5               \ routine to decrease the roll rate in X by A, taking
+ JSR REDU2              \ the keyboard auto re-centre setting into account
+
+ STX JSTX               \ Store the updated roll rate in JSTX
+
+ ASL A                  \ Double the value of A, to 14
+
+ LDX JSTY               \ Set X = JSTY, the current pitch rate (as shown in the
+                        \ DC indicator on the dashboard)
+
+ LDY KL+5               \ If the "X" key is being pressed, then call the REDU2
+ BEQ P%+5               \ routine to decrease the pitch rate in X by A, taking
+ JSR REDU2              \ the keyboard auto re-centre setting into account
+
+ LDY KL+6               \ If the "S" key is being pressed, then call the BUMP2
+ BEQ P%+5               \ routine to increase the pitch rate in X by A
+ JSR BUMP2
+
+ STX JSTY               \ Store the updated roll rate in JSTY
+
+                        \ Fall through into DK4 to scan for other keys
+
+\ ******************************************************************************
+\
+\       Name: DK4
+\       Type: Subroutine
+\   Category: Keyboard
+\    Summary: Scan for pause, configuration and secondary flight keys
+\  Deep dive: The key logger
+\
+\ ------------------------------------------------------------------------------
+\
+\ Scan for pause and configuration keys, and if this is a space view, also scan
+\ for secondary flight controls.
+\
+\ Specifically:
+\
+\   * Scan for the pause button (COPY) and if it's pressed, pause the game and
+\     process any configuration key presses until the game is unpaused (DELETE)
+\
+\   * If this is a space view, scan for secondary flight keys and update the
+\     relevant bytes in the key logger
+\
+\ ******************************************************************************
+
+.DK4
+
+ JSR RDKEY              \ Scan the keyboard for a key press and return the
+                        \ internal key number in A and X (or 0 for no key press)
+
+ STX KL                 \ Store X in KL, byte #0 of the key logger
+
+ CPX #&38               \ If COPY is not being pressed, jump to DK2 below,
+ BNE DK2                \ otherwise let's process the configuration keys
+
+.FREEZE
+
+                        \ COPY is being pressed, so we enter a loop that
+                        \ listens for configuration keys, and we keep looping
+                        \ until we detect a DELETE key press. This effectively
+                        \ pauses the game when COPY is pressed, and unpauses
+                        \ it when DELETE is pressed
+
+ JSR DEL8               \ Call DEL8 to wait for 30 delay loops
+
+ JSR RDKEY              \ Scan the keyboard for a key press and return the
+                        \ internal key number in A and X (or 0 for no key press)
+
+ CPX #&51               \ If "S" is not being pressed, skip to DK6
+ BNE DK6
+
+ LDA #0                 \ "S" is being pressed, so set DNOIZ to 0 to turn the
+ STA DNOIZ              \ sound on
+
+.DK6
+
+ LDY #&40               \ We now want to loop through the keys that toggle
+                        \ various settings. These have internal key numbers
+                        \ between &40 (CAPS LOCK) and &46 ("K"), so we set up
+                        \ the first key number in Y to act as a loop counter.
+                        \ See subroutine DKS3 for more details on this
+
+.DKL4
+
+ JSR DKS3               \ Call DKS3 to scan for the key given in Y, and toggle
+                        \ the relevant setting if it is pressed
+
+ INY                    \ Increment Y to point to the next toggle key
+
+ CPY #&47               \ The last toggle key is &46 (K), so check whether we
+                        \ have just done that one
+
+ BNE DKL4               \ If not, loop back to check for the next toggle key
+
+.DK55
+
+ CPX #&10               \ If "Q" is not being pressed, skip to DK7
+ BNE DK7
+
+ STX DNOIZ              \ "Q" is being pressed, so set DNOIZ to X, which is
+                        \ non-zero (&10), so this will turn the sound off
+
+.DK7
+
+ CPX #&70               \ If ESCAPE is not being pressed, skip over the next
+ BNE P%+5               \ instruction
+
+ JMP DEATH2             \ ESCAPE is being pressed, so jump to DEATH2 to end
+                        \ the game
+
+ CPX #&59               \ If DELETE is not being pressed, we are still paused,
+ BNE FREEZE             \ so loop back up to keep listening for configuration
+                        \ keys, otherwise fall through into the rest of the
+                        \ key detection code, which unpauses the game
+
+.DK2
+
+ LDA QQ11               \ If the current view is non-zero (i.e. not a space
+ BNE DK5                \ view), return from the subroutine (as DK5 contains
+                        \ an RTS)
+
+ LDY #15                \ This is a space view, so now we want to check for all
+                        \ the secondary flight keys. The internal key numbers
+                        \ are in the keyboard table KYTB from KYTB+8 to
+                        \ KYTB+15, and their key logger locations are from KL+8
+                        \ to KL+15. So set a decreasing counter in Y for the
+                        \ index, starting at 15, so we can loop through them
+
+ LDA #&FF               \ Set A to &FF so we can store this in the keyboard
+                        \ logger for keys that are being pressed
+
+.DKL1
+
+ LDX KYTB,Y             \ Get the internal key number of the Y-th flight key
+                        \ the KYTB keyboard table
+
+ CPX KL                 \ We stored the key that's being pressed in KL above,
+                        \ so check to see if the Y-th flight key is being
+                        \ pressed
+
+ BNE DK1                \ If it is not being pressed, skip to DK1 below
+
+ STA KL,Y               \ The Y-th flight key is being pressed, so set that
+                        \ key's location in the key logger to &FF
+
+.DK1
+
+ DEY                    \ Decrement the loop counter
+
+ CPY #7                 \ Have we just done the last key?
+
+ BNE DKL1               \ If not, loop back to process the next key
+
+.DK5
+
+ RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
 \
@@ -30109,6 +28797,1846 @@ ENDMACRO
 
 \ ******************************************************************************
 \
+\       Name: DOEXP
+\       Type: Subroutine
+\   Category: Drawing ships
+\    Summary: Draw an exploding ship
+\  Deep dive: Drawing explosion clouds
+\             Generating random numbers
+\
+\ ******************************************************************************
+
+.EX2
+
+ LDA INWK+31            \ Set bits 5 and 7 of the ship's byte #31 to denote that
+ ORA #%10100000         \ the ship is exploding and has been killed
+ STA INWK+31
+
+ RTS                    \ Return from the subroutine
+
+.DOEXP
+
+ LDA INWK+31            \ If bit 6 of the ship's byte #31 is clear, then the
+ AND #%01000000         \ ship is not already exploding so there is no existing
+ BEQ P%+5               \ explosion cloud to remove, so skip the following
+                        \ instruction
+
+ JSR PTCLS              \ Call PTCLS to remove the existing cloud by drawing it
+                        \ again
+
+ LDA INWK+6             \ Set T = z_lo
+ STA T
+
+ LDA INWK+7             \ Set A = z_hi, so (A T) = z
+
+ CMP #32                \ If z_hi < 32, skip the next two instructions
+ BCC P%+6
+
+ LDA #&FE               \ Set A = 254 and jump to yy (this BNE is effectively a
+ BNE yy                 \ JMP, as A is never zero)
+
+ ASL T                  \ Shift (A T) left twice
+ ROL A
+ ASL T
+ ROL A
+
+ SEC                    \ And then shift A left once more, inserting a 1 into
+ ROL A                  \ bit 0
+
+                        \ Overall, the above multiplies A by 8 and makes sure it
+                        \ is at least 1, to leave a one-byte distance in A. We
+                        \ can use this as the distance for our cloud, to ensure
+                        \ that the explosion cloud is visible even for ships
+                        \ that blow up a long way away
+
+.yy
+
+ STA Q                  \ Store the distance to the explosion in Q
+
+ LDY #1                 \ Fetch byte #1 of the ship line heap, which contains
+ LDA (XX19),Y           \ the cloud counter
+
+ ADC #4                 \ Add 4 to the cloud counter, so it ticks onwards every
+                        \ we redraw it
+
+ BCS EX2                \ If the addition overflowed, jump up to EX2 to update
+                        \ the explosion flags and return from the subroutine
+
+ STA (XX19),Y           \ Store the updated cloud counter in byte #1 of the ship
+                        \ line heap
+
+ JSR DVID4              \ Calculate the following:
+                        \
+                        \   (P R) = 256 * A / Q
+                        \         = 256 * cloud counter / distance
+                        \
+                        \ We are going to use this as our cloud size, so the
+                        \ further away the cloud, the smaller it is, and as the
+                        \ cloud counter ticks onward, the cloud expands
+
+ LDA P                  \ Set A = P, so we now have:
+                        \
+                        \   (A R) = 256 * cloud counter / distance
+
+ CMP #&1C               \ If A < 28, skip the next two instructions
+ BCC P%+6
+
+ LDA #&FE               \ Set A = 254 and skip the following (this BNE is
+ BNE LABEL_1            \ effectively a JMP as A is never zero)
+
+ ASL R                  \ Shift (A R) left three times to multiply by 8
+ ROL A
+ ASL R
+ ROL A
+ ASL R
+ ROL A
+
+                        \ Overall, the above multiplies (A R) by 8 to leave a
+                        \ one-byte cloud size in A, given by the following:
+                        \
+                        \   A = 8 * cloud counter / distance
+
+.LABEL_1
+
+ DEY                    \ Decrement Y to 0
+
+ STA (XX19),Y           \ Store the cloud size in byte #0 of the ship line heap
+
+ LDA INWK+31            \ Clear bit 6 of the ship's byte #31 to denote that the
+ AND #%10111111         \ explosion has not yet been drawn
+ STA INWK+31
+
+                        \ --- Mod: Code removed for sideways RAM: ------------->
+
+\AND #%00001000         \ If bit 3 of the ship's byte #31 is clear, then nothing
+\BEQ TT48               \ is being drawn on-screen for this ship anyway, so
+\                       \ return from the subroutine (as TT48 contains an RTS)
+
+                        \ --- And replaced by: -------------------------------->
+
+ AND #%00001000         \ If bit 3 of the ship's byte #31 is clear, then nothing
+ BEQ DOEXP-1            \ is being drawn on-screen for this ship anyway, so
+                        \ return from the subroutine (as DOEXP-1 contains an
+                        \ RTS)
+
+                        \ --- End of replacement ------------------------------>
+
+ LDY #2                 \ Otherwise it's time to draw an explosion cloud, so
+ LDA (XX19),Y           \ fetch byte #2 of the ship line heap into Y, which we
+ TAY                    \ set to the explosion count for this ship (i.e. the
+                        \ number of vertices used as origins for explosion
+                        \ clouds)
+                        \
+                        \ The explosion count is stored as 4 * n + 6, where n is
+                        \ the number of vertices, so the following loop copies
+                        \ the coordinates of the first n vertices from the heap
+                        \ at XX3, which is where we stored all the visible
+                        \ vertex coordinates in part 8 of the LL9 routine, and
+                        \ sticks them in the ship line heap pointed to by XX19,
+                        \ starting at byte #7 (so it leaves the first 6 bytes of
+                        \ the ship line heap alone)
+
+.EXL1
+
+ LDA XX3-7,Y            \ Copy byte Y-7 from the XX3 heap, into the Y-th byte of
+ STA (XX19),Y           \ the ship line heap
+
+ DEY                    \ Decrement the loop counter
+
+ CPY #6                 \ Keep copying vertex coordinates into the ship line
+ BNE EXL1               \ heap until Y = 6 (which will copy n vertices, where n
+                        \ is the number of vertices we should be exploding)
+
+ LDA INWK+31            \ Set bit 6 of the ship's byte #31 to denote that the
+ ORA #%01000000         \ explosion has been drawn (as it's about to be)
+ STA INWK+31
+
+.PTCLS
+
+                        \ This part of the routine actually draws the explosion
+                        \ cloud
+
+ LDY #0                 \ Fetch byte #0 of the ship line heap, which contains
+ LDA (XX19),Y           \ the cloud size we stored above, and store it in Q
+ STA Q
+
+ INY                    \ Increment the index in Y to point to byte #1
+
+ LDA (XX19),Y           \ Fetch byte #1 of the ship line heap, which contains
+                        \ the cloud counter. We are now going to process this
+                        \ into the number of particles in each vertex's cloud
+
+ BPL P%+4               \ If the cloud counter < 128, then we are in the first
+                        \ half of the cloud's existence, so skip the next
+                        \ instruction
+
+ EOR #&FF               \ Flip the value of A so that in the second half of the
+                        \ cloud's existence, A counts down instead of up
+
+ LSR A                  \ Divide A by 16 so that is has a maximum value of 7
+ LSR A
+ LSR A
+ LSR A
+
+ ORA #1                 \ Make sure A is at least 1 and store it in U, to
+ STA U                  \ give us the number of particles in the explosion for
+                        \ each vertex
+
+ INY                    \ Increment the index in Y to point to byte #2
+
+ LDA (XX19),Y           \ Fetch byte #2 of the ship line heap, which contains
+ STA TGT                \ the explosion count for this ship (i.e. the number of
+                        \ vertices used as origins for explosion clouds) and
+                        \ store it in TGT
+
+ LDA RAND+1             \ Fetch the current random number seed in RAND+1 and
+ PHA                    \ store it on the stack, so we can re-randomise the
+                        \ seeds when we are done
+
+ LDY #6                 \ Set Y = 6 to point to the byte before the first vertex
+                        \ coordinate we stored on the ship line heap above (we
+                        \ increment it below so it points to the first vertex)
+
+.EXL5
+
+ LDX #3                 \ We are about to fetch a pair of coordinates from the
+                        \ ship line heap, so set a counter in X for 4 bytes
+
+.EXL3
+
+ INY                    \ Increment the index in Y so it points to the next byte
+                        \ from the coordinate we are copying
+
+ LDA (XX19),Y           \ Copy the Y-th byte from the ship line heap to the X-th
+ STA K3,X               \ byte of K3
+
+ DEX                    \ Decrement the X index
+
+ BPL EXL3               \ Loop back to EXL3 until we have copied all four bytes
+
+                        \ The above loop copies the vertex coordinates from the
+                        \ ship line heap to K3, reversing them as we go, so it
+                        \ sets the following:
+                        \
+                        \   K3+3 = x_lo
+                        \   K3+2 = x_hi
+                        \   K3+1 = y_lo
+                        \   K3+0 = y_hi
+
+ STY CNT                \ Set CNT to the index that points to the next vertex on
+                        \ the ship line heap
+
+ LDY #2                 \ Set Y = 2, which we will use to point to bytes #3 to
+                        \ #6, after incrementing it
+
+                        \ This next loop copies bytes #3 to #6 from the ship
+                        \ line heap into the four random number seeds in RAND to
+                        \ RAND+3, EOR'ing them with the vertex index so they are
+                        \ different for every vertex. This enables us to
+                        \ generate random numbers for drawing each vertex that
+                        \ are random but repeatable, which we need when we
+                        \ redraw the cloud to remove it
+                        \
+                        \ Note that we haven't actually set the values of bytes
+                        \ #3 to #6 in the ship line heap, so we have no idea
+                        \ what they are, we just use what's already there. But
+                        \ the fact that those bytes are stored for this ship
+                        \ means we can repeat the random generation of the
+                        \ cloud, which is the important bit
+
+.EXL2
+
+ INY                    \ Increment the index in Y so it points to the next
+                        \ random number seed to copy
+
+ LDA (XX19),Y           \ Fetch the Y-th byte from the ship line heap
+
+ EOR CNT                \ EOR with the vertex index, so the seeds are different
+                        \ for each vertex
+
+ STA &FFFD,Y            \ Y is going from 3 to 6, so this stores the four bytes
+                        \ in memory locations &00, &01, &02 and &03, which are
+                        \ the memory locations of RAND through RAND+3
+
+ CPY #6                 \ Loop back to EXL2 until Y = 6, which means we have
+ BNE EXL2               \ copied four bytes
+
+ LDY U                  \ Set Y to the number of particles in the explosion for
+                        \ each vertex, which we stored in U above. We will now
+                        \ use this as a loop counter to iterate through all the
+                        \ particles in the explosion
+
+.EXL4
+
+ JSR DORND2             \ Set ZZ to a random number, making sure the C flag
+ STA ZZ                 \ doesn't affect the outcome
+
+ LDA K3+1               \ Set (A R) = (y_hi y_lo)
+ STA R                  \           = y
+ LDA K3
+
+ JSR EXS1               \ Set (A X) = (A R) +/- random * cloud size
+                        \           = y +/- random * cloud size
+
+ BNE EX11               \ If A is non-zero, the particle is off-screen as the
+                        \ coordinate is bigger than 255), so jump to EX11 to do
+                        \ the next particle
+
+ CPX #2*Y-1             \ If X > the y-coordinate of the bottom of the screen,
+ BCS EX11               \ the particle is off the bottom of the screen, so jump
+                        \ to EX11 to do the next particle
+
+                        \ Otherwise X contains a random y-coordinate within the
+                        \ cloud
+
+ STX Y1                 \ Set Y1 = our random y-coordinate within the cloud
+
+ LDA K3+3               \ Set (A R) = (x_hi x_lo)
+ STA R
+ LDA K3+2
+
+ JSR EXS1               \ Set (A X) = (A R) +/- random * cloud size
+                        \           = x +/- random * cloud size
+
+ BNE EX4                \ If A is non-zero, the particle is off-screen as the
+                        \ coordinate is bigger than 255), so jump to EX4 to do
+                        \ the next particle
+
+                        \ Otherwise X contains a random x-coordinate within the
+                        \ cloud
+
+ LDA Y1                 \ Set A = our random y-coordinate within the cloud
+
+ JSR PIXEL              \ Draw a point at screen coordinate (X, A) with the
+                        \ point size determined by the distance in ZZ
+
+.EX4
+
+ DEY                    \ Decrement the loop counter for the next particle
+
+ BPL EXL4               \ Loop back to EXL4 until we have done all the particles
+                        \ in the cloud
+
+ LDY CNT                \ Set Y to the index that points to the next vertex on
+                        \ the ship line heap
+
+ CPY TGT                \ If Y < TGT, which we set to the explosion count for
+ BCC EXL5               \ this ship (i.e. the number of vertices used as origins
+                        \ for explosion clouds), loop back to EXL5 to do a cloud
+                        \ for the next vertex
+
+ PLA                    \ Restore the current random number seed to RAND+1 that
+ STA RAND+1             \ we stored at the start of the routine
+
+ LDA K%+6               \ Store the z_lo coordinate for the planet (which will
+ STA RAND+3             \ be pretty random) in the RAND+3 seed
+
+ RTS                    \ Return from the subroutine
+
+.EX11
+
+ JSR DORND2             \ Set A and X to random numbers, making sure the C flag
+                        \ doesn't affect the outcome
+
+ JMP EX4                \ We just skipped a particle, so jump up to EX4 to do
+                        \ the next one
+
+.EXS1
+
+                        \ This routine calculates the following:
+                        \
+                        \   (A X) = (A R) +/- random * cloud size
+                        \
+                        \ returning with the flags set for the high byte in A
+
+ STA S                  \ Store A in S so we can use it later
+
+ JSR DORND2             \ Set A and X to random numbers, making sure the C flag
+                        \ doesn't affect the outcome
+
+ ROL A                  \ Set A = A * 2
+
+ BCS EX5                \ If bit 7 of A was set (50% chance), jump to EX5
+
+ JSR FMLTU              \ Set A = A * Q / 256
+                        \       = random << 1 * projected cloud size / 256
+
+ ADC R                  \ Set (A X) = (S R) + A
+ TAX                    \           = (S R) + random * projected cloud size
+                        \
+                        \ where S contains the argument A, starting with the low
+                        \ bytes
+
+ LDA S                  \ And then the high bytes
+ ADC #0
+
+ RTS                    \ Return from the subroutine
+
+.EX5
+
+ JSR FMLTU              \ Set T = A * Q / 256
+ STA T                  \       = random << 1 * projected cloud size / 256
+
+ LDA R                  \ Set (A X) = (S R) - T
+ SBC T                  \
+ TAX                    \ where S contains the argument A, starting with the low
+                        \ bytes
+
+ LDA S                  \ And then the high bytes
+ SBC #0
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: COMPAS
+\       Type: Subroutine
+\   Category: Dashboard
+\    Summary: Update the compass
+\
+\ ******************************************************************************
+
+.COMPAS
+
+ JSR DOT                \ Call DOT to redraw (i.e. remove) the current compass
+                        \ dot
+
+ LDA SSPR               \ If we are inside the space station safe zone, jump to
+ BNE SP1                \ SP1 to draw the space station on the compass
+
+ JSR SPS1               \ Otherwise we need to draw the planet on the compass,
+                        \ so first call SPS1 to calculate the vector to the
+                        \ planet and store it in XX15
+
+ JMP SP2                \ Jump to SP2 to draw XX15 on the compass, returning
+                        \ from the subroutine using a tail call
+
+\ ******************************************************************************
+\
+\       Name: SPS2
+\       Type: Subroutine
+\   Category: Maths (Arithmetic)
+\    Summary: Calculate (Y X) = A / 10
+\
+\ ------------------------------------------------------------------------------
+\
+\ Calculate the following, where A is a sign-magnitude 8-bit integer and the
+\ result is a signed 16-bit integer:
+\
+\   (Y X) = A / 10
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   C flag              The C flag is cleared
+\
+\ ******************************************************************************
+
+.SPS2
+
+ ASL A                  \ Set X = |A| * 2, and set the C flag to the sign bit of
+ TAX                    \ A
+
+ LDA #0                 \ Set Y to have the sign bit from A in bit 7, with the
+ ROR A                  \ rest of its bits zeroed, so Y now contains the sign of
+ TAY                    \ the original argument
+
+ LDA #20                \ Set Q = 20
+ STA Q
+
+ TXA                    \ Copy X into A, so A now contains the argument A * 2
+
+ JSR DVID4              \ Calculate the following:
+                        \
+                        \   P = A / Q
+                        \     = |argument A| * 2 / 20
+                        \     = |argument A| / 10
+
+ LDX P                  \ Set X to the result
+
+ TYA                    \ If the sign of the original argument A is negative,
+ BMI LL163              \ jump to LL163 to flip the sign of the result
+
+ LDY #0                 \ Set the high byte of the result to 0, as the result is
+                        \ positive
+
+ RTS                    \ Return from the subroutine
+
+.LL163
+
+ LDY #&FF               \ The result is negative, so set the high byte to &FF
+
+ TXA                    \ Flip the low byte and add 1 to get the negated low
+ EOR #&FF               \ byte, using two's complement
+ TAX
+ INX
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: SPS4
+\       Type: Subroutine
+\   Category: Maths (Geometry)
+\    Summary: Calculate the vector to the space station
+\
+\ ------------------------------------------------------------------------------
+\
+\ Calculate the vector between our ship and the space station and store it in
+\ XX15.
+\
+\ ******************************************************************************
+
+.SPS4
+
+ LDX #8                 \ First we need to copy the space station's coordinates
+                        \ into K3, so set a counter to copy the first 9 bytes
+                        \ (the three-byte x, y and z coordinates) from the
+                        \ station's data block at K% + NI% into K3
+
+.SPL1
+
+ LDA K%+NI%,X           \ Copy the X-th byte from the station's data block at
+ STA K3,X               \ K% + NI% to the X-th byte of K3
+
+ DEX                    \ Decrement the loop counter
+
+ BPL SPL1               \ Loop back to SPL1 until we have copied all 9 bytes
+
+ JMP TAS2               \ Call TAS2 to build XX15 from K3, returning from the
+                        \ subroutine using a tail call
+
+\ ******************************************************************************
+\
+\       Name: SP1
+\       Type: Subroutine
+\   Category: Dashboard
+\    Summary: Draw the space station on the compass
+\
+\ ******************************************************************************
+
+.SP1
+
+ JSR SPS4               \ Call SPS4 to calculate the vector to the space station
+                        \ and store it in XX15
+
+                        \ Fall through into SP2 to draw XX15 on the compass
+
+\ ******************************************************************************
+\
+\       Name: SP2
+\       Type: Subroutine
+\   Category: Dashboard
+\    Summary: Draw a dot on the compass, given the planet/station vector
+\
+\ ------------------------------------------------------------------------------
+\
+\ Draw a dot on the compass to represent the planet or station, whose normalised
+\ vector is in XX15.
+\
+\   XX15 to XX15+2      The normalised vector to the planet or space station,
+\                       stored as x in XX15, y in XX15+1 and z in XX15+2
+\
+\ ******************************************************************************
+
+.SP2
+
+ LDA XX15               \ Set A to the x-coordinate of the planet or station to
+                        \ show on the compass, which will be in the range -96 to
+                        \ +96 as the vector has been normalised
+
+ JSR SPS2               \ Set (Y X) = A / 10, so X will be from -9 to +9, which
+                        \ is the x-offset from the centre of the compass of the
+                        \ dot we want to draw. Returns with the C flag clear
+
+ TXA                    \ Set COMX = 193 + X, as 184 is the pixel x-coordinate
+ ADC #193               \ of the leftmost edge of the compass, and X can be -9,
+ STA COMX               \ which would be 193 - 9 = 184. This also means that the
+                        \ highest value for COMX is 193 + 9 = 202, and given
+                        \ that the compass dot is two pixels wide, this means
+                        \ the compass dot can overlap the left edge of the
+                        \ compass, but not the right edge
+
+ LDA XX15+1             \ Set A to the y-coordinate of the planet or station to
+                        \ show on the compass, which will be in the range -96 to
+                        \ +96 as the vector has been normalised
+
+ JSR SPS2               \ Set (Y X) = A / 10, so X will be from -9 to +9, which
+                        \ is the x-offset from the centre of the compass of the
+                        \ dot we want to draw. Returns with the C flag clear
+
+ STX T                  \ Set COMY = 204 - X, as 203 is the pixel y-coordinate
+ LDA #204               \ of the centre of the compass, the C flag is clear,
+ SBC T                  \ and the y-axis needs to be flipped around (because
+ STA COMY               \ when the planet or station is above us, and the
+                        \ vector is therefore positive, we want to show the dot
+                        \ higher up on the compass, which has a smaller pixel
+                        \ y-coordinate). So this calculation does this:
+                        \
+                        \   COMY = 204 - X - (1 - 0) = 203 - X
+
+ LDA #&F0               \ Set A to &F0, the value we pass to DOT for drawing a
+                        \ two-pixel high dot, for when the planet or station
+                        \ in the compass is in front of us
+
+ LDX XX15+2             \ If the z-coordinate of the XX15 vector is positive,
+ BPL P%+4               \ skip the following instruction
+
+ LDA #&FF               \ The z-coordinate of XX15 is negative, so the planet or
+                        \ station is behind us and the compass dot should be a
+                        \ single-height dash, so set A to &FF for the call to
+                        \ DOT below
+
+ STA COMC               \ Store the compass shape in COMC
+
+                        \ Fall through into DOT to draw the dot on the compass
+
+\ ******************************************************************************
+\
+\       Name: DOT
+\       Type: Subroutine
+\   Category: Dashboard
+\    Summary: Draw a dash on the compass
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   COMX                The screen pixel x-coordinate of the dash
+\
+\   COMY                The screen pixel y-coordinate of the dash
+\
+\   COMC                The thickness of the dash:
+\
+\                         * &F0 = a double-height dash in white, for when the
+\                           object in the compass is in front of us
+\
+\                         * &FF = a single-height dash in white, for when the
+\                           object in the compass is behind us
+\
+\ ******************************************************************************
+
+.DOT
+
+ LDA COMY               \ Set Y1 = COMY, the y-coordinate of the dash
+ STA Y1
+
+ LDA COMX               \ Set X1 = COMX, the x-coordinate of the dash
+ STA X1
+
+ LDA COMC               \ Set A = COMC, the thickness of the dash
+
+ CMP #&F0               \ If COMC is &F0 then the planet/station is in front of
+ BNE CPIX2              \ us and we want to draw a double-height dash, so if it
+                        \ isn't &F0 jump to CPIX2 to draw a single-height dash
+
+                        \ Otherwise fall through into CPIX4 to draw a double-
+                        \ height dash
+
+\ ******************************************************************************
+\
+\       Name: CPIX4
+\       Type: Subroutine
+\   Category: Drawing pixels
+\    Summary: Draw a double-height dot on the dashboard
+\
+\ ------------------------------------------------------------------------------
+\
+\ Draw a double-height mode 4 dot (2 pixels high, 4 pixels wide).
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X1                  The screen pixel x-coordinate of the bottom-left corner
+\                       of the dot
+\
+\   Y1                  The screen pixel y-coordinate of the bottom-left corner
+\                       of the dot
+\
+\ ******************************************************************************
+
+.CPIX4
+
+ JSR CPIX2              \ Call CPIX2 to draw a single-height dash at (X1, Y1)
+
+ DEC Y1                 \ Decrement Y1
+
+                        \ Fall through into CPIX2 to draw a second single-height
+                        \ dash on the pixel row above the first one, to create a
+                        \ double-height dot
+
+\ ******************************************************************************
+\
+\       Name: CPIX2
+\       Type: Subroutine
+\   Category: Drawing pixels
+\    Summary: Draw a single-height dash on the dashboard
+\  Deep dive: Drawing pixels in the Electron version
+\
+\ ------------------------------------------------------------------------------
+\
+\ Draw a single-height mode 4 dash (1 pixel high, 4 pixels wide).
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X1                  The screen pixel x-coordinate of the dash
+\
+\   Y1                  The screen pixel y-coordinate of the dash
+\
+\ ******************************************************************************
+
+.CPIX2
+
+ LDY #128               \ Set SC = 128 for use in the calculation below
+ STY SC
+
+ LDA Y1                 \ Fetch the y-coordinate into A
+
+                        \ We now calculate the address of the character block
+                        \ containing the pixel (x, y) and put it in SC(1 0), as
+                        \ follows:
+                        \
+                        \   SC = &5800 + (y div 8 * 256) + (y div 8 * 64) + 32
+
+ LSR A                  \ Set A = A >> 3
+ LSR A                  \       = y div 8
+ LSR A                  \
+                        \ So A now contains the number of the character row
+                        \ that will contain the pixel we want to draw
+
+                        \ Also, as SC = 128, we have:
+                        \
+                        \   (A SC) = (A 128)
+                        \          = (A * 256) + 128
+                        \          = 4 * ((A * 64) + 32)
+                        \          = 4 * ((char row * 64) + 32)
+
+ STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
+                        \                           = char row * 256
+
+ LSR A                  \ Set (A SC) = (A SC) / 4
+ ROR SC                 \            = (4 * ((char row * 64) + 32)) / 4
+ LSR A                  \            = char row * 64 + 32
+ ROR SC
+
+ ADC SC+1               \ Set SC(1 0) = (A SC) + (SC+1 0) + &5800
+ ADC #&58               \             = (char row * 64 + 32)
+ STA SC+1               \               + char row * 256
+                        \               + &5800
+                        \
+                        \ which is what we want, so SC(1 0) contains the address
+                        \ of the first visible pixel on the character row
+                        \ containing the point (x, y)
+
+ LDA X1                 \ Each character block contains 8 pixel rows, so to get
+ AND #%11111000         \ the address of the first byte in the character block
+                        \ that we need to draw into, as an offset from the start
+                        \ of the row, we clear bits 0-2
+
+ ADC SC                 \ And add the result to SC(1 0) to get the character
+ STA SC                 \ block on the row we want
+
+ BCC P%+4               \ If the addition of the low bytes overflowed, increment
+ INC SC+1               \ the high byte
+
+                        \ So SC(1 0) now contains the address of the first pixel
+                        \ in the character block containing the (x, y), taking
+                        \ the screen borders into consideration
+
+ LDA Y1                 \ Set Y to the y-coordinate mod 8, which will be the
+ AND #7                 \ number of the pixel row we need to draw within the
+ TAY                    \ character block
+
+ LDA X1                 \ Set X to X1 mod 8, which will be the pixel number
+ AND #7                 \ within the character row we need to draw
+ TAX
+
+ LDA TWOS,X             \ Fetch a mode 4 one-pixel byte with the pixel position
+                        \ at X
+
+ EOR (SC),Y             \ Draw the pixel on-screen using EOR logic, so we can
+ STA (SC),Y             \ remove it later without ruining the background that's
+                        \ already on-screen
+
+ JSR P%+3               \ Run the following code twice, incrementing X each
+                        \ time, so we draw a two-pixel dash
+
+ INX                    \ Increment X to get the next pixel along
+
+ LDA TWOS,X             \ Fetch a mode 4 one-pixel byte with the pixel position
+                        \ at X
+
+ BPL CP1                \ The CTWOS table is followed by the TWOS2 table, whose
+                        \ first entry is %11000000, so if we have not just
+                        \ fetched that value, then the right pixel of the dash
+                        \ is in the same character block as the left pixel, so
+                        \ jump to CP1 to draw it
+
+ LDA SC                 \ Otherwise the left pixel we drew was at the last
+ CLC                    \ position of four in this character block, so we add
+ ADC #8                 \ 8 to the screen address to move onto the next block
+ STA SC                 \ along (as there are 8 bytes in a character block)
+
+ BCC P%+4               \ If the addition we just did overflowed, then increment
+ INC SC+1               \ the high byte of SC(1 0), as this means we just moved
+                        \ into the right half of the screen row
+
+ LDA TWOS,X             \ Re-fetch the mode 4 one-pixel byte from before, as we
+                        \ just overwrote A
+
+.CP1
+
+ EOR (SC),Y             \ Draw the dash's right pixel according to the mask in
+ STA (SC),Y             \ A, using EOR logic, just as above
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: SPS3
+\       Type: Subroutine
+\   Category: Maths (Geometry)
+\    Summary: Copy a space coordinate from the K% block into K3
+\
+\ ------------------------------------------------------------------------------
+\
+\ Copy one of the planet's coordinates into the corresponding location in the
+\ temporary variable K3. The high byte and absolute value of the sign byte are
+\ copied into the first two K3 bytes, and the sign of the sign byte is copied
+\ into the highest K3 byte.
+\
+\ The comments below are written for copying the planet's x-coordinate into
+\ K3(2 1 0).
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   Determines which coordinate to copy, and to where:
+\
+\                         * X = 0 copies (x_sign, x_hi) into K3(2 1 0)
+\
+\                         * X = 3 copies (y_sign, y_hi) into K3(5 4 3)
+\
+\                         * X = 6 copies (z_sign, z_hi) into K3(8 7 6)
+\
+\ ******************************************************************************
+
+.SPS3
+
+ LDA K%+1,X             \ Copy x_hi into K3+X
+ STA K3,X
+
+ LDA K%+2,X             \ Set A = Y = x_sign
+ TAY
+
+ AND #%01111111         \ Set K3+1 = |x_sign|
+ STA K3+1,X
+
+ TYA                    \ Set K3+2 = the sign of x_sign
+ AND #%10000000
+ STA K3+2,X
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: GINF
+\       Type: Subroutine
+\   Category: Universe
+\    Summary: Fetch the address of a ship's data block into INF
+\
+\ ------------------------------------------------------------------------------
+\
+\ Get the address of the data block for ship slot X and store it in INF. This
+\ address is fetched from the UNIV table, which stores the addresses of the 13
+\ ship data blocks in workspace K%.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   The ship slot number for which we want the data block
+\                       address
+\
+\ ******************************************************************************
+
+.GINF
+
+ TXA                    \ Set Y = X * 2
+ ASL A
+ TAY
+
+ LDA UNIV,Y             \ Get the high byte of the address of the X-th ship
+ STA INF                \ from UNIV and store it in INF
+
+ LDA UNIV+1,Y           \ Get the low byte of the address of the X-th ship
+ STA INF+1              \ from UNIV and store it in INF
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: PROJ
+\       Type: Subroutine
+\   Category: Maths (Geometry)
+\    Summary: Project the current ship or planet onto the screen
+\  Deep dive: Extended screen coordinates
+\
+\ ------------------------------------------------------------------------------
+\
+\ Project the current ship's location or the planet onto the screen, either
+\ returning the screen coordinates of the projection (if it's on-screen), or
+\ returning an error via the C flag.
+\
+\ In this context, "on-screen" means that the point is projected into the
+\ following range:
+\
+\   centre of screen - 1024 < x < centre of screen + 1024
+\   centre of screen - 1024 < y < centre of screen + 1024
+\
+\ This is to cater for ships (and, more likely, planets) whose centres are
+\ off-screen but whose edges may still be visible.
+\
+\ The projection calculation is:
+\
+\   K3(1 0) = #X + x / z
+\   K4(1 0) = #Y + y / z
+\
+\ where #X and #Y are the pixel x-coordinate and y-coordinate of the centre of
+\ the screen.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   INWK                The ship data block for the ship to project on-screen
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   K3(1 0)             The x-coordinate of the ship's projection on-screen
+\
+\   K4(1 0)             The y-coordinate of the ship's projection on-screen
+\
+\   C flag              Set if the ship's projection doesn't fit on the screen,
+\                       clear if it does project onto the screen
+\
+\   A                   Contains K4+1, the high byte of the y-coordinate
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   RTS2                Contains an RTS
+\
+\ ******************************************************************************
+
+.PROJ
+
+ LDA INWK               \ Set P(1 0) = (x_hi x_lo)
+ STA P                  \            = x
+ LDA INWK+1
+ STA P+1
+
+ LDA INWK+2             \ Set A = x_sign
+
+ JSR PLS6               \ Call PLS6 to calculate:
+                        \
+                        \   (X K) = (A P+1 P) / (z_sign z_hi z_lo)
+                        \         = (x_sign x_hi x_lo) / (z_sign z_hi z_lo)
+                        \         = x / z
+
+ BCS PL2-1              \ If the C flag is set then the result overflowed and
+                        \ the coordinate doesn't fit on the screen, so return
+                        \ from the subroutine with the C flag set (as PL2-1
+                        \ contains an RTS)
+
+ LDA K                  \ Set K3(1 0) = (X K) + #X
+ ADC #X                 \             = #X + x / z
+ STA K3                 \
+                        \ first doing the low bytes
+
+ TXA                    \ And then the high bytes. #X is the x-coordinate of
+ ADC #0                 \ the centre of the space view, so this converts the
+ STA K3+1               \ space x-coordinate into a screen x-coordinate
+
+ LDA INWK+3             \ Set P(1 0) = (y_hi y_lo)
+ STA P
+ LDA INWK+4
+ STA P+1
+
+ LDA INWK+5             \ Set A = -y_sign
+ EOR #%10000000
+
+ JSR PLS6               \ Call PLS6 to calculate:
+                        \
+                        \   (X K) = (A P+1 P) / (z_sign z_hi z_lo)
+                        \         = -(y_sign y_hi y_lo) / (z_sign z_hi z_lo)
+                        \         = -y / z
+
+ BCS PL2-1              \ If the C flag is set then the result overflowed and
+                        \ the coordinate doesn't fit on the screen, so return
+                        \ from the subroutine with the C flag set (as PL2-1
+                        \ contains an RTS)
+
+ LDA K                  \ Set K4(1 0) = (X K) + #Y
+ ADC #Y                 \             = #Y - y / z
+ STA K4                 \
+                        \ first doing the low bytes
+
+ TXA                    \ And then the high bytes. #Y is the y-coordinate of
+ ADC #0                 \ the centre of the space view, so this converts the
+ STA K4+1               \ space x-coordinate into a screen y-coordinate
+
+ CLC                    \ Clear the C flag to indicate success
+
+.RTS2
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: PL2
+\       Type: Subroutine
+\   Category: Drawing planets
+\    Summary: Remove the planet from the screen
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   PL2-1               Contains an RTS
+\
+\ ******************************************************************************
+
+.PL2
+
+ JMP WPLS2              \ This is the planet, so jump to WPLS2 to remove it from
+                        \ screen, returning from the subroutine using a tail
+                        \ call
+
+\ ******************************************************************************
+\
+\       Name: PLANET
+\       Type: Subroutine
+\   Category: Drawing planets
+\    Summary: Draw the planet
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   INWK                The planet's ship data block
+\
+\ ******************************************************************************
+
+.PLANET
+
+ LDA TYPE               \ If bit 0 of the ship type is set, then this is 129,
+ LSR A                  \ which is the placeholder used to denote there is no
+ BCS PL2-1              \ space station, so return from the subroutine (as PL2-1
+                        \ contains an RTS)
+
+ LDA INWK+8             \ Set A = z_sign (the highest byte in the planet's
+                        \ coordinates)
+
+ BMI PL2                \ If A is negative then the planet is behind us, so
+                        \ jump to PL2 to remove it from the screen, returning
+                        \ from the subroutine using a tail call
+
+ CMP #48                \ If A >= 48 then the planet is too far away to be
+ BCS PL2                \ seen, so jump to PL2 to remove it from the screen,
+                        \ returning from the subroutine using a tail call
+
+ ORA INWK+7             \ Set A to 0 if both z_sign and z_hi are 0
+
+ BEQ PL2                \ If both z_sign and z_hi are 0, then the planet/sun is
+                        \ too close to be shown, so jump to PL2 to remove it
+                        \ from the screen, returning from the subroutine using a
+                        \ tail call
+
+ JSR PROJ               \ Project the planet onto the screen, returning the
+                        \ centre's coordinates in K3(1 0) and K4(1 0)
+
+ BCS PL2                \ If the C flag is set by PROJ then the planet is
+                        \ not visible on-screen, so jump to PL2 to remove it
+                        \ from the screen, returning from the subroutine using
+                        \ a tail call
+
+ LDA #96                \ Set (A P+1 P) = (0 96 0) = 24576
+ STA P+1                \
+ LDA #0                 \ This represents the planet's radius at a distance
+ STA P                  \ of z = 1
+
+ JSR DVID3B2            \ Call DVID3B2 to calculate:
+                        \
+                        \   K(3 2 1 0) = (A P+1 P) / (z_sign z_hi z_lo)
+                        \              = (0 96 0) / z
+                        \              = 24576 / z
+                        \
+                        \ so K now contains the planet's radius, reduced by
+                        \ the actual distance to the planet. We know that
+                        \ K+3 and K+2 will be 0, as the number we are dividing,
+                        \ (0 96 0), fits into the two bottom bytes, so the
+                        \ result is actually in K(1 0)
+
+ LDA K+1                \ If the high byte of the reduced radius is zero, jump
+ BEQ PL82               \ to PL82, as K contains the radius on its own
+
+ LDA #248               \ Otherwise set K = 248, to round up the radius in
+ STA K                  \ K(1 0) to the nearest integer (if we consider the low
+                        \ byte to be the fractional part)
+
+.PL82
+
+                        \ --- Mod: Code removed for flicker-free planets: ----->
+
+\JSR WPLS2              \ Call WPLS2 to remove the planet from the screen
+\
+\JMP CIRCLE             \ Jump to CIRCLE to draw the planet (which is just a
+\                       \ simple circle) and return from the subroutine using
+\                       \ a tail call
+
+                        \ --- And replaced by: -------------------------------->
+
+ JSR CIRCLE             \ Call CIRCLE to draw the planet's new circle
+
+ BCS PL2                \ If the call to CIRCLE returned with the C flag set,
+                        \ then the circle does not fit on-screen, so jump to
+                        \ PL2 to remove the planet from the screen and return
+                        \ from the subroutine
+
+ JMP EraseRestOfPlanet  \ We have drawn the new circle, so now we need to erase
+                        \ any lines that are left in the ball line heap, before
+                        \ returning from the subroutine using a tail call
+
+                        \ --- End of replacement ------------------------------>
+
+\ ******************************************************************************
+\
+\       Name: CIRCLE
+\       Type: Subroutine
+\   Category: Drawing circles
+\    Summary: Draw a circle for the planet
+\  Deep dive: Drawing circles
+\
+\ ------------------------------------------------------------------------------
+\
+\ Draw a circle with the centre at (K3, K4) and radius K. Used to draw the
+\ planet's main outline.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   K                   The planet's radius
+\
+\   K3(1 0)             Pixel x-coordinate of the centre of the planet
+\
+\   K4(1 0)             Pixel y-coordinate of the centre of the planet
+\
+\ ******************************************************************************
+
+.CIRCLE
+
+ JSR CHKON              \ Call CHKON to check whether the circle fits on-screen
+
+ BCS RTS2               \ If CHKON set the C flag then the circle does not fit
+                        \ on-screen, so return from the subroutine (as RTS2
+                        \ contains an RTS)
+
+ LDA #0                 \ Set LSX2 = 0 to indicate that the ball line heap is
+ STA LSX2               \ not empty, as we are about to fill it
+
+ LDX K                  \ Set X = K = radius
+
+ LDA #8                 \ Set A = 8
+
+                        \ --- Mod: Code removed for flicker-free planets: ----->
+
+\CPX #9                 \ If the radius < 9, skip to PL89
+\BCC PL89
+\
+\LSR A                  \ Halve A so A = 4
+
+                        \ --- And replaced by: -------------------------------->
+
+ CPX #8                 \ If the radius < 8, skip to PL89
+ BCC PL89
+
+ LSR A                  \ Halve A so A = 4
+
+ CPX #60                \ If the radius < 60, skip to PL89
+ BCC PL89
+
+ LSR A                  \ Halve A so A = 2
+
+                        \ --- End of replacement ------------------------------>
+
+.PL89
+
+ STA STP                \ Set STP = A. STP is the step size for the circle, so
+                        \ the above sets a smaller step size for bigger circles
+
+                        \ Fall through into CIRCLE2 to draw the circle with the
+                        \ correct step size
+
+\ ******************************************************************************
+\
+\       Name: CIRCLE2
+\       Type: Subroutine
+\   Category: Drawing circles
+\    Summary: Draw a circle (for the planet or chart)
+\  Deep dive: Drawing circles
+\
+\ ------------------------------------------------------------------------------
+\
+\ Draw a circle with the centre at (K3, K4) and radius K. Used to draw the
+\ planet and the chart circles.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   STP                 The step size for the circle
+\
+\   K                   The circle's radius
+\
+\   K3(1 0)             Pixel x-coordinate of the centre of the circle
+\
+\   K4(1 0)             Pixel y-coordinate of the centre of the circle
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   C flag              The C flag is cleared
+\
+\ ******************************************************************************
+
+.CIRCLE2
+
+                        \ --- Mod: Code added for flicker-free planets: ------->
+
+                        \ We now set things up for flicker-free circle plotting,
+                        \ by setting the following:
+                        \
+                        \   LSNUM = offset to the first coordinate in the ball
+                        \           line heap
+                        \
+                        \   LSNUM2 = the number of bytes in the heap for the
+                        \            circle that's currently on-screen (or 0 if
+                        \            there is no ship currently on-screen)
+
+ LDX #0                 \ Set LSNUM = 0, to point to the offset before the first
+ STX LSNUM              \ set of circle coordinates in the ball line heap
+
+ LDX LSP                \ Set LSNUM2 to the last byte of the ball line heap
+ STX LSNUM2
+
+ LDX #1                 \ Set LSP = 1 to reset the ball line heap pointer
+ STX LSP
+
+                        \ --- End of added code ------------------------------->
+
+ LDX #&FF               \ Set FLAG = &FF to reset the ball line heap in the call
+ STX FLAG               \ to the BLINE routine below
+
+ INX                    \ Set CNT = 0, our counter that goes up to 64, counting
+ STX CNT                \ segments in our circle
+
+.PLL3
+
+ LDA CNT                \ Set A = CNT
+
+ JSR FMLTU2             \ Call FMLTU2 to calculate:
+                        \
+                        \   A = K * sin(A)
+                        \     = K * sin(CNT)
+
+ LDX #0                 \ Set T = 0, so we have the following:
+ STX T                  \
+                        \   (T A) = K * sin(CNT)
+                        \
+                        \ which is the x-coordinate of the circle for this count
+
+ LDX CNT                \ If CNT < 33 then jump to PL37, as this is the right
+ CPX #33                \ half of the circle and the sign of the x-coordinate is
+ BCC PL37               \ correct
+
+ EOR #%11111111         \ This is the left half of the circle, so we want to
+ ADC #0                 \ flip the sign of the x-coordinate in (T A) using two's
+ TAX                    \ complement, so we start with the low byte and store it
+                        \ in X (the ADC adds 1 as we know the C flag is set)
+
+ LDA #&FF               \ And then we flip the high byte in T
+ ADC #0
+ STA T
+
+ TXA                    \ Finally, we restore the low byte from X, so we have
+                        \ now negated the x-coordinate in (T A)
+
+ CLC                    \ Clear the C flag so we can do some more addition below
+
+.PL37
+
+ ADC K3                 \ We now calculate the following:
+ STA K6                 \
+                        \   K6(1 0) = (T A) + K3(1 0)
+                        \
+                        \ to add the coordinates of the centre to our circle
+                        \ point, starting with the low bytes
+
+ LDA K3+1               \ And then doing the high bytes, so we now have:
+ ADC T                  \
+ STA K6+1               \   K6(1 0) = K * sin(CNT) + K3(1 0)
+                        \
+                        \ which is the result we want for the x-coordinate
+
+ LDA CNT                \ Set A = CNT + 16
+ CLC
+ ADC #16
+
+ JSR FMLTU2             \ Call FMLTU2 to calculate:
+                        \
+                        \   A = K * sin(A)
+                        \     = K * sin(CNT + 16)
+                        \     = K * cos(CNT)
+
+ TAX                    \ Set X = A
+                        \       = K * cos(CNT)
+
+ LDA #0                 \ Set T = 0, so we have the following:
+ STA T                  \
+                        \   (T X) = K * cos(CNT)
+                        \
+                        \ which is the y-coordinate of the circle for this count
+
+ LDA CNT                \ Set A = (CNT + 15) mod 64
+ ADC #15
+ AND #63
+
+ CMP #33                \ If A < 33 (i.e. CNT is 0-16 or 48-64) then jump to
+ BCC PL38               \ PL38, as this is the bottom half of the circle and the
+                        \ sign of the y-coordinate is correct
+
+ TXA                    \ This is the top half of the circle, so we want to
+ EOR #%11111111         \ flip the sign of the y-coordinate in (T X) using two's
+ ADC #0                 \ complement, so we start with the low byte in X (the
+ TAX                    \ ADC adds 1 as we know the C flag is set)
+
+ LDA #&FF               \ And then we flip the high byte in T, so we have
+ ADC #0                 \ now negated the y-coordinate in (T X)
+ STA T
+
+ CLC                    \ Clear the C flag so the addition at the start of BLINE
+                        \ will work
+
+.PL38
+
+ JSR BLINE              \ Call BLINE to draw this segment, which also increases
+                        \ CNT by STP, the step size
+
+ CMP #65                \ If CNT >= 65 then skip the next instruction
+ BCS P%+5
+
+ JMP PLL3               \ Jump back for the next segment
+
+ CLC                    \ Clear the C flag to indicate success
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: WPLS2
+\       Type: Subroutine
+\   Category: Drawing planets
+\    Summary: Remove the planet from the screen
+\  Deep dive: The ball line heap
+\
+\ ------------------------------------------------------------------------------
+\
+\ We do this by redrawing it using the lines stored in the ball line heap when
+\ the planet was originally drawn by the BLINE routine.
+\
+\ ******************************************************************************
+
+.WPLS2
+
+ LDY LSX2               \ If LSX2 is non-zero (which indicates the ball line
+ BNE WP1                \ heap is empty), jump to WP1 to reset the line heap
+                        \ without redrawing the planet
+
+                        \ --- Mod: Code removed for flicker-free planets: ----->
+
+\                       \ Otherwise Y is now 0, so we can use it as a counter to
+\                       \ loop through the lines in the line heap, redrawing
+\                       \ each one to remove the planet from the screen, before
+\                       \ resetting the line heap once we are done
+\
+\.WPL1
+\
+\CPY LSP                \ If Y >= LSP then we have reached the end of the line
+\BCS WP1                \ heap and have finished redrawing the planet (as LSP
+\                       \ points to the end of the heap), so jump to WP1 to
+\                       \ reset the line heap, returning from the subroutine
+\                       \ using a tail call
+\
+\LDA LSY2,Y             \ Set A to the y-coordinate of the current heap entry
+\
+\CMP #&FF               \ If the y-coordinate is &FF, this indicates that the
+\BEQ WP2                \ next point in the heap denotes the start of a line
+\                       \ segment, so jump to WP2 to put it into (X1, Y1)
+\
+\STA Y2                 \ Set (X2, Y2) to the x- and y-coordinates from the
+\LDA LSX2,Y             \ heap
+\STA X2
+\
+\JSR LOIN               \ Draw a line from (X1, Y1) to (X2, Y2)
+\
+\INY                    \ Increment the loop counter to point to the next point
+\
+\LDA SWAP               \ If SWAP is non-zero then we swapped the coordinates
+\BNE WPL1               \ when filling the heap in BLINE, so loop back WPL1
+\                       \ for the next point in the heap
+\
+\LDA X2                 \ Swap (X1, Y1) and (X2, Y2), so the next segment will
+\STA X1                 \ be drawn from the current (X2, Y2) to the next point
+\LDA Y2                 \ in the heap
+\STA Y1
+\
+\JMP WPL1               \ Loop back to WPL1 for the next point in the heap
+\
+\.WP2
+\
+\INY                    \ Increment the loop counter to point to the next point
+\
+\LDA LSX2,Y             \ Set (X1, Y1) to the x- and y-coordinates from the
+\STA X1                 \ heap
+\LDA LSY2,Y
+\STA Y1
+\
+\INY                    \ Increment the loop counter to point to the next point
+\
+\JMP WPL1               \ Loop back to WPL1 for the next point in the heap
+
+                        \ --- And replaced by: -------------------------------->
+
+ STY LSNUM              \ Reset LSNUM to the start of the ball line heap (we can
+                        \ set this to 0 rather than 1 to take advantage of the
+                        \ fact that Y is 0 - the effect is the same)
+
+ LDA LSP                \ Set LSNUM2 to the end of the ball line heap
+ STA LSNUM2
+
+ JSR EraseRestOfPlanet  \ Draw the contents of the ball line heap to erase the
+                        \ old planet
+
+                        \ --- End of replacement ------------------------------>
+
+\ ******************************************************************************
+\
+\       Name: WP1
+\       Type: Subroutine
+\   Category: Drawing planets
+\    Summary: Reset the ball line heap
+\
+\ ******************************************************************************
+
+.WP1
+
+ LDA #1                 \ Set LSP = 1 to reset the ball line heap pointer
+ STA LSP
+
+ LDA #&FF               \ Set LSX2 = &FF to indicate the ball line heap is empty
+ STA LSX2
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: CHKON
+\       Type: Subroutine
+\   Category: Drawing circles
+\    Summary: Check whether any part of a circle appears on the extended screen
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   K                   The circle's radius
+\
+\   K3(1 0)             Pixel x-coordinate of the centre of the circle
+\
+\   K4(1 0)             Pixel y-coordinate of the centre of the circle
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   C flag              Clear if any part of the circle appears on-screen, set
+\                       if none of the circle appears on-screen
+\
+\   (A X)               Minimum y-coordinate of the circle on-screen (i.e. the
+\                       y-coordinate of the top edge of the circle)
+\
+\   P(2 1)              Maximum y-coordinate of the circle on-screen (i.e. the
+\                       y-coordinate of the bottom edge of the circle)
+\
+\ ******************************************************************************
+
+.CHKON
+
+ LDA K3                 \ Set A = K3 + K
+ CLC
+ ADC K
+
+ LDA K3+1               \ Set A = K3+1 + 0 + any carry from above, so this
+ ADC #0                 \ effectively sets A to the high byte of K3(1 0) + K:
+                        \
+                        \   (A ?) = K3(1 0) + K
+                        \
+                        \ so A is the high byte of the x-coordinate of the right
+                        \ edge of the circle
+
+ BMI PL21               \ If A is negative then the right edge of the circle is
+                        \ to the left of the screen, so jump to PL21 to set the
+                        \ C flag and return from the subroutine, as the whole
+                        \ circle is off-screen to the left
+
+ LDA K3                 \ Set A = K3 - K
+ SEC
+ SBC K
+
+ LDA K3+1               \ Set A = K3+1 - 0 - any carry from above, so this
+ SBC #0                 \ effectively sets A to the high byte of K3(1 0) - K:
+                        \
+                        \   (A ?) = K3(1 0) - K
+                        \
+                        \ so A is the high byte of the x-coordinate of the left
+                        \ edge of the circle
+
+ BMI PL31               \ If A is negative then the left edge of the circle is
+                        \ to the left of the screen, and we already know the
+                        \ right edge is either on-screen or off-screen to the
+                        \ right, so skip to PL31 to move on to the y-coordinate
+                        \ checks, as at least part of the circle is on-screen in
+                        \ terms of the x-axis
+
+ BNE PL21               \ If A is non-zero, then the left edge of the circle is
+                        \ to the right of the screen, so jump to PL21 to set the
+                        \ C flag and return from the subroutine, as the whole
+                        \ circle is off-screen to the right
+
+.PL31
+
+ LDA K4                 \ Set P+1 = K4 + K
+ CLC
+ ADC K
+ STA P+1
+
+ LDA K4+1               \ Set A = K4+1 + 0 + any carry from above, so this
+ ADC #0                 \ does the following:
+                        \
+                        \   (A P+1) = K4(1 0) + K
+                        \
+                        \ so A is the high byte of the y-coordinate of the
+                        \ bottom edge of the circle
+
+ BMI PL21               \ If A is negative then the bottom edge of the circle is
+                        \ above the top of the screen, so jump to PL21 to set
+                        \ the C flag and return from the subroutine, as the
+                        \ whole circle is off-screen to the top
+
+ STA P+2                \ Store the high byte in P+2, so now we have:
+                        \
+                        \   P(2 1) = K4(1 0) + K
+                        \
+                        \ i.e. the maximum y-coordinate of the circle on-screen
+                        \ (which we return)
+
+ LDA K4                 \ Set X = K4 - K
+ SEC
+ SBC K
+ TAX
+
+ LDA K4+1               \ Set A = K4+1 - 0 - any carry from above, so this
+ SBC #0                 \ does the following:
+                        \
+                        \   (A X) = K4(1 0) - K
+                        \
+                        \ so A is the high byte of the y-coordinate of the top
+                        \ edge of the circle
+
+ BMI PL44               \ If A is negative then the top edge of the circle is
+                        \ above the top of the screen, and we already know the
+                        \ bottom edge is either on-screen or below the bottom
+                        \ of the screen, so skip to PL44 to clear the C flag and
+                        \ return from the subroutine using a tail call, as part
+                        \ of the circle definitely appears on-screen
+
+ BNE PL21               \ If A is non-zero, then the top edge of the circle is
+                        \ below the bottom of the screen, so jump to PL21 to set
+                        \ the C flag and return from the subroutine, as the
+                        \ whole circle is off-screen to the bottom
+
+ CPX #2*Y-1             \ If we get here then A is zero, which means the top
+                        \ edge of the circle is within the screen boundary, so
+                        \ now we need to check whether it is in the space view
+                        \ (in which case it is on-screen) or the dashboard (in
+                        \ which case the top of the circle is hidden by the
+                        \ dashboard, so the circle isn't on-screen). We do this
+                        \ by checking the low byte of the result in X against
+                        \ 2 * #Y - 1, and returning the C flag from this
+                        \ comparison. The constant #Y is the y-coordinate of the
+                        \ mid-point of the space view, so 2 * #Y - 1, the
+                        \ y-coordinate of the bottom pixel row of the space
+                        \ view. So this does the following:
+                        \
+                        \   * The C flag is set if coordinate (A X) is below the
+                        \     bottom row of the space view, i.e. the top edge of
+                        \     the circle is hidden by the dashboard
+                        \
+                        \   * The C flag is clear if coordinate (A X) is above
+                        \     the bottom row of the space view, i.e. the top
+                        \     edge of the circle is on-screen
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: PL21
+\       Type: Subroutine
+\   Category: Drawing planets
+\    Summary: Return from a planet-drawing routine with a failure flag
+\
+\ ------------------------------------------------------------------------------
+\
+\ Set the C flag and return from the subroutine. This is used to return from a
+\ planet-drawing routine with the C flag indicating an overflow in the
+\ calculation.
+\
+\ ******************************************************************************
+
+.PL21
+
+ SEC                    \ Set the C flag to indicate an overflow
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: PLS6
+\       Type: Subroutine
+\   Category: Drawing planets
+\    Summary: Calculate (X K) = (A P+1 P) / (z_sign z_hi z_lo)
+\
+\ ------------------------------------------------------------------------------
+\
+\ Calculate the following:
+\
+\   (X K) = (A P+1 P) / (z_sign z_hi z_lo)
+\
+\ returning an overflow in the C flag if the result is >= 1024.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   INWK                The planet's ship data block
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   C flag              Set if the result >= 1024, clear otherwise
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   PL44                Clear the C flag and return from the subroutine
+\
+\ ******************************************************************************
+
+.PLS6
+
+ JSR DVID3B2            \ Call DVID3B2 to calculate:
+                        \
+                        \   K(3 2 1 0) = (A P+1 P) / (z_sign z_hi z_lo)
+
+ LDA K+3                \ Set A = |K+3| OR K+2
+ AND #%01111111
+ ORA K+2
+
+ BNE PL21               \ If A is non-zero then the two high bytes of K(3 2 1 0)
+                        \ are non-zero, so jump to PL21 to set the C flag and
+                        \ return from the subroutine
+
+                        \ We can now just consider K(1 0), as we know the top
+                        \ two bytes of K(3 2 1 0) are both 0
+
+ LDX K+1                \ Set X = K+1, so now (X K) contains the result in
+                        \ K(1 0), which is the format we want to return the
+                        \ result in
+
+ CPX #4                 \ If the high byte of K(1 0) >= 4 then the result is
+ BCS PL6                \ >= 1024, so return from the subroutine with the C flag
+                        \ set to indicate an overflow (as PL6 contains an RTS)
+
+ LDA K+3                \ Fetch the sign of the result from K+3 (which we know
+                        \ has zeroes in bits 0-6, so this just fetches the sign)
+
+ BPL PL6                \ If the sign bit is clear and the result is positive,
+                        \ then the result is already correct, so return from
+                        \ the subroutine with the C flag clear to indicate
+                        \ success (as PL6 contains an RTS)
+
+ LDA K                  \ Otherwise we need to negate the result, which we do
+ EOR #%11111111         \ using two's complement, starting with the low byte:
+ ADC #1                 \
+ STA K                  \   K = ~K + 1
+
+ TXA                    \ And then the high byte:
+ EOR #%11111111         \
+ ADC #0                 \   X = ~X
+ TAX
+
+.PL44
+
+ CLC                    \ Clear the C flag to indicate success
+
+.PL6
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: TT17
+\       Type: Subroutine
+\   Category: Keyboard
+\    Summary: Scan the keyboard for cursor key movement
+\
+\ ------------------------------------------------------------------------------
+\
+\ Scan the keyboard for cursor key movement, and return the result as deltas
+\ (changes) in x- and y-coordinates as follows:
+\
+\   * X and Y are integers between -1 and +1 depending on which keys are pressed
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   A                   The key pressed, if the arrow keys were used
+\
+\   X                   Change in the x-coordinate according to the cursor keys
+\                       being pressed, as an integer (see above)
+\
+\   Y                   Change in the y-coordinate according to the cursor keys
+\                       being pressed, as an integer (see above)
+\
+\ ******************************************************************************
+
+.TT17
+
+ JSR DOKEY              \ Scan the keyboard for flight controls and pause keys,
+                        \ and update the key logger, setting KL to the key
+                        \ pressed
+
+                        \ --- Mod: Code removed for flicker-free planets: ----->
+
+\LDX JSTK               \ If the joystick is not configured, jump down to TJ1,
+\BEQ TJ1                \ otherwise keep going... though as the DOKEY routine
+\                       \ doesn't read the ADC channels in the Electron version,
+\                       \ this doesn't actually work, but instead moves the
+\                       \ crosshairs in an uncontrollable way, so this is
+\                       \ presumably a bug
+\
+\LDA JSTX               \ Fetch the joystick roll, ranging from 1 to 255 with
+\                       \ 128 as the centre point
+\
+\EOR #&FF               \ Flip the sign so A = -JSTX, because the joystick roll
+\                       \ works in the opposite way to moving a cursor on-screen
+\                       \ in terms of left and right
+\
+\JSR TJS1               \ Call TJS1 just below to set A to a value between -2
+\                       \ and +2 depending on the joystick roll value (moving
+\                       \ the stick sideways)
+\
+\TYA                    \ Copy Y to A
+\
+\TAX                    \ Copy A to X, so X contains the joystick roll value
+\
+\LDA JSTY               \ Fetch the joystick pitch, ranging from 1 to 255 with
+\                       \ 128 as the centre point, and fall through into TJS1 to
+\                       \ set Y to the joystick pitch value (moving the stick up
+\                       \ and down)
+\
+\.TJS1
+\
+\TAY                    \ Store A in Y
+\
+\LDA #0                 \ Set the result, A = 0
+\
+\CPY #16                \ If Y >= 16 set the C flag, so A = A - 1
+\SBC #0
+\
+\CPY #64                \ If Y >= 64 set the C flag, so A = A - 1
+\SBC #0
+\
+\CPY #192               \ If Y >= 192 set the C flag, so A = A + 1
+\ADC #0
+\
+\CPY #224               \ If Y >= 224 set the C flag, so A = A + 1
+\ADC #0
+\
+\TAY                    \ Copy the value of A into Y
+\
+\LDA KL                 \ Set A to the value of KL (the key pressed)
+\
+\RTS                    \ Return from the subroutine
+\
+\.TJ1
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDX #0                 \ Set X = 0
+
+                        \ --- End of replacement ------------------------------>
+
+ LDA KL                 \ Set A to the value of KL (the key pressed)
+
+ LDY #0                 \ Set the result, Y = 0 (and we know that X is 0 as well
+                        \ as we jumped to TJ1 from above following a LDX and a
+                        \ BEQ)
+
+ CMP #&18               \ If left arrow was pressed, set X = X - 1
+ BNE P%+3
+ DEX
+
+ CMP #&78               \ If right arrow was pressed, set X = X + 1
+ BNE P%+3
+ INX
+
+ CMP #&39               \ If up arrow was pressed, set Y = Y + 1
+ BNE P%+3
+ INY
+
+ CMP #&28               \ If down arrow was pressed, set Y = Y - 1
+ BNE P%+3
+ DEY
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
 \       Name: DORND
 \       Type: Subroutine
 \   Category: Maths (Arithmetic)
@@ -31551,489 +32079,6 @@ ENDMACRO
 
  TAX                    \ Copy A into X to return the key number of CAPS LOCK
                         \ with bit 7 set
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: KYTB
-\       Type: Variable
-\   Category: Keyboard
-\    Summary: Lookup table for in-flight keyboard controls
-\  Deep dive: The key logger
-\
-\ ------------------------------------------------------------------------------
-\
-\ Keyboard table for in-flight controls. This table contains the internal key
-\ codes for the flight keys (see page 40 of the "Acorn Electron Advanced User
-\ Guide" by Holmes and Dickens for a list of internal key numbers).
-\
-\ The pitch, roll, speed and laser keys (i.e. the seven primary flight
-\ control keys) have bit 7 set, so they have 128 added to their internal
-\ values. This doesn't appear to be used anywhere.
-\
-\ Note that KYTB actually points to the byte before the start of the table, so
-\ the offset of the first key value is 1 (i.e. KYTB+1), not 0.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   KYTB                Contains an RTS
-\
-\ ******************************************************************************
-
-.KYTB
-
- RTS                    \ Return from the subroutine (used as an entry point and
-                        \ a fall-through from above)
-
-                        \ These are the primary flight controls (pitch, roll,
-                        \ speed and lasers):
-
- EQUB &68 + 128         \ ?         KYTB+1      Slow down
- EQUB &62 + 128         \ Space     KYTB+2      Speed up
- EQUB &66 + 128         \ <         KYTB+3      Roll left
- EQUB &67 + 128         \ >         KYTB+4      Roll right
- EQUB &42 + 128         \ X         KYTB+5      Pull up
- EQUB &51 + 128         \ S         KYTB+6      Pitch down
- EQUB &41 + 128         \ A         KYTB+7      Fire lasers
-
-                        \ These are the secondary flight controls:
-
- EQUB &17               \ -         KYTB+8      Energy bomb
- EQUB &70               \ ESCAPE    KYTB+9      Launch escape pod
- EQUB &23               \ T         KYTB+10     Arm missile
- EQUB &35               \ U         KYTB+11     Unarm missile
- EQUB &65               \ M         KYTB+12     Fire missile
- EQUB &22               \ E         KYTB+13     E.C.M.
- EQUB &45               \ J         KYTB+14     In-system jump
- EQUB &52               \ C         KYTB+15     Docking computer
-
-\ ******************************************************************************
-\
-\       Name: DKS4
-\       Type: Subroutine
-\   Category: Keyboard
-\    Summary: Scan the keyboard to see if a specific key is being pressed
-\  Deep dive: The key logger
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   X                   The internal number of the key to check (see page 40 of
-\                       the "Acorn Electron Advanced User Guide" by Holmes and
-\                       Dickens for a list of internal key numbers)
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   A                   If the key in A is being pressed, A contains the
-\                       original argument A, but with bit 7 set (i.e. A + 128).
-\                       If the key in A is not being pressed, the value in A is
-\                       unchanged
-\
-\   X                   Contains the same as A
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   CAPSL               Scan the keyboard to see if CAPS LOCK is being pressed
-\
-\ ******************************************************************************
-
-.KSCAN
-
-                        \ This routine is called from below, and performs the
-                        \ actual keyboard scan
-
- SEC                    \ Set the C flag and clear the V flag, so when we call
- CLV                    \ KEYV, it scans the keyboard just like OSBYTE 121
-
- SEI                    \ Disable interrupts
-
- JMP (S%+4)             \ Jump to the original value of KEYV, which is stored in
-                        \ S%+4. Because we set the C and V flags as above, this
-                        \ will scan the keyboard like OSBYTE 121, which expects
-                        \ X to be set to the internal key number to scan for,
-                        \ EOR'd with %10000000. Unlike OSBYTE 121, a direct call
-                        \ to KEYV will return a negative value in both A and X
-                        \ if that key is being pressed
-
-.CAPSL
-
- LDX #&40               \ Set X to the internal key number for CAPS LOCK, and
-                        \ fall through into DKS4 to check whether it is being
-                        \ pressed
-
-.DKS4
-
- TYA                    \ Store Y on the stack so we can retrieve it when we
- PHA                    \ return from the subroutine, thus preserving Y
-
- TXA                    \ Store the key number to check in X on the stack so
- PHA                    \ we can retrieve it below
-
- ORA #%10000000         \ Set bit 7 of the key to check for and transfer the
- TAX                    \ value to X
-
- JSR KSCAN              \ Call KSCAN to check whether the key in X is being
-                        \ pressed, which returns a negative value in A and X
-                        \ if it is
-
- CLI                    \ Enable interrupts again (as they are disabled in
-                        \ KSCAN)
-
- TAX                    \ Set X to the result of the key press call above
-
- PLA                    \ Fetch the original argument value of X from the stack
- AND #%01111111         \ into A, and clear bit 7
-
- CPX #%10000000         \ If bit 7 of the result of the key press check above is
- BCC P%+4               \ set, then the key in X is being pressed, so skip the
-                        \ next instruction
-
- ORA #%10000000         \ The key in X isn't being pressed, so set bit 7 of A
-
- TAX                    \ By this point, A contains the key number we wanted to
-                        \ check for, with bit 7 set if the key is being pressed
-                        \ and clear otherwise, which is what we want to return
-                        \ from the subroutine, but first we need to restore the
-                        \ value of Y from the stack, so we store the result A in
-                        \ X while we do that
-
- PLA                    \ Restore the value Y that we stored on the stack, so it
- TAY                    \ gets preserved across calls to the subroutine
-
- TXA                    \ And we now retrieve the result that we stored in X
-                        \ back into A, so we can return it
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: DKS2
-\       Type: Subroutine
-\   Category: Keyboard
-\    Summary: Read the joystick position
-\
-\ ------------------------------------------------------------------------------
-\
-\ This routine is never called in the Electron version, as the Electron doesn't
-\ have ADC channels as standard and doesn't support joysticks (though a lot of
-\ the joystick code from the other versions is still present, it just isn't
-\ called).
-\
-\ Return the value of ADC channel in X (used to read the joystick). The value
-\ will be inverted if the game has been configured to reverse both joystick
-\ channels (which can be done by pausing the game and pressing J).
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   X                   The ADC channel to read:
-\
-\                         * 1 = joystick X
-\
-\                         * 2 = joystick Y
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   (A X)               The 16-bit value read from channel X, with the value
-\                       inverted if the game has been configured to reverse the
-\                       joystick
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   DKS2-1              Contains an RTS
-\
-\ ******************************************************************************
-
-                        \ --- Mod: Code removed for flicker-free ships: ------->
-
-\.DKS2
-\
-\LDA #128               \ Call OSBYTE with A = 128 to fetch the 16-bit value
-\JSR OSBYTE             \ from ADC channel X, returning (Y X), i.e. the high
-\                       \ byte in Y and the low byte in X
-\                       \
-\                       \   * Channel 1 is the x-axis: 0 = right, 65520 = left
-\                       \
-\                       \   * Channel 2 is the y-axis: 0 = down,  65520 = up
-\
-\TYA                    \ Copy Y to A, so the result is now in (A X)
-\
-\EOR JSTE               \ The high byte A is now EOR'd with the value in
-\                       \ location JSTE, which contains &FF if both joystick
-\                       \ channels are reversed and 0 otherwise (so A now
-\                       \ contains the high byte but inverted, if that's what
-\                       \ the current settings say)
-\
-\RTS                    \ Return from the subroutine
-
-                        \ --- End of removed code ----------------------------->
-
-\ ******************************************************************************
-\
-\       Name: U%
-\       Type: Subroutine
-\   Category: Keyboard
-\    Summary: Clear the key logger
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   A                   A is set to 0
-\
-\   Y                   Y is set to 0
-\
-\ ******************************************************************************
-
-.U%
-
- LDA #0                 \ Set A to 0, as this means "key not pressed" in the
-                        \ key logger at KL
-
- LDY #15                \ We want to clear the 15 key logger locations from
-                        \ KY1 to KY19, so set a counter in Y
-
-.DKL3
-
- STA KL,Y               \ Store 0 in the Y-th byte of the key logger
-
- DEY                    \ Decrement the counter
-
- BNE DKL3               \ And loop back for the next key, until we have just
-                        \ KL+1. We don't want to clear the first key logger
-                        \ location at KL, as the keyboard table at KYTB starts
-                        \ with offset 1, not 0, so KL is not technically part of
-                        \ the key logger (it's actually used for logging keys
-                        \ that don't appear in the keyboard table, and which
-                        \ therefore don't use the key logger)
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: DOKEY
-\       Type: Subroutine
-\   Category: Keyboard
-\    Summary: Scan for the seven primary flight controls
-\  Deep dive: The key logger
-\             The docking computer
-\
-\ ------------------------------------------------------------------------------
-\
-\ Scan for the seven primary flight controls, pause and configuration keys, and
-\ secondary flight controls, and update the key logger and pitch and roll rates
-\ accordingly.
-\
-\ Unlike the other versions of Elite, the Electron version doesn't actually read
-\ the joystick values from the ADC channels, so although you can configure
-\ joysticks using the "K" option when paused, they won't have any effect. All
-\ the other joystick code is present, though, so perhaps the intention was to
-\ support joysticks at some point?
-\
-\ ******************************************************************************
-
-.DOKEY
-
- JSR U%                 \ Call U% to clear the key logger
-
- LDY #7                 \ We're going to work our way through the primary flight
-                        \ control keys (pitch, roll, speed and laser), so set a
-                        \ counter in Y so we can loop through all 7
-
-.DKL2
-
- LDX KYTB,Y             \ Call DKS4 to see if the KYTB key at offset Y is being
- JSR DKS4               \ pressed
-
- BPL P%+6               \ If the key isn't being pressed, skip the following two
-                        \ instructions
-
- LDX #&FF               \ Set the key logger for this key to indicate it's being
- STX KL,Y               \ pressed
-
- DEY                    \ Decrement the loop counter
-
- BNE DKL2               \ Loop back for the next key, working our way from A at
-                        \ KYTB+7 down to ? at KYTB+1
-
- LDX JSTX               \ Set X = JSTX, the current roll rate (as shown in the
-                        \ RL indicator on the dashboard)
-
- LDA #7                 \ Set A to 7, which is the amount we want to alter the
-                        \ roll rate by if the roll keys are being pressed
-
- LDY KL+3               \ If the "<" key is being pressed, then call the BUMP2
- BEQ P%+5               \ routine to increase the roll rate in X by A
- JSR BUMP2
-
- LDY KL+4               \ If the ">" key is being pressed, then call the REDU2
- BEQ P%+5               \ routine to decrease the roll rate in X by A, taking
- JSR REDU2              \ the keyboard auto re-centre setting into account
-
- STX JSTX               \ Store the updated roll rate in JSTX
-
- ASL A                  \ Double the value of A, to 14
-
- LDX JSTY               \ Set X = JSTY, the current pitch rate (as shown in the
-                        \ DC indicator on the dashboard)
-
- LDY KL+5               \ If the "X" key is being pressed, then call the REDU2
- BEQ P%+5               \ routine to decrease the pitch rate in X by A, taking
- JSR REDU2              \ the keyboard auto re-centre setting into account
-
- LDY KL+6               \ If the "S" key is being pressed, then call the BUMP2
- BEQ P%+5               \ routine to increase the pitch rate in X by A
- JSR BUMP2
-
- STX JSTY               \ Store the updated roll rate in JSTY
-
-                        \ Fall through into DK4 to scan for other keys
-
-\ ******************************************************************************
-\
-\       Name: DK4
-\       Type: Subroutine
-\   Category: Keyboard
-\    Summary: Scan for pause, configuration and secondary flight keys
-\  Deep dive: The key logger
-\
-\ ------------------------------------------------------------------------------
-\
-\ Scan for pause and configuration keys, and if this is a space view, also scan
-\ for secondary flight controls.
-\
-\ Specifically:
-\
-\   * Scan for the pause button (COPY) and if it's pressed, pause the game and
-\     process any configuration key presses until the game is unpaused (DELETE)
-\
-\   * If this is a space view, scan for secondary flight keys and update the
-\     relevant bytes in the key logger
-\
-\ ******************************************************************************
-
-.DK4
-
- JSR RDKEY              \ Scan the keyboard for a key press and return the
-                        \ internal key number in A and X (or 0 for no key press)
-
- STX KL                 \ Store X in KL, byte #0 of the key logger
-
- CPX #&38               \ If COPY is not being pressed, jump to DK2 below,
- BNE DK2                \ otherwise let's process the configuration keys
-
-.FREEZE
-
-                        \ COPY is being pressed, so we enter a loop that
-                        \ listens for configuration keys, and we keep looping
-                        \ until we detect a DELETE key press. This effectively
-                        \ pauses the game when COPY is pressed, and unpauses
-                        \ it when DELETE is pressed
-
- JSR DEL8               \ Call DEL8 to wait for 30 delay loops
-
- JSR RDKEY              \ Scan the keyboard for a key press and return the
-                        \ internal key number in A and X (or 0 for no key press)
-
- CPX #&51               \ If "S" is not being pressed, skip to DK6
- BNE DK6
-
- LDA #0                 \ "S" is being pressed, so set DNOIZ to 0 to turn the
- STA DNOIZ              \ sound on
-
-.DK6
-
- LDY #&40               \ We now want to loop through the keys that toggle
-                        \ various settings. These have internal key numbers
-                        \ between &40 (CAPS LOCK) and &46 ("K"), so we set up
-                        \ the first key number in Y to act as a loop counter.
-                        \ See subroutine DKS3 for more details on this
-
-.DKL4
-
- JSR DKS3               \ Call DKS3 to scan for the key given in Y, and toggle
-                        \ the relevant setting if it is pressed
-
- INY                    \ Increment Y to point to the next toggle key
-
- CPY #&47               \ The last toggle key is &46 (K), so check whether we
-                        \ have just done that one
-
- BNE DKL4               \ If not, loop back to check for the next toggle key
-
-.DK55
-
- CPX #&10               \ If "Q" is not being pressed, skip to DK7
- BNE DK7
-
- STX DNOIZ              \ "Q" is being pressed, so set DNOIZ to X, which is
-                        \ non-zero (&10), so this will turn the sound off
-
-.DK7
-
- CPX #&70               \ If ESCAPE is not being pressed, skip over the next
- BNE P%+5               \ instruction
-
- JMP DEATH2             \ ESCAPE is being pressed, so jump to DEATH2 to end
-                        \ the game
-
- CPX #&59               \ If DELETE is not being pressed, we are still paused,
- BNE FREEZE             \ so loop back up to keep listening for configuration
-                        \ keys, otherwise fall through into the rest of the
-                        \ key detection code, which unpauses the game
-
-.DK2
-
- LDA QQ11               \ If the current view is non-zero (i.e. not a space
- BNE DK5                \ view), return from the subroutine (as DK5 contains
-                        \ an RTS)
-
- LDY #15                \ This is a space view, so now we want to check for all
-                        \ the secondary flight keys. The internal key numbers
-                        \ are in the keyboard table KYTB from KYTB+8 to
-                        \ KYTB+15, and their key logger locations are from KL+8
-                        \ to KL+15. So set a decreasing counter in Y for the
-                        \ index, starting at 15, so we can loop through them
-
- LDA #&FF               \ Set A to &FF so we can store this in the keyboard
-                        \ logger for keys that are being pressed
-
-.DKL1
-
- LDX KYTB,Y             \ Get the internal key number of the Y-th flight key
-                        \ the KYTB keyboard table
-
- CPX KL                 \ We stored the key that's being pressed in KL above,
-                        \ so check to see if the Y-th flight key is being
-                        \ pressed
-
- BNE DK1                \ If it is not being pressed, skip to DK1 below
-
- STA KL,Y               \ The Y-th flight key is being pressed, so set that
-                        \ key's location in the key logger to &FF
-
-.DK1
-
- DEY                    \ Decrement the loop counter
-
- CPY #7                 \ Have we just done the last key?
-
- BNE DKL1               \ If not, loop back to process the next key
-
-.DK5
 
  RTS                    \ Return from the subroutine
 
