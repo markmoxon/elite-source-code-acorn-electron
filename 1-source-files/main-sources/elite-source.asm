@@ -17641,18 +17641,69 @@ ENDMACRO
                         \     * 1 = the string " DESTROYED" gets added to the
                         \       end of the message
 
+                        \ --- Mod: Code removed for suns: --------------------->
+
+\.LSO
+\
+\SKIP 86                \ This is the ship line heap for the space station
+\                       \ (see NWSPS for details)
+
+                        \ --- And replaced by: -------------------------------->
+
+.LSX
+
+ SKIP 0                 \ LSX is an alias that points to the first byte of the
+                        \ sun line heap at LSO
+                        \
+                        \   * &FF indicates the sun line heap is empty
+                        \
+                        \   * Otherwise the LSO heap contains the line data for
+                        \     the sun
+
 .LSO
 
- SKIP 86                \ This is the ship line heap for the space station
-                        \ (see NWSPS for details)
+ SKIP 1                 \ The ship line heap for the space station (see NWSPS)
+                        \ and the sun line heap (see SUN)
+                        \
+                        \ The spaces can be shared as our local bubble of
+                        \ universe can support either the sun or a space
+                        \ station, but not both
+
+                        \ --- End of replacement ------------------------------>
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.BUF
+
+ SKIP 191               \ The line buffer used by DASC to print justified text
+                        \
+                        \ This buffer shares space with the LSO buffer, which
+                        \ works because neither the sun or space station are
+                        \ shown at the same time as printing justified text
+
+                        \ --- End of added code ------------------------------->
+
+                        \ --- Mod: Code removed for suns: --------------------->
+
+\.LSX2
+\
+\SKIP 40                \ The ball line heap for storing x-coordinates
+\
+\.LSY2
+\
+\SKIP 40                \ The ball line heap for storing y-coordinates
+
+                        \ --- And replaced by: -------------------------------->
 
 .LSX2
 
- SKIP 40                \ The ball line heap for storing x-coordinates
+ SKIP 78                \ The ball line heap for storing x-coordinates
 
 .LSY2
 
- SKIP 40                \ The ball line heap for storing y-coordinates
+ SKIP 78                \ The ball line heap for storing y-coordinates
+
+                        \ --- End of replacement ------------------------------>
 
 .SYL
 
