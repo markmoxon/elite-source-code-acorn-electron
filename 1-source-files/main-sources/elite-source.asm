@@ -109,6 +109,12 @@
 
  POW = 15               \ Pulse laser power
 
+                        \ --- Mod: Code added for missions: ------------------->
+
+ CON = 31               \ Ship type for a Constrictor
+
+                        \ --- End of added code ------------------------------->
+
  NI% = 36               \ The number of bytes in each ship's data block (as
                         \ stored in INWK and K%)
 
@@ -136,8 +142,25 @@
 
  func0 = &A7            \ Internal key number for FUNC-0 (Inventory)
 
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+ NRU% = 25              \ The number of planetary systems with extended system
+                        \ description overrides in the RUTOK table
+
+                        \ --- End of added code ------------------------------->
+
  RE = &23               \ The obfuscation byte used to hide the recursive tokens
                         \ table from crackers viewing the binary code
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+ VE = &57               \ The obfuscation byte used to hide the extended tokens
+                        \ table from crackers viewing the binary code
+
+ LL = 30                \ The length of lines (in characters) of justified text
+                        \ in the extended tokens system
+
+                        \ --- End of added code ------------------------------->
 
  VIA = &FE00            \ Memory-mapped space for accessing internal hardware,
                         \ such as the video ULA, 6845 CRTC and 6522 VIAs (also
@@ -2686,6 +2709,28 @@ ENDMACRO
                         \ joysticks moves the chart crosshairs in an
                         \ uncontrollable way (which is presumably a bug)
 
+                        \ --- Mod: Code added for saving and loading: --------->
+
+.CATF
+
+ SKIP 1                 \ The disc catalogue flag
+                        \
+                        \ Determines whether a disc catalogue is currently in
+                        \ progress, so the TT26 print routine can format the
+                        \ output correctly:
+                        \
+                        \   * 0 = disc is not currently being catalogued
+                        \
+                        \   * 1 = disc is currently being catalogued
+                        \
+                        \ Specifically, when CATF is non-zero, TT26 will omit
+                        \ column 17 from the catalogue so that it will fit
+                        \ on-screen (column 17 is blank column in the middle
+                        \ of the catalogue, between the two lists of filenames,
+                        \ so it can be dropped without affecting the layout)
+
+                        \ --- End of added code ------------------------------->
+
 \ ******************************************************************************
 \
 \       Name: IRQ1
@@ -4064,6 +4109,652 @@ ENDIF
 
 \ ******************************************************************************
 \
+\       Name: DTW1
+\       Type: Variable
+\   Category: Text
+\    Summary: A mask for applying the lower case part of Sentence Case to
+\             extended text tokens
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ This variable is used to change characters to lower case as part of applying
+\ Sentence Case to extended text tokens. It has two values:
+\
+\   * %00100000 = apply lower case to the second letter of a word onwards
+\
+\   * %00000000 = do not change case to lower case
+\
+\ The default value is %00100000 (apply lower case).
+\
+\ The flag is set to %00100000 (apply lower case) by jump token 2, {sentence
+\ case}, which calls routine MT2 to change the value of DTW1.
+\
+\ The flag is set to %00000000 (do not change case to lower case) by jump token
+\ 1, {all caps}, which calls routine MT1 to change the value of DTW1.
+\
+\ The letter to print is OR'd with DTW1 in DETOK2, which lower-cases the letter
+\ by setting bit 5 (if DTW1 is %00100000). However, this OR is only done if bit
+\ 7 of DTW2 is clear, i.e. we are printing a word, so this doesn't affect the
+\ first letter of the word, which remains capitalised.
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.DTW1
+
+ EQUB %00100000
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: DTW2
+\       Type: Variable
+\   Category: Text
+\    Summary: A flag that indicates whether we are currently printing a word
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ This variable is used to indicate whether we are currently printing a word. It
+\ has two values:
+\
+\   * 0 = we are currently printing a word
+\
+\   * Non-zero = we are not currently printing a word
+\
+\ The default value is %11111111 (we are not currently printing a word).
+\
+\ The flag is set to %00000000 (we are currently printing a word) whenever a
+\ non-terminator character is passed to DASC for printing.
+\
+\ The flag is set to %11111111 (we are not currently printing a word) whenever a
+\ terminator character (full stop, colon, carriage return, line feed, space) is
+\ passed to DASC for printing. It is also set to %11111111 by jump token 8,
+\ {tab 6}, which calls routine MT8 to change the value of DTW2, and to %10000000
+\ by TTX66 when we clear the screen.
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.DTW2
+
+ EQUB %11111111
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: DTW3
+\       Type: Variable
+\   Category: Text
+\    Summary: A flag for switching between standard and extended text tokens
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ This variable is used to indicate whether standard or extended text tokens
+\ should be printed by calls to DETOK. It allows us to mix standard tokens in
+\ with extended tokens. It has two values:
+\
+\   * %00000000 = print extended tokens (i.e. those in TKN1 and RUTOK)
+\
+\   * %11111111 = print standard tokens (i.e. those in QQ18)
+\
+\ The default value is %00000000 (extended tokens).
+\
+\ Standard tokens are set by jump token {6}, which calls routine MT6 to change
+\ the value of DTW3 to %11111111.
+\
+\ Extended tokens are set by jump token {5}, which calls routine MT5 to change
+\ the value of DTW3 to %00000000.
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.DTW3
+
+ EQUB %00000000
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: DTW4
+\       Type: Variable
+\   Category: Text
+\    Summary: Flags that govern how justified extended text tokens are printed
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ This variable is used to control how justified text tokens are printed as part
+\ of the extended text token system. There are two bits that affect justified
+\ text:
+\
+\   * Bit 7: 1 = justify text
+\            0 = do not justify text
+\
+\   * Bit 6: 1 = buffer the entire token before printing, including carriage
+\                returns (used for in-flight messages only)
+\            0 = print the contents of the buffer whenever a carriage return
+\                appears in the token
+\
+\ The default value is %00000000 (do not justify text, print buffer on carriage
+\ return).
+\
+\ The flag is set to %10000000 (justify text, print buffer on carriage return)
+\ by jump token 14, {justify}, which calls routine MT14 to change the value of
+\ DTW4.
+\
+\ The flag is set to %11000000 (justify text, buffer entire token) by routine
+\ MESS, which prints in-flight messages.
+\
+\ The flag is set to %00000000 (do not justify text, print buffer on carriage
+\ return) by jump token 15, {left align}, which calls routine MT1 to change the
+\ value of DTW4.
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.DTW4
+
+ EQUB 0
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: DTW5
+\       Type: Variable
+\   Category: Text
+\    Summary: The size of the justified text buffer at BUF
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ When justified text is enabled by jump token 14, {justify}, during printing of
+\ extended text tokens, text is fed into a buffer at BUF instead of being
+\ printed straight away, so it can be padded out with spaces to justify the
+\ text. DTW5 contains the size of the buffer, so BUF + DTW5 points to the first
+\ free byte after the end of the buffer.
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.DTW5
+
+ EQUB 0
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: DTW6
+\       Type: Variable
+\   Category: Text
+\    Summary: A flag to denote whether printing in lower case is enabled for
+\             extended text tokens
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ This variable is used to indicate whether lower case is currently enabled. It
+\ has two values:
+\
+\   * %10000000 = lower case is enabled
+\
+\   * %00000000 = lower case is not enabled
+\
+\ The default value is %00000000 (lower case is not enabled).
+\
+\ The flag is set to %10000000 (lower case is enabled) by jump token 13 {lower
+\ case}, which calls routine MT10 to change the value of DTW6.
+\
+\ The flag is set to %00000000 (lower case is not enabled) by jump token 1, {all
+\ caps}, and jump token 2, {sentence case}, which call routines MT1 and MT2 to
+\ change the value of DTW6.
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.DTW6
+
+ EQUB %00000000
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: DTW8
+\       Type: Variable
+\   Category: Text
+\    Summary: A mask for capitalising the next letter in an extended text token
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ This variable is only used by one specific extended token, the {single cap}
+\ jump token, which capitalises the next letter only. It has two values:
+\
+\   * %11011111 = capitalise the next letter
+\
+\   * %11111111 = do not change case
+\
+\ The default value is %11111111 (do not change case).
+\
+\ The flag is set to %11011111 (capitalise the next letter) by jump token 19,
+\ {single cap}, which calls routine MT19 to change the value of DTW.
+\
+\ The flag is set to %11111111 (do not change case) at the start of DASC, after
+\ the letter has been capitalised in DETOK2, so the effect is to capitalise one
+\ letter only.
+\
+\ The letter to print is AND'd with DTW8 in DETOK2, which capitalises the letter
+\ by clearing bit 5 (if DTW8 is %11011111). However, this AND is only done if at
+\ least one of the following is true:
+\
+\   * Bit 7 of DTW2 is set (we are not currently printing a word)
+\
+\   * Bit 7 of DTW6 is set (lower case has been enabled by jump token 13, {lower
+\     case}
+\
+\ In other words, we only capitalise the next letter if it's the first letter in
+\ a word, or we are printing in lower case.
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.DTW8
+
+ EQUB %11111111
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: FEED
+\       Type: Subroutine
+\   Category: Text
+\    Summary: Print a newline
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.FEED
+
+ LDA #12                \ Set A = 12, so when we skip MT16 and fall through into
+                        \ TT26, we print character 12, which is a newline
+
+ EQUB &2C               \ Skip the next instruction by turning it into
+                        \ &2C &A9 &41, or BIT &41A9, which does nothing apart
+                        \ from affect the flags
+
+                        \ Fall through into TT26 (skipping MT16) to print the
+                        \ newline character
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: MT16
+\       Type: Subroutine
+\   Category: Text
+\    Summary: Print the character in variable DTW7
+\  Deep dive: Extended text tokens
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.MT16
+
+ LDA #'A'               \ Set A to the contents of DTW7, as DTW7 points to the
+                        \ second byte of this instruction, so updating DTW7 will
+                        \ modify this instruction (the default value of DTW7 is
+                        \ an "A")
+
+ DTW7 = MT16 + 1        \ Point DTW7 to the second byte of the instruction above
+                        \ so that modifying DTW7 changes the value loaded into A
+
+                        \ Fall through into TT26 to print the character in A
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: TT26
+\       Type: Subroutine
+\   Category: Text
+\    Summary: Print a character at the text cursor, with support for verified
+\             text in extended tokens
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   The character to print
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   X                   X is preserved
+\
+\   C flag              The C flag is cleared
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   DASC                DASC does exactly the same as TT26 and prints a
+\                       character at the text cursor, with support for verified
+\                       text in extended tokens
+\
+\   rT9                 Contains an RTS
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.DASC
+
+.TT26
+
+ STX SC                 \ Store X in SC, so we can retrieve it below
+
+ LDX #%11111111         \ Set DTW8 = %11111111, to disable the effect of {19} if
+ STX DTW8               \ it was set (as {19} capitalises one character only)
+
+ CMP #'.'               \ If the character in A is a word terminator:
+ BEQ DA8                \
+ CMP #':'               \   * Full stop
+ BEQ DA8                \   * Colon
+ CMP #10                \   * Line feed
+ BEQ DA8                \   * Carriage return
+ CMP #12                \   * Space
+ BEQ DA8                \
+ CMP #' '               \ then skip the following instruction
+ BEQ DA8
+
+ INX                    \ Increment X to 0, so DTW2 gets set to %00000000 below
+
+.DA8
+
+ STX DTW2               \ Store X in DTW2, so DTW2 is now:
+                        \
+                        \   * %00000000 if this character is a word terminator
+                        \
+                        \   * %11111111 if it isn't
+                        \
+                        \ so DTW2 indicates whether or not we are currently
+                        \ printing a word
+
+ LDX SC                 \ Retrieve the original value of X from SC
+
+ BIT DTW4               \ If bit 7 of DTW4 is set then we are currently printing
+ BMI P%+5               \ justified text, so skip the next instruction
+
+ JMP CHPR               \ Bit 7 of DTW4 is clear, so jump down to CHPR to print
+                        \ this character, as we are not printing justified text
+
+                        \ If we get here then we are printing justified text, so
+                        \ we need to buffer the text until we reach the end of
+                        \ the paragraph, so we can then pad it out with spaces
+
+ CMP #12                \ If the character in A is a carriage return, then we
+ BEQ DA1                \ have reached the end of the paragraph, so jump down to
+                        \ DA1 to print out the contents of the buffer,
+                        \ justifying it as we go
+
+                        \ If we get here then we need to buffer this character
+                        \ in the line buffer at BUF
+
+ LDX DTW5               \ DTW5 contains the current size of the buffer, so this
+ STA BUF,X              \ stores the character in A at BUF + DTW5, the next free
+                        \ space in the buffer
+
+ LDX SC                 \ Retrieve the original value of X from SC so we can
+                        \ preserve it through this subroutine call
+
+ INC DTW5               \ Increment the size of the BUF buffer that is stored in
+                        \ DTW5
+
+ CLC                    \ Clear the C flag
+
+ RTS                    \ Return from the subroutine
+
+.DA1
+
+                        \ If we get here then we are justifying text and we have
+                        \ reached the end of the paragraph, so we need to print
+                        \ out the contents of the buffer, justifying it as we go
+
+ TXA                    \ Store X and Y on the stack
+ PHA
+ TYA
+ PHA
+
+.DA5
+
+ LDX DTW5               \ Set X = DTW5, which contains the size of the buffer
+
+ BEQ DA6+3              \ If X = 0 then the buffer is empty, so jump down to
+                        \ DA6+3 to print a newline
+
+ CPX #(LL+1)            \ If X < LL+1, i.e. X <= LL, then the buffer contains
+ BCC DA6                \ fewer than LL characters, which is less than a line
+                        \ length, so jump down to DA6 to print the contents of
+                        \ BUF followed by a newline, as we don't justify the
+                        \ last line of the paragraph
+
+                        \ Otherwise X > LL, so the buffer does not fit into one
+                        \ line, and we therefore need to justify the text, which
+                        \ we do one line at a time
+
+ LSR SC+1               \ Shift SC+1 to the right, which clears bit 7 of SC+1,
+                        \ so we pass through the following comparison on the
+                        \ first iteration of the loop and set SC+1 to %01000000
+
+.DA11
+
+ LDA SC+1               \ If bit 7 of SC+1 is set, skip the following two
+ BMI P%+6               \ instructions
+
+ LDA #%01000000         \ Set SC+1 = %01000000
+ STA SC+1
+
+ LDY #(LL-1)            \ Set Y = line length, so we can loop backwards from the
+                        \ end of the first line in the buffer using Y as the
+                        \ loop counter
+
+.DAL1
+
+ LDA BUF+LL             \ If the LL-th byte in BUF is a space, jump down to DA2
+ CMP #' '               \ to print out the first line from the buffer, as it
+ BEQ DA2                \ fits the line width exactly (i.e. it's justified)
+
+                        \ We now want to find the last space character in the
+                        \ first line in the buffer, so we loop through the line
+                        \ using Y as a counter
+
+.DAL2
+
+ DEY                    \ Decrement the loop counter in Y
+
+ BMI DA11               \ If Y <= 0, loop back to DA11, as we have now looped
+ BEQ DA11               \ through the whole line
+
+ LDA BUF,Y              \ If the Y-th byte in BUF is not a space, loop back up
+ CMP #' '               \ to DAL2 to check the next character
+ BNE DAL2
+
+                        \ Y now points to a space character in the line buffer
+
+ ASL SC+1               \ Shift SC+1 to the left
+
+ BMI DAL2               \ If bit 7 of SC+1 is set, jump to DAL2 to find the next
+                        \ space character
+
+                        \ We now want to insert a space into the line buffer at
+                        \ position Y, which we do by shifting every character
+                        \ after position Y along by 1, and then inserting the
+                        \ space
+
+ STY SC                 \ Store Y in SC, so we want to insert the space at
+                        \ position SC
+
+ LDY DTW5               \ Fetch the buffer size from DTW5 into Y, to act as a
+                        \ loop counter for moving the line buffer along by 1
+
+.DAL6
+
+ LDA BUF,Y              \ Copy the Y-th character from BUF into the Y+1-th
+ STA BUF+1,Y            \ position
+
+ DEY                    \ Decrement the loop counter in Y
+
+ CPY SC                 \ Loop back to shift the next character along, until we
+ BCS DAL6               \ have moved the SC-th character (i.e. Y < SC)
+
+ INC DTW5               \ Increment the buffer size in DTW5
+
+                        \ We've now shifted the line to the right by 1 from
+                        \ position SC onwards, so SC and SC+1 both contain
+                        \ spaces, and Y is now SC-1 as we did a DEY just before
+                        \ the end of the loop - in other words, we have inserted
+                        \ a space at position SC, and Y points to the character
+                        \ before the newly inserted space
+
+                        \ We now want to move the pointer Y left to find the
+                        \ next space in the line buffer, before looping back to
+                        \ check whether we are done, and if not, insert another
+                        \ space
+
+.DAL3
+
+ CMP BUF,Y              \ If the character at position Y is not a space, jump to
+ BNE DAL1               \ DAL1 to see whether we have now justified the line
+
+ DEY                    \ Decrement the loop counter in Y
+
+ BPL DAL3               \ Loop back to check the next character to the left,
+                        \ until we have found a space
+
+ BMI DA11               \ Jump back to DA11 (this BMI is effectively a JMP as
+                        \ we already passed through a BPL to get here)
+
+.DA2
+
+                        \ This subroutine prints out a full line of characters
+                        \ from the start of the line buffer in BUF, followed by
+                        \ a newline. It then removes that line from the buffer,
+                        \ shuffling the rest of the buffer contents down
+
+ LDX #LL                \ Call DAS1 to print out the first LL characters from
+ JSR DAS1               \ the line buffer in BUF
+
+ LDA #12                \ Print a newline
+ JSR CHPR
+
+ LDA DTW5               \ Subtract #LL from the end-of-buffer pointer in DTW5
+ SBC #LL                \
+ STA DTW5               \ The subtraction works as CHPR clears the C flag
+
+ TAX                    \ Copy the new value of DTW5 into X
+
+ BEQ DA6+3              \ If DTW5 = 0 then jump down to DA6+3 to print a newline
+                        \ as the buffer is now empty
+
+                        \ If we get here then we have printed our line but there
+                        \ is more in the buffer, so we now want to remove the
+                        \ line we just printed from the start of BUF
+
+ LDY #0                 \ Set Y = 0 to count through the characters in BUF
+
+ INX                    \ Increment X, so it now contains the number of
+                        \ characters in the buffer (as DTW5 is a zero-based
+                        \ pointer and is therefore equal to the number of
+                        \ characters minus 1)
+
+.DAL4
+
+ LDA BUF+LL+1,Y         \ Copy the Y-th character from BUF+LL to BUF
+ STA BUF,Y
+
+ INY                    \ Increment the character pointer
+
+ DEX                    \ Decrement the character count
+
+ BNE DAL4               \ Loop back to copy the next character until we have
+                        \ shuffled down the whole buffer
+
+ BEQ DA5                \ Jump back to DA5 (this BEQ is effectively a JMP as we
+                        \ have already passed through the BNE above)
+
+.DAS1
+
+                        \ This subroutine prints out X characters from BUF,
+                        \ returning with X = 0
+
+ LDY #0                 \ Set Y = 0 to point to the first character in BUF
+
+.DAL5
+
+ LDA BUF,Y              \ Print the Y-th character in BUF using CHPR, which also
+ JSR CHPR               \ clears the C flag for when we return from the
+                        \ subroutine below
+
+ INY                    \ Increment Y to point to the next character
+
+ DEX                    \ Decrement the loop counter
+
+ BNE DAL5               \ Loop back for the next character until we have printed
+                        \ X characters from BUF
+
+.rT9
+
+ RTS                    \ Return from the subroutine
+
+.DA6
+
+ JSR DAS1               \ Call DAS1 to print X characters from BUF, returning
+                        \ with X = 0
+
+ STX DTW5               \ Set the buffer size in DTW5 to 0, as the buffer is now
+                        \ empty
+
+ PLA                    \ Restore Y and X from the stack
+ TAY
+ PLA
+ TAX
+
+ LDA #12                \ Set A = 12, so when we skip BELL and fall through into
+                        \ CHPR, we print character 12, which is a newline
+
+.DA7
+
+ EQUB &2C               \ Skip the next instruction by turning it into
+                        \ &2C &A9 &07, or BIT &07A9, which does nothing apart
+                        \ from affect the flags
+
+                        \ Fall through into CHPR (skipping BELL) to print the
+                        \ character and return with the C flag cleared
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
 \       Name: BELL
 \       Type: Subroutine
 \   Category: Sound
@@ -4142,22 +4833,56 @@ ENDIF
 \
 \ ******************************************************************************
 
-.TT26
+                        \ --- Mod: Code removed for extended text tokens: ----->
+
+\.TT26
+
+                        \ --- And replaced by: -------------------------------->
+
+.CHPR
+
+                        \ --- End of replacement ------------------------------>
 
  STA K3                 \ Store the A, X and Y registers, so we can restore
  STY YSAV2              \ them at the end (so they don't get changed by this
  STX XSAV2              \ routine)
 
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.RRNEW
+
+                        \ --- End of added code ------------------------------->
+
  LDY QQ17               \ Load the QQ17 flag, which contains the text printing
                         \ flags
 
- CPY #255               \ If QQ17 = 255 then printing is disabled, so jump to
- BEQ RR4                \ RR4, which doesn't print anything, it just restores
-                        \ the registers and returns from the subroutine
+                        \ --- Mod: Code removed for extended text tokens: ----->
+
+\CPY #255               \ If QQ17 = 255 then printing is disabled, so jump to
+\BEQ RR4                \ RR4, which doesn't print anything, it just restores
+\                       \ the registers and returns from the subroutine
+
+                        \ --- And replaced by: -------------------------------->
+
+ INY                    \ If QQ17 = 255 then printing is disabled, so jump to
+ BNE P%+5               \ RR4, which doesn't print anything, it just restores
+ JMP RR4                \ the registers and returns from the subroutine
+
+ TAY                    \ Set Y = the character to be printed
+
+ BNE P%+5               \ If the character is zero, which is typically a string
+ JMP RR4                \ terminator character, jump down to RR4 to restore the
+                        \ registers and return from the subroutine
+
+ BPL P%+5               \ If A > 127 then there is nothing to print, so jump to
+ JMP RR4                \ RR4 to restore the registers and return from the
+                        \ subroutine
+
+                        \ --- End of replacement ------------------------------>
 
  CMP #7                 \ If this is a beep character (A = 7), jump to R5,
- BEQ R5                 \ which will emit the beep, restore the registers and
-                        \ return from the subroutine
+ BNE P%+5               \ which will emit the beep, restore the registers and
+ JMP R5                 \ return from the subroutine
 
  CMP #32                \ If this is an ASCII character (A >= 32), jump to RR1
  BCS RR1                \ below, which will print the character, restore the
@@ -4318,6 +5043,33 @@ ENDIF
  LDA XC                 \ Fetch XC, the x-coordinate (column) of the text cursor
                         \ into A
 
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+ LDX CATF               \ If CATF = 0, jump to RR5, otherwise we are printing a
+ BEQ RR5                \ disc catalogue
+
+ CPY #' '               \ If the character we want to print in Y is a space,
+ BNE RR5                \ jump to RR5
+
+                        \ If we get here, then CATF is non-zero, so we are
+                        \ printing a disc catalogue and we are not printing a
+                        \ space, so we drop column 17 from the output so the
+                        \ catalogue will fit on-screen (column 17 is a blank
+                        \ column in the middle of the catalogue, between the
+                        \ two lists of filenames, so it can be dropped without
+                        \ affecting the layout). Without this, the catalogue
+                        \ would be one character too wide for the square screen
+                        \ mode (it's 34 characters wide, while the screen mode
+                        \ is only 33 characters across)
+
+ CMP #17                \ If A = 17, i.e. the text cursor is in column 17, jump
+ BEQ RR4                \ to RR4 to restore the registers and return from the
+                        \ subroutine, thus omitting this column
+
+.RR5
+
+                        \ --- End of added code ------------------------------->
+
  ASL A                  \ Multiply A by 8, and add to SC. As each character is
  ASL A                  \ 8 pixels wide, this gives us the screen address of the
  ASL A                  \ character block where we want to print this character
@@ -4420,7 +5172,11 @@ ENDIF
  LDA K3                 \ the C flag, so everything is back to how it was
  CLC
 
-.rT9
+                        \ --- Mod: Code removed for extended text tokens: ----->
+
+\.rT9
+
+                        \ --- End of removed code ----------------------------->
 
  RTS                    \ Return from the subroutine
 
@@ -5252,6 +6008,638 @@ ENDIF
 .HF8
 
  RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: PDESC
+\       Type: Subroutine
+\   Category: Universe
+\    Summary: Print the system's extended description or a mission 1 directive
+\  Deep dive: Extended system descriptions
+\             Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ This prints a specific system's extended description. This is called the "pink
+\ volcanoes string" in a comment in the original source, and the "goat soup"
+\ recipe by Ian Bell on his website (where he also refers to the species string
+\ as the "pink felines" string).
+\
+\ For some special systems, when you are docked at them, the procedurally
+\ generated extended description is overridden and a text token from the RUTOK
+\ table is shown instead. If mission 1 is in progress, then a number of systems
+\ along the route of that mission's story will show custom mission-related
+\ directives in place of that system's normal "goat soup" phrase.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   ZZ                  The system number (0-255)
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.PDESC
+
+ LDA QQ8                \ If either byte in QQ18(1 0) is non-zero, meaning that
+ ORA QQ8+1              \ the distance from the current system to the selected
+ BNE PD1                \ is non-zero, jump to PD1 to show the standard "goat
+                        \ soup" description
+
+                        \ If we get here, then the current system is the same as
+                        \ the selected system and we are docked, so now to check
+                        \ whether there is a special override token for this
+                        \ system
+
+ LDY #NRU%              \ Set Y as a loop counter as we work our way through the
+                        \ system numbers in RUPLA, starting at NRU% (which is
+                        \ the number of entries in RUPLA, 26) and working our
+                        \ way down to 1
+
+.PDL1
+
+ LDA RUPLA-1,Y          \ Fetch the Y-th byte from RUPLA-1 into A (we use
+                        \ RUPLA-1 because Y is looping from 26 to 1)
+
+ CMP ZZ                 \ If A doesn't match the system whose description we
+ BNE PD2                \ are printing (in ZZ), jump to PD2 to keep looping
+                        \ through the system numbers in RUPLA
+
+                        \ If we get here we have found a match for this system
+                        \ number in RUPLA
+
+ LDA RUGAL-1,Y          \ Fetch the Y-th byte from RUGAL-1 into A
+
+ AND #%01111111         \ Extract bits 0-6 of A
+
+ CMP GCNT               \ If the result does not equal the current galaxy
+ BNE PD2                \ number, jump to PD2 to keep looping through the system
+                        \ numbers in RUPLA
+
+ LDA RUGAL-1,Y          \ Fetch the Y-th byte from RUGAL-1 into A, once again
+
+ BMI PD3                \ If bit 7 is set, jump to PD3 to print the extended
+                        \ token in A from the second table in RUTOK
+
+ LDA TP                 \ Fetch bit 0 of TP into the C flag, and skip to PD1 if
+ LSR A                  \ it is clear (i.e. if mission 1 is not in progress) to
+ BCC PD1                \ print the "goat soup" extended description
+
+                        \ If we get here then mission 1 is in progress, so we
+                        \ print out the corresponding token from RUTOK
+
+ JSR MT14               \ Call MT14 to switch to justified text
+
+ LDA #1                 \ Set A = 1 so that extended token 1 (an empty string)
+                        \ gets printed below instead of token 176, followed by
+                        \ the Y-th token in RUTOK
+
+ EQUB &2C               \ Skip the next instruction by turning it into
+                        \ &2C &A9 &B0, or BIT &B0A9, which does nothing apart
+                        \ from affect the flags
+
+.PD3
+
+ LDA #176               \ Print extended token 176 ("{lower case}{justify}
+ JSR DETOK2             \ {single cap}")
+
+ TYA                    \ Print the extended token in Y from the second table
+ JSR DETOK3             \ in RUTOK
+
+ LDA #177               \ Set A = 177 so when we jump to PD4 in the next
+                        \ instruction, we print token 177 (".{cr}{left align}")
+
+ BNE PD4                \ Jump to PD4 to print the extended token in A and
+                        \ return from the subroutine using a tail call
+
+.PD2
+
+ DEY                    \ Decrement the byte counter in Y
+
+ BNE PDL1               \ Loop back to check the next byte in RUPLA until we
+                        \ either find a match for the system in ZZ, or we fall
+                        \ through into the "goat soup" extended description
+                        \ routine
+
+.PD1
+
+                        \ We now print the "goat soup" extended description
+
+ LDX #3                 \ We now want to seed the random number generator with
+                        \ the s1 and s2 16-bit seeds from the current system, so
+                        \ we get the same extended description for each system
+                        \ every time we call PDESC, so set a counter in X for
+                        \ copying 4 bytes
+
+.PDL1K                  \ This label is a duplicate of the label above
+                        \
+                        \ In the original source this label is PDL1, but
+                        \ because BeebAsm doesn't allow us to redefine labels,
+                        \ I have renamed it to PDL1K
+
+ LDA QQ15+2,X           \ Copy QQ15+2 to QQ15+5 (s1 and s2) to RAND to RAND+3
+ STA RAND,X
+
+ DEX                    \ Decrement the loop counter
+
+ BPL PDL1K              \ Loop back to PDL1K until we have copied all
+
+ LDA #5                 \ Set A = 5, so we print extended token 5 in the next
+                        \ instruction ("{lower case}{justify}{single cap}[86-90]
+                        \ IS [140-144].{cr}{left align}"
+
+.PD4
+
+ JMP DETOK              \ Print the extended token given in A, and return from
+                        \ the subroutine using a tail call
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: BRIEF2
+\       Type: Subroutine
+\   Category: Missions
+\    Summary: Start mission 2
+\  Deep dive: The Thargoid Plans mission
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code removed for missions: ----------------->
+
+.BRIEF2
+
+ LDA TP                 \ Set bit 2 of TP to indicate mission 2 is in progress
+ ORA #%00000100         \ but plans have not yet been picked up
+ STA TP
+
+ LDA #11                \ Set A = 11 so the call to BRP prints extended token 11
+                        \ (the initial contact at the start of mission 2, asking
+                        \ us to head for Ceerdi for a mission briefing)
+
+                        \ Fall through into BRP to print the extended token in A
+                        \ and show the Status Mode screen
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: BRP
+\       Type: Subroutine
+\   Category: Missions
+\    Summary: Print an extended token and show the Status Mode screen
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code removed for missions: ----------------->
+
+.BRP
+
+ JSR DETOK              \ Print the extended token in A
+
+ JMP BAY                \ Jump to BAY to go to the docking bay (i.e. show the
+                        \ Status Mode screen) and return from the subroutine
+                        \ using a tail call
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: BRIEF3
+\       Type: Subroutine
+\   Category: Missions
+\    Summary: Receive the briefing and plans for mission 2
+\  Deep dive: The Thargoid Plans mission
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code removed for missions: ----------------->
+
+.BRIEF3
+
+ LDA TP                 \ Set bits 1 and 3 of TP to indicate that mission 1 is
+ AND #%11110000         \ complete, and mission 2 is in progress and the plans
+ ORA #%00001010         \ have been picked up
+ STA TP
+
+ LDA #222               \ Set A = 222 so the call to BRP prints extended token
+                        \ 222 (the briefing for mission 2 where we pick up the
+                        \ plans we need to take to Birera)
+
+ BNE BRP                \ Jump to BRP to print the extended token in A and show
+                        \ the Status Mode screen), returning from the subroutine
+                        \ using a tail call (this BNE is effectively a JMP as A
+                        \ is never zero)
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: DEBRIEF2
+\       Type: Subroutine
+\   Category: Missions
+\    Summary: Finish mission 2
+\  Deep dive: The Thargoid Plans mission
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code removed for missions: ----------------->
+
+.DEBRIEF2
+
+ LDA TP                 \ Set bit 2 of TP to indicate mission 2 is complete (so
+ ORA #%00000100         \ both bits 2 and 3 are now set)
+ STA TP
+
+ LDA #2                 \ Set ENGY to 2 so our energy banks recharge at a faster
+ STA ENGY               \ rate, as our mission reward is a special navy energy
+                        \ unit that recharges at a rate of 3 units of energy on
+                        \ each iteration of the main loop, compared to a rate of
+                        \ 2 units of energy for the standard energy unit
+
+ INC TALLY+1            \ Award 256 kill points for completing the mission
+
+ LDA #223               \ Set A = 223 so the call to BRP prints extended token
+                        \ 223 (the thank you message at the end of mission 2)
+
+ BNE BRP                \ Jump to BRP to print the extended token in A and show
+                        \ the Status Mode screen), returning from the subroutine
+                        \ using a tail call (this BNE is effectively a JMP as A
+                        \ is never zero)
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: DEBRIEF
+\       Type: Subroutine
+\   Category: Missions
+\    Summary: Finish mission 1
+\  Deep dive: The Constrictor mission
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   BRPS                Print the extended token in A, show the Status Mode
+\                       screen and return from the subroutine
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code removed for missions: ----------------->
+
+.DEBRIEF
+
+ LSR TP                 \ Clear bit 0 of TP to indicate that mission 1 is no
+ ASL TP                 \ longer in progress, as we have completed it
+
+ INC TALLY+1            \ Award 256 kill points for completing the mission
+
+ LDX #LO(50000)         \ Increase our cash reserves by the generous mission
+ LDY #HI(50000)         \ reward of 5,000 CR
+ JSR MCASH
+
+ LDA #15                \ Set A = 15 so the call to BRP prints extended token 15
+                        \ (the thank you message at the end of mission 1)
+
+.BRPS
+
+ BNE BRP                \ Jump to BRP to print the extended token in A and show
+                        \ the Status Mode screen, returning from the subroutine
+                        \ using a tail call (this BNE is effectively a JMP as A
+                        \ is never zero)
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: BRIEF
+\       Type: Subroutine
+\   Category: Missions
+\    Summary: Start mission 1 and show the mission briefing
+\  Deep dive: The Constrictor mission
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine does the following:
+\
+\   * Clear the screen
+\   * Display "INCOMING MESSAGE" in the middle of the screen
+\   * Wait for 2 seconds
+\   * Clear the screen
+\   * Show the Constrictor rolling and pitching in the middle of the screen
+\   * Do this for 64 loop iterations
+\   * Move the ship away from us and up until it's near the top of the screen
+\   * Show the mission 1 briefing in extended token 10
+\
+\ The mission briefing ends with a "{display ship, wait for key press}" token,
+\ which calls the PAUSE routine. This continues to display the rotating ship,
+\ waiting until a key is pressed, and then removes the ship from the screen.
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code removed for missions: ----------------->
+
+.BRIEF
+
+ LSR TP                 \ Set bit 0 of TP to indicate that mission 1 is now in
+ SEC                    \ progress
+ ROL TP
+
+ JSR BRIS               \ Call BRIS to clear the screen, display "INCOMING
+                        \ MESSAGE" and wait for 2 seconds
+
+ JSR ZINF               \ Call ZINF to reset the INWK ship workspace
+
+ LDA #CON               \ Set the ship type in TYPE to the Constrictor
+ STA TYPE
+
+ JSR NWSHP              \ Add a new Constrictor to the local bubble (in this
+                        \ case, the briefing screen)
+
+ LDA #1                 \ Move the text cursor to column 1
+ STA XC
+
+ STA INWK+7             \ Set z_hi = 1, the distance at which we show the
+                        \ rotating ship
+
+ JSR TT66               \ Clear the top part of the screen, draw a border box,
+                        \ and set the current view type in QQ11 to 1
+
+ LDA #64                \ Set the main loop counter to 64, so the ship rotates
+ STA MCNT               \ for 64 iterations through MVEIT
+
+.BRL1
+
+ LDX #%01111111         \ Set the ship's roll counter to a positive roll that
+ STX INWK+29            \ doesn't dampen (a clockwise roll)
+
+ STX INWK+30            \ Set the ship's pitch counter to a positive pitch that
+                        \ doesn't dampen (a diving pitch)
+
+ JSR LL9                \ Draw the ship on screen
+
+ JSR MVEIT              \ Call MVEIT to rotate the ship in space
+
+ DEC MCNT               \ Decrease the counter in MCNT
+
+ BNE BRL1               \ Loop back to keep moving the ship until we have done
+                        \ all 64 iterations
+
+.BRL2
+
+ LSR INWK               \ Halve x_lo so the Constrictor moves towards the centre
+
+ INC INWK+6             \ Increment z_lo so the Constrictor moves away from us
+
+ BEQ BR2                \ If z_lo = 0 (i.e. it just went past 255), jump to BR2
+                        \ to show the briefing
+
+ INC INWK+6             \ Increment z_lo so the Constrictor moves a bit further
+                        \ away from us
+
+ BEQ BR2                \ If z_lo = 0 (i.e. it just went past 255), jump out of
+                        \ the loop to BR2 to stop moving the ship up the screen
+                        \ and show the briefing
+
+ LDX INWK+3             \ Set X = y_lo + 1
+ INX
+
+ CPX #112               \ If X < 112 then skip the next instruction
+ BCC P%+4
+
+ LDX #112               \ X is bigger than 112, so set X = 112 so that X has a
+                        \ maximum value of 112
+
+ STX INWK+3             \ Set y_lo = X
+                        \          = y_lo + 1
+                        \
+                        \ so the ship moves up the screen (as space coordinates
+                        \ have the y-axis going up)
+
+ JSR LL9                \ Draw the ship on screen
+
+ JSR MVEIT              \ Call MVEIT to move and rotate the ship in space
+
+ JMP BRL2               \ Loop back to keep moving the ship up the screen and
+                        \ away from us
+
+.BR2
+
+ INC INWK+7             \ Increment z_hi, to keep the ship at the same distance
+                        \ as we just incremented z_lo past 255
+
+ LDA #10                \ Set A = 10 so the call to BRP prints extended token 10
+                        \ (the briefing for mission 1 where we find out all
+                        \ about the stolen Constrictor)
+
+ BNE BRPS               \ Jump to BRP via BRPS to print the extended token in A
+                        \ and show the Status Mode screen, returning from the
+                        \ subroutine using a tail call (this BNE is effectively
+                        \ a JMP as A is never zero)
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: BRIS
+\       Type: Subroutine
+\   Category: Missions
+\    Summary: Clear the screen, display "INCOMING MESSAGE" and wait for 2
+\             seconds
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code removed for missions: ----------------->
+
+.BRIS
+
+ LDA #216               \ Print extended token 216 ("{clear screen}{tab 6}{move
+ JSR DETOK              \ to row 10, white, lower case}{white}{all caps}INCOMING
+                        \ MESSAGE"
+
+ LDY #100               \ Wait for 100/50 of a second (2 seconds) and return
+ JMP DELAY              \ from the subroutine using a tail call
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: PAUSE
+\       Type: Subroutine
+\   Category: Missions
+\    Summary: Display a rotating ship, waiting until a key is pressed, then
+\             remove the ship from the screen
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code removed for missions: ----------------->
+
+.PAUSE
+
+ JSR PAS1               \ Call PAS1 to display the rotating ship at space
+                        \ coordinates (0, 112, 256) and scan the keyboard,
+                        \ returning the internal key number in X (or 0 for no
+                        \ key press)
+
+ BNE PAUSE              \ If a key was already being held down when we entered
+                        \ this routine, keep looping back up to PAUSE, until
+                        \ the key is released
+
+.PAL1
+
+ JSR PAS1               \ Call PAS1 to display the rotating ship at space
+                        \ coordinates (0, 112, 256) and scan the keyboard,
+                        \ returning the internal key number in X (or 0 for no
+                        \ key press)
+
+ BEQ PAL1               \ Keep looping up to PAL1 until a key is pressed
+
+ LDA #0                 \ Set the ship's AI flag to 0 (no AI) so it doesn't get
+ STA INWK+31            \ any ideas of its own
+
+ LDA #1                 \ Clear the top part of the screen, draw a border box,
+ JSR TT66               \ and set the current view type in QQ11 to 1
+
+ JSR LL9                \ Draw the ship on screen to redisplay it
+
+                        \ Fall through into MT23 to move to row 10, switch to
+                        \ white text, and switch to lower case when printing
+                        \ extended tokens
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: MT23
+\       Type: Subroutine
+\   Category: Text
+\    Summary: Move to row 10, switch to white text, and switch to lower case
+\             when printing extended tokens
+\  Deep dive: Extended text tokens
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.MT23
+
+ LDA #10                \ Set A = 10, so when we fall through into MT29, the
+                        \ text cursor gets moved to row 10
+
+ EQUB &2C               \ Skip the next instruction by turning it into
+                        \ &2C &A9 &06, or BIT &06A9, which does nothing apart
+                        \ from affect the flags
+
+                        \ Fall through into MT29 to move to the row in A, switch
+                        \ to white text, and switch to lower case
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: MT29
+\       Type: Subroutine
+\   Category: Text
+\    Summary: Move to row 6, switch to white text, and switch to lower case when
+\             printing extended tokens
+\  Deep dive: Extended text tokens
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.MT29
+
+ LDA #6                 \ Move the text cursor to row 6
+ STA YC
+
+ JMP MT13               \ Jump to MT13 to set bit 7 of DTW6 and bit 5 of DTW1,
+                        \ returning from the subroutine using a tail call
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: PAS1
+\       Type: Subroutine
+\   Category: Missions
+\    Summary: Display a rotating ship at space coordinates (0, 112, 256) and
+\             scan the keyboard
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   X                   If a key is being pressed, X contains the internal key
+\                       number, otherwise it contains 0
+\
+\   A                   Contains the same as X
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code removed for missions: ----------------->
+
+.PAS1
+
+ LDA #112               \ Set y_lo = 112
+ STA INWK+3
+
+ LDA #0                 \ Set x_lo = 0
+ STA INWK
+
+ STA INWK+6             \ Set z_lo = 0
+
+ LDA #2                 \ Set z_hi = 1, so (z_hi z_lo) = 256
+ STA INWK+7
+
+ JSR LL9                \ Draw the ship on screen
+
+ JSR MVEIT              \ Call MVEIT to move and rotate the ship in space
+
+ JMP RDKEY              \ Scan the keyboard for a key press and return the
+                        \ internal key number in X (or 0 for no key press),
+                        \ returning from the subroutine using a tail call
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: PAUSE2
+\       Type: Subroutine
+\   Category: Keyboard
+\    Summary: Wait until a key is pressed, ignoring any existing key press
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   X                   The internal key number of the key that was pressed
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code removed for missions: ----------------->
+
+.PAUSE2
+
+ JSR RDKEY              \ Scan the keyboard for a key press and return the
+                        \ internal key number in A and X (or 0 for no key press)
+
+ BNE PAUSE2             \ If a key was already being held down when we entered
+                        \ this routine, keep looping back up to PAUSE2, until
+                        \ the key is released
+
+ JSR RDKEY              \ Any pre-existing key press is now gone, so we can
+                        \ start scanning the keyboard again, returning the
+                        \ internal key number in A and X (or 0 for no key press)
+
+ BEQ PAUSE2             \ Keep looping up to PAUSE2 until a key is pressed
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
 
                         \ --- Mod: Code moved for sideways RAM: --------------->
 
@@ -6356,7 +7744,15 @@ ENDIF
 
 .TT67
 
- LDA #13                \ Load a newline character into A
+                        \ --- Mod: Code removed for extended text tokens: ----->
+
+\LDA #13                \ Load a newline character into A
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDA #12                \ Load a newline character into A
+
+                        \ --- End of replacement ------------------------------>
 
  JMP TT27               \ Print the text token in A and return from the
                         \ subroutine using a tail call
@@ -14436,38 +15832,124 @@ ENDIF
 \
 \ ******************************************************************************
 
+                        \ --- Mod: Code removed for saving and loading: ------->
+
+\.GTNME
+\
+\LDA #1                 \ Clear the top part of the screen, draw a border box,
+\JSR TT66               \ and set the current view type in QQ11 to 1
+\
+\LDA #123               \ Print recursive token 123 ("{crlf}COMMANDER'S NAME? ")
+\JSR TT27
+\
+\JSR DEL8               \ Call DEL8 to wait for 30 delay loops
+\
+\LDA #15                \ Call OSBYTE with A = 15 (flush all buffers)
+\TAX
+\JSR OSBYTE
+\
+\LDX #LO(RLINE)         \ Set (Y X) to point to the RLINE parameter block
+\LDY #HI(RLINE)         \ configuration block below
+\
+\LDA #0                 \ Set A = 0 for the following OSWORD call
+\
+\DEC KEYB               \ Decrement KEYB, so it is now &FF, to indicate that we
+\                       \ are reading from the keyboard using an OS command
+\
+\JSR OSWORD             \ Call OSWORD with A = 0 to read a line from the current
+\                       \ input stream (i.e. the keyboard)
+\
+\INC KEYB               \ Increment KEYB back to 0 to indicate we are done
+\                       \ reading the keyboard
+\
+\BCS TR1                \ The C flag will be set if we pressed ESCAPE when
+\                       \ entering the name, in which case jump to TR1 to copy
+\                       \ the last saved commander's name from NA% to INWK
+\                       \ and return from the subroutine there
+\
+\TYA                    \ The OSWORD call returns the length of the commander's
+\                       \ name in Y, so transfer this to A
+\
+\BEQ TR1                \ If A = 0, no name was entered, so jump to TR1 to copy
+\                       \ the last saved commander's name from NA% to INWK
+\                       \ and return from the subroutine there
+\
+\JMP TT67               \ We have a name, so jump to TT67 to print a newline
+\                       \ and return from the subroutine using a tail call
+
+                        \ --- End of removed code ----------------------------->
+
+\ ******************************************************************************
+\
+\       Name: GTNMEW
+\       Type: Subroutine
+\   Category: Save and load
+\    Summary: Fetch the name of a commander file to save or load
+\
+\ ------------------------------------------------------------------------------
+\
+\ Get the commander's name for loading or saving a commander file. The name is
+\ stored in the INWK workspace and is terminated by a return character (13).
+\
+\ If ESCAPE is pressed or a blank name is entered, then the name stored is set
+\ to the name from the last saved commander block.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   INWK                The full filename, including drive and directory, in
+\                       the form ":0.E.JAMESON", for example, terminated by a
+\                       return character (13)
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   GTNME               Skip the delay at the start of the routine
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for saving and loading: --------->
+
+.GTNMEW
+
+ LDY #8                 \ Wait for 8/50 of a second (0.16 seconds)
+ JSR DELAY
+
 .GTNME
 
- LDA #1                 \ Clear the top part of the screen, draw a border box,
- JSR TT66               \ and set the current view type in QQ11 to 1
+ LDX #4                 \ First we want to copy the drive and directory part of
+                        \ the commander file from S1% (which equals NA%-5), so
+                        \ set a counter in x for 5 bytes, as the string is of
+                        \ the form ":0.E."
 
- LDA #123               \ Print recursive token 123 ("{crlf}COMMANDER'S NAME? ")
- JSR TT27
+.GTL3
 
- JSR DEL8               \ Call DEL8 to wait for 30 delay loops
+ LDA NA%-5,X            \ Copy the X-th byte from NA%-5 to INWK
+ STA INWK,X
 
- LDA #15                \ Call OSBYTE with A = 15 (flush all buffers)
- TAX
- JSR OSBYTE
+ DEX                    \ Decrement the loop counter
 
- LDX #LO(RLINE)         \ Set (Y X) to point to the RLINE parameter block
- LDY #HI(RLINE)         \ configuration block below
+ BPL GTL3               \ Loop back until the whole drive and directory string
+                        \ has been copied to INWK to INWK+4
 
- LDA #0                 \ Set A = 0 for the following OSWORD call
+ LDA #7                 \ The call to MT26 below uses the OSWORD block at RLINE
+ STA RLINE+2            \ to fetch the line, and RLINE+2 defines the maximum
+                        \ line length allowed, so this changes the maximum
+                        \ length to 7 (as that's the longest commander name
+                        \ allowed)
 
- DEC KEYB               \ Decrement KEYB, so it is now &FF, to indicate that we
-                        \ are reading from the keyboard using an OS command
+ LDA #8                 \ Print extended token 8 ("{single cap}COMMANDER'S
+ JSR DETOK              \ NAME? ")
 
- JSR OSWORD             \ Call OSWORD with A = 0 to read a line from the current
-                        \ input stream (i.e. the keyboard)
+ JSR MT26               \ Call MT26 to fetch a line of text from the keyboard
+                        \ to INWK+5, with the text length in Y, so INWK now
+                        \ contains the full pathname of the file, as in
+                        \ ":0.E.JAMESON", for example
 
- INC KEYB               \ Increment KEYB back to 0 to indicate we are done
-                        \ reading the keyboard
-
- BCS TR1                \ The C flag will be set if we pressed ESCAPE when
-                        \ entering the name, in which case jump to TR1 to copy
-                        \ the last saved commander's name from NA% to INWK
-                        \ and return from the subroutine there
+ LDA #9                 \ Reset the maximum length in RLINE+2 to the original
+ STA RLINE+2            \ value of 9
 
  TYA                    \ The OSWORD call returns the length of the commander's
                         \ name in Y, so transfer this to A
@@ -14476,8 +15958,65 @@ ENDIF
                         \ the last saved commander's name from NA% to INWK
                         \ and return from the subroutine there
 
- JMP TT67               \ We have a name, so jump to TT67 to print a newline
-                        \ and return from the subroutine using a tail call
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: MT26
+\       Type: Subroutine
+\   Category: Text
+\    Summary: Fetch a line of text from the keyboard
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ If ESCAPE is pressed or a blank name is entered, then an empty string is
+\ returned.
+\
+\ Returns:
+\
+\   Y                   The size of the entered text, or 0 if none was entered
+\                       or if ESCAPE was pressed
+\
+\   INWK+5              The entered text, terminated by a carriage return
+\
+\   C flag              Set if ESCAPE was pressed
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.MT26
+
+ LDA #%10000001         \ Clear 6522 System VIA interrupt enable register IER
+ STA VIA+&4E            \ (SHEILA &4E) bit 1 (i.e. enable the CA2 interrupt,
+                        \ which comes from the keyboard)
+
+\JSR FLKB               \ Call FLKB to flush the keyboard buffer
+
+ LDX #LO(RLINE)         \ Set (Y X) to point to the RLINE parameter block
+ LDY #HI(RLINE)
+
+ LDA #0                 \ Call OSWORD with A = 0 to read a line from the current
+ JSR OSWORD             \ input stream (i.e. the keyboard)
+
+ BCC P%+4               \ The C flag will be set if we pressed ESCAPE when
+                        \ entering the name, otherwise it will be clear, so
+                        \ skip the next instruction if ESCAPE is not pressed
+
+ LDY #0                 \ ESCAPE was pressed, so set Y = 0 (as the OSWORD call
+                        \ returns the length of the entered string in Y)
+
+ LDA #%00000001         \ Set 6522 System VIA interrupt enable register IER
+ STA VIA+&4E            \ (SHEILA &4E) bit 1 (i.e. disable the CA2 interrupt,
+                        \ which comes from the keyboard)
+
+ JMP FEED               \ Jump to FEED to print a newline, returning from the
+                        \ subroutine using a tail call
+
+                        \ --- End of added code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -14491,14 +16030,29 @@ ENDIF
 
 .RLINE
 
- EQUW INWK              \ The address to store the input, so the commander's
-                        \ name will be stored in INWK as it is typed
+                        \ --- Mod: Code removed for saving and loading: ------->
 
- EQUB 7                 \ Maximum line length = 7, as that's the maximum size
-                        \ for a commander's name
+\EQUW INWK              \ The address to store the input, so the commander's
+\                       \ name will be stored in INWK as it is typed
+\
+\EQUB 7                 \ Maximum line length = 7, as that's the maximum size
+\                       \ for a commander's name
+\
+\EQUB '!'               \ Allow ASCII characters from "!" through to "z" in
+\EQUB 'z'               \ the name
 
- EQUB '!'               \ Allow ASCII characters from "!" through to "z" in
- EQUB 'z'               \ the name
+                        \ --- And replaced by: -------------------------------->
+
+ EQUW INWK+5            \ The address to store the input, so the text entered
+                        \ will be stored in INWK+5 as it is typed
+
+ EQUB 9                 \ Maximum line length = 9, as that's the maximum size
+                        \ for a commander's name including a directory name
+
+ EQUB '!'               \ Allow ASCII characters from "!" through to "{" in
+ EQUB '{'               \ the input
+
+                        \ --- End of replacement ------------------------------>
 
                         \ --- Mod: Code moved for sideways RAM: --------------->
 
@@ -15981,6 +17535,1079 @@ ENDIF
 
 \ ******************************************************************************
 \
+\       Name: MT27
+\       Type: Subroutine
+\   Category: Text
+\    Summary: Print the captain's name during mission briefings
+\  Deep dive: Extended text tokens
+\             The Constrictor mission
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine prints the following tokens, depending on the galaxy number:
+\
+\   * Token 217 ("CURRUTHERS") in galaxy 0
+\
+\   * Token 218 ("FOSDYKE SMYTHE") in galaxy 1
+\
+\   * Token 219 ("FORTESQUE") in galaxy 2
+\
+\ This is used when printing extended token 213 as part of the mission
+\ briefings, which looks like this when printed:
+\
+\   Commander {commander name}, I am Captain {mission captain's name} of Her
+\   Majesty's Space Navy
+\
+\ where {mission captain's name} is replaced by one of the names above.
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.MT27
+
+ LDA #217               \ Set A = 217, so when we fall through into MT28, the
+                        \ 217 gets added to the current galaxy number, so the
+                        \ extended token that is printed is 217-219 (as this is
+                        \ only called in galaxies 0 through 2)
+
+ EQUB &2C               \ Skip the next instruction by turning it into
+                        \ &2C &A9 &DC, or BIT &DCA9, which does nothing apart
+                        \ from affect the flags
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: MT28
+\       Type: Subroutine
+\   Category: Text
+\    Summary: Print the location hint during the mission 1 briefing
+\  Deep dive: Extended text tokens
+\             The Constrictor mission
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine prints the following tokens, depending on the galaxy number:
+\
+\   * Token 220 ("WAS LAST SEEN AT {single cap}REESDICE") in galaxy 0
+\
+\   * Token 221 ("IS BELIEVED TO HAVE JUMPED TO THIS GALAXY") in galaxy 1
+\
+\ This is used when printing extended token 10 as part of the mission 1
+\ briefing, which looks like this when printed:
+\
+\   It went missing from our ship yard on Xeer five months ago and {mission 1
+\   location hint}
+\
+\ where {mission 1 location hint} is replaced by one of the names above.
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.MT28
+
+ LDA #220               \ Set A = galaxy number in GCNT + 220, which is in the
+ CLC                    \ range 220-221, as this is only called in galaxies 0
+ ADC GCNT               \ and 1
+
+ BNE DETOK              \ Jump to DETOK to print extended token 220-221,
+                        \ returning from the subroutine using a tail call (this
+                        \ BNE is effectively a JMP as A is never zero)
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: DETOK3
+\       Type: Subroutine
+\   Category: Text
+\    Summary: Print an extended recursive token from the RUTOK token table
+\  Deep dive: Extended system descriptions
+\             Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   The recursive token to be printed, in the range 0-255
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   A                   A is preserved
+\
+\   Y                   Y is preserved
+\
+\   V(1 0)              V(1 0) is preserved
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.DETOK3
+
+ PHA                    \ Store A on the stack, so we can retrieve it later
+
+ TAX                    \ Copy the token number from A into X
+
+ TYA                    \ Store Y on the stack
+ PHA
+
+ LDA V                  \ Store V(1 0) on the stack
+ PHA
+ LDA V+1
+ PHA
+
+ LDA #LO(RUTOK)         \ Set V to the low byte of RUTOK
+ STA V
+
+ LDA #HI(RUTOK)         \ Set A to the high byte of RUTOK
+
+ BNE DTEN               \ Call DTEN to print token number X from the RUTOK
+                        \ table and restore the values of A, Y and V(1 0) from
+                        \ the stack, returning from the subroutine using a tail
+                        \ call (this BNE is effectively a JMP as A is never
+                        \ zero)
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: DETOK
+\       Type: Subroutine
+\   Category: Text
+\    Summary: Print an extended recursive token from the TKN1 token table
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   The recursive token to be printed, in the range 1-255
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   A                   A is preserved
+\
+\   Y                   Y is preserved
+\
+\   V(1 0)              V(1 0) is preserved
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   DTEN                Print recursive token number X from the token table
+\                       pointed to by (A V), used to print tokens from the RUTOK
+\                       table via calls to DETOK3
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.DETOK
+
+ PHA                    \ Store A on the stack, so we can retrieve it later
+
+ TAX                    \ Copy the token number from A into X
+
+ TYA                    \ Store Y on the stack
+ PHA
+
+ LDA V                  \ Store V(1 0) on the stack
+ PHA
+ LDA V+1
+ PHA
+
+ LDA #LO(TKN1)          \ Set V to the low byte of TKN1
+ STA V
+
+ LDA #HI(TKN1)          \ Set A to the high byte of TKN1, so when we fall
+                        \ through into DTEN, V(1 0) gets set to the address of
+                        \ the TKN1 token table
+
+.DTEN
+
+ STA V+1                \ Set the high byte of V(1 0) to A, so V(1 0) now points
+                        \ to the start of the token table to use
+
+ LDY #0                 \ First, we need to work our way through the table until
+                        \ we get to the token that we want to print. Tokens are
+                        \ delimited by #VE, and VE EOR VE = 0, so we work our
+                        \ way through the table in, counting #VE delimiters
+                        \ until we have passed X of them, at which point we jump
+                        \ down to DTL2 to do the actual printing. So first, we
+                        \ set a counter Y to point to the character offset as we
+                        \ scan through the table
+
+.DTL1
+
+ LDA (V),Y              \ Load the character at offset Y in the token table,
+                        \ which is the next character from the token table
+
+ EOR #VE                \ Tokens are stored in memory having been EOR'd with
+                        \ #VE, so we repeat the EOR to get the actual character
+                        \ in this token
+
+ BNE DT1                \ If the result is non-zero, then this is a character
+                        \ in a token rather than the delimiter (which is #VE),
+                        \ so jump to DT1
+
+ DEX                    \ We have just scanned the end of a token, so decrement
+                        \ X, which contains the token number we are looking for
+
+ BEQ DTL2               \ If X has now reached zero then we have found the token
+                        \ we are looking for, so jump down to DTL2 to print it
+
+.DT1
+
+ INY                    \ Otherwise this isn't the token we are looking for, so
+                        \ increment the character pointer
+
+ BNE DTL1               \ If Y hasn't just wrapped around to 0, loop back to
+                        \ DTL1 to process the next character
+
+ INC V+1                \ We have just crossed into a new page, so increment
+                        \ V+1 so that V points to the start of the new page
+
+ BNE DTL1               \ Jump back to DTL1 to process the next character (this
+                        \ BNE is effectively a JMP as V+1 won't reach zero
+                        \ before we reach the end of the token table)
+
+.DTL2
+
+ INY                    \ We just detected the delimiter byte before the token
+                        \ that we want to print, so increment the character
+                        \ pointer to point to the first character of the token,
+                        \ rather than the delimiter
+
+ BNE P%+4               \ If Y hasn't just wrapped around to 0, skip the next
+                        \ instruction
+
+ INC V+1                \ We have just crossed into a new page, so increment
+                        \ V+1 so that V points to the start of the new page
+
+ LDA (V),Y              \ Load the character at offset Y in the token table,
+                        \ which is the next character from the token we want to
+                        \ print
+
+ EOR #VE                \ Tokens are stored in memory having been EOR'd with
+                        \ #VE, so we repeat the EOR to get the actual character
+                        \ in this token
+
+ BEQ DTEX               \ If the result is zero, then this is the delimiter at
+                        \ the end of the token to print (which is #VE), so jump
+                        \ to DTEX to return from the subroutine, as we are done
+                        \ printing
+
+ JSR DETOK2             \ Otherwise call DETOK2 to print this part of the token
+
+ JMP DTL2               \ Jump back to DTL2 to process the next character
+
+.DTEX
+
+ PLA                    \ Restore V(1 0) from the stack, so it is preserved
+ STA V+1                \ through calls to this routine
+ PLA
+ STA V
+
+ PLA                    \ Restore Y from the stack, so it is preserved through
+ TAY                    \ calls to this routine
+
+ PLA                    \ Restore A from the stack, so it is preserved through
+                        \ calls to this routine
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: DETOK2
+\       Type: Subroutine
+\   Category: Text
+\    Summary: Print an extended text token (1-255)
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   The token to be printed (1-255)
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   A                   A is preserved
+\
+\   Y                   Y is preserved
+\
+\   V(1 0)              V(1 0) is preserved
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   DTS                 Print a single letter in the correct case
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.DETOK2
+
+ CMP #32                \ If A < 32 then this is a jump token, so skip to DT3 to
+ BCC DT3                \ process it
+
+ BIT DTW3               \ If bit 7 of DTW3 is clear, then extended tokens are
+ BPL DT8                \ enabled, so jump to DT8 to process them
+
+                        \ If we get there then this is not a jump token and
+                        \ extended tokens are not enabled, so we can call the
+                        \ standard text token routine at TT27 to print the token
+
+ TAX                    \ Copy the token number from A into X
+
+ TYA                    \ Store Y on the stack
+ PHA
+
+ LDA V                  \ Store V(1 0) on the stack
+ PHA
+ LDA V+1
+ PHA
+
+ TXA                    \ Copy the token number from X back into A
+
+ JSR TT27               \ Call TT27 to print the text token
+
+ JMP DT7                \ Jump to DT7 to restore V(1 0) and Y from the stack and
+                        \ return from the subroutine
+
+.DT8
+
+                        \ If we get here then this is not a jump token and
+                        \ extended tokens are enabled
+
+ CMP #'['               \ If A < ASCII "[" (i.e. A <= ASCII "Z", or 90) then
+ BCC DTS                \ this is a printable ASCII character, so jump down to
+                        \ DTS to print it
+
+ CMP #129               \ If A < 129, so A is in the range 91-128, jump down to
+ BCC DT6                \ DT6 to print a randomised token from the MTIN table
+
+ CMP #215               \ If A < 215, so A is in the range 129-214, jump to
+ BCC DETOK              \ DETOK as this is a recursive token, returning from the
+                        \ subroutine using a tail call
+
+                        \ If we get here then A >= 215, so this is a two-letter
+                        \ token from the extended TKN2/QQ16 table
+
+ SBC #215               \ Subtract 215 to get a token number in the range 0-12
+                        \ (the C flag is set as we passed through the BCC above,
+                        \ so this subtraction is correct)
+
+ ASL A                  \ Set A = A * 2, so it can be used as a pointer into the
+                        \ two-letter token tables at TKN2 and QQ16
+
+ PHA                    \ Store A on the stack, so we can restore it for the
+                        \ second letter below
+
+ TAX                    \ Fetch the first letter of the two-letter token from
+ LDA TKN2,X             \ TKN2, which is at TKN2 + X
+
+ JSR DTS                \ Call DTS to print it
+
+ PLA                    \ Restore A from the stack and transfer it into X
+ TAX
+
+ LDA TKN2+1,X           \ Fetch the second letter of the two-letter token from
+                        \ TKN2, which is at TKN2 + X + 1, and fall through into
+                        \ DTS to print it
+
+.DTS
+
+ CMP #'A'               \ If A < ASCII "A", jump to DT9 to print this as ASCII
+ BCC DT9
+
+ BIT DTW6               \ If bit 7 of DTW6 is set, then lower case has been
+ BMI DT10               \ enabled by jump token 13, {lower case}, so jump to
+                        \ DT10 to apply the lower case and single cap masks
+
+ BIT DTW2               \ If bit 7 of DTW2 is set, then we are not currently
+ BMI DT5                \ printing a word, so jump to DT5 so we skip the setting
+                        \ of lower case in Sentence Case (which we only want to
+                        \ do when we are already printing a word)
+
+.DT10
+
+ ORA DTW1               \ Convert the character to lower case if DTW1 is
+                        \ %00100000 (i.e. if we are in {sentence case} mode)
+
+.DT5
+
+ AND DTW8               \ Convert the character to upper case if DTW8 is
+                        \ %11011111 (i.e. after a {single cap} token)
+
+.DT9
+
+ JMP DASC               \ Jump to DASC to print the ASCII character in A,
+                        \ returning from the routine using a tail call
+
+.DT3
+
+                        \ If we get here then the token number in A is in the
+                        \ range 1 to 32, so this is a jump token that should
+                        \ call the corresponding address in the jump table at
+                        \ JMTB
+
+ TAX                    \ Copy the token number from A into X
+
+ TYA                    \ Store Y on the stack
+ PHA
+
+ LDA V                  \ Store V(1 0) on the stack
+ PHA
+ LDA V+1
+ PHA
+
+ TXA                    \ Copy the token number from X back into A
+
+ ASL A                  \ Set A = A * 2, so it can be used as a pointer into the
+                        \ jump table at JMTB, though because the original range
+                        \ of values is 1-32, so the doubled range is 2-64, we
+                        \ need to take the offset into the jump table from
+                        \ JMTB-2 rather than JMTB
+
+ TAX                    \ Copy the doubled token number from A into X
+
+ LDA JMTB-2,X           \ Set DTM(2 1) to the X-th address from the table at
+ STA DTM+1              \ JTM-2, which modifies the JSR DASC instruction at
+ LDA JMTB-1,X           \ label DTM below so that it calls the subroutine at the
+ STA DTM+2              \ relevant address from the JMTB table
+
+ TXA                    \ Copy the doubled token number from X back into A
+
+ LSR A                  \ Halve A to get the original token number
+
+.DTM
+
+ JSR DASC               \ Call the relevant JMTB subroutine, as this instruction
+                        \ will have been modified by the above to point to the
+                        \ relevant address
+
+.DT7
+
+ PLA                    \ Restore V(1 0) from the stack, so it is preserved
+ STA V+1                \ through calls to this routine
+ PLA
+ STA V
+
+ PLA                    \ Restore Y from the stack, so it is preserved through
+ TAY                    \ calls to this routine
+
+ RTS                    \ Return from the subroutine
+
+.DT6
+
+                        \ If we get here then the token number in A is in the
+                        \ range 91-128, which means we print a randomly picked
+                        \ token from the token range given in the corresponding
+                        \ entry in the MTIN table
+
+ STA SC                 \ Store the token number in SC
+
+ TYA                    \ Store Y on the stack
+ PHA
+
+ LDA V                  \ Store V(1 0) on the stack
+ PHA
+ LDA V+1
+ PHA
+
+ JSR DORND              \ Set X to a random number
+ TAX
+
+ LDA #0                 \ Set A to 0, so we can build a random number from 0 to
+                        \ 4 in A plus the C flag, with each number being equally
+                        \ likely
+
+ CPX #51                \ Add 1 to A if X >= 51
+ ADC #0
+
+ CPX #102               \ Add 1 to A if X >= 102
+ ADC #0
+
+ CPX #153               \ Add 1 to A if X >= 153
+ ADC #0
+
+ CPX #204               \ Set the C flag if X >= 204
+
+ LDX SC                 \ Fetch the token number from SC into X, so X is now in
+                        \ the range 91-128
+
+ ADC MTIN-91,X          \ Set A = MTIN-91 + token number (91-128) + random (0-4)
+                        \       = MTIN + token number (0-37) + random (0-4)
+
+ JSR DETOK              \ Call DETOK to print the extended recursive token in A
+
+ JMP DT7                \ Jump to DT7 to restore V(1 0) and Y from the stack and
+                        \ return from the subroutine using a tail call
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: MT1
+\       Type: Subroutine
+\   Category: Text
+\    Summary: Switch to ALL CAPS when printing extended tokens
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine sets the following:
+\
+\   * DTW1 = %00000000 (do not change case to lower case)
+\
+\   * DTW6 = %00000000 (lower case is not enabled)
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.MT1
+
+ LDA #%00000000         \ Set A = %00000000, so when we fall through into MT2,
+                        \ both DTW1 and DTW6 get set to %00000000
+
+ EQUB &2C               \ Skip the next instruction by turning it into
+                        \ &2C &A9 &20, or BIT &20A9, which does nothing apart
+                        \ from affect the flags
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: MT2
+\       Type: Subroutine
+\   Category: Text
+\    Summary: Switch to Sentence Case when printing extended tokens
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine sets the following:
+\
+\   * DTW1 = %00100000 (apply lower case to the second letter of a word onwards)
+\
+\   * DTW6 = %00000000 (lower case is not enabled)
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.MT2
+
+ LDA #%00100000         \ Set DTW1 = %00100000
+ STA DTW1
+
+ LDA #00000000          \ Set DTW6 = %00000000
+ STA DTW6
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: MT8
+\       Type: Subroutine
+\   Category: Text
+\    Summary: Tab to column 6 and start a new word when printing extended tokens
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine sets the following:
+\
+\   * XC = 6 (tab to column 6)
+\
+\   * DTW2 = %11111111 (we are not currently printing a word)
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.MT8
+
+ LDA #6                 \ Move the text cursor to column 6
+ STA XC
+
+ LDA #%11111111         \ Set all the bits in DTW2
+ STA DTW2
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: MT9
+\       Type: Subroutine
+\   Category: Text
+\    Summary: Clear the screen and set the current view type to 1
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine sets the following:
+\
+\   * XC = 1 (tab to column 1)
+\
+\ before calling TT66 to clear the screen and set the view type to 1.
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.MT9
+
+ LDA #1                 \ Move the text cursor to column 1
+ STA XC
+
+ JMP TT66               \ Jump to TT66 to clear the screen and set the current
+                        \ view type to 1, returning from the subroutine using a
+                        \ tail call
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: MT13
+\       Type: Subroutine
+\   Category: Text
+\    Summary: Switch to lower case when printing extended tokens
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine sets the following:
+\
+\   * DTW1 = %00100000 (apply lower case to the second letter of a word onwards)
+\
+\   * DTW6 = %10000000 (lower case is enabled)
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.MT13
+
+ LDA #%10000000         \ Set DTW6 = %10000000
+ STA DTW6
+
+ LDA #%00100000         \ Set DTW1 = %00100000
+ STA DTW1
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: MT6
+\       Type: Subroutine
+\   Category: Text
+\    Summary: Switch to standard tokens in Sentence Case
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine sets the following:
+\
+\   * QQ17 = %10000000 (set Sentence Case for standard tokens)
+\
+\   * DTW3 = %11111111 (print standard tokens)
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.MT6
+
+ LDA #%10000000         \ Set bit 7 of QQ17 to switch standard tokens to
+ STA QQ17               \ Sentence Case
+
+ LDA #%11111111         \ Set A = %11111111, so when we fall through into MT5,
+                        \ DTW3 gets set to %11111111 and calls to DETOK print
+                        \ standard tokens
+
+ EQUB &2C               \ Skip the next instruction by turning it into
+                        \ &2C &A9 &00, or BIT &00A9, which does nothing apart
+                        \ from affect the flags
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: MT5
+\       Type: Subroutine
+\   Category: Text
+\    Summary: Switch to extended tokens
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine sets the following:
+\
+\   * DTW3 = %00000000 (print extended tokens)
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.MT5
+
+ LDA #%00000000         \ Set DTW3 = %00000000, so that calls to DETOK print
+ STA DTW3               \ extended tokens
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: MT14
+\       Type: Subroutine
+\   Category: Text
+\    Summary: Switch to justified text when printing extended tokens
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine sets the following:
+\
+\   * DTW4 = %10000000 (justify text, print buffer on carriage return)
+\
+\   * DTW5 = 0 (reset line buffer size)
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.MT14
+
+ LDA #%10000000         \ Set A = %10000000, so when we fall through into MT15,
+                        \ DTW4 gets set to %10000000
+
+ EQUB &2C               \ Skip the next instruction by turning it into
+                        \ &2C &A9 &00, or BIT &00A9, which does nothing apart
+                        \ from affect the flags
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: MT15
+\       Type: Subroutine
+\   Category: Text
+\    Summary: Switch to left-aligned text when printing extended tokens
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine sets the following:
+\
+\   * DTW4 = %00000000 (do not justify text, print buffer on carriage return)
+\
+\   * DTW5 = 0 (reset line buffer size)
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.MT15
+
+ LDA #0                 \ Set DTW4 = %00000000
+ STA DTW4
+
+ ASL A                  \ Set DTW5 = 0 (even when we fall through from MT14 with
+ STA DTW5               \ A set to %10000000)
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: MT17
+\       Type: Subroutine
+\   Category: Text
+\    Summary: Print the selected system's adjective, e.g. Lavian for Lave
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ The adjective for the current system is generated by taking the system name,
+\ removing the last character if it is a vowel, and adding "-ian" to the end,
+\ so:
+\
+\   * Lave gives Lavian (as in "Lavian tree grub")
+\
+\   * Leesti gives Leestian (as in "Leestian Evil Juice")
+\
+\ This routine is called by jump token 17, {system name adjective}, and it can
+\ only be used when justified text is being printed - i.e. following jump token
+\ 14, {justify} - because the routine needs to use the line buffer to work.
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.MT17
+
+ LDA QQ17               \ Set QQ17 = %10111111 to switch to Sentence Case
+ AND #%10111111
+ STA QQ17
+
+ LDA #3                 \ Print control code 3 (selected system name) into the
+ JSR TT27               \ line buffer
+
+ LDX DTW5               \ Load the last character of the line buffer BUF into A
+ LDA BUF-1,X            \ (as DTW5 contains the buffer size, so character DTW5-1
+                        \ is the last character in the buffer BUF)
+
+ JSR VOWEL              \ Test whether the character is a vowel, in which case
+                        \ this will set the C flag
+
+ BCC MT171              \ If the character is not a vowel, skip the following
+                        \ instruction
+
+ DEC DTW5               \ The character is a vowel, so decrement DTW5, which
+                        \ removes the last character from the line buffer (i.e.
+                        \ it removes the trailing vowel from the system name)
+
+.MT171
+
+ LDA #153               \ Print extended token 153 ("IAN"), returning from the
+ JMP DETOK              \ subroutine using a tail call
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: MT18
+\       Type: Subroutine
+\   Category: Text
+\    Summary: Print a random 1-8 letter word in Sentence Case
+\  Deep dive: Extended text tokens
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.MT18
+
+ JSR MT19               \ Call MT19 to capitalise the next letter (i.e. set
+                        \ Sentence Case for this word only)
+
+ JSR DORND              \ Set A and X to random numbers and reduce A to a
+ AND #3                 \ random number in the range 0-3
+
+ TAY                    \ Copy the random number into Y, so we can use Y as a
+                        \ loop counter to print 1-4 words (i.e. Y+1 words)
+
+.MT18L
+
+ JSR DORND              \ Set A and X to random numbers and reduce A to an even
+ AND #62                \ random number in the range 0-62 (as bit 0 of 62 is 0)
+
+ TAX                    \ Copy the random number into X, so X contains the table
+                        \ offset of a random extended two-letter token from 0-31
+                        \ which we can now use to pick a token from the combined
+                        \ tables at TKN2+2 and QQ16 (we intentionally exclude
+                        \ the first token in TKN2, which contains a newline)
+
+ LDA TKN2+2,X           \ Print the first letter of the token at TKN2+2 + X
+ JSR DTS
+
+ LDA TKN2+3,X           \ Print the second letter of the token at TKN2+2 + X
+ JSR DTS
+
+ DEY                    \ Decrement the loop counter
+
+ BPL MT18L              \ Loop back to MT18L to print another two-letter token
+                        \ until we have printed Y+1 of them
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: MT19
+\       Type: Subroutine
+\   Category: Text
+\    Summary: Capitalise the next letter
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine sets the following:
+\
+\   * DTW8 = %11011111 (capitalise the next letter)
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.MT19
+
+ LDA #%11011111         \ Set DTW8 = %11011111
+ STA DTW8
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: VOWEL
+\       Type: Subroutine
+\   Category: Text
+\    Summary: Test whether a character is a vowel
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   The character to be tested
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   C flag              The C flag is set if the character is a vowel, otherwise
+\                       it is clear
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.VOWEL
+
+ ORA #%00100000         \ Set bit 5 of the character to make it lower case
+
+ CMP #'a'               \ If the letter is a vowel, jump to VRTS to return from
+ BEQ VRTS               \ the subroutine with the C flag set (as the CMP will
+ CMP #'e'               \ set the C flag if the comparison is equal)
+ BEQ VRTS
+ CMP #'i'
+ BEQ VRTS
+ CMP #'o'
+ BEQ VRTS
+ CMP #'u'
+ BEQ VRTS
+
+ CLC                    \ The character is not a vowel, so clear the C flag
+
+.VRTS
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: JMTB
+\       Type: Variable
+\   Category: Text
+\    Summary: The extended token table for jump tokens 1-32 (DETOK)
+\  Deep dive: Extended text tokens
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.JMTB
+
+ EQUW MT1               \ Token  1: Switch to ALL CAPS
+ EQUW MT2               \ Token  2: Switch to Sentence Case
+ EQUW TT27              \ Token  3: Print the selected system name
+ EQUW TT27              \ Token  4: Print the commander's name
+ EQUW MT5               \ Token  5: Switch to extended tokens
+ EQUW MT6               \ Token  6: Switch to standard tokens, in Sentence Case
+ EQUW DASC              \ Token  7: Beep
+ EQUW MT8               \ Token  8: Tab to column 6
+ EQUW MT9               \ Token  9: Clear screen, tab to column 1, view type = 1
+ EQUW DASC              \ Token 10: Line feed
+ EQUW NLIN4             \ Token 11: Draw box around title (line at pixel row 19)
+ EQUW DASC              \ Token 12: Carriage return
+ EQUW MT13              \ Token 13: Switch to lower case
+ EQUW MT14              \ Token 14: Switch to justified text
+ EQUW MT15              \ Token 15: Switch to left-aligned text
+ EQUW MT16              \ Token 16: Print the character in DTW7 (drive number)
+ EQUW MT17              \ Token 17: Print system name adjective in Sentence Case
+ EQUW MT18              \ Token 18: Randomly print 1 to 4 two-letter tokens
+ EQUW MT19              \ Token 19: Capitalise first letter of next word only
+ EQUW DASC              \ Token 20: Unused
+ EQUW CLYNS             \ Token 21: Clear the bottom few lines of the space view
+ EQUW PAUSE             \ Token 22: Display ship and wait for key press
+ EQUW MT23              \ Token 23: Move to row 10, white text, set lower case
+ EQUW PAUSE2            \ Token 24: Wait for a key press
+ EQUW BRIS              \ Token 25: Show incoming message screen, wait 2 seconds
+ EQUW MT26              \ Token 26: Fetch line input from keyboard (filename)
+ EQUW MT27              \ Token 27: Print mission captain's name (217-219)
+ EQUW MT28              \ Token 28: Print mission 1 location hint (220-221)
+ EQUW MT29              \ Token 29: Column 6, white text, lower case in words
+ EQUW DASC              \ Token 30: Unused
+ EQUW DASC              \ Token 31: Unused
+ EQUW DASC              \ Token 32: Unused
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: TKN2
+\       Type: Variable
+\   Category: Text
+\    Summary: The extended two-letter token lookup table
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ Two-letter token lookup table for extended tokens 215-227.
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.TKN2
+
+ EQUB 12, 10            \ Token 215 = {crlf}
+ EQUS "AB"              \ Token 216
+ EQUS "OU"              \ Token 217
+ EQUS "SE"              \ Token 218
+ EQUS "IT"              \ Token 219
+ EQUS "IL"              \ Token 220
+ EQUS "ET"              \ Token 221
+ EQUS "ST"              \ Token 222
+ EQUS "ON"              \ Token 223
+ EQUS "LO"              \ Token 224
+ EQUS "NU"              \ Token 225
+ EQUS "TH"              \ Token 226
+ EQUS "NO"              \ Token 227
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
 \       Name: QQ16
 \       Type: Variable
 \   Category: Text
@@ -16215,6 +18842,4437 @@ ENDMACRO
                         \   * LL145 (Part 4 of 4)
 
                         \ --- End of moved code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: EJMP
+\       Type: Macro
+\   Category: Text
+\    Summary: Macro definition for jump tokens in the extended token table
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ The following macro is used when building the extended token table:
+\
+\   EJMP n              Insert a jump to address n in the JMTB table
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   n                   The jump number to insert into the table
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+MACRO EJMP n
+
+ EQUB n EOR VE
+
+ENDMACRO
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: ECHR
+\       Type: Macro
+\   Category: Text
+\    Summary: Macro definition for characters in the extended token table
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ The following macro is used when building the extended token table:
+\
+\   ECHR 'x'            Insert ASCII character "x"
+\
+\ To include an apostrophe, use a backtick character, as in ECHR '`'.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   'x'                 The character to insert into the table
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+MACRO ECHR x
+
+ IF x = '`'
+  EQUB 39 EOR VE
+ ELSE
+  EQUB x EOR VE
+ ENDIF
+
+ENDMACRO
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: ETOK
+\       Type: Macro
+\   Category: Text
+\    Summary: Macro definition for recursive tokens in the extended token table
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ The following macro is used when building the extended token table:
+\
+\   ETOK n              Insert extended recursive token [n]
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   n                   The number of the recursive token to insert into the
+\                       table, in the range 129 to 214
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+MACRO ETOK n
+
+ EQUB n EOR VE
+
+ENDMACRO
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: ETWO
+\       Type: Macro
+\   Category: Text
+\    Summary: Macro definition for two-letter tokens in the extended token table
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ The following macro is used when building the extended token table:
+\
+\   ETWO 'x', 'y'       Insert two-letter token "xy"
+\
+\ The newline token can be entered using ETWO '-', '-'.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   'x'                 The first letter of the two-letter token to insert into
+\                       the table
+\
+\   'y'                 The second letter of the two-letter token to insert into
+\                       the table
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+MACRO ETWO t, k
+
+ IF t = '-' AND k = '-'
+  EQUB 215 EOR VE
+ ENDIF
+
+ IF t = 'A' AND k = 'B'
+  EQUB 216 EOR VE
+ ENDIF
+
+ IF t = 'O' AND k = 'U'
+  EQUB 217 EOR VE
+ ENDIF
+
+ IF t = 'S' AND k = 'E'
+  EQUB 218 EOR VE
+ ENDIF
+
+ IF t = 'I' AND k = 'T'
+  EQUB 219 EOR VE
+ ENDIF
+
+ IF t = 'I' AND k = 'L'
+  EQUB 220 EOR VE
+ ENDIF
+
+ IF t = 'E' AND k = 'T'
+  EQUB 221 EOR VE
+ ENDIF
+
+ IF t = 'S' AND k = 'T'
+  EQUB 222 EOR VE
+ ENDIF
+
+ IF t = 'O' AND k = 'N'
+  EQUB 223 EOR VE
+ ENDIF
+
+ IF t = 'L' AND k = 'O'
+  EQUB 224 EOR VE
+ ENDIF
+
+ IF t = 'N' AND k = 'U'
+  EQUB 225 EOR VE
+ ENDIF
+
+ IF t = 'T' AND k = 'H'
+  EQUB 226 EOR VE
+ ENDIF
+
+ IF t = 'N' AND k = 'O'
+  EQUB 227 EOR VE
+ ENDIF
+
+ IF t = 'A' AND k = 'L'
+  EQUB 228 EOR VE
+ ENDIF
+
+ IF t = 'L' AND k = 'E'
+  EQUB 229 EOR VE
+ ENDIF
+
+ IF t = 'X' AND k = 'E'
+  EQUB 230 EOR VE
+ ENDIF
+
+ IF t = 'G' AND k = 'E'
+  EQUB 231 EOR VE
+ ENDIF
+
+ IF t = 'Z' AND k = 'A'
+  EQUB 232 EOR VE
+ ENDIF
+
+ IF t = 'C' AND k = 'E'
+  EQUB 233 EOR VE
+ ENDIF
+
+ IF t = 'B' AND k = 'I'
+  EQUB 234 EOR VE
+ ENDIF
+
+ IF t = 'S' AND k = 'O'
+  EQUB 235 EOR VE
+ ENDIF
+
+ IF t = 'U' AND k = 'S'
+  EQUB 236 EOR VE
+ ENDIF
+
+ IF t = 'E' AND k = 'S'
+  EQUB 237 EOR VE
+ ENDIF
+
+ IF t = 'A' AND k = 'R'
+  EQUB 238 EOR VE
+ ENDIF
+
+ IF t = 'M' AND k = 'A'
+  EQUB 239 EOR VE
+ ENDIF
+
+ IF t = 'I' AND k = 'N'
+  EQUB 240 EOR VE
+ ENDIF
+
+ IF t = 'D' AND k = 'I'
+  EQUB 241 EOR VE
+ ENDIF
+
+ IF t = 'R' AND k = 'E'
+  EQUB 242 EOR VE
+ ENDIF
+
+ IF t = 'A' AND k = '?'
+  EQUB 243 EOR VE
+ ENDIF
+
+ IF t = 'E' AND k = 'R'
+  EQUB 244 EOR VE
+ ENDIF
+
+ IF t = 'A' AND k = 'T'
+  EQUB 245 EOR VE
+ ENDIF
+
+ IF t = 'E' AND k = 'N'
+  EQUB 246 EOR VE
+ ENDIF
+
+ IF t = 'B' AND k = 'E'
+  EQUB 247 EOR VE
+ ENDIF
+
+ IF t = 'R' AND k = 'A'
+  EQUB 248 EOR VE
+ ENDIF
+
+ IF t = 'L' AND k = 'A'
+  EQUB 249 EOR VE
+ ENDIF
+
+ IF t = 'V' AND k = 'E'
+  EQUB 250 EOR VE
+ ENDIF
+
+ IF t = 'T' AND k = 'I'
+  EQUB 251 EOR VE
+ ENDIF
+
+ IF t = 'E' AND k = 'D'
+  EQUB 252 EOR VE
+ ENDIF
+
+ IF t = 'O' AND k = 'R'
+  EQUB 253 EOR VE
+ ENDIF
+
+ IF t = 'Q' AND k = 'U'
+  EQUB 254 EOR VE
+ ENDIF
+
+ IF t = 'A' AND k = 'N'
+  EQUB 255 EOR VE
+ ENDIF
+
+ENDMACRO
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: ERND
+\       Type: Macro
+\   Category: Text
+\    Summary: Macro definition for random tokens in the extended token table
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ The following macro is used when building the extended token table:
+\
+\   ERND n              Insert recursive token [n]
+\
+\                         * Tokens 0-123 get stored as n + 91
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   n                   The number of the random token to insert into the
+\                       table, in the range 0 to 37
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+MACRO ERND n
+
+ EQUB (n + 91) EOR VE
+
+ENDMACRO
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: TOKN
+\       Type: Macro
+\   Category: Text
+\    Summary: Macro definition for standard tokens in the extended token table
+\  Deep dive: Printing text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ The following macro is used when building the recursive token table:
+\
+\   TOKN n              Insert recursive token [n]
+\
+\                         * Tokens 0-95 get stored as n + 160
+\
+\                         * Tokens 128-145 get stored as n - 114
+\
+\                         * Tokens 96-127 get stored as n
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   n                   The number of the recursive token to insert into the
+\                       table, in the range 0 to 145
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+MACRO TOKN n
+
+ IF n >= 0 AND n <= 95
+  t = n + 160
+ ELIF n >= 128
+  t = n - 114
+ ELSE
+  t = n
+ ENDIF
+
+ EQUB t EOR VE
+
+ENDMACRO
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: TKN1
+\       Type: Variable
+\   Category: Text
+\    Summary: The first extended token table for recursive tokens 0-255 (DETOK)
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ The encodings shown for each extended text token use the following notation:
+\
+\   {n}           Jump token                n = 1 to 31
+\   [n?]          Random token              n = 91 to 128
+\   [n]           Recursive token           n = 129 to 215
+\   <n>           Two-letter token          n = 215 to 255
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.TKN1
+
+ EQUB VE                \ Token 0:      ""
+                        \
+                        \ Encoded as:   ""
+
+ EJMP 9                 \ Token 1:      "{clear screen}
+ EJMP 11                \                {draw box around title}
+ EJMP 1                 \                {all caps}
+ EJMP 8                 \                {tab 6} DISK ACCESS MENU{crlf}
+ ECHR ' '               \                {lf}
+ ETWO 'D', 'I'          \                {sentence case}
+ ECHR 'S'               \                1. LOAD NEW {single cap}COMMANDER{crlf}
+ ECHR 'K'               \                2. SAVE {single cap}COMMANDER
+ ECHR ' '               \                   {commander name}{crlf}
+ ECHR 'A'               \                3. CATALOGUE{crlf}
+ ECHR 'C'               \                4. DELETE A FILE{crlf}
+ ETWO 'C', 'E'          \                5. EXIT{crlf}
+ ECHR 'S'               \               "
+ ECHR 'S'               \
+ ECHR ' '               \ Encoded as:   "{9}{11}{1}{8} <241>SK AC<233>SS ME
+ ECHR 'M'               \                <225><215>{10}{2}1. [149]<215>2. SA
+ ECHR 'E'               \                <250> [154] {4}<215>3. C<245>A<224>GUE
+ ETWO 'N', 'U'          \                <215>4. DEL<221>E[208]FI<229><215>5. EX
+ ETWO '-', '-'          \                <219><215>"
+ EJMP 10
+ EJMP 2
+ ECHR '1'
+ ECHR '.'
+ ECHR ' '
+ ETOK 149
+ ETWO '-', '-'
+ ECHR '2'
+ ECHR '.'
+ ECHR ' '
+ ECHR 'S'
+ ECHR 'A'
+ ETWO 'V', 'E'
+ ECHR ' '
+ ETOK 154
+ ECHR ' '
+ EJMP 4
+ ETWO '-', '-'
+ ECHR '3'
+ ECHR '.'
+ ECHR ' '
+ ECHR 'C'
+ ETWO 'A', 'T'
+ ECHR 'A'
+ ETWO 'L', 'O'
+ ECHR 'G'
+ ECHR 'U'
+ ECHR 'E'
+ ETWO '-', '-'
+ ECHR '4'
+ ECHR '.'
+ ECHR ' '
+ ECHR 'D'
+ ECHR 'E'
+ ECHR 'L'
+ ETWO 'E', 'T'
+ ECHR 'E'
+ ETOK 208
+ ECHR 'F'
+ ECHR 'I'
+ ETWO 'L', 'E'
+ ETWO '-', '-'
+ ECHR '5'
+ ECHR '.'
+ ECHR ' '
+ ECHR 'E'
+ ECHR 'X'
+ ETWO 'I', 'T'
+ ETWO '-', '-'
+ EQUB VE
+
+ EJMP 12                \ Token 2:      "{cr}
+ ECHR 'W'               \                WHICH DRIVE?"
+ ECHR 'H'               \
+ ECHR 'I'               \ Encoded as:   "{12}WHICH [151]?"
+ ECHR 'C'
+ ECHR 'H'
+ ECHR ' '
+ ETOK 151
+ ECHR '?'
+ EQUB VE
+
+ ECHR 'C'               \ Token 3:      "COMPETITION NUMBER:"
+ ECHR 'O'               \
+ ECHR 'M'               \ Encoded as:   "COMPE<251><251><223> <225>MB<244>:"
+ ECHR 'P'
+ ECHR 'E'
+ ETWO 'T', 'I'
+ ETWO 'T', 'I'
+ ETWO 'O', 'N'
+ ECHR ' '
+ ETWO 'N', 'U'
+ ECHR 'M'
+ ECHR 'B'
+ ETWO 'E', 'R'
+ ECHR ':'
+ EQUB VE
+
+ ETOK 150               \ Token 4:      "{clear screen}
+ ETOK 151               \                {draw box around title}
+ ECHR ' '               \                {all caps}
+ EJMP 16                \                {tab 6}DRIVE {drive number} CATALOGUE
+ ETOK 152               \                {crlf}
+ ETWO '-', '-'          \               "
+ EQUB VE                \
+                        \ Encoded as:   "[150][151] {16}[152]<215>"
+
+ ETOK 176               \ Token 5:      "{lower case}
+ ERND 18                \                {justify}
+ ETOK 202               \                {single cap}[86-90] IS [140-144].{cr}
+ ERND 19                \                {left align}"
+ ETOK 177               \
+ EQUB VE                \ Encoded as:   "[176][18?][202][19?][177]"
+
+ ECHR ' '               \ Token 6:      "  LOAD NEW {single cap}COMMANDER {all
+ ECHR ' '               \                caps}(Y/N)?{sentence case}{cr}{cr}"
+ ETOK 149               \
+ ECHR ' '               \ Encoded as:   "  [149] {1}(Y/N)?{2}{12}{12}"
+ EJMP 1
+ ECHR '('
+ ECHR 'Y'
+ ECHR '/'
+ ECHR 'N'
+ ECHR ')'
+ ECHR '?'
+ EJMP 2
+ EJMP 12
+ EJMP 12
+ EQUB VE
+
+ ECHR 'P'               \ Token 7:      "PRESS SPACE OR FIRE,{single cap}
+ ETWO 'R', 'E'          \                COMMANDER.{cr}{cr}"
+ ECHR 'S'               \
+ ECHR 'S'               \ Encoded as:   "P<242>SS SPA<233> <253> FI<242>,[154].
+ ECHR ' '               \                {12}{12}"
+ ECHR 'S'
+ ECHR 'P'
+ ECHR 'A'
+ ETWO 'C', 'E'
+ ECHR ' '
+ ETWO 'O', 'R'
+ ECHR ' '
+ ECHR 'F'
+ ECHR 'I'
+ ETWO 'R', 'E'
+ ECHR ','
+ ETOK 154
+ ECHR '.'
+ EJMP 12
+ EJMP 12
+ EQUB VE
+
+ ETOK 154               \ Token 8:      "{single cap}COMMANDER'S NAME? "
+ ECHR '`'               \
+ ECHR 'S'               \ Encoded as:   "[154]'S[200]"
+ ETOK 200
+ EQUB VE
+
+ EJMP 21                \ Token 9:      "{clear bottom of screen}
+ ECHR 'F'               \                FILE TO DELETE?"
+ ECHR 'I'               \
+ ETWO 'L', 'E'          \ Encoded as:   "{21}FI<229>[201]DEL<221>E?"
+ ETOK 201
+ ECHR 'D'
+ ECHR 'E'
+ ECHR 'L'
+ ETWO 'E', 'T'
+ ECHR 'E'
+ ECHR '?'
+ EQUB VE
+
+ EJMP 23                \ Token 10:     "{move to row 10, white, lower case}
+ EJMP 14                \                {justify}
+ EJMP 2                 \                {sentence case}
+ ECHR 'G'               \                GREETINGS {single cap}COMMANDER
+ ETWO 'R', 'E'          \                {commander name}, I {lower case}AM
+ ETWO 'E', 'T'          \                {sentence case} CAPTAIN {mission
+ ETWO 'I', 'N'          \                captain's name} {lower case}OF{sentence
+ ECHR 'G'               \                case} HER MAJESTY'S SPACE NAVY{lower
+ ECHR 'S'               \                case} AND {single cap}I BEG A MOMENT OF
+ ETOK 213               \                YOUR VALUABLE TIME.{cr}
+ ETOK 178               \                 {single cap}WE WOULD LIKE YOU TO DO A
+ EJMP 19                \                LITTLE JOB FOR US.{cr}
+ ECHR 'I'               \                 {single cap}THE SHIP YOU SEE HERE IS A
+ ECHR ' '               \                NEW MODEL, THE {single cap}CONSTRICTOR,
+ ETWO 'B', 'E'          \                EQUIPED WITH A TOP SECRET NEW SHIELD
+ ECHR 'G'               \                GENERATOR.{cr}
+ ETOK 208               \                 {single cap}UNFORTUNATELY IT'S BEEN
+ ECHR 'M'               \                STOLEN.{cr}
+ ECHR 'O'               \                 {single cap}{display ship, wait for
+ ECHR 'M'               \                key press}IT WENT MISSING FROM OUR SHIP
+ ETWO 'E', 'N'          \                YARD ON {single cap}XEER FIVE MONTHS
+ ECHR 'T'               \                AGO AND {mission 1 location hint}.{cr}
+ ECHR ' '               \                 {single cap}YOUR MISSION, SHOULD YOU
+ ECHR 'O'               \                DECIDE TO ACCEPT IT, IS TO SEEK AND
+ ECHR 'F'               \                DESTROY THIS SHIP.{cr}
+ ECHR ' '               \                 {single cap}YOU ARE CAUTIONED THAT
+ ETOK 179               \                ONLY {standard tokens, sentence case}
+ ECHR 'R'               \                MILITARY  LASERS{extended tokens} WILL
+ ECHR ' '               \                PENETRATE THE NEW SHIELDS AND THAT THE
+ ECHR 'V'               \                {single cap}CONSTRICTOR IS FITTED WITH
+ ETWO 'A', 'L'          \                AN {standard tokens, sentence case}
+ ECHR 'U'               \                E.C.M.SYSTEM{extended tokens}.{cr}
+ ETWO 'A', 'B'          \                 {left align}{sentence case}{tab 6}GOOD
+ ETWO 'L', 'E'          \                LUCK, {single cap}COMMANDER.{cr}
+ ECHR ' '               \                 {left align}{tab 6}{all caps}  MESSAGE
+ ETWO 'T', 'I'          \                ENDS{display ship, wait for key press}"
+ ECHR 'M'               \
+ ECHR 'E'               \ Encoded as:   "{23}{14}{2}G<242><221><240>GS[213][178]
+ ETOK 204               \                {19}I <247>G[208]MOM<246>T OF [179]R V
+ ECHR 'W'               \                <228>U<216><229> <251>ME[204]WE W<217>
+ ECHR 'E'               \                LD LIKE [179][201]DO[208]L<219>T<229>
+ ECHR ' '               \                 JOB F<253> <236>[204][147][207] [179]
+ ECHR 'W'               \                 <218>E HE<242>[202]A[210]MODEL, [147]
+ ETWO 'O', 'U'          \                {19}C<223><222>RICT<253>, E<254>IP[196]
+ ECHR 'L'               \                WI<226>[208]TOP <218>CR<221>[210]SHIELD
+ ECHR 'D'               \                 G<246><244><245><253>[204]UNF<253>TUN
+ ECHR ' '               \                <245>ELY <219>'S <247><246> <222>OL
+ ECHR 'L'               \                <246>[204]{22}<219> W<246>T MISS[195]
+ ECHR 'I'               \                FROM <217>R [207] Y<238>D <223> {19}
+ ECHR 'K'               \                <230><244> FI<250> M<223><226>S AGO
+ ECHR 'E'               \                [178]{28}[204][179]R MISSI<223>, SH
+ ECHR ' '               \                <217>LD [179] DECIDE[201]AC<233>PT
+ ETOK 179               \                 <219>, IS[201]<218>EK[178]D<237>TROY
+ ETOK 201               \                 [148][207][204][179] A<242> CAU<251>
+ ECHR 'D'               \                <223>[196]<226><245> <223>LY {6}[116]
+ ECHR 'O'               \                {5}S W<220>L P<246><221><248>TE [147]
+ ETOK 208               \                NEW SHIELDS[178]<226><245> [147]{19}
+ ECHR 'L'               \                C<223><222>RICT<253>[202]F<219>T[196]WI
+ ETWO 'I', 'T'          \                <226> <255> {6}[108]{5}[177]{2}{8}GOOD
+ ECHR 'T'               \                 LUCK, [154][212]{22}"
+ ETWO 'L', 'E'
+ ECHR ' '
+ ECHR 'J'
+ ECHR 'O'
+ ECHR 'B'
+ ECHR ' '
+ ECHR 'F'
+ ETWO 'O', 'R'
+ ECHR ' '
+ ETWO 'U', 'S'
+ ETOK 204
+ ETOK 147
+ ETOK 207
+ ECHR ' '
+ ETOK 179
+ ECHR ' '
+ ETWO 'S', 'E'
+ ECHR 'E'
+ ECHR ' '
+ ECHR 'H'
+ ECHR 'E'
+ ETWO 'R', 'E'
+ ETOK 202
+ ECHR 'A'
+ ETOK 210
+ ECHR 'M'
+ ECHR 'O'
+ ECHR 'D'
+ ECHR 'E'
+ ECHR 'L'
+ ECHR ','
+ ECHR ' '
+ ETOK 147
+ EJMP 19
+ ECHR 'C'
+ ETWO 'O', 'N'
+ ETWO 'S', 'T'
+ ECHR 'R'
+ ECHR 'I'
+ ECHR 'C'
+ ECHR 'T'
+ ETWO 'O', 'R'
+ ECHR ','
+ ECHR ' '
+ ECHR 'E'
+ ETWO 'Q', 'U'
+ ECHR 'I'
+ ECHR 'P'
+ ETOK 196
+ ECHR 'W'
+ ECHR 'I'
+ ETWO 'T', 'H'
+ ETOK 208
+ ECHR 'T'
+ ECHR 'O'
+ ECHR 'P'
+ ECHR ' '
+ ETWO 'S', 'E'
+ ECHR 'C'
+ ECHR 'R'
+ ETWO 'E', 'T'
+ ETOK 210
+ ECHR 'S'
+ ECHR 'H'
+ ECHR 'I'
+ ECHR 'E'
+ ECHR 'L'
+ ECHR 'D'
+ ECHR ' '
+ ECHR 'G'
+ ETWO 'E', 'N'
+ ETWO 'E', 'R'
+ ETWO 'A', 'T'
+ ETWO 'O', 'R'
+ ETOK 204
+ ECHR 'U'
+ ECHR 'N'
+ ECHR 'F'
+ ETWO 'O', 'R'
+ ECHR 'T'
+ ECHR 'U'
+ ECHR 'N'
+ ETWO 'A', 'T'
+ ECHR 'E'
+ ECHR 'L'
+ ECHR 'Y'
+ ECHR ' '
+ ETWO 'I', 'T'
+ ECHR '`'
+ ECHR 'S'
+ ECHR ' '
+ ETWO 'B', 'E'
+ ETWO 'E', 'N'
+ ECHR ' '
+ ETWO 'S', 'T'
+ ECHR 'O'
+ ECHR 'L'
+ ETWO 'E', 'N'
+ ETOK 204
+ EJMP 22
+ ETWO 'I', 'T'
+ ECHR ' '
+ ECHR 'W'
+ ETWO 'E', 'N'
+ ECHR 'T'
+ ECHR ' '
+ ECHR 'M'
+ ECHR 'I'
+ ECHR 'S'
+ ECHR 'S'
+ ETOK 195
+ ECHR 'F'
+ ECHR 'R'
+ ECHR 'O'
+ ECHR 'M'
+ ECHR ' '
+ ETWO 'O', 'U'
+ ECHR 'R'
+ ECHR ' '
+ ETOK 207
+ ECHR ' '
+ ECHR 'Y'
+ ETWO 'A', 'R'
+ ECHR 'D'
+ ECHR ' '
+ ETWO 'O', 'N'
+ ECHR ' '
+ EJMP 19
+ ETWO 'X', 'E'
+ ETWO 'E', 'R'
+ ECHR ' '
+ ECHR 'F'
+ ECHR 'I'
+ ETWO 'V', 'E'
+ ECHR ' '
+ ECHR 'M'
+ ETWO 'O', 'N'
+ ETWO 'T', 'H'
+ ECHR 'S'
+ ECHR ' '
+ ECHR 'A'
+ ECHR 'G'
+ ECHR 'O'
+ ETOK 178
+ EJMP 28
+ ETOK 204
+ ETOK 179
+ ECHR 'R'
+ ECHR ' '
+ ECHR 'M'
+ ECHR 'I'
+ ECHR 'S'
+ ECHR 'S'
+ ECHR 'I'
+ ETWO 'O', 'N'
+ ECHR ','
+ ECHR ' '
+ ECHR 'S'
+ ECHR 'H'
+ ETWO 'O', 'U'
+ ECHR 'L'
+ ECHR 'D'
+ ECHR ' '
+ ETOK 179
+ ECHR ' '
+ ECHR 'D'
+ ECHR 'E'
+ ECHR 'C'
+ ECHR 'I'
+ ECHR 'D'
+ ECHR 'E'
+ ETOK 201
+ ECHR 'A'
+ ECHR 'C'
+ ETWO 'C', 'E'
+ ECHR 'P'
+ ECHR 'T'
+ ECHR ' '
+ ETWO 'I', 'T'
+ ECHR ','
+ ECHR ' '
+ ECHR 'I'
+ ECHR 'S'
+ ETOK 201
+ ETWO 'S', 'E'
+ ECHR 'E'
+ ECHR 'K'
+ ETOK 178
+ ECHR 'D'
+ ETWO 'E', 'S'
+ ECHR 'T'
+ ECHR 'R'
+ ECHR 'O'
+ ECHR 'Y'
+ ECHR ' '
+ ETOK 148
+ ETOK 207
+ ETOK 204
+ ETOK 179
+ ECHR ' '
+ ECHR 'A'
+ ETWO 'R', 'E'
+ ECHR ' '
+ ECHR 'C'
+ ECHR 'A'
+ ECHR 'U'
+ ETWO 'T', 'I'
+ ETWO 'O', 'N'
+ ETOK 196
+ ETWO 'T', 'H'
+ ETWO 'A', 'T'
+ ECHR ' '
+ ETWO 'O', 'N'
+ ECHR 'L'
+ ECHR 'Y'
+ ECHR ' '
+ EJMP 6
+ TOKN 117
+ EJMP 5
+ ECHR 'S'
+ ECHR ' '
+ ECHR 'W'
+ ETWO 'I', 'L'
+ ECHR 'L'
+ ECHR ' '
+ ECHR 'P'
+ ETWO 'E', 'N'
+ ETWO 'E', 'T'
+ ETWO 'R', 'A'
+ ECHR 'T'
+ ECHR 'E'
+ ECHR ' '
+ ETOK 147
+ ECHR 'N'
+ ECHR 'E'
+ ECHR 'W'
+ ECHR ' '
+ ECHR 'S'
+ ECHR 'H'
+ ECHR 'I'
+ ECHR 'E'
+ ECHR 'L'
+ ECHR 'D'
+ ECHR 'S'
+ ETOK 178
+ ETWO 'T', 'H'
+ ETWO 'A', 'T'
+ ECHR ' '
+ ETOK 147
+ EJMP 19
+ ECHR 'C'
+ ETWO 'O', 'N'
+ ETWO 'S', 'T'
+ ECHR 'R'
+ ECHR 'I'
+ ECHR 'C'
+ ECHR 'T'
+ ETWO 'O', 'R'
+ ETOK 202
+ ECHR 'F'
+ ETWO 'I', 'T'
+ ECHR 'T'
+ ETOK 196
+ ECHR 'W'
+ ECHR 'I'
+ ETWO 'T', 'H'
+ ECHR ' '
+ ETWO 'A', 'N'
+ ECHR ' '
+ EJMP 6
+ TOKN 108
+ EJMP 5
+ ETOK 177
+ EJMP 2
+ EJMP 8
+ ECHR 'G'
+ ECHR 'O'
+ ECHR 'O'
+ ECHR 'D'
+ ECHR ' '
+ ECHR 'L'
+ ECHR 'U'
+ ECHR 'C'
+ ECHR 'K'
+ ECHR ','
+ ECHR ' '
+ ETOK 154
+ ETOK 212
+ EJMP 22
+ EQUB VE
+
+ EJMP 25                \ Token 11:     "{incoming message screen, wait 2s}
+ EJMP 9                 \                {clear screen}
+ EJMP 23                \                {move to row 10, white, lower case}
+ EJMP 14                \                {justify}
+ EJMP 2                 \                {sentence case}
+ ECHR ' '               \                  ATTENTION {single cap}COMMANDER
+ ECHR ' '               \                {commander name}, I {lower case}AM
+ ETWO 'A', 'T'          \                {sentence case} CAPTAIN {mission
+ ECHR 'T'               \                captain's name} {lower case}OF{sentence
+ ETWO 'E', 'N'          \                case} HER MAJESTY'S SPACE NAVY{lower
+ ETWO 'T', 'I'          \                case}. {single cap}WE HAVE NEED OF YOUR
+ ETWO 'O', 'N'          \                SERVICES AGAIN.{cr}
+ ETOK 213               \                 {single cap}IF YOU WOULD BE SO GOOD AS
+ ECHR '.'               \                TO GO TO {single cap}CEERDI YOU WILL BE
+ ECHR ' '               \                BRIEFED.{cr}
+ EJMP 19                \                 {single cap}IF SUCCESSFUL, YOU WILL BE
+ ECHR 'W'               \                WELL REWARDED.{cr}
+ ECHR 'E'               \                {left align}{tab 6}{all caps}  MESSAGE
+ ECHR ' '               \                ENDS{wait for key press}"
+ ECHR 'H'               \
+ ECHR 'A'               \ Encoded as:   "{25}{9}{23}{14}{2}  <245>T<246><251>
+ ETWO 'V', 'E'          \                <223>[213]. {19}WE HA<250> NE[196]OF
+ ECHR ' '               \                 [179]R <218>RVIC<237> AGA<240>[204]IF
+ ECHR 'N'               \                 [179] W<217>LD <247> <235> GOOD AS
+ ECHR 'E'               \                [201]GO[201]{19}<233><244><241> [179] W
+ ETOK 196               \                <220>L <247> BRIEF<252>[204]IF SUC<233>
+ ECHR 'O'               \                SSFUL, [179] W<220>L <247> WELL <242>W
+ ECHR 'F'               \                <238>D<252>[212]{24}"
+ ECHR ' '
+ ETOK 179
+ ECHR 'R'
+ ECHR ' '
+ ETWO 'S', 'E'
+ ECHR 'R'
+ ECHR 'V'
+ ECHR 'I'
+ ECHR 'C'
+ ETWO 'E', 'S'
+ ECHR ' '
+ ECHR 'A'
+ ECHR 'G'
+ ECHR 'A'
+ ETWO 'I', 'N'
+ ETOK 204
+ ECHR 'I'
+ ECHR 'F'
+ ECHR ' '
+ ETOK 179
+ ECHR ' '
+ ECHR 'W'
+ ETWO 'O', 'U'
+ ECHR 'L'
+ ECHR 'D'
+ ECHR ' '
+ ETWO 'B', 'E'
+ ECHR ' '
+ ETWO 'S', 'O'
+ ECHR ' '
+ ECHR 'G'
+ ECHR 'O'
+ ECHR 'O'
+ ECHR 'D'
+ ECHR ' '
+ ECHR 'A'
+ ECHR 'S'
+ ETOK 201
+ ECHR 'G'
+ ECHR 'O'
+ ETOK 201
+ EJMP 19
+ ETWO 'C', 'E'
+ ETWO 'E', 'R'
+ ETWO 'D', 'I'
+ ECHR ' '
+ ETOK 179
+ ECHR ' '
+ ECHR 'W'
+ ETWO 'I', 'L'
+ ECHR 'L'
+ ECHR ' '
+ ETWO 'B', 'E'
+ ECHR ' '
+ ECHR 'B'
+ ECHR 'R'
+ ECHR 'I'
+ ECHR 'E'
+ ECHR 'F'
+ ETWO 'E', 'D'
+ ETOK 204
+ ECHR 'I'
+ ECHR 'F'
+ ECHR ' '
+ ECHR 'S'
+ ECHR 'U'
+ ECHR 'C'
+ ETWO 'C', 'E'
+ ECHR 'S'
+ ECHR 'S'
+ ECHR 'F'
+ ECHR 'U'
+ ECHR 'L'
+ ECHR ','
+ ECHR ' '
+ ETOK 179
+ ECHR ' '
+ ECHR 'W'
+ ETWO 'I', 'L'
+ ECHR 'L'
+ ECHR ' '
+ ETWO 'B', 'E'
+ ECHR ' '
+ ECHR 'W'
+ ECHR 'E'
+ ECHR 'L'
+ ECHR 'L'
+ ECHR ' '
+ ETWO 'R', 'E'
+ ECHR 'W'
+ ETWO 'A', 'R'
+ ECHR 'D'
+ ETWO 'E', 'D'
+ ETOK 212
+ EJMP 24
+ EQUB VE
+
+ ECHR '('               \ Token 12:     "({single cap}C) ACORNSOFT 1984"
+ EJMP 19                \
+ ECHR 'C'               \ Encoded as:   "({19}C) AC<253>N<235>FT 1984"
+ ECHR ')'
+ ECHR ' '
+ ECHR 'A'
+ ECHR 'C'
+ ETWO 'O', 'R'
+ ECHR 'N'
+ ETWO 'S', 'O'
+ ECHR 'F'
+ ECHR 'T'
+ ECHR ' '
+ ECHR '1'
+ ECHR '9'
+ ECHR '8'
+ ECHR '4'
+ EQUB VE
+
+ ECHR 'B'               \ Token 13:     "BY D.BRABEN & I.BELL"
+ ECHR 'Y'               \
+ ECHR ' '               \ Encoded as:   "BY D.B<248><247>N & I.<247>LL"
+ ECHR 'D'
+ ECHR '.'
+ ECHR 'B'
+ ETWO 'R', 'A'
+ ETWO 'B', 'E'
+ ECHR 'N'
+ ECHR ' '
+ ECHR '&'
+ ECHR ' '
+ ECHR 'I'
+ ECHR '.'
+ ETWO 'B', 'E'
+ ECHR 'L'
+ ECHR 'L'
+ EQUB VE
+
+ EJMP 21                \ Token 14:     "{clear bottom of screen}
+ ETOK 145               \                PLANET NAME?
+ ETOK 200               \                {fetch line input from keyboard}"
+ EJMP 26                \
+ EQUB VE                \ Encoded as:   "{21}[145][200]{26}"
+
+ EJMP 25                \ Token 15:     "{incoming message screen, wait 2s}
+ EJMP 9                 \                {clear screen}
+ EJMP 23                \                {move to row 10, white, lower case}
+ EJMP 14                \                {justify}
+ EJMP 2                 \                {sentence case}
+ ECHR ' '               \                  CONGRATULATIONS {single cap}
+ ECHR ' '               \                COMMANDER!{cr}
+ ECHR 'C'               \                {cr}
+ ETWO 'O', 'N'          \                THERE{lower case} WILL ALWAYS BE A
+ ECHR 'G'               \                PLACE FOR YOU IN{sentence case} HER
+ ETWO 'R', 'A'          \                MAJESTY'S SPACE NAVY{lower case}.{cr}
+ ECHR 'T'               \                 {single cap}AND MAYBE SOONER THAN YOU
+ ECHR 'U'               \                THINK...{cr}
+ ETWO 'L', 'A'          \                {left align}{tab 6}{all caps}  MESSAGE
+ ETWO 'T', 'I'          \                ENDS{wait for key press}"
+ ETWO 'O', 'N'          \
+ ECHR 'S'               \ Encoded as:   "{25}{9}{23}{14}{2}  C<223>G<248>TU
+ ECHR ' '               \                <249><251><223>S [154]!{12}{12}<226>
+ ETOK 154               \                <244>E{13} W<220>L <228>WAYS <247>[208]
+ ECHR '!'               \                P<249><233> F<253> [179] <240>[211]
+ EJMP 12                \                [204]<255>D <239>Y<247> <235><223><244>
+ EJMP 12                \                 <226><255> [179] <226><240>K..[212]
+ ETWO 'T', 'H'          \                {24}"
+ ETWO 'E', 'R'
+ ECHR 'E'
+ EJMP 13
+ ECHR ' '
+ ECHR 'W'
+ ETWO 'I', 'L'
+ ECHR 'L'
+ ECHR ' '
+ ETWO 'A', 'L'
+ ECHR 'W'
+ ECHR 'A'
+ ECHR 'Y'
+ ECHR 'S'
+ ECHR ' '
+ ETWO 'B', 'E'
+ ETOK 208
+ ECHR 'P'
+ ETWO 'L', 'A'
+ ETWO 'C', 'E'
+ ECHR ' '
+ ECHR 'F'
+ ETWO 'O', 'R'
+ ECHR ' '
+ ETOK 179
+ ECHR ' '
+ ETWO 'I', 'N'
+ ETOK 211
+ ETOK 204
+ ETWO 'A', 'N'
+ ECHR 'D'
+ ECHR ' '
+ ETWO 'M', 'A'
+ ECHR 'Y'
+ ETWO 'B', 'E'
+ ECHR ' '
+ ETWO 'S', 'O'
+ ETWO 'O', 'N'
+ ETWO 'E', 'R'
+ ECHR ' '
+ ETWO 'T', 'H'
+ ETWO 'A', 'N'
+ ECHR ' '
+ ETOK 179
+ ECHR ' '
+ ETWO 'T', 'H'
+ ETWO 'I', 'N'
+ ECHR 'K'
+ ECHR '.'
+ ECHR '.'
+ ETOK 212
+ EJMP 24
+ EQUB VE
+
+ ECHR 'F'               \ Token 16:     "FABLED"
+ ETWO 'A', 'B'          \
+ ETWO 'L', 'E'          \ Encoded as:   "F<216><229>D"
+ ECHR 'D'
+ EQUB VE
+
+ ETWO 'N', 'O'          \ Token 17:     "NOTABLE"
+ ECHR 'T'               \
+ ETWO 'A', 'B'          \ Encoded as:   "<227>T<216><229>"
+ ETWO 'L', 'E'
+ EQUB VE
+
+ ECHR 'W'               \ Token 18:     "WELL KNOWN"
+ ECHR 'E'               \
+ ECHR 'L'               \ Encoded as:   "WELL K<227>WN"
+ ECHR 'L'
+ ECHR ' '
+ ECHR 'K'
+ ETWO 'N', 'O'
+ ECHR 'W'
+ ECHR 'N'
+ EQUB VE
+
+ ECHR 'F'               \ Token 19:     "FAMOUS"
+ ECHR 'A'               \
+ ECHR 'M'               \ Encoded as:   "FAMO<236>"
+ ECHR 'O'
+ ETWO 'U', 'S'
+ EQUB VE
+
+ ETWO 'N', 'O'          \ Token 20:     "NOTED"
+ ECHR 'T'               \
+ ETWO 'E', 'D'          \ Encoded as:   "<227>T<252>"
+ EQUB VE
+
+ ETWO 'V', 'E'          \ Token 21:     "VERY"
+ ECHR 'R'               \
+ ECHR 'Y'               \ Encoded as:   "<250>RY"
+ EQUB VE
+
+ ECHR 'M'               \ Token 22:     "MILDLY"
+ ETWO 'I', 'L'          \
+ ECHR 'D'               \ Encoded as:   "M<220>DLY"
+ ECHR 'L'
+ ECHR 'Y'
+ EQUB VE
+
+ ECHR 'M'               \ Token 23:     "MOST"
+ ECHR 'O'               \
+ ETWO 'S', 'T'          \ Encoded as:   "MO<222>"
+ EQUB VE
+
+ ETWO 'R', 'E'          \ Token 24:     "REASONABLY"
+ ECHR 'A'               \
+ ECHR 'S'               \ Encoded as:   "<242>AS<223><216>LY"
+ ETWO 'O', 'N'
+ ETWO 'A', 'B'
+ ECHR 'L'
+ ECHR 'Y'
+ EQUB VE
+
+ EQUB VE                \ Token 25:     ""
+                        \
+                        \ Encoded as:   ""
+
+ ETOK 165               \ Token 26:     "ANCIENT"
+ EQUB VE                \
+                        \ Encoded as:   "[165]"
+
+ ERND 23                \ Token 27:     "[130-134]"
+ EQUB VE                \
+                        \ Encoded as:   "[23?]"
+
+ ECHR 'G'               \ Token 28:     "GREAT"
+ ETWO 'R', 'E'          \
+ ETWO 'A', 'T'          \ Encoded as:   "G<242><245>"
+ EQUB VE
+
+ ECHR 'V'               \ Token 29:     "VAST"
+ ECHR 'A'               \
+ ETWO 'S', 'T'          \ Encoded as:   "VA<222>"
+ EQUB VE
+
+ ECHR 'P'               \ Token 30:     "PINK"
+ ETWO 'I', 'N'          \
+ ECHR 'K'               \ Encoded as:   "P<240>K"
+ EQUB VE
+
+ EJMP 2                 \ Token 31:     "{sentence case}[190-194] [185-189]
+ ERND 28                \                {lower case} PLANTATIONS"
+ ECHR ' '               \
+ ERND 27                \ Encoded as:   "{2}[28?] [27?]{13} [185]A<251><223>S"
+ EJMP 13
+ ECHR ' '
+ ETOK 185
+ ECHR 'A'
+ ETWO 'T', 'I'
+ ETWO 'O', 'N'
+ ECHR 'S'
+ EQUB VE
+
+ ETOK 156               \ Token 32:     "MOUNTAINS"
+ ECHR 'S'               \
+ EQUB VE                \ Encoded as:   "[156]S"
+
+ ERND 26                \ Token 33:     "[180-184]"
+ EQUB VE                \
+                        \ Encoded as:   "[26?]"
+
+ ERND 37                \ Token 34:     "[125-129] FORESTS"
+ ECHR ' '               \
+ ECHR 'F'               \ Encoded as:   "[37?] F<253><237>TS"
+ ETWO 'O', 'R'
+ ETWO 'E', 'S'
+ ECHR 'T'
+ ECHR 'S'
+ EQUB VE
+
+ ECHR 'O'               \ Token 35:     "OCEANS"
+ ETWO 'C', 'E'          \
+ ETWO 'A', 'N'          \ Encoded as:   "O<233><255>S"
+ ECHR 'S'
+ EQUB VE
+
+ ECHR 'S'               \ Token 36:     "SHYNESS"
+ ECHR 'H'               \
+ ECHR 'Y'               \ Encoded as:   "SHYN<237>S"
+ ECHR 'N'
+ ETWO 'E', 'S'
+ ECHR 'S'
+ EQUB VE
+
+ ECHR 'S'               \ Token 37:     "SILLINESS"
+ ETWO 'I', 'L'          \
+ ECHR 'L'               \ Encoded as:   "S<220>L<240><237>S"
+ ETWO 'I', 'N'
+ ETWO 'E', 'S'
+ ECHR 'S'
+ EQUB VE
+
+ ETWO 'M', 'A'          \ Token 38:     "MATING TRADITIONS"
+ ECHR 'T'               \
+ ETOK 195               \ Encoded as:   "<239>T[195]T<248><241><251><223>S"
+ ECHR 'T'
+ ETWO 'R', 'A'
+ ETWO 'D', 'I'
+ ETWO 'T', 'I'
+ ETWO 'O', 'N'
+ ECHR 'S'
+ EQUB VE
+
+ ETWO 'L', 'O'          \ Token 39:     "LOATHING OF [41-45]"
+ ETWO 'A', 'T'          \
+ ECHR 'H'               \ Encoded as:   "<224><245>H[195]OF [9?]"
+ ETOK 195
+ ECHR 'O'
+ ECHR 'F'
+ ECHR ' '
+ ERND 9
+ EQUB VE
+
+ ETWO 'L', 'O'          \ Token 40:     "LOVE FOR [41-45]"
+ ETWO 'V', 'E'          \
+ ECHR ' '               \ Encoded as:   "<224><250> F<253> [9?]"
+ ECHR 'F'
+ ETWO 'O', 'R'
+ ECHR ' '
+ ERND 9
+ EQUB VE
+
+ ECHR 'F'               \ Token 41:     "FOOD BLENDERS"
+ ECHR 'O'               \
+ ECHR 'O'               \ Encoded as:   "FOOD B<229>ND<244>S"
+ ECHR 'D'
+ ECHR ' '
+ ECHR 'B'
+ ETWO 'L', 'E'
+ ECHR 'N'
+ ECHR 'D'
+ ETWO 'E', 'R'
+ ECHR 'S'
+ EQUB VE
+
+ ECHR 'T'               \ Token 42:     "TOURISTS"
+ ETWO 'O', 'U'          \
+ ECHR 'R'               \ Encoded as:   "T<217>RI<222>S"
+ ECHR 'I'
+ ETWO 'S', 'T'
+ ECHR 'S'
+ EQUB VE
+
+ ECHR 'P'               \ Token 43:     "POETRY"
+ ECHR 'O'               \
+ ETWO 'E', 'T'          \ Encoded as:   "PO<221>RY"
+ ECHR 'R'
+ ECHR 'Y'
+ EQUB VE
+
+ ETWO 'D', 'I'          \ Token 44:     "DISCOS"
+ ECHR 'S'               \
+ ECHR 'C'               \ Encoded as:   "<241>SCOS"
+ ECHR 'O'
+ ECHR 'S'
+ EQUB VE
+
+ ERND 17                \ Token 45:     "[81-85]"
+ EQUB VE                \
+                        \ Encoded as:   "[17?]"
+
+ ECHR 'W'               \ Token 46:     "WALKING TREE"
+ ETWO 'A', 'L'          \
+ ECHR 'K'               \ Encoded as:   "W<228>K[195][158]"
+ ETOK 195
+ ETOK 158
+ EQUB VE
+
+ ECHR 'C'               \ Token 47:     "CRAB"
+ ETWO 'R', 'A'          \
+ ECHR 'B'               \ Encoded as:   "C<248>B"
+ EQUB VE
+
+ ECHR 'B'               \ Token 48:     "BAT"
+ ETWO 'A', 'T'          \
+ EQUB VE                \ Encoded as:   "B<245>"
+
+ ETWO 'L', 'O'          \ Token 49:     "LOBST"
+ ECHR 'B'               \
+ ETWO 'S', 'T'          \ Encoded as:   "<224>B<222>"
+ EQUB VE
+
+ EJMP 18                \ Token 50:     "{random 1-8 letter word}"
+ EQUB VE                \
+                        \ Encoded as:   "{18}"
+
+ ETWO 'B', 'E'          \ Token 51:     "BESET"
+ ECHR 'S'               \
+ ETWO 'E', 'T'          \ Encoded as:   "<247>S<221>"
+ EQUB VE
+
+ ECHR 'P'               \ Token 52:     "PLAGUED"
+ ETWO 'L', 'A'          \
+ ECHR 'G'               \ Encoded as:   "P<249>GU<252>"
+ ECHR 'U'
+ ETWO 'E', 'D'
+ EQUB VE
+
+ ETWO 'R', 'A'          \ Token 53:     "RAVAGED"
+ ECHR 'V'               \
+ ECHR 'A'               \ Encoded as:   "<248>VAG<252>"
+ ECHR 'G'
+ ETWO 'E', 'D'
+ EQUB VE
+
+ ECHR 'C'               \ Token 54:     "CURSED"
+ ECHR 'U'               \
+ ECHR 'R'               \ Encoded as:   "CURS<252>"
+ ECHR 'S'
+ ETWO 'E', 'D'
+ EQUB VE
+
+ ECHR 'S'               \ Token 55:     "SCOURGED"
+ ECHR 'C'               \
+ ETWO 'O', 'U'          \ Encoded as:   "SC<217>RG<252>"
+ ECHR 'R'
+ ECHR 'G'
+ ETWO 'E', 'D'
+ EQUB VE
+
+ ERND 22                \ Token 56:     "[135-139] CIVIL WAR"
+ ECHR ' '               \
+ ECHR 'C'               \ Encoded as:   "[22?] CIV<220> W<238>"
+ ECHR 'I'
+ ECHR 'V'
+ ETWO 'I', 'L'
+ ECHR ' '
+ ECHR 'W'
+ ETWO 'A', 'R'
+ EQUB VE
+
+ ERND 13                \ Token 57:     "[170-174] [155-159] [160-164]S"
+ ECHR ' '               \
+ ERND 4                 \ Encoded as:   "[13?] [4?] [5?]S"
+ ECHR ' '
+ ERND 5
+ ECHR 'S'
+ EQUB VE
+
+ ECHR 'A'               \ Token 58:     "A [170-174] DISEASE"
+ ECHR ' '               \
+ ERND 13                \ Encoded as:   "A [13?] <241><218>A<218>"
+ ECHR ' '
+ ETWO 'D', 'I'
+ ETWO 'S', 'E'
+ ECHR 'A'
+ ETWO 'S', 'E'
+ EQUB VE
+
+ ERND 22                \ Token 59:     "[135-139] EARTHQUAKES"
+ ECHR ' '               \
+ ECHR 'E'               \ Encoded as:   "[22?] E<238><226><254>AK<237>"
+ ETWO 'A', 'R'
+ ETWO 'T', 'H'
+ ETWO 'Q', 'U'
+ ECHR 'A'
+ ECHR 'K'
+ ETWO 'E', 'S'
+ EQUB VE
+
+ ERND 22                \ Token 60:     "[135-139] SOLAR ACTIVITY"
+ ECHR ' '               \
+ ETWO 'S', 'O'          \ Encoded as:   "[22?] <235><249>R AC<251>V<219>Y"
+ ETWO 'L', 'A'
+ ECHR 'R'
+ ECHR ' '
+ ECHR 'A'
+ ECHR 'C'
+ ETWO 'T', 'I'
+ ECHR 'V'
+ ETWO 'I', 'T'
+ ECHR 'Y'
+ EQUB VE
+
+ ETOK 175               \ Token 61:     "ITS [26-30] [31-35]"
+ ERND 2                 \
+ ECHR ' '               \ Encoded as:   "[175][2?] [3?]"
+ ERND 3
+ EQUB VE
+
+ ETOK 147               \ Token 62:     "THE {system name adjective} [155-159]
+ EJMP 17                \                 [160-164]"
+ ECHR ' '               \
+ ERND 4                 \ Encoded as:   "[147]{17} [4?] [5?]"
+ ECHR ' '
+ ERND 5
+ EQUB VE
+
+ ETOK 175               \ Token 63:     "ITS INHABITANTS' [165-169] [36-40]"
+ ETOK 193               \
+ ECHR 'S'               \ Encoded as:   "[175][193]S' [7?] [8?]"
+ ECHR '`'
+ ECHR ' '
+ ERND 7
+ ECHR ' '
+ ERND 8
+ EQUB VE
+
+ EJMP 2                 \ Token 64:     "{sentence case}[235-239]{lower case}"
+ ERND 31                \
+ EJMP 13                \ Encoded as:   "{2}[31?]{13}"
+ EQUB VE
+
+ ETOK 175               \ Token 65:     "ITS [76-80] [81-85]"
+ ERND 16                \
+ ECHR ' '               \ Encoded as:   "[175][16?] [17?]"
+ ERND 17
+ EQUB VE
+
+ ECHR 'J'               \ Token 66:     "JUICE"
+ ECHR 'U'               \
+ ECHR 'I'               \ Encoded as:   "JUI<233>"
+ ETWO 'C', 'E'
+ EQUB VE
+
+ ECHR 'B'               \ Token 67:     "BRANDY"
+ ETWO 'R', 'A'          \
+ ECHR 'N'               \ Encoded as:   "B<248>NDY"
+ ECHR 'D'
+ ECHR 'Y'
+ EQUB VE
+
+ ECHR 'W'               \ Token 68:     "WATER"
+ ETWO 'A', 'T'          \
+ ETWO 'E', 'R'          \ Encoded as:   "W<245><244>"
+ EQUB VE
+
+ ECHR 'B'               \ Token 69:     "BREW"
+ ETWO 'R', 'E'          \
+ ECHR 'W'               \ Encoded as:   "B<242>W"
+ EQUB VE
+
+ ECHR 'G'               \ Token 70:     "GARGLE BLASTERS"
+ ETWO 'A', 'R'          \
+ ECHR 'G'               \ Encoded as:   "G<238>G<229> B<249><222><244>S"
+ ETWO 'L', 'E'
+ ECHR ' '
+ ECHR 'B'
+ ETWO 'L', 'A'
+ ETWO 'S', 'T'
+ ETWO 'E', 'R'
+ ECHR 'S'
+ EQUB VE
+
+ EJMP 18                \ Token 71:     "{random 1-8 letter word}"
+ EQUB VE                \
+                        \ Encoded as:   "{18}"
+
+ EJMP 17                \ Token 72:     "{system name adjective} [160-164]"
+ ECHR ' '               \
+ ERND 5                 \ Encoded as:   "{17} [5?]"
+ EQUB VE
+
+ EJMP 17                \ Token 73:     "{system name adjective} {random 1-8
+ ECHR ' '               \                letter word}"
+ EJMP 18                \
+ EQUB VE                \ Encoded as:   "{17} {18}"
+
+ EJMP 17                \ Token 74:     "{system name adjective} [170-174]"
+ ECHR ' '               \
+ ERND 13                \ Encoded as:   "{17} [13?]"
+ EQUB VE
+
+ ERND 13                \ Token 75:     "[170-174] {random 1-8 letter word}"
+ ECHR ' '               \
+ EJMP 18                \ Encoded as:   "[13?] {18}"
+ EQUB VE
+
+ ECHR 'F'               \ Token 76:     "FABULOUS"
+ ETWO 'A', 'B'          \
+ ECHR 'U'               \ Encoded as:   "F<216>U<224><236>"
+ ETWO 'L', 'O'
+ ETWO 'U', 'S'
+ EQUB VE
+
+ ECHR 'E'               \ Token 77:     "EXOTIC"
+ ECHR 'X'               \
+ ECHR 'O'               \ Encoded as:   "EXO<251>C"
+ ETWO 'T', 'I'
+ ECHR 'C'
+ EQUB VE
+
+ ECHR 'H'               \ Token 78:     "HOOPY"
+ ECHR 'O'               \
+ ECHR 'O'               \ Encoded as:   "HOOPY"
+ ECHR 'P'
+ ECHR 'Y'
+ EQUB VE
+
+ ECHR 'U'               \ Token 79:     "UNUSUAL"
+ ETWO 'N', 'U'          \
+ ECHR 'S'               \ Encoded as:   "U<225>SU<228>"
+ ECHR 'U'
+ ETWO 'A', 'L'
+ EQUB VE
+
+ ECHR 'E'               \ Token 80:     "EXCITING"
+ ECHR 'X'               \
+ ECHR 'C'               \ Encoded as:   "EXC<219><240>G"
+ ETWO 'I', 'T'
+ ETWO 'I', 'N'
+ ECHR 'G'
+ EQUB VE
+
+ ECHR 'C'               \ Token 81:     "CUISINE"
+ ECHR 'U'               \
+ ECHR 'I'               \ Encoded as:   "CUIS<240>E"
+ ECHR 'S'
+ ETWO 'I', 'N'
+ ECHR 'E'
+ EQUB VE
+
+ ECHR 'N'               \ Token 82:     "NIGHT LIFE"
+ ECHR 'I'               \
+ ECHR 'G'               \ Encoded as:   "NIGHT LIFE"
+ ECHR 'H'
+ ECHR 'T'
+ ECHR ' '
+ ECHR 'L'
+ ECHR 'I'
+ ECHR 'F'
+ ECHR 'E'
+ EQUB VE
+
+ ECHR 'C'               \ Token 83:     "CASINOS"
+ ECHR 'A'               \
+ ECHR 'S'               \ Encoded as:   "CASI<227>S"
+ ECHR 'I'
+ ETWO 'N', 'O'
+ ECHR 'S'
+ EQUB VE
+
+ ECHR 'S'               \ Token 84:     "SIT COMS"
+ ETWO 'I', 'T'          \
+ ECHR ' '               \ Encoded as:   "S<219> COMS"
+ ECHR 'C'
+ ECHR 'O'
+ ECHR 'M'
+ ECHR 'S'
+ EQUB VE
+
+ EJMP 2                 \ Token 85:     "{sentence case}[235-239]{lower case}"
+ ERND 31                \
+ EJMP 13                \ Encoded as:   "{2}[31?]{13}"
+ EQUB VE
+
+ EJMP 3                 \ Token 86:     "{selected system name}"
+ EQUB VE                \
+                        \ Encoded as:   "{3}"
+
+ ETOK 147               \ Token 87:     "THE PLANET {selected system name}"
+ ETOK 145               \
+ ECHR ' '               \ Encoded as:   "[147][145] {3}"
+ EJMP 3
+ EQUB VE
+
+ ETOK 147               \ Token 88:     "THE WORLD {selected system name}"
+ ETOK 146               \
+ ECHR ' '               \ Encoded as:   "[147][146] {3}"
+ EJMP 3
+ EQUB VE
+
+ ETOK 148               \ Token 89:     "THIS PLANET"
+ ETOK 145               \
+ EQUB VE                \ Encoded as:   "[148][145]"
+
+ ETOK 148               \ Token 90:     "THIS WORLD"
+ ETOK 146               \
+ EQUB VE                \ Encoded as:   "[148][146]"
+
+ ECHR 'S'               \ Token 91:     "SON OF A BITCH"
+ ETWO 'O', 'N'          \
+ ECHR ' '               \ Encoded as:   "S<223> OF[208]B<219>CH"
+ ECHR 'O'
+ ECHR 'F'
+ ETOK 208
+ ECHR 'B'
+ ETWO 'I', 'T'
+ ECHR 'C'
+ ECHR 'H'
+ EQUB VE
+
+ ECHR 'S'               \ Token 92:     "SCOUNDREL"
+ ECHR 'C'               \
+ ETWO 'O', 'U'          \ Encoded as:   "SC<217>ND<242>L"
+ ECHR 'N'
+ ECHR 'D'
+ ETWO 'R', 'E'
+ ECHR 'L'
+ EQUB VE
+
+ ECHR 'B'               \ Token 93:     "BLACKGUARD"
+ ETWO 'L', 'A'          \
+ ECHR 'C'               \ Encoded as:   "B<249>CKGU<238>D"
+ ECHR 'K'
+ ECHR 'G'
+ ECHR 'U'
+ ETWO 'A', 'R'
+ ECHR 'D'
+ EQUB VE
+
+ ECHR 'R'               \ Token 94:     "ROGUE"
+ ECHR 'O'               \
+ ECHR 'G'               \ Encoded as:   "ROGUE"
+ ECHR 'U'
+ ECHR 'E'
+ EQUB VE
+
+ ECHR 'W'               \ Token 95:     "WHORESON BEETLE HEADFLAP EAR'D
+ ECHR 'H'               \                KNAVE"
+ ETWO 'O', 'R'          \
+ ETWO 'E', 'S'          \ Encoded as:   "WH<253><237><223> <247><221><229> HEAD
+ ETWO 'O', 'N'          \                [198]F<249>P E<238>'D KNA<250>"
+ ECHR ' '
+ ETWO 'B', 'E'
+ ETWO 'E', 'T'
+ ETWO 'L', 'E'
+ ECHR ' '
+ ECHR 'H'
+ ECHR 'E'
+ ECHR 'A'
+ ECHR 'D'
+ ETOK 198
+ ECHR 'F'
+ ETWO 'L', 'A'
+ ECHR 'P'
+ ECHR ' '
+ ECHR 'E'
+ ETWO 'A', 'R'
+ ECHR '`'
+ ECHR 'D'
+ ECHR ' '
+ ECHR 'K'
+ ECHR 'N'
+ ECHR 'A'
+ ETWO 'V', 'E'
+ EQUB VE
+
+ ECHR 'N'               \ Token 96:     "N UNREMARKABLE"
+ ECHR ' '               \
+ ECHR 'U'               \ Encoded as:   "N UN<242><239>RK<216><229>"
+ ECHR 'N'
+ ETWO 'R', 'E'
+ ETWO 'M', 'A'
+ ECHR 'R'
+ ECHR 'K'
+ ETWO 'A', 'B'
+ ETWO 'L', 'E'
+ EQUB VE
+
+ ECHR ' '               \ Token 97:     " BORING"
+ ECHR 'B'               \
+ ETWO 'O', 'R'          \ Encoded as:   " B<253><240>G"
+ ETWO 'I', 'N'
+ ECHR 'G'
+ EQUB VE
+
+ ECHR ' '               \ Token 98:     " DULL"
+ ECHR 'D'               \
+ ECHR 'U'               \ Encoded as:   " DULL"
+ ECHR 'L'
+ ECHR 'L'
+ EQUB VE
+
+ ECHR ' '               \ Token 99:     " TEDIOUS"
+ ECHR 'T'               \
+ ECHR 'E'               \ Encoded as:   " TE<241>O<236>"
+ ETWO 'D', 'I'
+ ECHR 'O'
+ ETWO 'U', 'S'
+ EQUB VE
+
+ ECHR ' '               \ Token 100:    " REVOLTING"
+ ETWO 'R', 'E'          \
+ ECHR 'V'               \ Encoded as:   " <242>VOLT<240>G"
+ ECHR 'O'
+ ECHR 'L'
+ ECHR 'T'
+ ETWO 'I', 'N'
+ ECHR 'G'
+ EQUB VE
+
+ ETOK 145               \ Token 101:    "PLANET"
+ EQUB VE                \
+                        \ Encoded as:   "[145]"
+
+ ETOK 146               \ Token 102:    "WORLD"
+ EQUB VE                \
+                        \ Encoded as:   "[146]"
+
+ ECHR 'P'               \ Token 103:    "PLACE"
+ ETWO 'L', 'A'          \
+ ETWO 'C', 'E'          \ Encoded as:   "P<249><233>"
+ EQUB VE
+
+ ECHR 'L'               \ Token 104:    "LITTLE PLANET"
+ ETWO 'I', 'T'          \
+ ECHR 'T'               \ Encoded as:   "L<219>T<229> [145]"
+ ETWO 'L', 'E'
+ ECHR ' '
+ ETOK 145
+ EQUB VE
+
+ ECHR 'D'               \ Token 105:    "DUMP"
+ ECHR 'U'               \
+ ECHR 'M'               \ Encoded as:   "DUMP"
+ ECHR 'P'
+ EQUB VE
+
+ ECHR 'I'               \ Token 106:    "I HEAR A [130-134] LOOKING SHIP
+ ECHR ' '               \                APPEARED AT ERRIUS"
+ ECHR 'H'               \
+ ECHR 'E'               \ Encoded as:   "I HE<238>[208][23?] <224>OK[195][207]
+ ETWO 'A', 'R'          \                 APPE<238>[196]<245>[209]"
+ ETOK 208
+ ERND 23
+ ECHR ' '
+ ETWO 'L', 'O'
+ ECHR 'O'
+ ECHR 'K'
+ ETOK 195
+ ETOK 207
+ ECHR ' '
+ ECHR 'A'
+ ECHR 'P'
+ ECHR 'P'
+ ECHR 'E'
+ ETWO 'A', 'R'
+ ETOK 196
+ ETWO 'A', 'T'
+ ETOK 209
+ EQUB VE
+
+ ECHR 'Y'               \ Token 107:    "YEAH, I HEAR A [130-134] SHIP LEFT
+ ECHR 'E'               \                ERRIUS A  WHILE BACK"
+ ECHR 'A'               \
+ ECHR 'H'               \ Encoded as:   "YEAH, I HE<238>[208][23?] [207]
+ ECHR ','               \                 <229>FT[209][208] WHI<229> BACK"
+ ECHR ' '
+ ECHR 'I'
+ ECHR ' '
+ ECHR 'H'
+ ECHR 'E'
+ ETWO 'A', 'R'
+ ETOK 208
+ ERND 23
+ ECHR ' '
+ ETOK 207
+ ECHR ' '
+ ETWO 'L', 'E'
+ ECHR 'F'
+ ECHR 'T'
+ ETOK 209
+ ETOK 208
+ ECHR ' '
+ ECHR 'W'
+ ECHR 'H'
+ ECHR 'I'
+ ETWO 'L', 'E'
+ ECHR ' '
+ ECHR 'B'
+ ECHR 'A'
+ ECHR 'C'
+ ECHR 'K'
+ EQUB VE
+
+ ECHR 'G'               \ Token 108:    "GET YOUR IRON ASS OVER TO ERRIUS"
+ ETWO 'E', 'T'          \
+ ECHR ' '               \ Encoded as:   "G<221> [179]R IR<223> ASS OV<244> TO
+ ETOK 179               \                [209]"
+ ECHR 'R'
+ ECHR ' '
+ ECHR 'I'
+ ECHR 'R'
+ ETWO 'O', 'N'
+ ECHR ' '
+ ECHR 'A'
+ ECHR 'S'
+ ECHR 'S'
+ ECHR ' '
+ ECHR 'O'
+ ECHR 'V'
+ ETWO 'E', 'R'
+ ECHR ' '
+ ECHR 'T'
+ ECHR 'O'
+ ETOK 209
+ EQUB VE
+
+ ETWO 'S', 'O'          \ Token 109:    "SOME [91-95] NEW SHIP WAS SEEN AT
+ ECHR 'M'               \                ERRIUS"
+ ECHR 'E'               \
+ ECHR ' '               \ Encoded as:   "<235>ME [24?][210][207] WAS <218><246>
+ ERND 24                \                 <245>[209]"
+ ETOK 210
+ ETOK 207
+ ECHR ' '
+ ECHR 'W'
+ ECHR 'A'
+ ECHR 'S'
+ ECHR ' '
+ ETWO 'S', 'E'
+ ETWO 'E', 'N'
+ ECHR ' '
+ ETWO 'A', 'T'
+ ETOK 209
+ EQUB VE
+
+ ECHR 'T'               \ Token 110:    "TRY ERRIUS"
+ ECHR 'R'               \
+ ECHR 'Y'               \ Encoded as:   "TRY[209]"
+ ETOK 209
+ EQUB VE
+
+ EQUB VE                \ Token 111:    ""
+                        \
+                        \ Encoded as:   ""
+
+ EQUB VE                \ Token 112:    ""
+                        \
+                        \ Encoded as:   ""
+
+ EQUB VE                \ Token 113:    ""
+                        \
+                        \ Encoded as:   ""
+
+ EQUB VE                \ Token 114:    ""
+                        \
+                        \ Encoded as:   ""
+
+ ECHR 'W'               \ Token 115:    "WASP"
+ ECHR 'A'               \
+ ECHR 'S'               \ Encoded as:   "WASP"
+ ECHR 'P'
+ EQUB VE
+
+ ECHR 'M'               \ Token 116:    "MOTH"
+ ECHR 'O'               \
+ ETWO 'T', 'H'          \ Encoded as:   "MO<226>"
+ EQUB VE
+
+ ECHR 'G'               \ Token 117:    "GRUB"
+ ECHR 'R'               \
+ ECHR 'U'               \ Encoded as:   "GRUB"
+ ECHR 'B'
+ EQUB VE
+
+ ETWO 'A', 'N'          \ Token 118:    "ANT"
+ ECHR 'T'               \
+ EQUB VE                \ Encoded as:   "<255>T"
+
+ EJMP 18                \ Token 119:    "{random 1-8 letter word}"
+ EQUB VE                \
+                        \ Encoded as:   "{18}"
+
+ ECHR 'P'               \ Token 120:    "POET"
+ ECHR 'O'               \
+ ETWO 'E', 'T'          \ Encoded as:   "PO<221>"
+ EQUB VE
+
+ ETWO 'A', 'R'          \ Token 121:    "ARTS GRADUATE"
+ ECHR 'T'               \
+ ECHR 'S'               \ Encoded as:   "<238>TS G<248>DU<245>E"
+ ECHR ' '
+ ECHR 'G'
+ ETWO 'R', 'A'
+ ECHR 'D'
+ ECHR 'U'
+ ETWO 'A', 'T'
+ ECHR 'E'
+ EQUB VE
+
+ ECHR 'Y'               \ Token 122:    "YAK"
+ ECHR 'A'               \
+ ECHR 'K'               \ Encoded as:   "YAK"
+ EQUB VE
+
+ ECHR 'S'               \ Token 123:    "SNAIL"
+ ECHR 'N'               \
+ ECHR 'A'               \ Encoded as:   "SNA<220>"
+ ETWO 'I', 'L'
+ EQUB VE
+
+ ECHR 'S'               \ Token 124:    "SLUG"
+ ECHR 'L'               \
+ ECHR 'U'               \ Encoded as:   "SLUG"
+ ECHR 'G'
+ EQUB VE
+
+ ECHR 'T'               \ Token 125:    "TROPICAL"
+ ECHR 'R'               \
+ ECHR 'O'               \ Encoded as:   "TROPIC<228>"
+ ECHR 'P'
+ ECHR 'I'
+ ECHR 'C'
+ ETWO 'A', 'L'
+ EQUB VE
+
+ ECHR 'D'               \ Token 126:    "DENSE"
+ ETWO 'E', 'N'          \
+ ETWO 'S', 'E'          \ Encoded as:   "D<246><218>"
+ EQUB VE
+
+ ETWO 'R', 'A'          \ Token 127:    "RAIN"
+ ETWO 'I', 'N'          \
+ EQUB VE                \ Encoded as:   "<248><240>"
+
+ ECHR 'I'               \ Token 128:    "IMPENETRABLE"
+ ECHR 'M'               \
+ ECHR 'P'               \ Encoded as:   "IMP<246><221><248>B<229>"
+ ETWO 'E', 'N'
+ ETWO 'E', 'T'
+ ETWO 'R', 'A'
+ ECHR 'B'
+ ETWO 'L', 'E'
+ EQUB VE
+
+ ECHR 'E'               \ Token 129:    "EXUBERANT"
+ ECHR 'X'               \
+ ECHR 'U'               \ Encoded as:   "EXU<247><248>NT"
+ ETWO 'B', 'E'
+ ETWO 'R', 'A'
+ ECHR 'N'
+ ECHR 'T'
+ EQUB VE
+
+ ECHR 'F'               \ Token 130:    "FUNNY"
+ ECHR 'U'               \
+ ECHR 'N'               \ Encoded as:   "FUNNY"
+ ECHR 'N'
+ ECHR 'Y'
+ EQUB VE
+
+ ECHR 'W'               \ Token 131:    "WIERD"
+ ECHR 'I'               \
+ ETWO 'E', 'R'          \ Encoded as:   "WI<244>D"
+ ECHR 'D'
+ EQUB VE
+
+ ECHR 'U'               \ Token 132:    "UNUSUAL"
+ ETWO 'N', 'U'          \
+ ECHR 'S'               \ Encoded as:   "U<225>SU<228>"
+ ECHR 'U'
+ ETWO 'A', 'L'
+ EQUB VE
+
+ ETWO 'S', 'T'          \ Token 133:    "STRANGE"
+ ETWO 'R', 'A'          \
+ ECHR 'N'               \ Encoded as:   "<222><248>N<231>"
+ ETWO 'G', 'E'
+ EQUB VE
+
+ ECHR 'P'               \ Token 134:    "PECULIAR"
+ ECHR 'E'               \
+ ECHR 'C'               \ Encoded as:   "PECULI<238>"
+ ECHR 'U'
+ ECHR 'L'
+ ECHR 'I'
+ ETWO 'A', 'R'
+ EQUB VE
+
+ ECHR 'F'               \ Token 135:    "FREQUENT"
+ ETWO 'R', 'E'          \
+ ETWO 'Q', 'U'          \ Encoded as:   "F<242><254><246>T"
+ ETWO 'E', 'N'
+ ECHR 'T'
+ EQUB VE
+
+ ECHR 'O'               \ Token 136:    "OCCASIONAL"
+ ECHR 'C'               \
+ ECHR 'C'               \ Encoded as:   "OCCASI<223><228>"
+ ECHR 'A'
+ ECHR 'S'
+ ECHR 'I'
+ ETWO 'O', 'N'
+ ETWO 'A', 'L'
+ EQUB VE
+
+ ECHR 'U'               \ Token 137:    "UNPREDICTABLE"
+ ECHR 'N'               \
+ ECHR 'P'               \ Encoded as:   "UNP<242><241>CT<216><229>"
+ ETWO 'R', 'E'
+ ETWO 'D', 'I'
+ ECHR 'C'
+ ECHR 'T'
+ ETWO 'A', 'B'
+ ETWO 'L', 'E'
+ EQUB VE
+
+ ECHR 'D'               \ Token 138:    "DREADFUL"
+ ETWO 'R', 'E'          \
+ ECHR 'A'               \ Encoded as:   "D<242>ADFUL"
+ ECHR 'D'
+ ECHR 'F'
+ ECHR 'U'
+ ECHR 'L'
+ EQUB VE
+
+ ETOK 171               \ Token 139:    "DEADLY"
+ EQUB VE                \
+                        \ Encoded as:   "[171]"
+
+ ERND 1                 \ Token 140:    "[21-25] [16-20] FOR [61-65]"
+ ECHR ' '               \
+ ERND 0                 \ Encoded as:   "[1?] [0?] F<253> [10?]"
+ ECHR ' '
+ ECHR 'F'
+ ETWO 'O', 'R'
+ ECHR ' '
+ ERND 10
+ EQUB VE
+
+ ETOK 140               \ Token 141:    "[21-25] [16-20] FOR [61-65] AND
+ ETOK 178               \                [61-65]"
+ ERND 10                \
+ EQUB VE                \ Encoded as:   "[140][178][10?]"
+
+ ERND 11                \ Token 142:    "[51-55] BY [56-60]"
+ ECHR ' '               \
+ ECHR 'B'               \ Encoded as:   "[11?] BY [12?]"
+ ECHR 'Y'
+ ECHR ' '
+ ERND 12
+ EQUB VE
+
+ ETOK 140               \ Token 143:    "[21-25] [16-20] FOR [61-65] BUT [51-55]
+ ECHR ' '               \                BY [56-60]"
+ ECHR 'B'               \
+ ECHR 'U'               \ Encoded as:   "[140] BUT [142]"
+ ECHR 'T'
+ ECHR ' '
+ ETOK 142
+ EQUB VE
+
+ ECHR ' '               \ Token 144:    " A[96-100] [101-105]"
+ ECHR 'A'               \
+ ERND 20                \ Encoded as:   " A[20?] [21?]"
+ ECHR ' '
+ ERND 21
+ EQUB VE
+
+ ECHR 'P'               \ Token 145:    "PLANET"
+ ECHR 'L'               \
+ ETWO 'A', 'N'          \ Encoded as:   "PL<255><221>"
+ ETWO 'E', 'T'
+ EQUB VE
+
+ ECHR 'W'               \ Token 146:    "WORLD"
+ ETWO 'O', 'R'          \
+ ECHR 'L'               \ Encoded as:   "W<253>LD"
+ ECHR 'D'
+ EQUB VE
+
+ ETWO 'T', 'H'          \ Token 147:    "THE "
+ ECHR 'E'               \
+ ECHR ' '               \ Encoded as:   "<226>E "
+ EQUB VE
+
+ ETWO 'T', 'H'          \ Token 148:    "THIS "
+ ECHR 'I'               \
+ ECHR 'S'               \ Encoded as:   "<226>IS "
+ ECHR ' '
+ EQUB VE
+
+ ETWO 'L', 'O'          \ Token 149:    "LOAD NEW {single cap}COMMANDER"
+ ECHR 'A'               \
+ ECHR 'D'               \ Encoded as:   "<224>AD[210][154]"
+ ETOK 210
+ ETOK 154
+ EQUB VE
+
+ EJMP 9                 \ Token 150:    "{clear screen}
+ EJMP 11                \                {draw box around title}
+ EJMP 1                 \                {all caps}
+ EJMP 8                 \                {tab 6}"
+ EQUB VE                \
+                        \ Encoded as:   "{9}{11}{1}{8}"
+
+ ECHR 'D'               \ Token 151:    "DRIVE"
+ ECHR 'R'               \
+ ECHR 'I'               \ Encoded as:   "DRI<250>"
+ ETWO 'V', 'E'
+ EQUB VE
+
+ ECHR ' '               \ Token 152:    " CATALOGUE"
+ ECHR 'C'               \
+ ETWO 'A', 'T'          \ Encoded as:   " C<245>A<224>GUE"
+ ECHR 'A'
+ ETWO 'L', 'O'
+ ECHR 'G'
+ ECHR 'U'
+ ECHR 'E'
+ EQUB VE
+
+ ECHR 'I'               \ Token 153:    "IAN"
+ ETWO 'A', 'N'          \
+ EQUB VE                \ Encoded as:   "I<255>"
+
+ EJMP 19                \ Token 154:    "{single cap}COMMANDER"
+ ECHR 'C'               \
+ ECHR 'O'               \ Encoded as:   "{19}COMM<255>D<244>"
+ ECHR 'M'
+ ECHR 'M'
+ ETWO 'A', 'N'
+ ECHR 'D'
+ ETWO 'E', 'R'
+ EQUB VE
+
+ ERND 13                \ Token 155:    "[170-174]"
+ EQUB VE                \
+                        \ Encoded as:   "[13?]"
+
+ ECHR 'M'               \ Token 156:    "MOUNTAIN"
+ ETWO 'O', 'U'          \
+ ECHR 'N'               \ Encoded as:   "M<217>NTA<240>"
+ ECHR 'T'
+ ECHR 'A'
+ ETWO 'I', 'N'
+ EQUB VE
+
+ ETWO 'E', 'D'          \ Token 157:    "EDIBLE"
+ ECHR 'I'               \
+ ECHR 'B'               \ Encoded as:   "<252>IB<229>"
+ ETWO 'L', 'E'
+ EQUB VE
+
+ ECHR 'T'               \ Token 158:    "TREE"
+ ETWO 'R', 'E'          \
+ ECHR 'E'               \ Encoded as:   "T<242>E"
+ EQUB VE
+
+ ECHR 'S'               \ Token 159:    "SPOTTED"
+ ECHR 'P'               \
+ ECHR 'O'               \ Encoded as:   "SPOTT<252>"
+ ECHR 'T'
+ ECHR 'T'
+ ETWO 'E', 'D'
+ EQUB VE
+
+ ERND 29                \ Token 160:    "[225-229]"
+ EQUB VE                \
+                        \ Encoded as:   "[29?]"
+
+ ERND 30                \ Token 161:    "[230-234]"
+ EQUB VE                \
+                        \ Encoded as:   "[30?]"
+
+ ERND 6                 \ Token 162:    "[46-50]OID"
+ ECHR 'O'               \
+ ECHR 'I'               \ Encoded as:   "[6?]OID"
+ ECHR 'D'
+ EQUB VE
+
+ ERND 36                \ Token 163:    "[120-124]"
+ EQUB VE                \
+                        \ Encoded as:   "[36?]"
+
+ ERND 35                \ Token 164:    "[115-119]"
+ EQUB VE                \
+                        \ Encoded as:   "[35?]"
+
+ ETWO 'A', 'N'          \ Token 165:    "ANCIENT"
+ ECHR 'C'               \
+ ECHR 'I'               \ Encoded as:   "<255>CI<246>T"
+ ETWO 'E', 'N'
+ ECHR 'T'
+ EQUB VE
+
+ ECHR 'E'               \ Token 166:    "EXCEPTIONAL"
+ ECHR 'X'               \
+ ETWO 'C', 'E'          \ Encoded as:   "EX<233>P<251><223><228>"
+ ECHR 'P'
+ ETWO 'T', 'I'
+ ETWO 'O', 'N'
+ ETWO 'A', 'L'
+ EQUB VE
+
+ ECHR 'E'               \ Token 167:    "ECCENTRIC"
+ ECHR 'C'               \
+ ETWO 'C', 'E'          \ Encoded as:   "EC<233>NTRIC"
+ ECHR 'N'
+ ECHR 'T'
+ ECHR 'R'
+ ECHR 'I'
+ ECHR 'C'
+ EQUB VE
+
+ ETWO 'I', 'N'          \ Token 168:    "INGRAINED"
+ ECHR 'G'               \
+ ETWO 'R', 'A'          \ Encoded as:   "<240>G<248><240><252>"
+ ETWO 'I', 'N'
+ ETWO 'E', 'D'
+ EQUB VE
+
+ ERND 23                \ Token 169:    "[130-134]"
+ EQUB VE                \
+                        \ Encoded as:   "[23?]"
+
+ ECHR 'K'               \ Token 170:    "KILLER"
+ ETWO 'I', 'L'          \
+ ECHR 'L'               \ Encoded as:   "K<220>L<244>"
+ ETWO 'E', 'R'
+ EQUB VE
+
+ ECHR 'D'               \ Token 171:    "DEADLY"
+ ECHR 'E'               \
+ ECHR 'A'               \ Encoded as:   "DEADLY"
+ ECHR 'D'
+ ECHR 'L'
+ ECHR 'Y'
+ EQUB VE
+
+ ECHR 'E'               \ Token 172:    "EVIL"
+ ECHR 'V'               \
+ ETWO 'I', 'L'          \ Encoded as:   "EV<220>"
+ EQUB VE
+
+ ETWO 'L', 'E'          \ Token 173:    "LETHAL"
+ ETWO 'T', 'H'          \
+ ETWO 'A', 'L'          \ Encoded as:   "<229><226><228>"
+ EQUB VE
+
+ ECHR 'V'               \ Token 174:    "VICIOUS"
+ ECHR 'I'               \
+ ECHR 'C'               \ Encoded as:   "VICIO<236>"
+ ECHR 'I'
+ ECHR 'O'
+ ETWO 'U', 'S'
+ EQUB VE
+
+ ETWO 'I', 'T'          \ Token 175:    "ITS "
+ ECHR 'S'               \
+ ECHR ' '               \ Encoded as:   "<219>S "
+ EQUB VE
+
+ EJMP 13                \ Token 176:    "{lower case}
+ EJMP 14                \                {justify}
+ EJMP 19                \                {single cap}"
+ EQUB VE                \
+                        \ Encoded as:   "{13}{14}{19}"
+
+ ECHR '.'               \ Token 177:    ".{cr}
+ EJMP 12                \                {left align}"
+ EJMP 15                \
+ EQUB VE                \ Encoded as:   ".{12}{15}"
+
+ ECHR ' '               \ Token 178:    " AND "
+ ETWO 'A', 'N'          \
+ ECHR 'D'               \ Encoded as:   " <255>D "
+ ECHR ' '
+ EQUB VE
+
+ ECHR 'Y'               \ Token 179:    "YOU"
+ ETWO 'O', 'U'          \
+ EQUB VE                \ Encoded as:   "Y<217>"
+
+ ECHR 'P'               \ Token 180:    "PARKING METERS"
+ ETWO 'A', 'R'          \
+ ECHR 'K'               \ Encoded as:   "P<238>K[195]M<221><244>S"
+ ETOK 195
+ ECHR 'M'
+ ETWO 'E', 'T'
+ ETWO 'E', 'R'
+ ECHR 'S'
+ EQUB VE
+
+ ECHR 'D'               \ Token 181:    "DUST CLOUDS"
+ ETWO 'U', 'S'          \
+ ECHR 'T'               \ Encoded as:   "D<236>T C<224>UDS"
+ ECHR ' '
+ ECHR 'C'
+ ETWO 'L', 'O'
+ ECHR 'U'
+ ECHR 'D'
+ ECHR 'S'
+ EQUB VE
+
+ ECHR 'I'               \ Token 182:    "ICE BERGS"
+ ETWO 'C', 'E'          \
+ ECHR ' '               \ Encoded as:   "I<233> <247>RGS"
+ ETWO 'B', 'E'
+ ECHR 'R'
+ ECHR 'G'
+ ECHR 'S'
+ EQUB VE
+
+ ECHR 'R'               \ Token 183:    "ROCK FORMATIONS"
+ ECHR 'O'               \
+ ECHR 'C'               \ Encoded as:   "ROCK F<253><239><251><223>S"
+ ECHR 'K'
+ ECHR ' '
+ ECHR 'F'
+ ETWO 'O', 'R'
+ ETWO 'M', 'A'
+ ETWO 'T', 'I'
+ ETWO 'O', 'N'
+ ECHR 'S'
+ EQUB VE
+
+ ECHR 'V'               \ Token 184:    "VOLCANOES"
+ ECHR 'O'               \
+ ECHR 'L'               \ Encoded as:   "VOLCA<227><237>"
+ ECHR 'C'
+ ECHR 'A'
+ ETWO 'N', 'O'
+ ETWO 'E', 'S'
+ EQUB VE
+
+ ECHR 'P'               \ Token 185:    "PLANT"
+ ECHR 'L'               \
+ ETWO 'A', 'N'          \ Encoded as:   "PL<255>T"
+ ECHR 'T'
+ EQUB VE
+
+ ECHR 'T'               \ Token 186:    "TULIP"
+ ECHR 'U'               \
+ ECHR 'L'               \ Encoded as:   "TULIP"
+ ECHR 'I'
+ ECHR 'P'
+ EQUB VE
+
+ ECHR 'B'               \ Token 187:    "BANANA"
+ ETWO 'A', 'N'          \
+ ETWO 'A', 'N'          \ Encoded as:   "B<255><255>A"
+ ECHR 'A'
+ EQUB VE
+
+ ECHR 'C'               \ Token 188:    "CORN"
+ ETWO 'O', 'R'          \
+ ECHR 'N'               \ Encoded as:   "C<253>N"
+ EQUB VE
+
+ EJMP 18                \ Token 189:    "{random 1-8 letter word}WEED"
+ ECHR 'W'               \
+ ECHR 'E'               \ Encoded as:   "{18}WE<252>"
+ ETWO 'E', 'D'
+ EQUB VE
+
+ EJMP 18                \ Token 190:    "{random 1-8 letter word}"
+ EQUB VE                \
+                        \ Encoded as:   "{18}"
+
+ EJMP 17                \ Token 191:    "{system name adjective} {random 1-8
+ ECHR ' '               \                letter word}"
+ EJMP 18                \
+ EQUB VE                \ Encoded as:   "{17} {18}"
+
+ EJMP 17                \ Token 192:    "{system name adjective} [170-174]"
+ ECHR ' '               \
+ ERND 13                \ Encoded as:   "{17} [13?]"
+ EQUB VE
+
+ ETWO 'I', 'N'          \ Token 193:    "INHABITANT"
+ ECHR 'H'               \
+ ECHR 'A'               \ Encoded as:   "<240>HA<234>T<255>T"
+ ETWO 'B', 'I'
+ ECHR 'T'
+ ETWO 'A', 'N'
+ ECHR 'T'
+ EQUB VE
+
+ ETOK 191               \ Token 194:    "{system name adjective} {random 1-8
+ EQUB VE                \                letter word}"
+                        \
+                        \ Encoded as:   "[191]"
+
+ ETWO 'I', 'N'          \ Token 195:    "ING "
+ ECHR 'G'               \
+ ECHR ' '               \ Encoded as:   "<240>G "
+ EQUB VE
+
+ ETWO 'E', 'D'          \ Token 196:    "ED "
+ ECHR ' '               \
+ EQUB VE                \ Encoded as:   "<252> "
+
+ EQUB VE                \ Token 197:    ""
+                        \
+                        \ Encoded as:   ""
+
+ EQUB VE                \ Token 198:    ""
+                        \
+                        \ Encoded as:   ""
+
+ EQUB VE                \ Token 199:    ""
+                        \
+                        \ Encoded as:   ""
+
+ ECHR ' '               \ Token 200:    " NAME? "
+ ECHR 'N'               \
+ ECHR 'A'               \ Encoded as:   " NAME? "
+ ECHR 'M'
+ ECHR 'E'
+ ECHR '?'
+ ECHR ' '
+ EQUB VE
+
+ ECHR ' '               \ Token 201:    " TO "
+ ECHR 'T'               \
+ ECHR 'O'               \ Encoded as:   " TO "
+ ECHR ' '
+ EQUB VE
+
+ ECHR ' '               \ Token 202:    " IS "
+ ECHR 'I'               \
+ ECHR 'S'               \ Encoded as:   " IS "
+ ECHR ' '
+ EQUB VE
+
+ ECHR 'W'               \ Token 203:    "WAS LAST SEEN AT {single cap}"
+ ECHR 'A'               \
+ ECHR 'S'               \ Encoded as:   "WAS <249><222> <218><246> <245> {19}"
+ ECHR ' '
+ ETWO 'L', 'A'
+ ETWO 'S', 'T'
+ ECHR ' '
+ ETWO 'S', 'E'
+ ETWO 'E', 'N'
+ ECHR ' '
+ ETWO 'A', 'T'
+ ECHR ' '
+ EJMP 19
+ EQUB VE
+
+ ECHR '.'               \ Token 204:    ".{cr}
+ EJMP 12                \                 {single cap}"
+ ECHR ' '               \
+ EJMP 19                \ Encoded as:   ".{12} {19}"
+ EQUB VE
+
+ ECHR 'D'               \ Token 205:    "DOCKED"
+ ECHR 'O'               \
+ ECHR 'C'               \ Encoded as:   "DOCK<252>"
+ ECHR 'K'
+ ETWO 'E', 'D'
+ EQUB VE
+
+ EJMP 1                 \ Token 206:    "{all caps}(Y/N)?"
+ ECHR '('               \
+ ECHR 'Y'               \ Encoded as:   "{1}(Y/N)?"
+ ECHR '/'
+ ECHR 'N'
+ ECHR ')'
+ ECHR '?'
+ EQUB VE
+
+ ECHR 'S'               \ Token 207:    "SHIP"
+ ECHR 'H'               \
+ ECHR 'I'               \ Encoded as:   "SHIP"
+ ECHR 'P'
+ EQUB VE
+
+ ECHR ' '               \ Token 208:    " A "
+ ECHR 'A'               \
+ ECHR ' '               \ Encoded as:   " A "
+ EQUB VE
+
+ ECHR ' '               \ Token 209:    " ERRIUS"
+ ETWO 'E', 'R'          \
+ ECHR 'R'               \ Encoded as:   " <244>RI<236>"
+ ECHR 'I'
+ ETWO 'U', 'S'
+ EQUB VE
+
+ ECHR ' '               \ Token 210:    " NEW "
+ ECHR 'N'               \
+ ECHR 'E'               \ Encoded as:   " NEW "
+ ECHR 'W'
+ ECHR ' '
+ EQUB VE
+
+ EJMP 2                 \ Token 211:    "{sentence case} HER MAJESTY'S SPACE
+ ECHR ' '               \                 NAVY{lower case}"
+ ECHR 'H'               \
+ ETWO 'E', 'R'          \ Encoded as:   "{2} H<244> <239>J<237>TY'S SPA<233> NAV
+ ECHR ' '               \                Y{13}"
+ ETWO 'M', 'A'
+ ECHR 'J'
+ ETWO 'E', 'S'
+ ECHR 'T'
+ ECHR 'Y'
+ ECHR '`'
+ ECHR 'S'
+ ECHR ' '
+ ECHR 'S'
+ ECHR 'P'
+ ECHR 'A'
+ ETWO 'C', 'E'
+ ECHR ' '
+ ECHR 'N'
+ ECHR 'A'
+ ECHR 'V'
+ ECHR 'Y'
+ EJMP 13
+ EQUB VE
+
+ ETOK 177               \ Token 212:    ".{cr}
+ EJMP 8                 \                {left align}
+ EJMP 1                 \                {tab 6}{all caps}  MESSAGE ENDS"
+ ECHR ' '               \
+ ECHR ' '               \ Encoded as:   "[177]{8}{1}  M<237>SA<231> <246>DS"
+ ECHR 'M'
+ ETWO 'E', 'S'
+ ECHR 'S'
+ ECHR 'A'
+ ETWO 'G', 'E'
+ ECHR ' '
+ ETWO 'E', 'N'
+ ECHR 'D'
+ ECHR 'S'
+ EQUB VE
+
+ ECHR ' '               \ Token 213:    " {single cap}COMMANDER {commander
+ ETOK 154               \                name}, I {lower case}AM{sentence case}
+ ECHR ' '               \                CAPTAIN {mission captain's name}
+ EJMP 4                 \                {lower case}OF{sentence case} HER
+ ECHR ','               \                MAJESTY'S SPACE NAVY{lower case}"
+ ECHR ' '               \
+ ECHR 'I'               \ Encoded as:   " [154] {4}, I {13}AM{2} CAPTA<240> {27}
+ ECHR ' '               \                 {13}OF[211]"
+ EJMP 13
+ ECHR 'A'
+ ECHR 'M'
+ EJMP 2
+ ECHR ' '
+ ECHR 'C'
+ ECHR 'A'
+ ECHR 'P'
+ ECHR 'T'
+ ECHR 'A'
+ ETWO 'I', 'N'
+ ECHR ' '
+ EJMP 27
+ ECHR ' '
+ EJMP 13
+ ECHR 'O'
+ ECHR 'F'
+ ETOK 211
+ EQUB VE
+
+ EQUB VE                \ Token 214:    ""
+                        \
+                        \ Encoded as:   ""
+
+ EJMP 15                \ Token 215:    "{left align} UNKNOWN PLANET"
+ ECHR ' '               \
+ ECHR 'U'               \ Encoded as:   "{15} UNK<227>WN [145]"
+ ECHR 'N'
+ ECHR 'K'
+ ETWO 'N', 'O'
+ ECHR 'W'
+ ECHR 'N'
+ ECHR ' '
+ ETOK 145
+ EQUB VE
+
+ EJMP 9                 \ Token 216:    "{clear screen}
+ EJMP 8                 \                {tab 6}
+ EJMP 23                \                {move to row 10, white, lower case}
+ EJMP 1                 \                {all caps}
+ ETWO 'I', 'N'          \                INCOMING MESSAGE"
+ ECHR 'C'               \
+ ECHR 'O'               \ Encoded as:   "{9}{8}{23}{1}<240>COM[195]M<237>SA
+ ECHR 'M'               \                <231>"
+ ETOK 195
+ ECHR 'M'
+ ETWO 'E', 'S'
+ ECHR 'S'
+ ECHR 'A'
+ ETWO 'G', 'E'
+ EQUB VE
+
+ ECHR 'C'               \ Token 217:    "CURRUTHERS"
+ ECHR 'U'               \
+ ECHR 'R'               \ Encoded as:   "CURRU<226><244>S"
+ ECHR 'R'
+ ECHR 'U'
+ ETWO 'T', 'H'
+ ETWO 'E', 'R'
+ ECHR 'S'
+ EQUB VE
+
+ ECHR 'F'               \ Token 218:    "FOSDYKE SMYTHE"
+ ECHR 'O'               \
+ ECHR 'S'               \ Encoded as:   "FOSDYKE SMY<226>E"
+ ECHR 'D'
+ ECHR 'Y'
+ ECHR 'K'
+ ECHR 'E'
+ ECHR ' '
+ ECHR 'S'
+ ECHR 'M'
+ ECHR 'Y'
+ ETWO 'T', 'H'
+ ECHR 'E'
+ EQUB VE
+
+ ECHR 'F'               \ Token 219:    "FORTESQUE"
+ ETWO 'O', 'R'          \
+ ECHR 'T'               \ Encoded as:   "F<253>T<237><254>E"
+ ETWO 'E', 'S'
+ ETWO 'Q', 'U'
+ ECHR 'E'
+ EQUB VE
+
+ ETOK 203               \ Token 220:    "WAS LAST SEEN AT {single cap}REESDICE"
+ ETWO 'R', 'E'          \
+ ETWO 'E', 'S'          \ Encoded as:   "[203]<242><237><241><233>"
+ ETWO 'D', 'I'
+ ETWO 'C', 'E'
+ EQUB VE
+
+ ECHR 'I'               \ Token 221:    "IS BELIEVED TO HAVE JUMPED TO THIS
+ ECHR 'S'               \                GALAXY"
+ ECHR ' '               \
+ ETWO 'B', 'E'          \ Encoded as:   "IS <247>LIEV<252>[201]HA<250> JUMP<252>
+ ECHR 'L'               \                [201][148]G<228>AXY"
+ ECHR 'I'
+ ECHR 'E'
+ ECHR 'V'
+ ETWO 'E', 'D'
+ ETOK 201
+ ECHR 'H'
+ ECHR 'A'
+ ETWO 'V', 'E'
+ ECHR ' '
+ ECHR 'J'
+ ECHR 'U'
+ ECHR 'M'
+ ECHR 'P'
+ ETWO 'E', 'D'
+ ETOK 201
+ ETOK 148
+ ECHR 'G'
+ ETWO 'A', 'L'
+ ECHR 'A'
+ ECHR 'X'
+ ECHR 'Y'
+ EQUB VE
+
+ EJMP 25                \ Token 222:    "{incoming message screen, wait 2s}
+ EJMP 9                 \                {clear screen}
+ EJMP 29                \                {tab 6, white, lower case in words}
+ EJMP 14                \                {justify}
+ EJMP 2                 \                {sentence case}
+ ECHR 'G'               \                GOOD DAY {single cap}COMMANDER
+ ECHR 'O'               \                {commander name}.{cr}
+ ECHR 'O'               \                 {single cap}I{lower case} AM {single
+ ECHR 'D'               \                cap}AGENT{single cap}BLAKE OF {single
+ ECHR ' '               \                cap}NAVAL {single cap}INTELLEGENCE.{cr}
+ ECHR 'D'               \                 {single cap}AS YOU KNOW, THE {single
+ ECHR 'A'               \                cap}NAVY HAVE BEEN KEEPING THE {single
+ ECHR 'Y'               \                cap}THARGOIDS OFF YOUR ASS OUT IN DEEP
+ ECHR ' '               \                SPACE FOR MANY YEARS NOW. {single cap}
+ ETOK 154               \                WELL THE SITUATION HAS CHANGED.{cr}
+ ECHR ' '               \                 {single cap}OUR BOYS ARE READY FOR A
+ EJMP 4                 \                PUSH RIGHT TO THE HOME SYSTEM OF THOSE
+ ETOK 204               \                MOTHERS.{cr}
+ ECHR 'I'               \                 {single cap}
+ EJMP 13                \                {wait for key press}
+ ECHR ' '               \                {clear screen}
+ ECHR 'A'               \                {white}
+ ECHR 'M'               \                {tab 6, white, lower case in words}
+ ECHR ' '               \                I{lower case} HAVE OBTAINED THE DEFENCE
+ EJMP 19                \                PLANS FOR THEIR {single cap}HIVE
+ ECHR 'A'               \                {single cap}WORLDS.{cr} {single cap}THE
+ ECHR 'G'               \                BEETLES KNOW WE'VE GOT SOMETHING BUT
+ ETWO 'E', 'N'          \                NOT WHAT.{cr} {single cap}IF {single
+ ECHR 'T'               \                cap}I TRANSMIT THE PLANS TO OUR BASE ON
+ ECHR ' '               \                {single cap}BIRERA THEY'LL INTERCEPT
+ EJMP 19                \                THE TRANSMISSION. {single cap}I NEED A
+ ECHR 'B'               \                SHIP TO MAKE THE RUN.{cr}
+ ETWO 'L', 'A'          \                 {single cap}YOU'RE ELECTED.{cr}
+ ECHR 'K'               \                 {single cap}THE PLANS ARE UNIPULSE
+ ECHR 'E'               \                CODED WITHIN THIS TRANSMISSION.{cr}
+ ECHR ' '               \                 {single cap}{tab 6}YOU WILL BE
+ ECHR 'O'               \                PAID.{cr}
+ ECHR 'F'               \                 {single cap}    {single cap}GOOD LUCK
+ ECHR ' '               \                {single cap}COMMANDER.{cr}
+ EJMP 19                \                {left align}
+ ECHR 'N'               \                {tab 6}{all caps}  MESSAGE ENDS
+ ECHR 'A'               \                {wait for key press}"
+ ECHR 'V'               \
+ ECHR 'A'               \ Encoded as:   "{25}{9}{29}{14}{2}GOOD DAY [154]
+ ECHR 'L'               \                 {4}[204]I{13} AM {19}AG<246>T {19}B
+ ECHR ' '               \                <249>KE OF {19}NAVAL {19}<240>TEL<229>
+ EJMP 19                \                G<246><233>[204]AS [179] K<227>W, [147]
+ ETWO 'I', 'N'          \                {19}NAVY HA<250> <247><246> KEEP[195]
+ ECHR 'T'               \                [147]{19}<226><238>GOIDS OFF [179]R ASS
+ ECHR 'E'               \                 <217>T <240> DEEP SPA<233> F<253>
+ ECHR 'L'               \                 <239>NY YE<238>S <227>W. {19}WELL
+ ETWO 'L', 'E'          \                 [147]S<219>UA<251><223> HAS CH<255>G
+ ECHR 'G'               \                <252>[204]<217>R BOYS <238>E <242>ADY F
+ ETWO 'E', 'N'          \                <253>[208]PUSH RIGHT[201][147]HOME
+ ETWO 'C', 'E'          \                 SYSTEM OF <226>O<218> MO<226><244>S
+ ETOK 204               \                [204]{24}{9}{29}I{13} HA<250> OBTA
+ ECHR 'A'               \                <240>[196][147]DEF<246><233> P<249>NS F
+ ECHR 'S'               \                <253> <226>EIR {19}HI<250> {19}W<253>LD
+ ECHR ' '               \                S[204][147]<247><221><229>S K<227>W WE'
+ ETOK 179               \                <250> GOT <235>ME<226>[195]BUT <227>T W
+ ECHR ' '               \                H<245>[204]IF {19}I T<248>NSM<219>
+ ECHR 'K'               \                 [147]P<249>NS[201]<217>R BA<218> <223>
+ ETWO 'N', 'O'          \                 {19}<234><242><248> <226>EY'LL <240>T
+ ECHR 'W'               \                <244><233>PT [147]TR<255>SMISSI<223>.
+ ECHR ','               \                 {19}I NE<252>[208][207][201]<239>KE
+ ECHR ' '               \                 [147]RUN[204][179]'<242> E<229>CT<252>
+ ETOK 147               \                [204][147]P<249>NS A<242> UNIPUL<218> C
+ EJMP 19                \                OD[196]WI<226><240> [148]TR<255>SMISSI
+ ECHR 'N'               \                <223>[204]{8}[179] W<220>L <247> PAID
+ ECHR 'A'               \                [204]    {19}GOOD LUCK [154][212]{24}"
+ ECHR 'V'
+ ECHR 'Y'
+ ECHR ' '
+ ECHR 'H'
+ ECHR 'A'
+ ETWO 'V', 'E'
+ ECHR ' '
+ ETWO 'B', 'E'
+ ETWO 'E', 'N'
+ ECHR ' '
+ ECHR 'K'
+ ECHR 'E'
+ ECHR 'E'
+ ECHR 'P'
+ ETOK 195
+ ETOK 147
+ EJMP 19
+ ETWO 'T', 'H'
+ ETWO 'A', 'R'
+ ECHR 'G'
+ ECHR 'O'
+ ECHR 'I'
+ ECHR 'D'
+ ECHR 'S'
+ ECHR ' '
+ ECHR 'O'
+ ECHR 'F'
+ ECHR 'F'
+ ECHR ' '
+ ETOK 179
+ ECHR 'R'
+ ECHR ' '
+ ECHR 'A'
+ ECHR 'S'
+ ECHR 'S'
+ ECHR ' '
+ ETWO 'O', 'U'
+ ECHR 'T'
+ ECHR ' '
+ ETWO 'I', 'N'
+ ECHR ' '
+ ECHR 'D'
+ ECHR 'E'
+ ECHR 'E'
+ ECHR 'P'
+ ECHR ' '
+ ECHR 'S'
+ ECHR 'P'
+ ECHR 'A'
+ ETWO 'C', 'E'
+ ECHR ' '
+ ECHR 'F'
+ ETWO 'O', 'R'
+ ECHR ' '
+ ETWO 'M', 'A'
+ ECHR 'N'
+ ECHR 'Y'
+ ECHR ' '
+ ECHR 'Y'
+ ECHR 'E'
+ ETWO 'A', 'R'
+ ECHR 'S'
+ ECHR ' '
+ ETWO 'N', 'O'
+ ECHR 'W'
+ ECHR '.'
+ ECHR ' '
+ EJMP 19
+ ECHR 'W'
+ ECHR 'E'
+ ECHR 'L'
+ ECHR 'L'
+ ECHR ' '
+ ETOK 147
+ ECHR 'S'
+ ETWO 'I', 'T'
+ ECHR 'U'
+ ECHR 'A'
+ ETWO 'T', 'I'
+ ETWO 'O', 'N'
+ ECHR ' '
+ ECHR 'H'
+ ECHR 'A'
+ ECHR 'S'
+ ECHR ' '
+ ECHR 'C'
+ ECHR 'H'
+ ETWO 'A', 'N'
+ ECHR 'G'
+ ETWO 'E', 'D'
+ ETOK 204
+ ETWO 'O', 'U'
+ ECHR 'R'
+ ECHR ' '
+ ECHR 'B'
+ ECHR 'O'
+ ECHR 'Y'
+ ECHR 'S'
+ ECHR ' '
+ ETWO 'A', 'R'
+ ECHR 'E'
+ ECHR ' '
+ ETWO 'R', 'E'
+ ECHR 'A'
+ ECHR 'D'
+ ECHR 'Y'
+ ECHR ' '
+ ECHR 'F'
+ ETWO 'O', 'R'
+ ETOK 208
+ ECHR 'P'
+ ECHR 'U'
+ ECHR 'S'
+ ECHR 'H'
+ ECHR ' '
+ ECHR 'R'
+ ECHR 'I'
+ ECHR 'G'
+ ECHR 'H'
+ ECHR 'T'
+ ETOK 201
+ ETOK 147
+ ECHR 'H'
+ ECHR 'O'
+ ECHR 'M'
+ ECHR 'E'
+ ECHR ' '
+ ECHR 'S'
+ ECHR 'Y'
+ ECHR 'S'
+ ECHR 'T'
+ ECHR 'E'
+ ECHR 'M'
+ ECHR ' '
+ ECHR 'O'
+ ECHR 'F'
+ ECHR ' '
+ ETWO 'T', 'H'
+ ECHR 'O'
+ ETWO 'S', 'E'
+ ECHR ' '
+ ECHR 'M'
+ ECHR 'O'
+ ETWO 'T', 'H'
+ ETWO 'E', 'R'
+ ECHR 'S'
+ ETOK 204
+ EJMP 24
+ EJMP 9
+ EJMP 29
+ ECHR 'I'
+ EJMP 13
+ ECHR ' '
+ ECHR 'H'
+ ECHR 'A'
+ ETWO 'V', 'E'
+ ECHR ' '
+ ECHR 'O'
+ ECHR 'B'
+ ECHR 'T'
+ ECHR 'A'
+ ETWO 'I', 'N'
+ ETOK 196
+ ETOK 147
+ ECHR 'D'
+ ECHR 'E'
+ ECHR 'F'
+ ETWO 'E', 'N'
+ ETWO 'C', 'E'
+ ECHR ' '
+ ECHR 'P'
+ ETWO 'L', 'A'
+ ECHR 'N'
+ ECHR 'S'
+ ECHR ' '
+ ECHR 'F'
+ ETWO 'O', 'R'
+ ECHR ' '
+ ETWO 'T', 'H'
+ ECHR 'E'
+ ECHR 'I'
+ ECHR 'R'
+ ECHR ' '
+ EJMP 19
+ ECHR 'H'
+ ECHR 'I'
+ ETWO 'V', 'E'
+ ECHR ' '
+ EJMP 19
+ ECHR 'W'
+ ETWO 'O', 'R'
+ ECHR 'L'
+ ECHR 'D'
+ ECHR 'S'
+ ETOK 204
+ ETOK 147
+ ETWO 'B', 'E'
+ ETWO 'E', 'T'
+ ETWO 'L', 'E'
+ ECHR 'S'
+ ECHR ' '
+ ECHR 'K'
+ ETWO 'N', 'O'
+ ECHR 'W'
+ ECHR ' '
+ ECHR 'W'
+ ECHR 'E'
+ ECHR '`'
+ ETWO 'V', 'E'
+ ECHR ' '
+ ECHR 'G'
+ ECHR 'O'
+ ECHR 'T'
+ ECHR ' '
+ ETWO 'S', 'O'
+ ECHR 'M'
+ ECHR 'E'
+ ETWO 'T', 'H'
+ ETOK 195
+ ECHR 'B'
+ ECHR 'U'
+ ECHR 'T'
+ ECHR ' '
+ ETWO 'N', 'O'
+ ECHR 'T'
+ ECHR ' '
+ ECHR 'W'
+ ECHR 'H'
+ ETWO 'A', 'T'
+ ETOK 204
+ ECHR 'I'
+ ECHR 'F'
+ ECHR ' '
+ EJMP 19
+ ECHR 'I'
+ ECHR ' '
+ ECHR 'T'
+ ETWO 'R', 'A'
+ ECHR 'N'
+ ECHR 'S'
+ ECHR 'M'
+ ETWO 'I', 'T'
+ ECHR ' '
+ ETOK 147
+ ECHR 'P'
+ ETWO 'L', 'A'
+ ECHR 'N'
+ ECHR 'S'
+ ETOK 201
+ ETWO 'O', 'U'
+ ECHR 'R'
+ ECHR ' '
+ ECHR 'B'
+ ECHR 'A'
+ ETWO 'S', 'E'
+ ECHR ' '
+ ETWO 'O', 'N'
+ ECHR ' '
+ EJMP 19
+ ETWO 'B', 'I'
+ ETWO 'R', 'E'
+ ETWO 'R', 'A'
+ ECHR ' '
+ ETWO 'T', 'H'
+ ECHR 'E'
+ ECHR 'Y'
+ ECHR '`'
+ ECHR 'L'
+ ECHR 'L'
+ ECHR ' '
+ ETWO 'I', 'N'
+ ECHR 'T'
+ ETWO 'E', 'R'
+ ETWO 'C', 'E'
+ ECHR 'P'
+ ECHR 'T'
+ ECHR ' '
+ ETOK 147
+ ECHR 'T'
+ ECHR 'R'
+ ETWO 'A', 'N'
+ ECHR 'S'
+ ECHR 'M'
+ ECHR 'I'
+ ECHR 'S'
+ ECHR 'S'
+ ECHR 'I'
+ ETWO 'O', 'N'
+ ECHR '.'
+ ECHR ' '
+ EJMP 19
+ ECHR 'I'
+ ECHR ' '
+ ECHR 'N'
+ ECHR 'E'
+ ETWO 'E', 'D'
+ ETOK 208
+ ETOK 207
+ ETOK 201
+ ETWO 'M', 'A'
+ ECHR 'K'
+ ECHR 'E'
+ ECHR ' '
+ ETOK 147
+ ECHR 'R'
+ ECHR 'U'
+ ECHR 'N'
+ ETOK 204
+ ETOK 179
+ ECHR '`'
+ ETWO 'R', 'E'
+ ECHR ' '
+ ECHR 'E'
+ ETWO 'L', 'E'
+ ECHR 'C'
+ ECHR 'T'
+ ETWO 'E', 'D'
+ ETOK 204
+ ETOK 147
+ ECHR 'P'
+ ETWO 'L', 'A'
+ ECHR 'N'
+ ECHR 'S'
+ ECHR ' '
+ ECHR 'A'
+ ETWO 'R', 'E'
+ ECHR ' '
+ ECHR 'U'
+ ECHR 'N'
+ ECHR 'I'
+ ECHR 'P'
+ ECHR 'U'
+ ECHR 'L'
+ ETWO 'S', 'E'
+ ECHR ' '
+ ECHR 'C'
+ ECHR 'O'
+ ECHR 'D'
+ ETOK 196
+ ECHR 'W'
+ ECHR 'I'
+ ETWO 'T', 'H'
+ ETWO 'I', 'N'
+ ECHR ' '
+ ETOK 148
+ ECHR 'T'
+ ECHR 'R'
+ ETWO 'A', 'N'
+ ECHR 'S'
+ ECHR 'M'
+ ECHR 'I'
+ ECHR 'S'
+ ECHR 'S'
+ ECHR 'I'
+ ETWO 'O', 'N'
+ ETOK 204
+ EJMP 8
+ ETOK 179
+ ECHR ' '
+ ECHR 'W'
+ ETWO 'I', 'L'
+ ECHR 'L'
+ ECHR ' '
+ ETWO 'B', 'E'
+ ECHR ' '
+ ECHR 'P'
+ ECHR 'A'
+ ECHR 'I'
+ ECHR 'D'
+ ETOK 204
+ ECHR ' '
+ ECHR ' '
+ ECHR ' '
+ ECHR ' '
+ EJMP 19
+ ECHR 'G'
+ ECHR 'O'
+ ECHR 'O'
+ ECHR 'D'
+ ECHR ' '
+ ECHR 'L'
+ ECHR 'U'
+ ECHR 'C'
+ ECHR 'K'
+ ECHR ' '
+ ETOK 154
+ ETOK 212
+ EJMP 24
+ EQUB VE
+
+ EJMP 25                \ Token 223:    "{incoming message screen, wait 2s}
+ EJMP 9                 \                {clear screen}
+ EJMP 29                \                {tab 6, white, lower case in words}
+ EJMP 8                 \                {tab 6}
+ EJMP 14                \                {justify}
+ EJMP 13                \                {lower case}
+ EJMP 19                \                {single cap}WELL DONE {single cap}
+ ECHR 'W'               \                COMMANDER.{cr}
+ ECHR 'E'               \                 {single cap}YOU HAVE SERVED US WELL
+ ECHR 'L'               \                AND WE SHALL REMEMBER.{cr}
+ ECHR 'L'               \                 {single cap}WE DID NOT EXPECT THE
+ ECHR ' '               \                {single cap}THARGOIDS TO FIND OUT
+ ECHR 'D'               \                ABOUT YOU.{cr}
+ ETWO 'O', 'N'          \                 {single cap}FOR THE MOMENT PLEASE
+ ECHR 'E'               \                ACCEPT THIS {single cap}NAVY {standard
+ ECHR ' '               \                tokens, sentence case}EXTRA ENERGY
+ ETOK 154               \                UNIT{extended tokens} AS PAYMENT.{cr}
+ ETOK 204               \                {left align}
+ ETOK 179               \                {tab 6}{all caps}  MESSAGE ENDS
+ ECHR ' '               \                {wait for key press}"
+ ECHR 'H'               \
+ ECHR 'A'               \ Encoded as:   "{25}{9}{29}{8}{14}{13}{19}WELL D
+ ETWO 'V', 'E'          \                <223>E [154][204][179] HA<250> <218>RV
+ ECHR ' '               \                [196]US WELL[178]WE SH<228>L <242>MEMB
+ ETWO 'S', 'E'          \                <244>[204]WE DID <227>T EXPECT [147]
+ ECHR 'R'               \                {19}<226><238>GOIDS[201]F<240>D <217>T
+ ECHR 'V'               \                 AB<217>T [179][204]F<253> [147]MOM
+ ETOK 196               \                <246>T P<229>A<218> AC<233>PT [148]{19}
+ ECHR 'U'               \                NAVY {6}[114]{5} AS PAYM<246>T[212]
+ ECHR 'S'               \                {24}"
+ ECHR ' '
+ ECHR 'W'
+ ECHR 'E'
+ ECHR 'L'
+ ECHR 'L'
+ ETOK 178
+ ECHR 'W'
+ ECHR 'E'
+ ECHR ' '
+ ECHR 'S'
+ ECHR 'H'
+ ETWO 'A', 'L'
+ ECHR 'L'
+ ECHR ' '
+ ETWO 'R', 'E'
+ ECHR 'M'
+ ECHR 'E'
+ ECHR 'M'
+ ECHR 'B'
+ ETWO 'E', 'R'
+ ETOK 204
+ ECHR 'W'
+ ECHR 'E'
+ ECHR ' '
+ ECHR 'D'
+ ECHR 'I'
+ ECHR 'D'
+ ECHR ' '
+ ETWO 'N', 'O'
+ ECHR 'T'
+ ECHR ' '
+ ECHR 'E'
+ ECHR 'X'
+ ECHR 'P'
+ ECHR 'E'
+ ECHR 'C'
+ ECHR 'T'
+ ECHR ' '
+ ETOK 147
+ EJMP 19
+ ETWO 'T', 'H'
+ ETWO 'A', 'R'
+ ECHR 'G'
+ ECHR 'O'
+ ECHR 'I'
+ ECHR 'D'
+ ECHR 'S'
+ ETOK 201
+ ECHR 'F'
+ ETWO 'I', 'N'
+ ECHR 'D'
+ ECHR ' '
+ ETWO 'O', 'U'
+ ECHR 'T'
+ ECHR ' '
+ ECHR 'A'
+ ECHR 'B'
+ ETWO 'O', 'U'
+ ECHR 'T'
+ ECHR ' '
+ ETOK 179
+ ETOK 204
+ ECHR 'F'
+ ETWO 'O', 'R'
+ ECHR ' '
+ ETOK 147
+ ECHR 'M'
+ ECHR 'O'
+ ECHR 'M'
+ ETWO 'E', 'N'
+ ECHR 'T'
+ ECHR ' '
+ ECHR 'P'
+ ETWO 'L', 'E'
+ ECHR 'A'
+ ETWO 'S', 'E'
+ ECHR ' '
+ ECHR 'A'
+ ECHR 'C'
+ ETWO 'C', 'E'
+ ECHR 'P'
+ ECHR 'T'
+ ECHR ' '
+ ETOK 148
+ EJMP 19
+ ECHR 'N'
+ ECHR 'A'
+ ECHR 'V'
+ ECHR 'Y'
+ ECHR ' '
+ EJMP 6
+ TOKN 114
+ EJMP 5
+ ECHR ' '
+ ECHR 'A'
+ ECHR 'S'
+ ECHR ' '
+ ECHR 'P'
+ ECHR 'A'
+ ECHR 'Y'
+ ECHR 'M'
+ ETWO 'E', 'N'
+ ECHR 'T'
+ ETOK 212
+ EJMP 24
+ EQUB VE
+
+ EQUB VE                \ Token 224:    ""
+                        \
+                        \ Encoded as:   ""
+
+ ECHR 'S'               \ Token 225:    "SHREW"
+ ECHR 'H'               \
+ ETWO 'R', 'E'          \ Encoded as:   "SH<242>W"
+ ECHR 'W'
+ EQUB VE
+
+ ETWO 'B', 'E'          \ Token 226:    "BEAST"
+ ECHR 'A'               \
+ ETWO 'S', 'T'          \ Encoded as:   "<247>A<222>"
+ EQUB VE
+
+ ECHR 'B'               \ Token 227:    "BISON"
+ ECHR 'I'               \
+ ECHR 'S'               \ Encoded as:   "BIS<223>"
+ ETWO 'O', 'N'
+ EQUB VE
+
+ ECHR 'S'               \ Token 228:    "SNAKE"
+ ECHR 'N'               \
+ ECHR 'A'               \ Encoded as:   "SNAKE"
+ ECHR 'K'
+ ECHR 'E'
+ EQUB VE
+
+ ECHR 'W'               \ Token 229:    "WOLF"
+ ECHR 'O'               \
+ ECHR 'L'               \ Encoded as:   "WOLF"
+ ECHR 'F'
+ EQUB VE
+
+ ETWO 'L', 'E'          \ Token 230:    "LEOPARD"
+ ECHR 'O'               \
+ ECHR 'P'               \ Encoded as:   "<229>OP<238>D"
+ ETWO 'A', 'R'
+ ECHR 'D'
+ EQUB VE
+
+ ECHR 'C'               \ Token 231:    "CAT"
+ ETWO 'A', 'T'          \
+ EQUB VE                \ Encoded as:   "C<245>"
+
+ ECHR 'M'               \ Token 232:    "MONKEY"
+ ETWO 'O', 'N'          \
+ ECHR 'K'               \ Encoded as:   "M<223>KEY"
+ ECHR 'E'
+ ECHR 'Y'
+ EQUB VE
+
+ ECHR 'G'               \ Token 233:    "GOAT"
+ ECHR 'O'               \
+ ETWO 'A', 'T'          \ Encoded as:   "GO<245>"
+ EQUB VE
+
+ ECHR 'F'               \ Token 234:    "FISH"
+ ECHR 'I'               \
+ ECHR 'S'               \ Encoded as:   "FISH"
+ ECHR 'H'
+ EQUB VE
+
+ ERND 15                \ Token 235:    "[71-75] [66-70]"
+ ECHR ' '               \
+ ERND 14                \ Encoded as:   "[15?] [14?]"
+ EQUB VE
+
+ EJMP 17                \ Token 236:    "{system name adjective} [225-229]
+ ECHR ' '               \                 [240-244]"
+ ERND 29                \
+ ECHR ' '               \ Encoded as:   "{17} [29?] [32?]"
+ ERND 32
+ EQUB VE
+
+ ETOK 175               \ Token 237:    "ITS [76-80] [230-234] [240-244]"
+ ERND 16                \
+ ECHR ' '               \ Encoded as:   "[175][16?] [30?] [32?]"
+ ERND 30
+ ECHR ' '
+ ERND 32
+ EQUB VE
+
+ ERND 33                \ Token 238:    "[245-249] [250-254]"
+ ECHR ' '               \
+ ERND 34                \ Encoded as:   "[33?] [34?]"
+ EQUB VE
+
+ ERND 15                \ Token 239:    "[71-75] [66-70]"
+ ECHR ' '               \
+ ERND 14                \ Encoded as:   "[15?] [14?]"
+ EQUB VE
+
+ ECHR 'M'               \ Token 240:    "MEAT"
+ ECHR 'E'               \
+ ETWO 'A', 'T'          \ Encoded as:   "ME<245>"
+ EQUB VE
+
+ ECHR 'C'               \ Token 241:    "CUTLET"
+ ECHR 'U'               \
+ ECHR 'T'               \ Encoded as:   "CUTL<221>"
+ ECHR 'L'
+ ETWO 'E', 'T'
+ EQUB VE
+
+ ETWO 'S', 'T'          \ Token 242:    "STEAK"
+ ECHR 'E'               \
+ ECHR 'A'               \ Encoded as:   "<222>EAK"
+ ECHR 'K'
+ EQUB VE
+
+ ECHR 'B'               \ Token 243:    "BURGERS"
+ ECHR 'U'               \
+ ECHR 'R'               \ Encoded as:   "BURG<244>S"
+ ECHR 'G'
+ ETWO 'E', 'R'
+ ECHR 'S'
+ EQUB VE
+
+ ETWO 'S', 'O'          \ Token 244:    "SOUP"
+ ECHR 'U'               \
+ ECHR 'P'               \ Encoded as:   "<235>UP"
+ EQUB VE
+
+ ECHR 'I'               \ Token 245:    "ICE"
+ ETWO 'C', 'E'          \
+ EQUB VE                \ Encoded as:   "I<233>"
+
+ ECHR 'M'               \ Token 246:    "MUD"
+ ECHR 'U'               \
+ ECHR 'D'               \ Encoded as:   "MUD"
+ EQUB VE
+
+ ECHR 'Z'               \ Token 247:    "ZERO-{single cap}G"
+ ETWO 'E', 'R'          \
+ ECHR 'O'               \ Encoded as:   "Z<244>O-{19}G"
+ ECHR '-'
+ EJMP 19
+ ECHR 'G'
+ EQUB VE
+
+ ECHR 'V'               \ Token 248:    "VACUUM"
+ ECHR 'A'               \
+ ECHR 'C'               \ Encoded as:   "VACUUM"
+ ECHR 'U'
+ ECHR 'U'
+ ECHR 'M'
+ EQUB VE
+
+ EJMP 17                \ Token 249:    "{system name adjective} ULTRA"
+ ECHR ' '               \
+ ECHR 'U'               \ Encoded as:   "{17} ULT<248>"
+ ECHR 'L'
+ ECHR 'T'
+ ETWO 'R', 'A'
+ EQUB VE
+
+ ECHR 'H'               \ Token 250:    "HOCKEY"
+ ECHR 'O'               \
+ ECHR 'C'               \ Encoded as:   "HOCKEY"
+ ECHR 'K'
+ ECHR 'E'
+ ECHR 'Y'
+ EQUB VE
+
+ ECHR 'C'               \ Token 251:    "CRICKET"
+ ECHR 'R'               \
+ ECHR 'I'               \ Encoded as:   "CRICK<221>"
+ ECHR 'C'
+ ECHR 'K'
+ ETWO 'E', 'T'
+ EQUB VE
+
+ ECHR 'K'               \ Token 252:    "KARATE"
+ ETWO 'A', 'R'          \
+ ETWO 'A', 'T'          \ Encoded as:   "K<238><245>E"
+ ECHR 'E'
+ EQUB VE
+
+ ECHR 'P'               \ Token 253:    "POLO"
+ ECHR 'O'               \
+ ETWO 'L', 'O'          \ Encoded as:   "PO<224>"
+ EQUB VE
+
+ ECHR 'T'               \ Token 254:    "TENNIS"
+ ETWO 'E', 'N'          \
+ ECHR 'N'               \ Encoded as:   "T<246>NIS"
+ ECHR 'I'
+ ECHR 'S'
+ EQUB VE
+
+ EQUB VE                \ Token 255:    ""
+                        \
+                        \ Encoded as:   ""
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: RUPLA
+\       Type: Variable
+\   Category: Text
+\    Summary: System numbers that have extended description overrides
+\  Deep dive: Extended system descriptions
+\             Extended text tokens
+\             The Constrictor mission
+\
+\ ------------------------------------------------------------------------------
+\
+\ This table contains the extended token numbers to show as the specified
+\ system's extended description, if the criteria in the RUGAL table are met.
+\
+\ The three variables work as follows:
+\
+\   * The RUPLA table contains the system numbers
+\
+\   * The RUGAL table contains the galaxy numbers and mission criteria
+\
+\   * The RUTOK table contains the extended token to display instead of the
+\     normal extended description if the criteria in RUPLA and RUGAL are met
+\
+\ See the PDESC routine for details of how extended system descriptions work.
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.RUPLA
+
+ EQUB 211               \ System 211, Galaxy 0                 Teorge = Token  1
+ EQUB 150               \ System 150, Galaxy 0, Mission 1        Xeer = Token  2
+ EQUB 36                \ System  36, Galaxy 0, Mission 1    Reesdice = Token  3
+ EQUB 28                \ System  28, Galaxy 0, Mission 1       Arexe = Token  4
+ EQUB 253               \ System 253, Galaxy 1, Mission 1      Errius = Token  5
+ EQUB 79                \ System  79, Galaxy 1, Mission 1      Inbibe = Token  6
+ EQUB 53                \ System  53, Galaxy 1, Mission 1       Ausar = Token  7
+ EQUB 118               \ System 118, Galaxy 1, Mission 1      Usleri = Token  8
+ EQUB 100               \ System 100, Galaxy 2                 Arredi = Token  9
+ EQUB 32                \ System  32, Galaxy 1, Mission 1      Bebege = Token 10
+ EQUB 68                \ System  68, Galaxy 1, Mission 1      Cearso = Token 11
+ EQUB 164               \ System 164, Galaxy 1, Mission 1      Dicela = Token 12
+ EQUB 220               \ System 220, Galaxy 1, Mission 1      Eringe = Token 13
+ EQUB 106               \ System 106, Galaxy 1, Mission 1      Gexein = Token 14
+ EQUB 16                \ System  16, Galaxy 1, Mission 1      Isarin = Token 15
+ EQUB 162               \ System 162, Galaxy 1, Mission 1    Letibema = Token 16
+ EQUB 3                 \ System   3, Galaxy 1, Mission 1      Maisso = Token 17
+ EQUB 107               \ System 107, Galaxy 1, Mission 1        Onen = Token 18
+ EQUB 26                \ System  26, Galaxy 1, Mission 1      Ramaza = Token 19
+ EQUB 192               \ System 192, Galaxy 1, Mission 1      Sosole = Token 20
+ EQUB 184               \ System 184, Galaxy 1, Mission 1      Tivere = Token 21
+ EQUB 5                 \ System   5, Galaxy 1, Mission 1      Veriar = Token 22
+ EQUB 101               \ System 101, Galaxy 2, Mission 1      Xeveon = Token 23
+ EQUB 193               \ System 193, Galaxy 1, Mission 1      Orarra = Token 24
+ EQUB 41                \ System  41, Galaxy 2                 Anreer = Token 25
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: RUGAL
+\       Type: Variable
+\   Category: Text
+\    Summary: The criteria for systems with extended description overrides
+\  Deep dive: Extended system descriptions
+\             Extended text tokens
+\             The Constrictor mission
+\
+\ ------------------------------------------------------------------------------
+\
+\ This table contains the criteria for printing an extended description override
+\ for a system. The galaxy number is in bits 0-6, while bit 7 determines whether
+\ to show this token during mission 1 only (bit 7 is clear, i.e. a value of &0x
+\ in the table below), or all of the time (bit 7 is set, i.e. a value of &8x in
+\ the table below).
+\
+\ In other words, Teorge, Arredi, Anreer and Lave have extended description
+\ overrides that are always shown, while the rest only appear when mission 1 is
+\ in progress.
+\
+\ The three variables work as follows:
+\
+\   * The RUPLA table contains the system numbers
+\
+\   * The RUGAL table contains the galaxy numbers and mission criteria
+\
+\   * The RUTOK table contains the extended token to display instead of the
+\     normal extended description if the criteria in RUPLA and RUGAL are met
+\
+\ See the PDESC routine for details of how extended system descriptions work.
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.RUGAL
+
+ EQUB &80               \ System 211, Galaxy 0                 Teorge = Token  1
+ EQUB &00               \ System 150, Galaxy 0, Mission 1        Xeer = Token  2
+ EQUB &00               \ System  36, Galaxy 0, Mission 1    Reesdice = Token  3
+ EQUB &00               \ System  28, Galaxy 0, Mission 1       Arexe = Token  4
+ EQUB &01               \ System 253, Galaxy 1, Mission 1      Errius = Token  5
+ EQUB &01               \ System  79, Galaxy 1, Mission 1      Inbibe = Token  6
+ EQUB &01               \ System  53, Galaxy 1, Mission 1       Ausar = Token  7
+ EQUB &01               \ System 118, Galaxy 1, Mission 1      Usleri = Token  8
+ EQUB &82               \ System 100, Galaxy 2                 Arredi = Token  9
+ EQUB &01               \ System  32, Galaxy 1, Mission 1      Bebege = Token 10
+ EQUB &01               \ System  68, Galaxy 1, Mission 1      Cearso = Token 11
+ EQUB &01               \ System 164, Galaxy 1, Mission 1      Dicela = Token 12
+ EQUB &01               \ System 220, Galaxy 1, Mission 1      Eringe = Token 13
+ EQUB &01               \ System 106, Galaxy 1, Mission 1      Gexein = Token 14
+ EQUB &01               \ System  16, Galaxy 1, Mission 1      Isarin = Token 15
+ EQUB &01               \ System 162, Galaxy 1, Mission 1    Letibema = Token 16
+ EQUB &01               \ System   3, Galaxy 1, Mission 1      Maisso = Token 17
+ EQUB &01               \ System 107, Galaxy 1, Mission 1        Onen = Token 18
+ EQUB &01               \ System  26, Galaxy 1, Mission 1      Ramaza = Token 19
+ EQUB &01               \ System 192, Galaxy 1, Mission 1      Sosole = Token 20
+ EQUB &01               \ System 184, Galaxy 1, Mission 1      Tivere = Token 21
+ EQUB &01               \ System   5, Galaxy 1, Mission 1      Veriar = Token 22
+ EQUB &02               \ System 101, Galaxy 2, Mission 1      Xeveon = Token 23
+ EQUB &01               \ System 193, Galaxy 1, Mission 1      Orarra = Token 24
+ EQUB &82               \ System  41, Galaxy 2                 Anreer = Token 25
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: RUTOK
+\       Type: Variable
+\   Category: Text
+\    Summary: The second extended token table for recursive tokens 0-26 (DETOK3)
+\  Deep dive: Extended system descriptions
+\             Extended text tokens
+\             The Constrictor mission
+\
+\ ------------------------------------------------------------------------------
+\
+\ Contains the tokens for extended description overrides of systems that match
+\ the system number in RUPLA and the conditions in RUGAL.
+\
+\ The three variables work as follows:
+\
+\   * The RUPLA table contains the system numbers
+\
+\   * The RUGAL table contains the galaxy numbers and mission criteria
+\
+\   * The RUTOK table contains the extended token to display instead of the
+\     normal extended description if the criteria in RUPLA and RUGAL are met
+\
+\ See the PDESC routine for details of how extended system descriptions work.
+\
+\ The encodings shown for each extended text token use the following notation:
+\
+\   {n}           Jump token                n = 1 to 31
+\   [n?]          Random token              n = 91 to 128
+\   [n]           Recursive token           n = 129 to 215
+\   <n>           Two-letter token          n = 215 to 255
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.RUTOK
+
+ EQUB VE                \ Token 0:      ""
+                        \
+                        \ Encoded as:   ""
+
+ ETOK 147               \ Token 1:      "THE COLONISTS HERE HAVE VIOLATED
+ ECHR 'C'               \                {sentence case} INTERGALACTIC CLONING
+ ECHR 'O'               \                PROTOCOL{lower case} AND SHOULD BE
+ ETWO 'L', 'O'          \                AVOIDED"
+ ECHR 'N'               \
+ ECHR 'I'               \ Encoded as:   "[147]CO<224>NI<222>S HE<242> HA<250>
+ ETWO 'S', 'T'          \                 VIOL<245><252>{2} <240>T<244>G<228>AC
+ ECHR 'S'               \                <251>C C<224>N[195]PROTOCOL{13}[178]SH
+ ECHR ' '               \                <217>LD <247> AVOID<252>"
+ ECHR 'H'
+ ECHR 'E'
+ ETWO 'R', 'E'
+ ECHR ' '
+ ECHR 'H'
+ ECHR 'A'
+ ETWO 'V', 'E'
+ ECHR ' '
+ ECHR 'V'
+ ECHR 'I'
+ ECHR 'O'
+ ECHR 'L'
+ ETWO 'A', 'T'
+ ETWO 'E', 'D'
+ EJMP 2
+ ECHR ' '
+ ETWO 'I', 'N'
+ ECHR 'T'
+ ETWO 'E', 'R'
+ ECHR 'G'
+ ETWO 'A', 'L'
+ ECHR 'A'
+ ECHR 'C'
+ ETWO 'T', 'I'
+ ECHR 'C'
+ ECHR ' '
+ ECHR 'C'
+ ETWO 'L', 'O'
+ ECHR 'N'
+ ETOK 195
+ ECHR 'P'
+ ECHR 'R'
+ ECHR 'O'
+ ECHR 'T'
+ ECHR 'O'
+ ECHR 'C'
+ ECHR 'O'
+ ECHR 'L'
+ EJMP 13
+ ETOK 178
+ ECHR 'S'
+ ECHR 'H'
+ ETWO 'O', 'U'
+ ECHR 'L'
+ ECHR 'D'
+ ECHR ' '
+ ETWO 'B', 'E'
+ ECHR ' '
+ ECHR 'A'
+ ECHR 'V'
+ ECHR 'O'
+ ECHR 'I'
+ ECHR 'D'
+ ETWO 'E', 'D'
+ EQUB VE
+
+ ETOK 147               \ Token 2:      "THE CONSTRICTOR WAS LAST SEEN AT
+ ECHR 'C'               \                {single cap}REESDICE, {single cap}
+ ETWO 'O', 'N'          \                COMMANDER"
+ ETWO 'S', 'T'          \
+ ECHR 'R'               \ Encoded as:   "[147]C<223><222>RICT<253> [203]<242>
+ ECHR 'I'               \                <237><241><233>, [154]"
+ ECHR 'C'
+ ECHR 'T'
+ ETWO 'O', 'R'
+ ECHR ' '
+ ETOK 203
+ ETWO 'R', 'E'
+ ETWO 'E', 'S'
+ ETWO 'D', 'I'
+ ETWO 'C', 'E'
+ ECHR ','
+ ECHR ' '
+ ETOK 154
+ EQUB VE
+
+ ECHR 'A'               \ Token 3:      "A [130-134] LOOKING SHIP LEFT HERE A
+ ECHR ' '               \                WHILE BACK. LOOKED BOUND FOR AREXE"
+ ERND 23                \
+ ECHR ' '               \ Encoded as:   "A [23?] <224>OK[195][207] <229>FT HE
+ ETWO 'L', 'O'          \                <242>[208]WHI<229> BACK. LOOK[196]B
+ ECHR 'O'               \                <217>ND F<253> <238>E<230>"
+ ECHR 'K'
+ ETOK 195
+ ETOK 207
+ ECHR ' '
+ ETWO 'L', 'E'
+ ECHR 'F'
+ ECHR 'T'
+ ECHR ' '
+ ECHR 'H'
+ ECHR 'E'
+ ETWO 'R', 'E'
+ ETOK 208
+ ECHR 'W'
+ ECHR 'H'
+ ECHR 'I'
+ ETWO 'L', 'E'
+ ECHR ' '
+ ECHR 'B'
+ ECHR 'A'
+ ECHR 'C'
+ ECHR 'K'
+ ECHR '.'
+ ECHR ' '
+ ECHR 'L'
+ ECHR 'O'
+ ECHR 'O'
+ ECHR 'K'
+ ETOK 196
+ ECHR 'B'
+ ETWO 'O', 'U'
+ ECHR 'N'
+ ECHR 'D'
+ ECHR ' '
+ ECHR 'F'
+ ETWO 'O', 'R'
+ ECHR ' '
+ ETWO 'A', 'R'
+ ECHR 'E'
+ ETWO 'X', 'E'
+ EQUB VE
+
+ ECHR 'Y'               \ Token 4:      "YEP, A [130-134] NEW SHIP HAD A
+ ECHR 'E'               \                GALACTIC HYPERDRIVE FITTED HERE. USED
+ ECHR 'P'               \                IT TOO"
+ ECHR ','               \
+ ETOK 208               \ Encoded as:   "YEP,[208][23?][210][207] HAD[208]G
+ ERND 23                \                <228>AC<251>C HYP<244>DRI<250> F<219>
+ ETOK 210               \                T[196]HE<242>. <236>[196]<219> TOO"
+ ETOK 207
+ ECHR ' '
+ ECHR 'H'
+ ECHR 'A'
+ ECHR 'D'
+ ETOK 208
+ ECHR 'G'
+ ETWO 'A', 'L'
+ ECHR 'A'
+ ECHR 'C'
+ ETWO 'T', 'I'
+ ECHR 'C'
+ ECHR ' '
+ ECHR 'H'
+ ECHR 'Y'
+ ECHR 'P'
+ ETWO 'E', 'R'
+ ECHR 'D'
+ ECHR 'R'
+ ECHR 'I'
+ ETWO 'V', 'E'
+ ECHR ' '
+ ECHR 'F'
+ ETWO 'I', 'T'
+ ECHR 'T'
+ ETOK 196
+ ECHR 'H'
+ ECHR 'E'
+ ETWO 'R', 'E'
+ ECHR '.'
+ ECHR ' '
+ ETWO 'U', 'S'
+ ETOK 196
+ ETWO 'I', 'T'
+ ECHR ' '
+ ECHR 'T'
+ ECHR 'O'
+ ECHR 'O'
+ EQUB VE
+
+ ETOK 148               \ Token 5:      "THIS  [130-134] SHIP DEHYPED HERE FROM
+ ECHR ' '               \                NOWHERE, SUN SKIMMED AND JUMPED. I HEAR
+ ERND 23                \                IT WENT TO INBIBE"
+ ECHR ' '               \
+ ETOK 207               \ Encoded as:   "[148] [23?] [207] DEHYP[196]HE<242> FRO
+ ECHR ' '               \                M <227>WHE<242>, SUN SKIMM<252>[178]JUM
+ ECHR 'D'               \                P<252>. I HE<238> <219> W<246>T[201]
+ ECHR 'E'               \                <240><234><247>"
+ ECHR 'H'
+ ECHR 'Y'
+ ECHR 'P'
+ ETOK 196
+ ECHR 'H'
+ ECHR 'E'
+ ETWO 'R', 'E'
+ ECHR ' '
+ ECHR 'F'
+ ECHR 'R'
+ ECHR 'O'
+ ECHR 'M'
+ ECHR ' '
+ ETWO 'N', 'O'
+ ECHR 'W'
+ ECHR 'H'
+ ECHR 'E'
+ ETWO 'R', 'E'
+ ECHR ','
+ ECHR ' '
+ ECHR 'S'
+ ECHR 'U'
+ ECHR 'N'
+ ECHR ' '
+ ECHR 'S'
+ ECHR 'K'
+ ECHR 'I'
+ ECHR 'M'
+ ECHR 'M'
+ ETWO 'E', 'D'
+ ETOK 178
+ ECHR 'J'
+ ECHR 'U'
+ ECHR 'M'
+ ECHR 'P'
+ ETWO 'E', 'D'
+ ECHR '.'
+ ECHR ' '
+ ECHR 'I'
+ ECHR ' '
+ ECHR 'H'
+ ECHR 'E'
+ ETWO 'A', 'R'
+ ECHR ' '
+ ETWO 'I', 'T'
+ ECHR ' '
+ ECHR 'W'
+ ETWO 'E', 'N'
+ ECHR 'T'
+ ETOK 201
+ ETWO 'I', 'N'
+ ETWO 'B', 'I'
+ ETWO 'B', 'E'
+ EQUB VE
+
+ ERND 24                \ Token 6:      "[91-95] SHIP WENT FOR ME AT AUSAR. MY
+ ECHR ' '               \                LASERS DIDN'T EVEN SCRATCH THE [91-95]"
+ ETOK 207               \
+ ECHR ' '               \ Encoded as:   "[24?] [207] W<246>T F<253> ME <245>
+ ECHR 'W'               \                 A<236><238>. MY <249>S<244>S DIDN'T EV
+ ETWO 'E', 'N'          \                <246> SC<248>TCH [147][24?]"
+ ECHR 'T'
+ ECHR ' '
+ ECHR 'F'
+ ETWO 'O', 'R'
+ ECHR ' '
+ ECHR 'M'
+ ECHR 'E'
+ ECHR ' '
+ ETWO 'A', 'T'
+ ECHR ' '
+ ECHR 'A'
+ ETWO 'U', 'S'
+ ETWO 'A', 'R'
+ ECHR '.'
+ ECHR ' '
+ ECHR 'M'
+ ECHR 'Y'
+ ECHR ' '
+ ETWO 'L', 'A'
+ ECHR 'S'
+ ETWO 'E', 'R'
+ ECHR 'S'
+ ECHR ' '
+ ECHR 'D'
+ ECHR 'I'
+ ECHR 'D'
+ ECHR 'N'
+ ECHR '`'
+ ECHR 'T'
+ ECHR ' '
+ ECHR 'E'
+ ECHR 'V'
+ ETWO 'E', 'N'
+ ECHR ' '
+ ECHR 'S'
+ ECHR 'C'
+ ETWO 'R', 'A'
+ ECHR 'T'
+ ECHR 'C'
+ ECHR 'H'
+ ECHR ' '
+ ETOK 147
+ ERND 24
+ EQUB VE
+
+ ECHR 'O'               \ Token 7:      "OH DEAR ME YES. A FRIGHTFUL ROGUE WITH
+ ECHR 'H'               \                WHAT I BELIEVE YOU PEOPLE CALL A LEAD
+ ECHR ' '               \                POSTERIOR SHOT UP LOTS OF THOSE BEASTLY
+ ECHR 'D'               \                PIRATES AND WENT TO USLERI"
+ ECHR 'E'               \
+ ETWO 'A', 'R'          \ Encoded as:   "OH DE<238> ME Y<237>.[208]FRIGHTFUL ROG
+ ECHR ' '               \                UE WI<226> WH<245> I <247>LIE<250>
+ ECHR 'M'               \                 [179] PEOP<229> C<228>L[208]<229>AD PO
+ ECHR 'E'               \                <222><244>I<253> SHOT UP <224>TS OF
+ ECHR ' '               \                 <226>O<218> <247>A<222>LY PI<248>T
+ ECHR 'Y'               \                <237>[178]W<246>T[201]<236><229>RI"
+ ETWO 'E', 'S'
+ ECHR '.'
+ ETOK 208
+ ECHR 'F'
+ ECHR 'R'
+ ECHR 'I'
+ ECHR 'G'
+ ECHR 'H'
+ ECHR 'T'
+ ECHR 'F'
+ ECHR 'U'
+ ECHR 'L'
+ ECHR ' '
+ ECHR 'R'
+ ECHR 'O'
+ ECHR 'G'
+ ECHR 'U'
+ ECHR 'E'
+ ECHR ' '
+ ECHR 'W'
+ ECHR 'I'
+ ETWO 'T', 'H'
+ ECHR ' '
+ ECHR 'W'
+ ECHR 'H'
+ ETWO 'A', 'T'
+ ECHR ' '
+ ECHR 'I'
+ ECHR ' '
+ ETWO 'B', 'E'
+ ECHR 'L'
+ ECHR 'I'
+ ECHR 'E'
+ ETWO 'V', 'E'
+ ECHR ' '
+ ETOK 179
+ ECHR ' '
+ ECHR 'P'
+ ECHR 'E'
+ ECHR 'O'
+ ECHR 'P'
+ ETWO 'L', 'E'
+ ECHR ' '
+ ECHR 'C'
+ ETWO 'A', 'L'
+ ECHR 'L'
+ ETOK 208
+ ETWO 'L', 'E'
+ ECHR 'A'
+ ECHR 'D'
+ ECHR ' '
+ ECHR 'P'
+ ECHR 'O'
+ ETWO 'S', 'T'
+ ETWO 'E', 'R'
+ ECHR 'I'
+ ETWO 'O', 'R'
+ ECHR ' '
+ ECHR 'S'
+ ECHR 'H'
+ ECHR 'O'
+ ECHR 'T'
+ ECHR ' '
+ ECHR 'U'
+ ECHR 'P'
+ ECHR ' '
+ ETWO 'L', 'O'
+ ECHR 'T'
+ ECHR 'S'
+ ECHR ' '
+ ECHR 'O'
+ ECHR 'F'
+ ECHR ' '
+ ETWO 'T', 'H'
+ ECHR 'O'
+ ETWO 'S', 'E'
+ ECHR ' '
+ ETWO 'B', 'E'
+ ECHR 'A'
+ ETWO 'S', 'T'
+ ECHR 'L'
+ ECHR 'Y'
+ ECHR ' '
+ ECHR 'P'
+ ECHR 'I'
+ ETWO 'R', 'A'
+ ECHR 'T'
+ ETWO 'E', 'S'
+ ETOK 178
+ ECHR 'W'
+ ETWO 'E', 'N'
+ ECHR 'T'
+ ETOK 201
+ ETWO 'U', 'S'
+ ETWO 'L', 'E'
+ ECHR 'R'
+ ECHR 'I'
+ EQUB VE
+
+ ETOK 179               \ Token 8:      "YOU CAN TACKLE THE [170-174] [91-95]
+ ECHR ' '               \                IF YOU LIKE. HE'S AT ORARRA"
+ ECHR 'C'               \
+ ETWO 'A', 'N'          \ Encoded as:   "[179] C<255> TACK<229> [147][13?] [24?]
+ ECHR ' '               \                 IF [179] LIKE. HE'S <245> <253><238>
+ ECHR 'T'               \                <248>"
+ ECHR 'A'
+ ECHR 'C'
+ ECHR 'K'
+ ETWO 'L', 'E'
+ ECHR ' '
+ ETOK 147
+ ERND 13
+ ECHR ' '
+ ERND 24
+ ECHR ' '
+ ECHR 'I'
+ ECHR 'F'
+ ECHR ' '
+ ETOK 179
+ ECHR ' '
+ ECHR 'L'
+ ECHR 'I'
+ ECHR 'K'
+ ECHR 'E'
+ ECHR '.'
+ ECHR ' '
+ ECHR 'H'
+ ECHR 'E'
+ ECHR '`'
+ ECHR 'S'
+ ECHR ' '
+ ETWO 'A', 'T'
+ ECHR ' '
+ ETWO 'O', 'R'
+ ETWO 'A', 'R'
+ ETWO 'R', 'A'
+ EQUB VE
+
+ EJMP 1                 \ Token 9:      "{all caps}COMING SOON: ELITE II"
+ ECHR 'C'               \
+ ECHR 'O'               \ Encoded as:   "{1}COM[195]<235><223>: EL<219>E II"
+ ECHR 'M'
+ ETOK 195
+ ETWO 'S', 'O'
+ ETWO 'O', 'N'
+ ECHR ':'
+ ECHR ' '
+ ECHR 'E'
+ ECHR 'L'
+ ETWO 'I', 'T'
+ ECHR 'E'
+ ECHR ' '
+ ECHR 'I'
+ ECHR 'I'
+ EQUB VE
+
+ ERND 25                \ Token 10:     "[106-110]"
+ EQUB VE                \
+                        \ Encoded as:   "[25?]"
+
+ ERND 25                \ Token 11:     "[106-110]"
+ EQUB VE                \
+                        \ Encoded as:   "[25?]"
+
+ ERND 25                \ Token 12:     "[106-110]"
+ EQUB VE                \
+                        \ Encoded as:   "[25?]"
+
+ ERND 25                \ Token 13:     "[106-110]"
+ EQUB VE                \
+                        \ Encoded as:   "[25?]"
+
+ ERND 25                \ Token 14:     "[106-110]"
+ EQUB VE                \
+                        \ Encoded as:   "[25?]"
+
+ ERND 25                \ Token 15:     "[106-110]"
+ EQUB VE                \
+                        \ Encoded as:   "[25?]"
+
+ ERND 25                \ Token 16:     "[106-110]"
+ EQUB VE                \
+                        \ Encoded as:   "[25?]"
+
+ ERND 25                \ Token 17:     "[106-110]"
+ EQUB VE                \
+                        \ Encoded as:   "[25?]"
+
+ ERND 25                \ Token 18:     "[106-110]"
+ EQUB VE                \
+                        \ Encoded as:   "[25?]"
+
+ ERND 25                \ Token 19:     "[106-110]"
+ EQUB VE                \
+                        \ Encoded as:   "[25?]"
+
+ ERND 25                \ Token 20:     "[106-110]"
+ EQUB VE                \
+                        \ Encoded as:   "[25?]"
+
+ ERND 25                \ Token 21:     "[106-110]"
+ EQUB VE                \
+                        \ Encoded as:   "[25?]"
+
+ ERND 25                \ Token 22:     "[106-110]"
+ EQUB VE                \
+                        \ Encoded as:   "[25?]"
+
+ ECHR 'B'               \ Token 23:     "BOY ARE YOU IN THE WRONG GALAXY!"
+ ECHR 'O'               \
+ ECHR 'Y'               \ Encoded as:   "BOY A<242> [179] <240> [147]WR<223>G G
+ ECHR ' '               \                <228>AXY!"
+ ECHR 'A'
+ ETWO 'R', 'E'
+ ECHR ' '
+ ETOK 179
+ ECHR ' '
+ ETWO 'I', 'N'
+ ECHR ' '
+ ETOK 147
+ ECHR 'W'
+ ECHR 'R'
+ ETWO 'O', 'N'
+ ECHR 'G'
+ ECHR ' '
+ ECHR 'G'
+ ETWO 'A', 'L'
+ ECHR 'A'
+ ECHR 'X'
+ ECHR 'Y'
+ ECHR '!'
+ EQUB VE
+
+ ETWO 'T', 'H'          \ Token 24:     "THERE'S A REAL [91-95] PIRATE OUT
+ ETWO 'E', 'R'          \                THERE"
+ ECHR 'E'               \
+ ECHR '`'               \ Encoded as:   "<226><244>E'S[208]<242><228> [24?] PI
+ ECHR 'S'               \                <248>TE <217>T <226><244>E"
+ ETOK 208
+ ETWO 'R', 'E'
+ ETWO 'A', 'L'
+ ECHR ' '
+ ERND 24
+ ECHR ' '
+ ECHR 'P'
+ ECHR 'I'
+ ETWO 'R', 'A'
+ ECHR 'T'
+ ECHR 'E'
+ ECHR ' '
+ ETWO 'O', 'U'
+ ECHR 'T'
+ ECHR ' '
+ ETWO 'T', 'H'
+ ETWO 'E', 'R'
+ ECHR 'E'
+ EQUB VE
+
+ ETOK 147               \ Token 25:     "THE INHABITANTS OF [86-90] ARE SO
+ ETOK 193               \                AMAZINGLY PRIMITIVE THAT THEY STILL
+ ECHR 'S'               \                THINK {single cap}A*****R IS A PRETTY
+ ECHR ' '               \                NEAT GAME"
+ ECHR 'O'               \
+ ECHR 'F'               \ Encoded as:   "[147][193]S OF [18?] A<242> <235> A
+ ECHR ' '               \                <239>Z<240>GLY PRIMI<251><250> <226>
+ ERND 18                \                <245> <226>EY <222><220>L <226><240>K
+ ECHR ' '               \                 {19}A*****R[202]A P<242>TTY NE<245>
+ ECHR 'A'               \                 GAME"
+ ETWO 'R', 'E'
+ ECHR ' '
+ ETWO 'S', 'O'
+ ECHR ' '
+ ECHR 'A'
+ ETWO 'M', 'A'
+ ECHR 'Z'
+ ETWO 'I', 'N'
+ ECHR 'G'
+ ECHR 'L'
+ ECHR 'Y'
+ ECHR ' '
+ ECHR 'P'
+ ECHR 'R'
+ ECHR 'I'
+ ECHR 'M'
+ ECHR 'I'
+ ETWO 'T', 'I'
+ ETWO 'V', 'E'
+ ECHR ' '
+ ETWO 'T', 'H'
+ ETWO 'A', 'T'
+ ECHR ' '
+ ETWO 'T', 'H'
+ ECHR 'E'
+ ECHR 'Y'
+ ECHR ' '
+ ETWO 'S', 'T'
+ ETWO 'I', 'L'
+ ECHR 'L'
+ ECHR ' '
+ ETWO 'T', 'H'
+ ETWO 'I', 'N'
+ ECHR 'K'
+ ECHR ' '
+ EJMP 19
+ ECHR 'A'
+ ECHR '*'
+ ECHR '*'
+ ECHR '*'
+ ECHR '*'
+ ECHR '*'
+ ECHR 'R'
+ ETOK 202
+ ECHR 'A'
+ ECHR ' '
+ ECHR 'P'
+ ETWO 'R', 'E'
+ ECHR 'T'
+ ECHR 'T'
+ ECHR 'Y'
+ ECHR ' '
+ ECHR 'N'
+ ECHR 'E'
+ ETWO 'A', 'T'
+ ECHR ' '
+ ECHR 'G'
+ ECHR 'A'
+ ECHR 'M'
+ ECHR 'E'
+ EQUB VE
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: MTIN
+\       Type: Variable
+\   Category: Text
+\    Summary: Lookup table for random tokens in the extended token table (0-37)
+\  Deep dive: Extended text tokens
+\
+\ ------------------------------------------------------------------------------
+\
+\ The ERND token type, which is part of the extended token system, takes an
+\ argument between 0 and 37, and returns a randomly chosen token in the range
+\ specified in this table. This is used to generate the extended description of
+\ each system.
+\
+\ For example, the entry at position 13 in this table (counting from 0) is 66,
+\ so ERND 14 will expand into a random token in the range 66-70, i.e. one of
+\ "JUICE", "BRANDY", "WATER", "BREW" and "GARGLE BLASTERS".
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.MTIN
+
+ EQUB 16                \ Token  0: a random extended token between 16 and 20
+ EQUB 21                \ Token  1: a random extended token between 21 and 25
+ EQUB 26                \ Token  2: a random extended token between 26 and 30
+ EQUB 31                \ Token  3: a random extended token between 31 and 35
+ EQUB 155               \ Token  4: a random extended token between 155 and 159
+ EQUB 160               \ Token  5: a random extended token between 160 and 164
+ EQUB 46                \ Token  6: a random extended token between 46 and 50
+ EQUB 165               \ Token  7: a random extended token between 165 and 169
+ EQUB 36                \ Token  8: a random extended token between 36 and 40
+ EQUB 41                \ Token  9: a random extended token between 41 and 45
+ EQUB 61                \ Token 10: a random extended token between 61 and 65
+ EQUB 51                \ Token 11: a random extended token between 51 and 55
+ EQUB 56                \ Token 12: a random extended token between 56 and 60
+ EQUB 170               \ Token 13: a random extended token between 170 and 174
+ EQUB 66                \ Token 14: a random extended token between 66 and 70
+ EQUB 71                \ Token 15: a random extended token between 71 and 75
+ EQUB 76                \ Token 16: a random extended token between 76 and 80
+ EQUB 81                \ Token 17: a random extended token between 81 and 85
+ EQUB 86                \ Token 18: a random extended token between 86 and 90
+ EQUB 140               \ Token 19: a random extended token between 140 and 144
+ EQUB 96                \ Token 20: a random extended token between 96 and 100
+ EQUB 101               \ Token 21: a random extended token between 101 and 105
+ EQUB 135               \ Token 22: a random extended token between 135 and 139
+ EQUB 130               \ Token 23: a random extended token between 130 and 134
+ EQUB 91                \ Token 24: a random extended token between 91 and 95
+ EQUB 106               \ Token 25: a random extended token between 106 and 110
+ EQUB 180               \ Token 26: a random extended token between 180 and 184
+ EQUB 185               \ Token 27: a random extended token between 185 and 189
+ EQUB 190               \ Token 28: a random extended token between 190 and 194
+ EQUB 225               \ Token 29: a random extended token between 225 and 229
+ EQUB 230               \ Token 30: a random extended token between 230 and 234
+ EQUB 235               \ Token 31: a random extended token between 235 and 239
+ EQUB 240               \ Token 32: a random extended token between 240 and 244
+ EQUB 245               \ Token 33: a random extended token between 245 and 249
+ EQUB 250               \ Token 34: a random extended token between 250 and 254
+ EQUB 115               \ Token 35: a random extended token between 115 and 119
+ EQUB 120               \ Token 36: a random extended token between 120 and 124
+ EQUB 125               \ Token 37: a random extended token between 125 and 129
+
+                        \ --- End of added code ------------------------------->
 
 \ ******************************************************************************
 \
