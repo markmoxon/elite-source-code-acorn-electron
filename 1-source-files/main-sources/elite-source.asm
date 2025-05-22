@@ -695,7 +695,7 @@
                         \
                         \   0   = Space view
                         \   1   = Data on System screen (FUNC-7)
-                        \         Get commander name ("@", save/load commander)
+                        \         Get commander name (":", save/load commander)
                         \         In-system jump just arrived ("J")
                         \         Title screen
                         \         Buy Cargo screen (FUNC-2)
@@ -2512,8 +2512,9 @@ ENDMACRO
                         \ elite-loader.asm
 
  EQUW 0                 \ This flag is flipped between 0 and &FF every time the
-                        \ interrupt routine at IRQ1 is called, but it is never
-                        \ read anywhere, so presumably it isn't actually used
+                        \ interrupt routine at IRQ1 is called, so we can save
+                        \ some time by skipping every other interrupt (see the
+                        \ IRQ1 routine for details)
 
  EQUW TT170             \ The entry point for the main game; once the main code
                         \ has been loaded, decrypted and moved to the right
@@ -31219,7 +31220,7 @@ ENDMACRO
 \
 \ ------------------------------------------------------------------------------
 \
-\ Process function key presses, plus "@" (save commander), "H" (hyperspace),
+\ Process function key presses, plus ":" (save commander), "H" (hyperspace),
 \ "D" (show distance to system) and "O" (move chart cursor back to current
 \ system). We can also pass cursor position deltas in X and Y to indicate that
 \ the cursor keys have been used (i.e. the values that are returned by routine
@@ -31291,7 +31292,7 @@ ENDMACRO
 
  BIT QQ12               \ If bit 7 of QQ12 is clear (i.e. we are not docked, but
  BPL INSP               \ in space), jump to INSP to skip the following checks
-                        \ for FUNC-2 to FUNC-4 and "@" (save commander file) key
+                        \ for FUNC-2 to FUNC-4 and ":" (save commander file) key
                         \ presses
 
  CMP #func4             \ If FUNC-4 was pressed, jump to EQSHP to show the
@@ -31302,7 +31303,7 @@ ENDMACRO
  BNE P%+5               \ Buy Cargo screen, returning from the subroutine using
  JMP TT219              \ a tail call
 
- CMP #&48               \ If "@" was pressed, jump to SVE to save the commander
+ CMP #&48               \ If ":" was pressed, jump to SVE to save the commander
  BNE P%+5               \ file, returning from the subroutine using a tail call
  JMP SVE
 
