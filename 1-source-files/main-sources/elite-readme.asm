@@ -66,7 +66,7 @@
  EQUB 10, 13
  EQUS "Sideways RAM detection, loading and"
  EQUB 10, 13
- EQUS "inspiration by haerfest"
+ EQUS "inspiration by Wouter Hobers"
  EQUB 10, 13
  EQUB 10, 13
  EQUS "See www.bbcelite.com for details"

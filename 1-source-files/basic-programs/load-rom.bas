@@ -10,7 +10,7 @@ PRINT"Copyright (c) Acornsoft 1984"
 PRINT'"Flicker-free routines, bug fixes and"
 PRINT"enhancements by Mark Moxon"
 PRINT'"Sideways RAM loader, routines and"
-PRINT"inspiration by haerfest"
+PRINT"inspiration by Wouter Hobers"
 
 DIM code &100
 PROCassemble

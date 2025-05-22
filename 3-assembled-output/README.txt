@@ -16,10 +16,10 @@
 Copyright (c) Acornsoft 1984
 
 Sideways RAM detection, loading and
-inspiration by haerfest
+inspiration by Wouter Hobers
 
 See www.bbcelite.com for details
 
-Build: 2025-05-21 16:42:53
+Build: 2025-05-22 11:56:37
 ---------------------------------------
 
