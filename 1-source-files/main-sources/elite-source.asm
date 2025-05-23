@@ -16836,7 +16836,7 @@ ENDIF
  LDY #HI(DELI)          \ contains the DFS command for deleting this file
 
  JSR OSCLI              \ Call OSCLI to execute the OS command at (Y X), which
-                        \ catalogues the disc
+                        \ deletes the file
 
  JMP SVE                \ Jump to SVE to display the disc access menu and return
                         \ from the subroutine using a tail call
@@ -17328,7 +17328,7 @@ ENDIF
  LDX #&FF               \ Set KEYB = &FF to indicate that we are reading from
  STX KEYB               \ the keyboard using an OS command
 
- INX                    \ Set the botttom byte of (Y X) = &0C00
+ INX                    \ Set the bottom byte of (Y X) = &0C00
 
  JSR OSFILE             \ Call OSFILE to do the file operation specified in
                         \ &0C00 (i.e. save or load a file depending on the value
