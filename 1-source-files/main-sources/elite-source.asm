@@ -17232,7 +17232,7 @@ ENDIF
                         \
                         \ Y is left containing &C which we use below
 
- LDA #0                 \ Call QUS1 with A = 0, Y = &C to save the commander
+ LDA #0                 \ Call QUS1 with A = 0, Y = &A to save the commander
  JSR QUS1               \ file with the filename we copied to INWK at the start
                         \ of this routine
 
@@ -17458,8 +17458,8 @@ ENDIF
                         \
                         \ Length of file = &00000100 in &0C0A to &0C0D
 
- LDA #&FF               \ Call QUS1 with A = &FF, Y = &C to load the commander
- JSR QUS1               \ file to address &0B00
+ LDA #&FF               \ Call QUS1 with A = &FF, Y = &A to load the commander
+ JSR QUS1               \ file to address &0900
 
  BCS LOR                \ If the C flag is set then an invalid drive number was
                         \ entered during the call to QUS1 and the file wasn't
