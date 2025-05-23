@@ -162,6 +162,12 @@
 
                         \ --- End of added code ------------------------------->
 
+                        \ --- Mod: Code added for saving and loading: --------->
+
+ BRKV = &0202           \ The address of the break vector
+
+                        \ --- End of added code ------------------------------->
+
  VIA = &FE00            \ Memory-mapped space for accessing internal hardware,
                         \ such as the video ULA, 6845 CRTC and 6522 VIAs (also
                         \ known as SHEILA)
@@ -968,14 +974,338 @@
  SKIP 256               \ Temporary storage, typically used for storing tables
                         \ of values such as screen coordinates or ship data
 
+\ ******************************************************************************
+\
+\       Name: T%
+\       Type: Workspace
+\    Address: &0300 to &036C
+\   Category: Workspaces
+\    Summary: Current commander data and stardust data blocks
+\
+\ ------------------------------------------------------------------------------
+\
+\ Contains the current commander data (NT% bytes at location TP), and the
+\ stardust data blocks (NOST bytes at location SX)
+\
+\ ******************************************************************************
+
+ ORG &0300
+
+.T%
+
+ SKIP 0                 \ The start of the T% workspace
+
+                        \ --- Mod: Code added for saving and loading: --------->
+
+.NAME
+
+ SKIP 8                 \ The current commander name
+                        \
+                        \ The commander name can be up to 7 characters (the DFS
+                        \ limit for filenames), and is terminated by a carriage
+                        \ return
+
+                        \ --- End of added code ------------------------------->
+
+.TP
+
+ SKIP 1                 \ The current mission status, which is always 0 for the
+                        \ cassette version of Elite as there are no missions
+
+.QQ0
+
+ SKIP 1                 \ The current system's galactic x-coordinate (0-256)
+
+.QQ1
+
+ SKIP 1                 \ The current system's galactic y-coordinate (0-256)
+
+.QQ21
+
+ SKIP 6                 \ The three 16-bit seeds for the current galaxy
+                        \
+                        \ These seeds define system 0 in the current galaxy, so
+                        \ they can be used as a starting point to generate all
+                        \ 256 systems in the galaxy
+                        \
+                        \ Using a galactic hyperdrive rotates each byte to the
+                        \ left (rolling each byte within itself) to get the
+                        \ seeds for the next galaxy, so after eight galactic
+                        \ jumps, the seeds roll around to the first galaxy again
+
+.CASH
+
+ SKIP 4                 \ Our current cash pot
+                        \
+                        \ The cash stash is stored as a 32-bit unsigned integer,
+                        \ with the most significant byte in CASH and the least
+                        \ significant in CASH+3. This is big-endian, which is
+                        \ the opposite way round to most of the numbers used in
+                        \ Elite - to use our notation for multi-byte numbers,
+                        \ the amount of cash is CASH(0 1 2 3)
+
+.QQ14
+
+ SKIP 1                 \ Our current fuel level (0-70)
+                        \
+                        \ The fuel level is stored as the number of light years
+                        \ multiplied by 10, so QQ14 = 1 represents 0.1 light
+                        \ years, and the maximum possible value is 70, for 7.0
+                        \ light years
+
+.COK
+
+ SKIP 1                 \ Flags used to generate the competition code
+
+.GCNT
+
+ SKIP 1                 \ The number of the current galaxy (0-7)
+                        \
+                        \ When this is displayed in-game, 1 is added to the
+                        \ number, so we start in galaxy 1 in-game, but it's
+                        \ stored as galaxy 0 internally
+                        \
+                        \ The galaxy number increases by one every time a
+                        \ galactic hyperdrive is used, and wraps back around to
+                        \ the start after eight galaxies
+
+.LASER
+
+ SKIP 4                 \ The specifications of the lasers fitted to each of the
+                        \ four space views:
+                        \
+                        \   * Byte #0 = front view
+                        \   * Byte #1 = rear view
+                        \   * Byte #2 = left view
+                        \   * Byte #3 = right view
+                        \
+                        \ For each of the views:
+                        \
+                        \   * 0 = no laser is fitted to this view
+                        \
+                        \   * Non-zero = a laser is fitted to this view, with
+                        \     the following specification:
+                        \
+                        \     * Bits 0-6 contain the laser's power
+                        \
+                        \     * Bit 7 determines whether or not the laser pulses
+                        \       (0 = pulse laser) or is always on (1 = beam
+                        \       laser)
+
+ SKIP 2                 \ These bytes appear to be unused (they were originally
+                        \ used for up/down lasers, but they were dropped)
+
+.CRGO
+
+ SKIP 1                 \ Our ship's cargo capacity
+                        \
+                        \   * 22 = standard cargo bay of 20 tonnes
+                        \
+                        \   * 37 = large cargo bay of 35 tonnes
+                        \
+                        \ The value is two greater than the actual capacity to
+                        \ make the maths in tnpr slightly more efficient
+
+.QQ20
+
+ SKIP 17                \ The contents of our cargo hold
+                        \
+                        \ The amount of market item X that we have in our hold
+                        \ can be found in the X-th byte of QQ20. For example:
+                        \
+                        \   * QQ20 contains the amount of food (item 0)
+                        \
+                        \   * QQ20+7 contains the amount of computers (item 7)
+                        \
+                        \ See QQ23 for a list of market item numbers and their
+                        \ storage units
+
+.ECM
+
+ SKIP 1                 \ E.C.M. system
+                        \
+                        \   * 0 = not fitted
+                        \
+                        \   * &FF = fitted
+
+.BST
+
+ SKIP 1                 \ Fuel scoops (BST stands for "barrel status")
+                        \
+                        \   * 0 = not fitted
+                        \
+                        \   * &FF = fitted
+
+.BOMB
+
+ SKIP 1                 \ Energy bomb
+                        \
+                        \   * 0 = not fitted
+                        \
+                        \   * &7F = fitted
+
+.ENGY
+
+ SKIP 1                 \ Energy unit
+                        \
+                        \   * 0 = not fitted
+                        \
+                        \   * Non-zero = fitted
+                        \
+                        \ The actual value determines the refresh rate of our
+                        \ energy banks, as they refresh by ENGY+1 each time (so
+                        \ our ship's energy level goes up by 2 each time if we
+                        \ have an energy unit fitted, otherwise it goes up by 1)
+                        \
+                        \ The enhanced versions of Elite set ENGY to 2 as the
+                        \ reward for completing mission 2, where we receive a
+                        \ special naval energy unit that recharges at a fast
+                        \ rate than a standard energy unit, i.e. by 3 each time
+
+.DKCMP
+
+ SKIP 1                 \ Docking computer
+                        \
+                        \   * 0 = not fitted
+                        \
+                        \   * &FF = fitted
+
+.GHYP
+
+ SKIP 1                 \ Galactic hyperdrive
+                        \
+                        \   * 0 = not fitted
+                        \
+                        \   * &FF = fitted
+
+.ESCP
+
+ SKIP 1                 \ Escape pod
+                        \
+                        \   * 0 = not fitted
+                        \
+                        \   * &FF = fitted
+
+ SKIP 4                 \ These bytes appear to be unused
+
+.NOMSL
+
+ SKIP 1                 \ The number of missiles we have fitted (0-4)
+
+.FIST
+
+ SKIP 1                 \ Our legal status (FIST stands for "fugitive/innocent
+                        \ status"):
+                        \
+                        \   * 0 = Clean
+                        \
+                        \   * 1-49 = Offender
+                        \
+                        \   * 50+ = Fugitive
+                        \
+                        \ You get 64 points if you kill a cop, so that's a fast
+                        \ ticket to fugitive status
+
+.AVL
+
+ SKIP 17                \ Market availability in the current system
+                        \
+                        \ The available amount of market item X is stored in
+                        \ the X-th byte of AVL, so for example:
+                        \
+                        \   * AVL contains the amount of food (item 0)
+                        \
+                        \   * AVL+7 contains the amount of computers (item 7)
+                        \
+                        \ See QQ23 for a list of market item numbers and their
+                        \ storage units
+
+.QQ26
+
+ SKIP 1                 \ A random value used to randomise market data
+                        \
+                        \ This value is set to a new random number for each
+                        \ change of system, so we can add a random factor into
+                        \ the calculations for market prices
+
+.TALLY
+
+ SKIP 2                 \ Our combat rank
+                        \
+                        \ The combat rank is stored as the number of kills, in a
+                        \ 16-bit number TALLY(1 0) - so the high byte is in
+                        \ TALLY+1 and the low byte in TALLY
+                        \
+                        \ If the high byte in TALLY+1 is 0 then we have between
+                        \ 0 and 255 kills, so our rank is Harmless, Mostly
+                        \ Harmless, Poor, Average Above Average or Competent,
+                        \ according to the value of the low byte in TALLY:
+                        \
+                        \   Harmless         %00000000 to %00000111 = 0 to 7
+                        \   Mostly Harmless  %00001000 to %00001111 = 8 to 15
+                        \   Poor             %00010000 to %00011111 = 16 to 31
+                        \   Average          %00100000 to %00111111 = 32 to 63
+                        \   Above Average    %01000000 to %01111111 = 64 to 127
+                        \   Competent        %10000000 to %11111111 = 128 to 255
+                        \
+                        \ Note that the Competent range also covers kill counts
+                        \ from 256 to 511, as follows
+                        \
+                        \ If the high byte in TALLY+1 is non-zero then we are
+                        \ Competent, Dangerous, Deadly or Elite, according to
+                        \ the value of TALLY(1 0):
+                        \
+                        \   Competent   (1 0) to (1 255)   = 256 to 511 kills
+                        \   Dangerous   (2 0) to (9 255)   = 512 to 2559 kills
+                        \   Deadly      (10 0) to (24 255) = 2560 to 6399 kills
+                        \   Elite       (25 0) and up      = 6400 kills and up
+                        \
+                        \ You can see the rating calculation in the STATUS
+                        \ subroutine
+
+.SVC
+
+ SKIP 1                 \ The save count
+                        \
+                        \ When a new commander is created, the save count gets
+                        \ set to 128. This value gets halved each time the
+                        \ commander file is saved, but it is otherwise unused.
+                        \ It is presumably part of the security system for the
+                        \ competition, possibly another flag to catch out
+                        \ entries with manually altered commander files
+
+ SKIP 2                 \ The commander file checksum
+                        \
+                        \ These two bytes are reserved for the commander file
+                        \ checksum, so when the current commander block is
+                        \ copied from here to the last saved commander block at
+                        \ NA%, CHK and CHK2 get overwritten
+
+ NT% = SVC + 2 - TP     \ This sets the variable NT% to the size of the current
+                        \ commander data block, which starts at TP and ends at
+                        \ SVC+2 (inclusive)
+
+.XSAV2
+
+ SKIP 1                 \ Temporary storage, used for storing the value of the X
+                        \ register in the TT26 routine
+
+.YSAV2
+
+ SKIP 1                 \ Temporary storage, used for storing the value of the Y
+                        \ register in the TT26 routine
+
+ PRINT "T% workspace from ", ~T%, "to ", ~P%-1, "inclusive"
 
                         \ --- Mod: Code moved for sideways RAM: --------------->
 
-                        \ The following workspace has been moved into sideways
+                        \ The following variables have been moved into sideways
                         \ RAM (see the ELITE SIDEWAYS RAM FILE section at the
                         \ end of this source file):
                         \
-                        \   * T%
+                        \   * SX
+                        \   * SXL
+                        \   * SY
 
                         \ --- End of moved code ------------------------------->
 
@@ -2553,11 +2883,17 @@ ENDMACRO
                         \ JMP (S%+8) instruction, which jumps to the main entry
                         \ point at TT170 via this location
 
- EQUW TT26              \ WRCHV is set to point here by elite-loader.asm
+                        \ --- Mod: Code removed for extended text tokens: ----->
+
+\EQUW TT26              \ WRCHV is set to point here by elite-loader.asm
+
+                        \ --- And replaced by: -------------------------------->
+
+ EQUW CHPR              \ WRCHV is set to point here by elite-loader.asm
+
+                        \ --- End of replacement ------------------------------>
 
  EQUW IRQ1              \ IRQ1V is set to point here by elite-loader.asm
-
-.BRKV
 
  EQUW BR1               \ BRKV is set to point here by elite-loader.asm
 
@@ -2929,6 +3265,33 @@ ENDMACRO
                         \   * MV40
 
                         \ --- End of moved code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: S1%
+\       Type: Variable
+\   Category: Save and load
+\    Summary: The drive and directory number used when saving or loading a
+\             commander file
+\  Deep dive: Commander save files
+\
+\ ------------------------------------------------------------------------------
+\
+\ The drive part of this string (the "0") is updated with the chosen drive in
+\ the GTNMEW routine, but the directory part (the "E") is fixed. The variable
+\ is followed directly by the commander file at NA%, which starts with the
+\ commander name, so the full string at S1% is in the format ":0.E.JAMESON",
+\ which gives the full filename of the commander file.
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for saving and loading: --------->
+
+.S1%
+
+ EQUS ":0.E."
+
+                        \ --- End of added code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -15470,17 +15833,34 @@ ENDIF
  CMP #&44               \ Did we press "Y"? If not, jump to QU5, otherwise
  BNE QU5                \ continue on to load a new commander
 
- JSR GTNME              \ We want to load a new commander, so we need to get
-                        \ the commander name to load
+                        \ --- Mod: Code removed for saving and loading: ------->
 
- JSR LOD                \ We then call the LOD subroutine to load the commander
-                        \ file to address NA%+8, which is where we store the
-                        \ commander save file
+\JSR GTNME              \ We want to load a new commander, so we need to get
+\                       \ the commander name to load
+\
+\JSR LOD                \ We then call the LOD subroutine to load the commander
+\                       \ file to address NA%+8, which is where we store the
+\                       \ commander save file
+\
+\JSR TRNME              \ Once loaded, we copy the commander name to NA%
+\
+\JSR TTX66              \ And we clear the top part of the screen and draw a
+\                       \ border box
 
- JSR TRNME              \ Once loaded, we copy the commander name to NA%
+                        \ --- And replaced by: -------------------------------->
 
- JSR TTX66              \ And we clear the top part of the screen and draw a
-                        \ border box
+ JSR DFAULT             \ Call DFAULT to reset the current commander data block
+                        \ to the last saved commander
+
+ JSR SVE                \ Call SVE to load a new commander into the last saved
+                        \ commander data block
+
+.QU5
+
+ JSR DFAULT             \ Call DFAULT to reset the current commander data block
+                        \ to the last saved commander
+
+                        \ --- End of replacement ------------------------------>
 
 \ ******************************************************************************
 \
@@ -15491,36 +15871,181 @@ ENDIF
 \
 \ ******************************************************************************
 
-.QU5
+                        \ --- Mod: Code removed for saving and loading: ------->
 
-                        \ By the time we get here, the correct commander name
-                        \ is at NA% and the correct commander data is at NA%+8.
-                        \ Specifically:
-                        \
-                        \   * If we loaded a commander file, then the name and
-                        \     data from that file will be at NA% and NA%+8
-                        \
-                        \   * If this is a brand new game, then NA% will contain
-                        \     the default starting commander name ("JAMESON")
-                        \     and NA%+8 will contain the default commander data
-                        \
-                        \   * If this is not a new game (because they died or
-                        \     quit) and we didn't want to load a commander file,
-                        \     then NA% will contain the last saved commander
-                        \     name, and NA%+8 the last saved commander data. If
-                        \     the game has never been saved, this will still be
-                        \     the default commander
+\.QU5
+\
+\                       \ By the time we get here, the correct commander name
+\                       \ is at NA% and the correct commander data is at NA%+8.
+\                       \ Specifically:
+\                       \
+\                       \   * If we loaded a commander file, then the name and
+\                       \     data from that file will be at NA% and NA%+8
+\                       \
+\                       \   * If this is a brand new game, then NA% will contain
+\                       \     the default starting commander name ("JAMESON")
+\                       \     and NA%+8 will contain the default commander data
+\                       \
+\                       \   * If this is not a new game (because they died or
+\                       \     quit) and we didn't want to load a commander file,
+\                       \     then NA% will contain the last saved commander
+\                       \     name, and NA%+8 the last saved commander data. If
+\                       \     the game has never been saved, this will still be
+\                       \     the default commander
+\
+\LDX #NT%               \ The size of the commander data block is NT% bytes,
+\                       \ and it starts at NA%+8, so we need to copy the data
+\                       \ from the "last saved" buffer at NA%+8 to the current
+\                       \ commander workspace at TP. So we set up a counter in X
+\                       \ for the NT% bytes that we want to copy
+\
+\.QUL1
+\
+\LDA NA%+7,X            \ Copy the X-th byte of NA%+7 to the X-th byte of TP-1,
+\STA TP-1,X             \ (the -1 is because X is counting down from NT% to 1)
+\
+\DEX                    \ Decrement the loop counter
+\
+\BNE QUL1               \ Loop back for the next byte of the commander data
+\                       \ block
+\
+\STX QQ11               \ X is 0 by the end of the above loop, so this sets QQ11
+\                       \ to 0, which means we will be showing a view without a
+\                       \ boxed title at the top (i.e. we're going to use the
+\                       \ screen layout of a space view in the following)
+\
+\                       \ If the commander check below fails, we keep jumping
+\                       \ back to here to crash the game with an infinite loop
+\
+\JSR CHECK              \ Call the CHECK subroutine to calculate the checksum
+\                       \ for the current commander block at NA%+8 and put it
+\                       \ in A
+\
+\CMP CHK                \ Test the calculated checksum against CHK
+\
+\IF _REMOVE_CHECKSUMS
+\
+\NOP                    \ If we have disabled checksums, then ignore the result
+\NOP                    \ of the comparison and fall through into the next part
+\
+\ELSE
+\
+\BNE P%-6               \ If the calculated checksum does not match CHK, then
+\                       \ loop back to repeat the check - in other words, we
+\                       \ enter an infinite loop here, as the checksum routine
+\                       \ will keep returning the same incorrect value
+\
+\ENDIF
+\
+\                       \ The checksum CHK is correct, so now we check whether
+\                       \ CHK2 = CHK EOR A9, and if this check fails, bit 7 of
+\                       \ the competition flags at COK gets set, to indicate
+\                       \ to Acornsoft via the competition code that there has
+\                       \ been some hacking going on with this competition entry
+\
+\EOR #&A9               \ X = checksum EOR &A9
+\TAX
+\
+\LDA COK                \ Set A to the competition flags in COK
+\
+\CPX CHK2               \ If X = CHK2, then skip the next instruction
+\BEQ tZ
+\
+\ORA #%10000000         \ Set bit 7 of A to indicate this commander file has
+\                       \ been tampered with
+\
+\.tZ
+\
+\ORA #%00001000         \ Set bit 3 of A to denote that this is the Electron
+\                       \ version
+\
+\STA COK                \ Store the updated competition flags in COK
 
- LDX #NT%               \ The size of the commander data block is NT% bytes,
-                        \ and it starts at NA%+8, so we need to copy the data
-                        \ from the "last saved" buffer at NA%+8 to the current
-                        \ commander workspace at TP. So we set up a counter in X
-                        \ for the NT% bytes that we want to copy
+                        \ --- End of removed code ----------------------------->
+
+\ ******************************************************************************
+\
+\       Name: BR1 (Part 2 of 2)
+\       Type: Subroutine
+\   Category: Start and end
+\    Summary: Show the "Press Fire or Space, Commander" screen and start the
+\             game
+\
+\ ------------------------------------------------------------------------------
+\
+\ BRKV is set to point to BR1 by the loading process.
+\
+\ ******************************************************************************
+
+ JSR msblob             \ Reset the dashboard's missile indicators so none of
+                        \ them are targeted
+
+ LDA #147               \ Call TITLE to show a rotating Mamba (#3) and token
+ LDX #3                 \ 147 ("PRESS FIRE OR SPACE,COMMANDER.{crlf}{crlf}"),
+ JSR TITLE              \ returning with the internal number of the key pressed
+                        \ in A
+
+ JSR ping               \ Set the target system coordinates (QQ9, QQ10) to the
+                        \ current system coordinates (QQ0, QQ1) we just loaded
+
+ JSR hyp1               \ Arrive in the system closest to (QQ9, QQ10)
+
+                        \ Fall through into the docking bay routine below
+
+\ ******************************************************************************
+\
+\       Name: BAY
+\       Type: Subroutine
+\   Category: Status
+\    Summary: Go to the docking bay (i.e. show the Status Mode screen)
+\
+\ ------------------------------------------------------------------------------
+\
+\ We end up here after the start-up process (load commander etc.), as well as
+\ after a successful save, an escape pod launch, a successful docking, the end
+\ of a cargo sell, and various errors (such as not having enough cash, entering
+\ too many items when buying, trying to fit an item to your ship when you
+\ already have it, running out of cargo space, and so on).
+\
+\ ******************************************************************************
+
+.BAY
+
+ LDA #&FF               \ Set QQ12 = &FF (the docked flag) to indicate that we
+ STA QQ12               \ are docked
+
+ LDA #func9             \ Jump into the main loop at FRCE, setting the key
+ JMP FRCE               \ that's "pressed" to FUNC-9 (so we show the Status
+                        \ Mode screen)
+
+\ ******************************************************************************
+\
+\       Name: DFAULT
+\       Type: Subroutine
+\   Category: Start and end
+\    Summary: Reset the current commander data block to the last saved commander
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for saving and loading: --------->
+
+.DFAULT
+
+ LDX #NT%+8             \ The size of the last saved commander data block is NT%
+                        \ bytes, and it is preceded by the 8 bytes of the
+                        \ commander name (seven characters plus a carriage
+                        \ return). The commander data block at NAME is followed
+                        \ by the commander data block, so we need to copy the
+                        \ name and data from the "last saved" buffer at NA% to
+                        \ the current commander workspace at NAME. So we set up
+                        \ a counter in X for the NT% + 8 bytes that we want to
+                        \ copy
 
 .QUL1
 
- LDA NA%+7,X            \ Copy the X-th byte of NA%+7 to the X-th byte of TP-1,
- STA TP-1,X             \ (the -1 is because X is counting down from NT% to 1)
+ LDA NA%-1,X            \ Copy the X-th byte of NA%-1 to the X-th byte of
+ STA NAME-1,X           \ NAME-1 (the -1 is because X is counting down from
+                        \ NT% + 8 to 1)
 
  DEX                    \ Decrement the loop counter
 
@@ -15579,60 +16104,9 @@ ENDIF
 
  STA COK                \ Store the updated competition flags in COK
 
-\ ******************************************************************************
-\
-\       Name: BR1 (Part 2 of 2)
-\       Type: Subroutine
-\   Category: Start and end
-\    Summary: Show the "Press Fire or Space, Commander" screen and start the
-\             game
-\
-\ ------------------------------------------------------------------------------
-\
-\ BRKV is set to point to BR1 by the loading process.
-\
-\ ******************************************************************************
+ RTS                    \ Return from the subroutine
 
- JSR msblob             \ Reset the dashboard's missile indicators so none of
-                        \ them are targeted
-
- LDA #147               \ Call TITLE to show a rotating Mamba (#3) and token
- LDX #3                 \ 147 ("PRESS FIRE OR SPACE,COMMANDER.{crlf}{crlf}"),
- JSR TITLE              \ returning with the internal number of the key pressed
-                        \ in A
-
- JSR ping               \ Set the target system coordinates (QQ9, QQ10) to the
-                        \ current system coordinates (QQ0, QQ1) we just loaded
-
- JSR hyp1               \ Arrive in the system closest to (QQ9, QQ10)
-
-                        \ Fall through into the docking bay routine below
-
-\ ******************************************************************************
-\
-\       Name: BAY
-\       Type: Subroutine
-\   Category: Status
-\    Summary: Go to the docking bay (i.e. show the Status Mode screen)
-\
-\ ------------------------------------------------------------------------------
-\
-\ We end up here after the start-up process (load commander etc.), as well as
-\ after a successful save, an escape pod launch, a successful docking, the end
-\ of a cargo sell, and various errors (such as not having enough cash, entering
-\ too many items when buying, trying to fit an item to your ship when you
-\ already have it, running out of cargo space, and so on).
-\
-\ ******************************************************************************
-
-.BAY
-
- LDA #&FF               \ Set QQ12 = &FF (the docked flag) to indicate that we
- STA QQ12               \ are docked
-
- LDA #func9             \ Jump into the main loop at FRCE, setting the key
- JMP FRCE               \ that's "pressed" to FUNC-9 (so we show the Status
-                        \ Mode screen)
+                        \ --- End of added code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -15848,8 +16322,17 @@ ENDIF
 
 .GTL1
 
- LDA INWK,X             \ Copy the X-th byte of INWK to the X-th byte of NA%
+                        \ --- Mod: Code removed for saving and loading: ------->
+
+\LDA INWK,X             \ Copy the X-th byte of INWK to the X-th byte of NA%
+\STA NA%,X
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDA INWK+5,X           \ Copy the X-th byte of INWK+5 to the X-th byte of NA%
  STA NA%,X
+
+                        \ --- End of replacement ------------------------------>
 
  DEX                    \ Decrement the loop counter
 
@@ -15877,8 +16360,17 @@ ENDIF
 
 .GTL2
 
- LDA NA%,X              \ Copy the X-th byte of NA% to the X-th byte of INWK
- STA INWK,X
+                        \ --- Mod: Code removed for saving and loading: ------->
+
+\LDA NA%,X              \ Copy the X-th byte of NA% to the X-th byte of INWK
+\STA INWK,X
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDA NA%,X              \ Copy the X-th byte of NA% to the X-th byte of INWK+5
+ STA INWK+5,X
+
+                        \ --- End of replacement ------------------------------>
 
  DEX                    \ Decrement the loop counter
 
@@ -16068,17 +16560,19 @@ ENDIF
 
 .MT26
 
- LDA #%10000001         \ Clear 6522 System VIA interrupt enable register IER
- STA VIA+&4E            \ (SHEILA &4E) bit 1 (i.e. enable the CA2 interrupt,
-                        \ which comes from the keyboard)
-
 \JSR FLKB               \ Call FLKB to flush the keyboard buffer
 
  LDX #LO(RLINE)         \ Set (Y X) to point to the RLINE parameter block
  LDY #HI(RLINE)
 
+ DEC KEYB               \ Decrement KEYB, so it is now &FF, to indicate that we
+                        \ are reading from the keyboard using an OS command
+
  LDA #0                 \ Call OSWORD with A = 0 to read a line from the current
  JSR OSWORD             \ input stream (i.e. the keyboard)
+
+ INC KEYB               \ Increment KEYB back to 0 to indicate we are done
+                        \ reading the keyboard
 
  BCC P%+4               \ The C flag will be set if we pressed ESCAPE when
                         \ entering the name, otherwise it will be clear, so
@@ -16086,10 +16580,6 @@ ENDIF
 
  LDY #0                 \ ESCAPE was pressed, so set Y = 0 (as the OSWORD call
                         \ returns the length of the entered string in Y)
-
- LDA #%00000001         \ Set 6522 System VIA interrupt enable register IER
- STA VIA+&4E            \ (SHEILA &4E) bit 1 (i.e. disable the CA2 interrupt,
-                        \ which comes from the keyboard)
 
  JMP FEED               \ Jump to FEED to print a newline, returning from the
                         \ subroutine using a tail call
@@ -16403,6 +16893,18 @@ ENDIF
 
 .MEBRK
 
+                        \ --- Mod: Code added for sideways RAM: --------------->
+
+ LDA #&0C               \ Switch to the sideways RAM bank containing the game
+ STA &00F4              \ code by first switching to one of ROM 12 to 15, and
+ STA VIA+&05            \ then switching to the required bank (we stored the
+ LDA S%                 \ bank number in S% in the loader)
+ STA &00F4              \
+ STA VIA+&05            \ We do this so the game code is paged in should a break
+                        \ be triggered, as BRKV points to MEBRK
+
+                        \ --- End of added code ------------------------------->
+
  LDX stack              \ Set the stack pointer to the value that we stored in
  TXS                    \ the stack variable, so that's back to the value it had
                         \ before we set BRKV to point to MEBRK in the SVE
@@ -16591,10 +17093,14 @@ ENDIF
  TSX                    \ Transfer the stack pointer to X and store it in stack,
  STX stack              \ so we can restore it in the MEBRK routine
 
+ SEI                    \ Disable interrupts so we can update the 6845
+
  LDA #LO(MEBRK)         \ Set BRKV to point to the MEBRK routine, which is the
  STA BRKV               \ BRKV handler for disc access operations, and replaces
  LDA #HI(MEBRK)         \ the standard BRKV handler in BRBR while disc access
  STA BRKV+1             \ operations are happening
+
+ CLI                    \ Re-enable interrupts
 
  LDA #1                 \ Print extended token 1, the disc access menu, which
  JSR DETOK              \ presents these options:
@@ -18246,10 +18752,14 @@ ENDIF
 
 .BRKBK
 
+ SEI                    \ Disable interrupts so we can update the 6845
+
  LDA #LO(BRBR)          \ Set BRKV to point to the BRBR routine
  STA BRKV
  LDA #HI(BRBR)
  STA BRKV+1
+
+ CLI                    \ Re-enable interrupts
 
  RTS                    \ Return from the subroutine
 
@@ -25500,16 +26010,6 @@ ENDMACRO
  SKIP NOST + 1          \ This is where we store the z_lo coordinates for all
                         \ the stardust particles
 
-.XSAV2
-
- SKIP 1                 \ Temporary storage, used for storing the value of the X
-                        \ register in the TT26 routine
-
-.YSAV2
-
- SKIP 1                 \ Temporary storage, used for storing the value of the Y
-                        \ register in the TT26 routine
-
 .MCH
 
  SKIP 1                 \ The text token number of the in-flight message that is
@@ -25690,304 +26190,7 @@ ENDMACRO
                         \ galaxy chart (and, most of the time, the selected
                         \ system's galactic y-coordinate)
 
- PRINT "WP workspace from ", ~WP, "to ", ~P%-1, "inclusive"
-
-\ ******************************************************************************
-\
-\       Name: T%
-\       Type: Workspace
-\    Address: &0300 to &036C
-\   Category: Workspaces
-\    Summary: Current commander data and stardust data blocks
-\
-\ ------------------------------------------------------------------------------
-\
-\ Contains the current commander data (NT% bytes at location TP), and the
-\ stardust data blocks (NOST bytes at location SX)
-\
-\ ******************************************************************************
-
-.T%
-
- SKIP 0                 \ The start of the T% workspace
-
-.TP
-
- SKIP 1                 \ The current mission status, which is always 0 for the
-                        \ cassette version of Elite as there are no missions
-
-.QQ0
-
- SKIP 1                 \ The current system's galactic x-coordinate (0-256)
-
-.QQ1
-
- SKIP 1                 \ The current system's galactic y-coordinate (0-256)
-
-.QQ21
-
- SKIP 6                 \ The three 16-bit seeds for the current galaxy
-                        \
-                        \ These seeds define system 0 in the current galaxy, so
-                        \ they can be used as a starting point to generate all
-                        \ 256 systems in the galaxy
-                        \
-                        \ Using a galactic hyperdrive rotates each byte to the
-                        \ left (rolling each byte within itself) to get the
-                        \ seeds for the next galaxy, so after eight galactic
-                        \ jumps, the seeds roll around to the first galaxy again
-
-.CASH
-
- SKIP 4                 \ Our current cash pot
-                        \
-                        \ The cash stash is stored as a 32-bit unsigned integer,
-                        \ with the most significant byte in CASH and the least
-                        \ significant in CASH+3. This is big-endian, which is
-                        \ the opposite way round to most of the numbers used in
-                        \ Elite - to use our notation for multi-byte numbers,
-                        \ the amount of cash is CASH(0 1 2 3)
-
-.QQ14
-
- SKIP 1                 \ Our current fuel level (0-70)
-                        \
-                        \ The fuel level is stored as the number of light years
-                        \ multiplied by 10, so QQ14 = 1 represents 0.1 light
-                        \ years, and the maximum possible value is 70, for 7.0
-                        \ light years
-
-.COK
-
- SKIP 1                 \ Flags used to generate the competition code
-
-.GCNT
-
- SKIP 1                 \ The number of the current galaxy (0-7)
-                        \
-                        \ When this is displayed in-game, 1 is added to the
-                        \ number, so we start in galaxy 1 in-game, but it's
-                        \ stored as galaxy 0 internally
-                        \
-                        \ The galaxy number increases by one every time a
-                        \ galactic hyperdrive is used, and wraps back around to
-                        \ the start after eight galaxies
-
-.LASER
-
- SKIP 4                 \ The specifications of the lasers fitted to each of the
-                        \ four space views:
-                        \
-                        \   * Byte #0 = front view
-                        \   * Byte #1 = rear view
-                        \   * Byte #2 = left view
-                        \   * Byte #3 = right view
-                        \
-                        \ For each of the views:
-                        \
-                        \   * 0 = no laser is fitted to this view
-                        \
-                        \   * Non-zero = a laser is fitted to this view, with
-                        \     the following specification:
-                        \
-                        \     * Bits 0-6 contain the laser's power
-                        \
-                        \     * Bit 7 determines whether or not the laser pulses
-                        \       (0 = pulse laser) or is always on (1 = beam
-                        \       laser)
-
- SKIP 2                 \ These bytes appear to be unused (they were originally
-                        \ used for up/down lasers, but they were dropped)
-
-.CRGO
-
- SKIP 1                 \ Our ship's cargo capacity
-                        \
-                        \   * 22 = standard cargo bay of 20 tonnes
-                        \
-                        \   * 37 = large cargo bay of 35 tonnes
-                        \
-                        \ The value is two greater than the actual capacity to
-                        \ make the maths in tnpr slightly more efficient
-
-.QQ20
-
- SKIP 17                \ The contents of our cargo hold
-                        \
-                        \ The amount of market item X that we have in our hold
-                        \ can be found in the X-th byte of QQ20. For example:
-                        \
-                        \   * QQ20 contains the amount of food (item 0)
-                        \
-                        \   * QQ20+7 contains the amount of computers (item 7)
-                        \
-                        \ See QQ23 for a list of market item numbers and their
-                        \ storage units
-
-.ECM
-
- SKIP 1                 \ E.C.M. system
-                        \
-                        \   * 0 = not fitted
-                        \
-                        \   * &FF = fitted
-
-.BST
-
- SKIP 1                 \ Fuel scoops (BST stands for "barrel status")
-                        \
-                        \   * 0 = not fitted
-                        \
-                        \   * &FF = fitted
-
-.BOMB
-
- SKIP 1                 \ Energy bomb
-                        \
-                        \   * 0 = not fitted
-                        \
-                        \   * &7F = fitted
-
-.ENGY
-
- SKIP 1                 \ Energy unit
-                        \
-                        \   * 0 = not fitted
-                        \
-                        \   * Non-zero = fitted
-                        \
-                        \ The actual value determines the refresh rate of our
-                        \ energy banks, as they refresh by ENGY+1 each time (so
-                        \ our ship's energy level goes up by 2 each time if we
-                        \ have an energy unit fitted, otherwise it goes up by 1)
-                        \
-                        \ The enhanced versions of Elite set ENGY to 2 as the
-                        \ reward for completing mission 2, where we receive a
-                        \ special naval energy unit that recharges at a fast
-                        \ rate than a standard energy unit, i.e. by 3 each time
-
-.DKCMP
-
- SKIP 1                 \ Docking computer
-                        \
-                        \   * 0 = not fitted
-                        \
-                        \   * &FF = fitted
-
-.GHYP
-
- SKIP 1                 \ Galactic hyperdrive
-                        \
-                        \   * 0 = not fitted
-                        \
-                        \   * &FF = fitted
-
-.ESCP
-
- SKIP 1                 \ Escape pod
-                        \
-                        \   * 0 = not fitted
-                        \
-                        \   * &FF = fitted
-
- SKIP 4                 \ These bytes appear to be unused
-
-.NOMSL
-
- SKIP 1                 \ The number of missiles we have fitted (0-4)
-
-.FIST
-
- SKIP 1                 \ Our legal status (FIST stands for "fugitive/innocent
-                        \ status"):
-                        \
-                        \   * 0 = Clean
-                        \
-                        \   * 1-49 = Offender
-                        \
-                        \   * 50+ = Fugitive
-                        \
-                        \ You get 64 points if you kill a cop, so that's a fast
-                        \ ticket to fugitive status
-
-.AVL
-
- SKIP 17                \ Market availability in the current system
-                        \
-                        \ The available amount of market item X is stored in
-                        \ the X-th byte of AVL, so for example:
-                        \
-                        \   * AVL contains the amount of food (item 0)
-                        \
-                        \   * AVL+7 contains the amount of computers (item 7)
-                        \
-                        \ See QQ23 for a list of market item numbers and their
-                        \ storage units
-
-.QQ26
-
- SKIP 1                 \ A random value used to randomise market data
-                        \
-                        \ This value is set to a new random number for each
-                        \ change of system, so we can add a random factor into
-                        \ the calculations for market prices
-
-.TALLY
-
- SKIP 2                 \ Our combat rank
-                        \
-                        \ The combat rank is stored as the number of kills, in a
-                        \ 16-bit number TALLY(1 0) - so the high byte is in
-                        \ TALLY+1 and the low byte in TALLY
-                        \
-                        \ If the high byte in TALLY+1 is 0 then we have between
-                        \ 0 and 255 kills, so our rank is Harmless, Mostly
-                        \ Harmless, Poor, Average Above Average or Competent,
-                        \ according to the value of the low byte in TALLY:
-                        \
-                        \   Harmless         %00000000 to %00000111 = 0 to 7
-                        \   Mostly Harmless  %00001000 to %00001111 = 8 to 15
-                        \   Poor             %00010000 to %00011111 = 16 to 31
-                        \   Average          %00100000 to %00111111 = 32 to 63
-                        \   Above Average    %01000000 to %01111111 = 64 to 127
-                        \   Competent        %10000000 to %11111111 = 128 to 255
-                        \
-                        \ Note that the Competent range also covers kill counts
-                        \ from 256 to 511, as follows
-                        \
-                        \ If the high byte in TALLY+1 is non-zero then we are
-                        \ Competent, Dangerous, Deadly or Elite, according to
-                        \ the value of TALLY(1 0):
-                        \
-                        \   Competent   (1 0) to (1 255)   = 256 to 511 kills
-                        \   Dangerous   (2 0) to (9 255)   = 512 to 2559 kills
-                        \   Deadly      (10 0) to (24 255) = 2560 to 6399 kills
-                        \   Elite       (25 0) and up      = 6400 kills and up
-                        \
-                        \ You can see the rating calculation in the STATUS
-                        \ subroutine
-
-.SVC
-
- SKIP 1                 \ The save count
-                        \
-                        \ When a new commander is created, the save count gets
-                        \ set to 128. This value gets halved each time the
-                        \ commander file is saved, but it is otherwise unused.
-                        \ It is presumably part of the security system for the
-                        \ competition, possibly another flag to catch out
-                        \ entries with manually altered commander files
-
- SKIP 2                 \ The commander file checksum
-                        \
-                        \ These two bytes are reserved for the commander file
-                        \ checksum, so when the current commander block is
-                        \ copied from here to the last saved commander block at
-                        \ NA%, CHK and CHK2 get overwritten
-
- NT% = SVC + 2 - TP     \ This sets the variable NT% to the size of the current
-                        \ commander data block, which starts at TP and ends at
-                        \ SVC+2 (inclusive)
+                        \ --- Mod: Code moved for sideways RAM: --------------->
 
 .SX
 
@@ -26004,7 +26207,9 @@ ENDMACRO
  SKIP NOST + 1          \ This is where we store the y_hi coordinates for all
                         \ the stardust particles
 
- PRINT "T% workspace from ", ~T%, "to ", ~P%-1, "inclusive"
+                        \ --- End of moved code ------------------------------->
+
+ PRINT "WP workspace from ", ~WP, "to ", ~P%-1, "inclusive"
 
 \ ******************************************************************************
 \

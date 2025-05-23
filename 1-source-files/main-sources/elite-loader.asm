@@ -1938,6 +1938,16 @@ ENDMACRO
  JSR OSCLI              \ Call OSCLI to run the OS command in MESS1, which loads
                         \ the main game code at location &2000
 
+                        \ --- Mod: Code added for saving and loading: --------->
+
+ LDX #LO(MESS2)         \ Set (Y X) to point to MESS2 ("DIR E")
+ LDY #HI(MESS2)
+
+ JSR OSCLI              \ Call OSCLI to run the OS command in MESS1, which
+                        \ changes the disc directory to E
+
+                        \ --- End of added code ------------------------------->
+
  LDA #3                 \ Directly update &0258, the memory location associated
  STA &0258              \ with OSBYTE 200, so this is the same as calling OSBYTE
                         \ with A = 200, X = 3 and Y = 0 to disable the ESCAPE
@@ -2121,6 +2131,24 @@ ELSE
  EQUB 13
 
 ENDIF
+
+\ ******************************************************************************
+\
+\       Name: MESS2
+\       Type: Variable
+\   Category: Loader
+\    Summary: The OS command string for changing the disc directory to E
+\
+\ ******************************************************************************
+
+.MESS2
+
+                        \ --- Mod: Code added for saving and loading: --------->
+
+ EQUS "*DIR E"
+ EQUB 13
+
+                        \ --- End of added code ------------------------------->
 
  SKIP 13                \ These bytes appear to be unused
 
