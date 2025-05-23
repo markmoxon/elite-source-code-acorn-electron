@@ -27859,7 +27859,7 @@ ENDIF
                         \
                         \ Y is left containing &A which we use below
 
- LDA #0                 \ Call QUS1 with A = 0, Y = &C to save the commander
+ LDA #0                 \ Call QUS1 with A = 0, Y = &A to save the commander
  JSR QUS1               \ file with the filename we copied to INWK at the start
                         \ of this routine
 
@@ -27947,8 +27947,8 @@ ENDIF
 
  INY                    \ Increment Y to &A, which we use next
 
- LDA #&FF               \ Call QUS1 with A = &FF, Y = &C to load the commander
- JSR QUS1               \ file to address &0B00
+ LDA #&FF               \ Call QUS1 with A = &FF, Y = &A to load the commander
+ JSR QUS1               \ file to address &0900
 
  LDA &0900              \ If the first byte of the loaded file has bit 7 set,
  BMI SPS1+1             \ jump to SPS+1, which is the second byte of an LDA #0
