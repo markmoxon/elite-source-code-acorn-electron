@@ -16565,11 +16565,13 @@ ENDIF
  LDX #LO(RLINE)         \ Set (Y X) to point to the RLINE parameter block
  LDY #HI(RLINE)
 
+ LDA #0                 \ Set A = 0 for the following OSWORD call
+
  DEC KEYB               \ Decrement KEYB, so it is now &FF, to indicate that we
                         \ are reading from the keyboard using an OS command
 
- LDA #0                 \ Call OSWORD with A = 0 to read a line from the current
- JSR OSWORD             \ input stream (i.e. the keyboard)
+ JSR OSWORD             \ Call OSWORD with A = 0 to read a line from the current
+                        \ input stream (i.e. the keyboard)
 
  INC KEYB               \ Increment KEYB back to 0 to indicate we are done
                         \ reading the keyboard
@@ -17321,12 +17323,19 @@ ENDIF
  STX &0C00              \ &0C00, storing #INWK in the low byte because INWK is
                         \ in zero page
 
- LDX #0                 \ Set (Y X) = &0C00
- LDY #&C
+ LDY #&C                \ Set the top byte of (Y X) = &0C00
+
+ LDX #&FF               \ Set KEYB = &FF to indicate that we are reading from
+ STX KEYB               \ the keyboard using an OS command
+
+ INX                    \ Set the botttom byte of (Y X) = &0C00
 
  JSR OSFILE             \ Call OSFILE to do the file operation specified in
                         \ &0C00 (i.e. save or load a file depending on the value
                         \ of A)
+
+ INC KEYB               \ Increment KEYB back to 0 to indicate we are done
+                        \ reading the keyboard
 
  CLC                    \ Clear the C flag
 
