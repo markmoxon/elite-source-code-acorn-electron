@@ -1538,7 +1538,22 @@ ENDMACRO
 
 MACRO CONT n
 
- EQUB n EOR RE
+                        \ --- Mod: Code removed for sideways RAM: ------------->
+
+\EQUB n EOR RE
+
+                        \ --- And replaced by: -------------------------------->
+
+ IF n = 13
+
+  EQUB 12 EOR RE        \ Convert {crlf} control code 13 to control code 12
+
+ ELSE
+
+  EQUB n EOR RE         \ Leave all other characters alone
+
+ ENDIF
+                        \ --- End of replacement ------------------------------>
 
 ENDMACRO
 
@@ -5272,6 +5287,10 @@ ENDIF
                         \ one line (line feed). These two lines do the first
                         \ bit by setting XC = 1, and we then fall through into
                         \ the line feed routine that's used by control code 10
+
+ CMP #13                \ If this is control code 13 (carriage return) then jump
+ BEQ RR4                \ RR4 to restore the registers and return from the
+                        \ subroutine
 
 .RRX1
 
