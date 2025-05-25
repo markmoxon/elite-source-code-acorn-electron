@@ -2,7 +2,7 @@ MODE6
 fromAddr = &80
 romNumber = &87 : REM Set to address of .sramBankNumber
 
-PRINT"Electron Elite (Compendium version)"
+PRINT'"Electron Elite (Compendium version)"
 PRINT"==================================="
 PRINT'"Based on the Acornsoft SLG38 release"
 PRINT"of Elite by Ian Bell and David Braben"
