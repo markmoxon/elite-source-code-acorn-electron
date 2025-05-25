@@ -39367,9 +39367,30 @@ ENDMACRO
  BNE P%+5               \ Buy Cargo screen, returning from the subroutine using
  JMP TT219              \ a tail call
 
- CMP #&48               \ If ":" was pressed, jump to SVE to save the commander
- BNE P%+5               \ file, returning from the subroutine using a tail call
- JMP SVE
+                        \ --- Mod: Code removed for saving and loading: ------->
+
+\CMP #&48               \ If ":" was pressed, jump to SVE to save the commander
+\BNE P%+5               \ file, returning from the subroutine using a tail call
+\JMP SVE
+
+                        \ --- And replaced by: -------------------------------->
+
+ CMP #&48               \ If ":" was not pressed, skip to nosave
+ BNE nosave
+
+ JSR SVE                \ ":" was pressed, so call SVE to show the disc access
+                        \ menu
+
+ BCC P%+5               \ If the C flag was set by SVE, then we loaded a new
+ JMP QU5                \ commander file, so jump to QU5 to restart the game
+                        \ with the newly loaded commander
+
+ JMP BAY                \ Otherwise the C flag was clear, so jump to BAY to go
+                        \ to the docking bay (i.e. show the Status Mode screen)
+
+.nosave
+
+                        \ --- End of replacement ------------------------------>
 
  CMP #func3             \ If FUNC-3 was pressed, jump to TT208 to show the Sell
  BNE LABEL_3            \ Cargo screen, returning from the subroutine using a
