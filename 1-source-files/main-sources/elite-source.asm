@@ -25764,6 +25764,103 @@ ENDMACRO
 
 \ ******************************************************************************
 \
+\       Name: log
+\       Type: Variable
+\   Category: Maths (Arithmetic)
+\    Summary: Binary logarithm table (high byte)
+\
+\ ------------------------------------------------------------------------------
+\
+\ At byte n, the table contains the high byte of:
+\
+\   &2000 * log10(n) / log10(2) = 32 * 256 * log10(n) / log10(2)
+\
+\ where log10 is the logarithm to base 10. The change-of-base formula says that:
+\
+\   log2(n) = log10(n) / log10(2)
+\
+\ so byte n contains the high byte of:
+\
+\   32 * log2(n) * 256
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for logarithms: ----------------->
+
+.log
+
+ SKIP 1
+
+ FOR I%, 1, 255
+
+  EQUB HI(INT(&2000 * LOG(I%) / LOG(2) + 0.5))
+
+ NEXT
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: logL
+\       Type: Variable
+\   Category: Maths (Arithmetic)
+\    Summary: Binary logarithm table (low byte)
+\
+\ ------------------------------------------------------------------------------
+\
+\ Byte n contains the low byte of:
+\
+\   32 * log2(n) * 256
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for logarithms: ----------------->
+
+.logL
+
+ SKIP 1
+
+ FOR I%, 1, 255
+
+  EQUB LO(INT(&2000 * LOG(I%) / LOG(2) + 0.5))
+
+ NEXT
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: alogh
+\       Type: Variable
+\   Category: Maths (Arithmetic)
+\    Summary: Binary antilogarithm table
+\
+\ ------------------------------------------------------------------------------
+\
+\ At byte n, the table contains:
+\
+\   2^((n / 2 + 128) / 16) / 256
+\
+\ which equals:
+\
+\   2^(n / 32 + 8) / 256
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for logarithms: ----------------->
+
+.alogh
+
+ FOR I%, 0, 255
+
+  EQUB HI(INT(2^((I% / 2 + 128) / 16) + 0.5))
+
+ NEXT
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
 \       Name: K%
 \       Type: Workspace
 \    Address: &8000 to &81AF
@@ -40209,7 +40306,7 @@ ENDMACRO
                         \ with - i.e. zero
 
  LDX #HI(de)            \ Set SC(1 0) to the address of the start of the page
- STX SC+1               \ containing de, which will be &8300
+ STX SC+1               \ containing de, which will be &8600
  STA SC
 
  LDY #LO(de)            \ Set Y to the offset of de within its page, which we
@@ -40224,17 +40321,18 @@ ENDMACRO
  BPL zero1              \ Loop back to zero the next byte until we have zeroed
                         \ down to the first byte of the page
 
-                        \ We now zero pages &80, &81 and &82
+                        \ We now zero the three pages before the page containing
+                        \ de (i.e. &83, &84 and &85)
 
- LDX #&82               \ Point X to page &82
-
- JSR ZES1               \ Call ZES1 to zero-fill the page in X
-
- DEX                    \ Decrement X to point to the next page (&81)
+ LDX #HI(de)-1          \ Point X to page &85
 
  JSR ZES1               \ Call ZES1 to zero-fill the page in X
 
- DEX                    \ Decrement X to point to the next page (&80)
+ DEX                    \ Decrement X to point to the next page (&84)
+
+ JSR ZES1               \ Call ZES1 to zero-fill the page in X
+
+ DEX                    \ Decrement X to point to the next page (&83)
 
  JSR ZES1               \ Call ZES1 to zero-fill the page in X
 
@@ -45328,103 +45426,6 @@ ENDMACRO
                         \ fit on-screen
 
  RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: log
-\       Type: Variable
-\   Category: Maths (Arithmetic)
-\    Summary: Binary logarithm table (high byte)
-\
-\ ------------------------------------------------------------------------------
-\
-\ At byte n, the table contains the high byte of:
-\
-\   &2000 * log10(n) / log10(2) = 32 * 256 * log10(n) / log10(2)
-\
-\ where log10 is the logarithm to base 10. The change-of-base formula says that:
-\
-\   log2(n) = log10(n) / log10(2)
-\
-\ so byte n contains the high byte of:
-\
-\   32 * log2(n) * 256
-\
-\ ******************************************************************************
-
-                        \ --- Mod: Code added for logarithms: ----------------->
-
-.log
-
- SKIP 1
-
- FOR I%, 1, 255
-
-  EQUB HI(INT(&2000 * LOG(I%) / LOG(2) + 0.5))
-
- NEXT
-
-                        \ --- End of added code ------------------------------->
-
-\ ******************************************************************************
-\
-\       Name: logL
-\       Type: Variable
-\   Category: Maths (Arithmetic)
-\    Summary: Binary logarithm table (low byte)
-\
-\ ------------------------------------------------------------------------------
-\
-\ Byte n contains the low byte of:
-\
-\   32 * log2(n) * 256
-\
-\ ******************************************************************************
-
-                        \ --- Mod: Code added for logarithms: ----------------->
-
-.logL
-
- SKIP 1
-
- FOR I%, 1, 255
-
-  EQUB LO(INT(&2000 * LOG(I%) / LOG(2) + 0.5))
-
- NEXT
-
-                        \ --- End of added code ------------------------------->
-
-\ ******************************************************************************
-\
-\       Name: alogh
-\       Type: Variable
-\   Category: Maths (Arithmetic)
-\    Summary: Binary antilogarithm table
-\
-\ ------------------------------------------------------------------------------
-\
-\ At byte n, the table contains:
-\
-\   2^((n / 2 + 128) / 16) / 256
-\
-\ which equals:
-\
-\   2^(n / 32 + 8) / 256
-\
-\ ******************************************************************************
-
-                        \ --- Mod: Code added for logarithms: ----------------->
-
-.alogh
-
- FOR I%, 0, 255
-
-  EQUB HI(INT(2^((I% / 2 + 128) / 16) + 0.5))
-
- NEXT
-
-                        \ --- End of added code ------------------------------->
 
 .endSRAM
 
