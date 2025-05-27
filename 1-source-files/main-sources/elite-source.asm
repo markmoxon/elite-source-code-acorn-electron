@@ -29967,11 +29967,23 @@ ENDMACRO
  ADC #1                 \ adding 1, i.e. using two's complement to make it
                         \ positive
 
+                        \ --- Mod: Code removed for logarithms: --------------->
+
+\.LI1
+\
+\STA P                  \ Store A in P, so P = |X2 - X1|, or |delta_x|
+\
+\SEC                    \ Set the C flag, ready for the subtraction below
+
+                        \ --- And replaced by: -------------------------------->
+
+ SEC                    \ Set the C flag, ready for the subtraction below
+
 .LI1
 
  STA P                  \ Store A in P, so P = |X2 - X1|, or |delta_x|
 
- SEC                    \ Set the C flag, ready for the subtraction below
+                        \ --- End of replacement ------------------------------>
 
  LDA Y2                 \ Set A = Y2 - Y1
  SBC Y1                 \       = delta_y
