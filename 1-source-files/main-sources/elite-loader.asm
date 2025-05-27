@@ -81,9 +81,9 @@
 
                         \ --- And replaced by: -------------------------------->
 
- C% = &1200             \ C% is set to the location of the main game code
+ C% = &1D00             \ C% is set to the location of the main game code
 
- L% = &1200             \ L% is the load address of the main game code file
+ L% = &1D00             \ L% is the load address of the main game code file
 
                         \ --- End of replacement ------------------------------>
 
@@ -2120,7 +2120,7 @@ IF _DISC
 
                         \ --- And replaced by: -------------------------------->
 
- EQUS "LOAD EliteCo FFFF1200"
+ EQUS "LOAD EliteCo FFFF1D00"
  EQUB 13
 
                         \ --- End of replacement ------------------------------>

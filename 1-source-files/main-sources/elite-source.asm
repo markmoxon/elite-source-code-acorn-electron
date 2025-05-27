@@ -73,9 +73,9 @@
 
                         \ --- And replaced by: -------------------------------->
 
- CODE% = &1200          \ The address where the code will be run
+ CODE% = &1D00          \ The address where the code will be run
 
- LOAD% = &1200          \ The address where the code will be loaded
+ LOAD% = &1D00          \ The address where the code will be loaded
 
                         \ --- End of replacement ------------------------------>
 

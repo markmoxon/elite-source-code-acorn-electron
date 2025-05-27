@@ -73,10 +73,10 @@
 
                         \ --- And replaced by: -------------------------------->
 
- CODE% = &1200          \ CODE% is set to the location that the main game code
+ CODE% = &1D00          \ CODE% is set to the location that the main game code
                         \ gets moved to after it is loaded
 
- LOAD% = &1200          \ The load address of the main game code file
+ LOAD% = &1D00          \ The load address of the main game code file
 
                         \ --- End of replacement ------------------------------>
 
