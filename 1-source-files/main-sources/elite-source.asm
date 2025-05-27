@@ -30008,58 +30008,132 @@ ENDMACRO
  LDA TWOS,X             \ Fetch a one-pixel byte from TWOS where pixel X is set,
  STA R                  \ and store it in R
 
-                        \ The following calculates:
+                        \ --- Mod: Code removed for logarithms: --------------->
+
+\                       \ The following calculates:
+\                       \
+\                       \   Q = Q / P
+\                       \     = |delta_y| / |delta_x|
+\                       \
+\                       \ using the same shift-and-subtract algorithm that's
+\                       \ documented in TIS2
+\
+\LDA Q                  \ Set A = |delta_y|
+\
+\LDX #%11111110         \ Set Q to have bits 1-7 set, so we can rotate through 7
+\STX Q                  \ loop iterations, getting a 1 each time, and then
+\                       \ getting a 0 on the 8th iteration... and we can also
+\                       \ use Q to catch our result bits into bit 0 each time
+\
+\.LIL1
+\
+\ASL A                  \ Shift A to the left
+\
+\BCS LI4                \ If bit 7 of A was set, then jump straight to the
+\                       \ subtraction
+\
+\CMP P                  \ If A < P, skip the following subtraction
+\BCC LI5
+\
+\.LI4
+\
+\SBC P                  \ A >= P, so set A = A - P
+\
+\SEC                    \ Set the C flag to rotate into the result in Q
+\
+\.LI5
+\
+\ROL Q                  \ Rotate the counter in Q to the left, and catch the
+\                       \ result bit into bit 0 (which will be a 0 if we didn't
+\                       \ do the subtraction, or 1 if we did)
+\
+\BCS LIL1               \ If we still have set bits in Q, loop back to TIL2 to
+\                       \ do the next iteration of 7
+\
+\                       \ We now have:
+\                       \
+\                       \   Q = A / P
+\                       \     = |delta_y| / |delta_x|
+\                       \
+\                       \ and the C flag is clear
+\
+\LDX P                  \ Set X = P + 1
+\INX                    \       = |delta_x| + 1
+\                       \
+\                       \ We add 1 so we can skip the first pixel plot if the
+\                       \ line is being drawn with swapped coordinates
+
+                        \ --- And replaced by: -------------------------------->
+                        \ The following section calculates:
                         \
                         \   Q = Q / P
                         \     = |delta_y| / |delta_x|
                         \
-                        \ using the same shift-and-subtract algorithm that's
-                        \ documented in TIS2
-
- LDA Q                  \ Set A = |delta_y|
-
- LDX #%11111110         \ Set Q to have bits 1-7 set, so we can rotate through 7
- STX Q                  \ loop iterations, getting a 1 each time, and then
-                        \ getting a 0 on the 8th iteration... and we can also
-                        \ use Q to catch our result bits into bit 0 each time
-
-.LIL1
-
- ASL A                  \ Shift A to the left
-
- BCS LI4                \ If bit 7 of A was set, then jump straight to the
-                        \ subtraction
-
- CMP P                  \ If A < P, skip the following subtraction
- BCC LI5
-
-.LI4
-
- SBC P                  \ A >= P, so set A = A - P
-
- SEC                    \ Set the C flag to rotate into the result in Q
-
-.LI5
-
- ROL Q                  \ Rotate the counter in Q to the left, and catch the
-                        \ result bit into bit 0 (which will be a 0 if we didn't
-                        \ do the subtraction, or 1 if we did)
-
- BCS LIL1               \ If we still have set bits in Q, loop back to TIL2 to
-                        \ do the next iteration of 7
-
-                        \ We now have:
+                        \ using the log tables at logL and log to calculate:
                         \
-                        \   Q = A / P
-                        \     = |delta_y| / |delta_x|
+                        \   A = log(Q) - log(P)
+                        \     = log(|delta_y|) - log(|delta_x|)
                         \
-                        \ and the C flag is clear
+                        \ by first subtracting the low bytes of the logarithms
+                        \ from the table at LogL, and then subtracting the high
+                        \ bytes from the table at log, before applying the
+                        \ antilog to get the result of the division and putting
+                        \ it in Q
 
- LDX P                  \ Set X = P + 1
- INX                    \       = |delta_x| + 1
+ LDX Q                  \ Set X = |delta_y|
+
+ BEQ LIlog7             \ If |delta_y| = 0, jump to LIlog7 to return 0 as the
+                        \ result of the division
+
+ LDA logL,X             \ Set A = log(Q) - log(P)
+ LDX P                  \       = log(|delta_y|) - log(|delta_x|)
+ SEC                    \
+ SBC logL,X             \ by first subtracting the low bytes of log(Q) - log(P)
+
+ LDX Q                  \ And then subtracting the high bytes of log(Q) - log(P)
+ LDA log,X              \ so now A contains the high byte of log(Q) - log(P)
+ LDX P
+ SBC log,X
+
+ BCS LIlog5             \ If the subtraction fitted into one byte and didn't
+                        \ underflow, then log(Q) - log(P) < 256, so we jump to
+                        \ LIlog5 to return a result of 255
+
+ TAX                    \ Otherwise we set A to the A-th entry from the antilog
+ LDA alogh,X            \ table so the result of the division is now in A
+
+ JMP LIlog6             \ Jump to LIlog6 to return the result
+
+.LIlog5
+
+ LDA #255               \ The division is very close to 1, so set A to the
+ BNE LIlog6             \ closest possible answer to 256, i.e. 255, and jump to
+                        \ LIlog6 to return the result (this BNE is effectively a
+                        \ JMP as A is never zero)
+
+.LIlog7
+
+ LDA #0                 \ The numerator in the division is 0, so set A to 0
+
+.LIlog6
+
+ STA Q                  \ Store the result of the division in Q, so we have:
+                        \
+                        \   Q = |delta_y| / |delta_x|
+
+ LDX P                  \ Set X = P
+                        \       = |delta_x|
+
+ BEQ DOWN-1             \ If |delta_x| = 0, return from the subroutine, as
+                        \ DOWN-1 contains an RTS
+
+ INX                    \ Set X = P + 1
+                        \       = |delta_x| + 1
                         \
                         \ We add 1 so we can skip the first pixel plot if the
                         \ line is being drawn with swapped coordinates
+
+                        \ --- End of replacement ------------------------------>
 
  LDA Y2                 \ Set A = Y2 - Y1 - 1 (as the C flag is clear following
  SBC Y1                 \ the above division)
@@ -34465,6 +34539,33 @@ ENDMACRO
 
 \ ******************************************************************************
 \
+\       Name: MU6
+\       Type: Subroutine
+\   Category: Maths (Arithmetic)
+\    Summary: Set P(1 0) = (A A)
+\
+\ ------------------------------------------------------------------------------
+\
+\ In practice this is only called via a BEQ following an AND instruction, in
+\ which case A = 0, so this routine effectively does this:
+\
+\   P(1 0) = 0
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code moved for logarithms: ----------------->
+
+.MU6
+
+ STA P+1                \ Set P(1 0) = (A A)
+ STA P
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of moved code ------------------------------->
+
+\ ******************************************************************************
+\
 \       Name: SQUA
 \       Type: Subroutine
 \   Category: Maths (Arithmetic)
@@ -34635,20 +34736,69 @@ ENDMACRO
 
  LDA #0                 \ Set A = 0 so we can start building the answer in A
 
- LDX #8                 \ Set up a counter in X to count the 8 bits in P
+                        \ --- Mod: Code removed for logarithms: --------------->
+
+\LDX #8                 \ Set up a counter in X to count the 8 bits in P
+\
+\LSR P                  \ Set P = P >> 1
+\                       \ and C flag = bit 0 of P
+\
+\                       \ We are now going to work our way through the bits of
+\                       \ P, and do a shift-add for any bits that are set,
+\                       \ keeping the running total in A. We just did the first
+\                       \ shift right, so we now need to do the first add and
+\                       \ loop through the other bits in P
+\
+\.MUL6
+\
+\BCC P%+4               \ If C (i.e. the next bit from P) is set, do the
+\ADC T                  \ addition for this bit of P:
+\                       \
+\                       \   A = A + T + C
+\                       \     = A + X - 1 + 1
+\                       \     = A + X
+\
+\ROR A                  \ Shift A right to catch the next digit of our result,
+\                       \ which the next ROR sticks into the left end of P while
+\                       \ also extracting the next bit of P
+\
+\ROR P                  \ Add the overspill from shifting A to the right onto
+\                       \ the start of P, and shift P right to fetch the next
+\                       \ bit for the calculation into the C flag
+\
+\DEX                    \ Decrement the loop counter
+\
+\BNE MUL6               \ Loop back for the next bit until P has been rotated
+\                       \ all the way
+\
+\RTS                    \ Return from the subroutine
+
+                        \ --- And replaced by: -------------------------------->
+
+ TAX                    \ Copy A into X. There is a comment in the original
+                        \ source here that says "just in case", which refers to
+                        \ the MU11 routine in the BBC Micro cassette and disc
+                        \ versions, which set X to 0 (as they use X as a loop
+                        \ counter)
+                        \
+                        \ The version here doesn't use a loop, but this
+                        \ instruction makes sure the unrolled version returns
+                        \ the same results as the loop versions, just in case
+                        \ something out there relies on MU11 returning X = 0
 
  LSR P                  \ Set P = P >> 1
                         \ and C flag = bit 0 of P
 
-                        \ We are now going to work our way through the bits of
-                        \ P, and do a shift-add for any bits that are set,
-                        \ keeping the running total in A. We just did the first
-                        \ shift right, so we now need to do the first add and
-                        \ loop through the other bits in P
+                        \ We now repeat the following four instruction block
+                        \ eight times, one for each bit in P. In the BBC Micro
+                        \ cassette and disc versions of Elite the following is
+                        \ done with a loop, but it is marginally faster to
+                        \ unroll the loop and have eight copies of the code,
+                        \ though it does take up a bit more memory (though that
+                        \ isn't a big concern when you have a 6502 Second
+                        \ Processor)
 
-.MUL6
-
- BCC P%+4               \ If C (i.e. the next bit from P) is set, do the
+ BCC P%+4               \ If C (i.e. bit 0 of P) is set, do the
  ADC T                  \ addition for this bit of P:
                         \
                         \   A = A + T + C
@@ -34663,12 +34813,44 @@ ENDMACRO
                         \ the start of P, and shift P right to fetch the next
                         \ bit for the calculation into the C flag
 
- DEX                    \ Decrement the loop counter
+ BCC P%+4               \ Repeat for the second time
+ ADC T
+ ROR A
+ ROR P
 
- BNE MUL6               \ Loop back for the next bit until P has been rotated
-                        \ all the way
+ BCC P%+4               \ Repeat for the third time
+ ADC T
+ ROR A
+ ROR P
+
+ BCC P%+4               \ Repeat for the fourth time
+ ADC T
+ ROR A
+ ROR P
+
+ BCC P%+4               \ Repeat for the fifth time
+ ADC T
+ ROR A
+ ROR P
+
+ BCC P%+4               \ Repeat for the sixth time
+ ADC T
+ ROR A
+ ROR P
+
+ BCC P%+4               \ Repeat for the seventh time
+ ADC T
+ ROR A
+ ROR P
+
+ BCC P%+4               \ Repeat for the eighth time
+ ADC T
+ ROR A
+ ROR P
 
  RTS                    \ Return from the subroutine
+
+                        \ --- End of replacement ------------------------------>
 
 \ ******************************************************************************
 \
@@ -34686,12 +34868,16 @@ ENDMACRO
 \
 \ ******************************************************************************
 
-.MU6
+                        \ --- Mod: Code moved for logarithms: ----------------->
 
- STA P+1                \ Set P(1 0) = (A A)
- STA P
+\.MU6
+\
+\STA P+1                \ Set P(1 0) = (A A)
+\STA P
+\
+\RTS                    \ Return from the subroutine
 
- RTS                    \ Return from the subroutine
+                        \ --- End of moved code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -34847,8 +35033,6 @@ ENDMACRO
  CLC                    \ Set A = A + low byte of Lq
  ADC logL,X             \       = low byte of La + low byte of Lq
 
- BMI oddlog             \ If A > 127, jump to oddlog
-
  LDA log,X              \ Set A = high byte of Lq
 
  LDX widget             \ Set A = A + C + high byte of La
@@ -34866,36 +35050,7 @@ ENDMACRO
                         \ we return from the subroutine below
 
  TAX                    \ Otherwise La + Lq >= 256, so we return the A-th entry
- LDA antilog,X          \ from the antilog table
-
- LDX P                  \ Restore X from P so it is preserved
-
- RTS                    \ Return from the subroutine
-
-.oddlog
-
- LDA log,X              \ Set A = high byte of Lq
-
- LDX widget             \ Set A = A + C + high byte of La
- ADC log,X              \       = high byte of Lq + high byte of La + C
-                        \
-                        \ so we now have:
-                        \
-                        \   A = high byte of (La + Lq)
-
- BCC MU3again           \ If the addition fitted into one byte and didn't carry,
-                        \ then La + Lq < 256, so we jump to MU3again to return a
-                        \ result of 0 and the C flag clear
-
-                        \ If we get here then the C flag is set, ready for when
-                        \ we return from the subroutine below
-
- TAX                    \ Otherwise La + Lq >= 256, so we return the A-th entry
- LDA antilogODD,X       \ from the antilogODD table
-
-.MU3
-
-                        \ If we get here then A (our result) is already 0
+ LDA alogh,X            \ from the antilog table
 
  LDX P                  \ Restore X from P so it is preserved
 
@@ -34904,6 +35059,10 @@ ENDMACRO
 .MU3again
 
  LDA #0                 \ Set A = 0
+
+.MU3
+
+                        \ If we get here then A (our result) is already 0
 
  LDX P                  \ Restore X from P so it is preserved
 
@@ -35186,10 +35345,93 @@ ENDMACRO
 
  LDA #0                 \ Set A = 0 so we can start building the answer in A
 
- LDX #7                 \ Set up a counter in X to count the 7 bits remaining
-                        \ in P
+                        \ --- Mod: Code removed for logarithms: --------------->
 
-.MUL4
+\LDX #7                 \ Set up a counter in X to count the 7 bits remaining
+\                       \ in P
+\
+\.MUL4
+\
+\BCC P%+4               \ If C (i.e. the next bit from P) is set, do the
+\ADC T1                 \ addition for this bit of P:
+\                       \
+\                       \   A = A + T1 + C
+\                       \     = A + |Q| - 1 + 1
+\                       \     = A + |Q|
+\
+\ROR A                  \ As mentioned above, this ROR shifts A right and
+\                       \ catches bit 0 in C - giving another digit for our
+\                       \ result - and the next ROR sticks that bit into the
+\                       \ left end of P while also extracting the next bit of P
+\                       \ for the next addition
+\
+\ROR P                  \ Add the overspill from shifting A to the right onto
+\                       \ the start of P, and shift P right to fetch the next
+\                       \ bit for the calculation
+\
+\DEX                    \ Decrement the loop counter
+\
+\BNE MUL4               \ Loop back for the next bit until P has been rotated
+\                       \ all the way
+\
+\LSR A                  \ Rotate (A P) once more to get the final result, as
+\ROR P                  \ we only pushed 7 bits through the above process
+\
+\ORA T                  \ Set the sign bit of the result that we stored in T
+\
+\RTS                    \ Return from the subroutine
+\
+\.mu10
+\
+\STA P                  \ If we get here, the result is 0 and A = 0, so set
+\                       \ P = 0 so (A P) = 0
+\
+\RTS                    \ Return from the subroutine
+
+                        \ --- And replaced by: -------------------------------->
+
+ TAX                    \ Copy A into X. There is a comment in the original
+                        \ source here that says "just in case", which refers to
+                        \ the MULT1 routine in the BBC Micro cassette and disc
+                        \ versions, which set X to 0 (as they use X as a loop
+                        \ counter)
+                        \
+                        \ The version here doesn't use a loop, but this
+                        \ instruction makes sure the unrolled version returns
+                        \ the same results as the loop versions, just in case
+                        \ something out there relies on MULT1 returning X = 0
+
+\.MUL4                  \ These instructions are commented out in the original
+\                       \ source. They contain the original loop version of the
+\BCC P%+4               \ code that's used in the BBC Micro cassette and disc
+\ADC T1                 \ versions
+\
+\ROR A
+\ROR P
+\
+\DEX
+\
+\BNE MUL4
+\
+\LSR A
+\ROR P
+\
+\ORA T
+\
+\RTS
+\
+\.mu10
+\
+\STA P
+\
+\RTS
+
+                        \ We now repeat the following four instruction block
+                        \ seven times, one for each remaining bit in P. In the
+                        \ BBC Micro cassette and disc versions of Elite the
+                        \ following is done with a loop, but it is marginally
+                        \ faster to unroll the loop and have seven copies of
+                        \ the code, though it does take up a bit more memory
 
  BCC P%+4               \ If C (i.e. the next bit from P) is set, do the
  ADC T1                 \ addition for this bit of P:
@@ -35208,10 +35450,35 @@ ENDMACRO
                         \ the start of P, and shift P right to fetch the next
                         \ bit for the calculation
 
- DEX                    \ Decrement the loop counter
+ BCC P%+4               \ Repeat for the second time
+ ADC T1
+ ROR A
+ ROR P
 
- BNE MUL4               \ Loop back for the next bit until P has been rotated
-                        \ all the way
+ BCC P%+4               \ Repeat for the third time
+ ADC T1
+ ROR A
+ ROR P
+
+ BCC P%+4               \ Repeat for the fourth time
+ ADC T1
+ ROR A
+ ROR P
+
+ BCC P%+4               \ Repeat for the fifth time
+ ADC T1
+ ROR A
+ ROR P
+
+ BCC P%+4               \ Repeat for the sixth time
+ ADC T1
+ ROR A
+ ROR P
+
+ BCC P%+4               \ Repeat for the seventh time
+ ADC T1
+ ROR A
+ ROR P
 
  LSR A                  \ Rotate (A P) once more to get the final result, as
  ROR P                  \ we only pushed 7 bits through the above process
@@ -35226,6 +35493,8 @@ ENDMACRO
                         \ P = 0 so (A P) = 0
 
  RTS                    \ Return from the subroutine
+
+                        \ --- End of replacement ------------------------------>
 
 \ ******************************************************************************
 \
@@ -35696,6 +35965,12 @@ ENDMACRO
 \
 \BNE DVL4               \ Loop back for the next bit until we have done all 8
 \                       \ bits of P
+\
+\JMP LL28+4             \ Jump to LL28+4 to convert the remainder in A into an
+\                       \ integer representation of the fractional value A / Q,
+\                       \ in R, where 1.0 = 255. LL28+4 always returns with the
+\                       \ C flag cleared, and we return from the subroutine
+\                       \ using a tail call
 
                         \ --- And replaced by: -------------------------------->
 
@@ -35772,13 +36047,33 @@ ENDMACRO
  LDX #0                 \ Set X = 0 so this unrolled version of DVID4 also
                         \ returns X = 0
 
-                        \ --- End of replacement ------------------------------>
+ STA widget             \ This contains the code from the LL28+4 routine, so
+ TAX                    \ this section is exactly equivalent to a JMP LL28+4
+ BEQ LLfix22            \ call, but is slightly faster as it's been inlined
+ LDA logL,X             \ (so it converts the remainder in A into an integer
+ LDX Q                  \ representation of the fractional value A / Q, in R,
+ SEC                    \ where 1.0 = 255, and it also clears the C flag
+ SBC logL,X
+ LDX widget
+ LDA log,X
+ LDX Q
+ SBC log,X
+ BCS LL222
+ TAX
+ LDA alogh,X
 
- JMP LL28+4             \ Jump to LL28+4 to convert the remainder in A into an
-                        \ integer representation of the fractional value A / Q,
-                        \ in R, where 1.0 = 255. LL28+4 always returns with the
-                        \ C flag cleared, and we return from the subroutine
-                        \ using a tail call
+.LLfix22
+
+ STA R                  \ This is also part of the inline LL28+4 routine
+ RTS
+
+.LL222
+
+ LDA #255               \ This is also part of the inline LL28+4 routine
+ STA R
+ RTS
+
+                        \ --- End of replacement ------------------------------>
 
 \ ******************************************************************************
 \
@@ -41107,8 +41402,6 @@ ENDMACRO
  SEC                    \ Set A = A - low byte of log(Q)
  SBC logL,X             \       = low byte of log(A) - low byte of log(Q)
 
- BMI noddlog            \ If the subtraction is negative, jump to noddlog
-
  LDX widget             \ Set A = high byte of log(A) - high byte of log(Q)
  LDA log,X
  LDX Q
@@ -41119,7 +41412,7 @@ ENDMACRO
                         \ LL2 return a result of 255
 
  TAX                    \ Otherwise we return the A-th entry from the antilog
- LDA antilog,X          \ table
+ LDA alogh,X            \ table
 
 .LLfix
 
@@ -41127,23 +41420,15 @@ ENDMACRO
 
  RTS                    \ Return from the subroutine
 
-.noddlog
-
- LDX widget             \ Set A = high byte of log(A) - high byte of log(Q)
- LDA log,X
- LDX Q
- SBC log,X
+\.LL28                  \ These instructions are commented out in the original
+\CMP Q                  \ source
 
  BCS LL2                \ If the subtraction fitted into one byte and didn't
                         \ underflow, then log(A) - log(Q) < 256, so we jump to
                         \ LL2 to return a result of 255
 
- TAX                    \ Otherwise we return the A-th entry from the antilogODD
- LDA antilogODD,X       \ table
-
- STA R                  \ Set the result in R to the value of A
-
- RTS                    \ Return from the subroutine
+ LDX #254               \ Otherwise set the result in R to 254
+ STX R
 
                         \ --- End of replacement ------------------------------>
 
@@ -45112,7 +45397,7 @@ ENDMACRO
 
 \ ******************************************************************************
 \
-\       Name: antilog
+\       Name: alogh
 \       Type: Variable
 \   Category: Maths (Arithmetic)
 \    Summary: Binary antilogarithm table
@@ -45131,43 +45416,11 @@ ENDMACRO
 
                         \ --- Mod: Code added for logarithms: ----------------->
 
-.antilog
+.alogh
 
  FOR I%, 0, 255
 
   EQUB HI(INT(2^((I% / 2 + 128) / 16) + 0.5))
-
- NEXT
-
-                        \ --- End of added code ------------------------------->
-
-\ ******************************************************************************
-\
-\       Name: antilogODD
-\       Type: Variable
-\   Category: Maths (Arithmetic)
-\    Summary: Binary antilogarithm table
-\
-\ ------------------------------------------------------------------------------
-\
-\ At byte n, the table contains:
-\
-\   2^((n / 2 + 128.25) / 16) / 256
-\
-\ which equals:
-\
-\   2^(n / 32 + 8.015625) / 256 = 2^(n / 32 + 8) * 2^(.015625) / 256
-\                               = (2^(n / 32 + 8) + 1) / 256
-\
-\ ******************************************************************************
-
-                        \ --- Mod: Code added for logarithms: ----------------->
-
-.antilogODD
-
- FOR I%, 0, 255
-
-  EQUB HI(INT(2^((I% / 2 + 128.25) / 16) + 0.5))
 
  NEXT
 
