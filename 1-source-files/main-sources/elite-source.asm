@@ -30581,64 +30581,137 @@ ENDMACRO
  LDA TWOS,X             \ Fetch a mode 4 one-pixel byte with the pixel position
  STA R                  \ at X and store it in R to act as a mask
 
-                        \ The following calculates:
+                        \ --- Mod: Code removed for logarithms: --------------->
+
+\                       \ The following calculates:
+\                       \
+\                       \   P = P / Q
+\                       \     = |delta_x| / |delta_y|
+\                       \
+\                       \ using the same shift-and-subtract algorithm
+\                       \ documented in TIS2
+\
+\LDA P                  \ Set A = |delta_x|
+\
+\LDX #1                 \ Set Q to have bits 1-7 clear, so we can rotate through
+\STX P                  \ 7 loop iterations, getting a 1 each time, and then
+\                       \ getting a 1 on the 8th iteration... and we can also
+\                       \ use P to catch our result bits into bit 0 each time
+\
+\.LIL4
+\
+\ASL A                  \ Shift A to the left
+\
+\BCS LI13               \ If bit 7 of A was set, then jump straight to the
+\                       \ subtraction
+\
+\CMP Q                  \ If A < Q, skip the following subtraction
+\BCC LI14
+\
+\.LI13
+\
+\SBC Q                  \ A >= Q, so set A = A - Q
+\
+\SEC                    \ Set the C flag to rotate into the result in Q
+\
+\.LI14
+\
+\ROL P                  \ Rotate the counter in P to the left, and catch the
+\                       \ result bit into bit 0 (which will be a 0 if we didn't
+\                       \ do the subtraction, or 1 if we did)
+\
+\BCC LIL4               \ If we still have set bits in P, loop back to TIL2 to
+\                       \ do the next iteration of 7
+\
+\                       \ We now have:
+\                       \
+\                       \   P = A / Q
+\                       \     = |delta_x| / |delta_y|
+\                       \
+\                       \ and the C flag is set
+\
+\LDX Q                  \ Set X = Q + 1
+\INX                    \       = |delta_y| + 1
+\                       \
+\                       \ We add 1 so we can skip the first pixel plot if the
+\                       \ line is being drawn with swapped coordinates
+\
+\LDA X2                 \ Set A = X2 - X1 (the C flag is set as we didn't take
+\SBC X1                 \ the above BCC)
+\
+\BCC LFT                \ If X2 < X1 then jump to LFT, as we need to draw the
+\                       \ line to the left and down
+
+                        \ --- And replaced by: -------------------------------->
+
+                        \ The following section calculates:
                         \
                         \   P = P / Q
                         \     = |delta_x| / |delta_y|
                         \
-                        \ using the same shift-and-subtract algorithm
-                        \ documented in TIS2
-
- LDA P                  \ Set A = |delta_x|
-
- LDX #1                 \ Set Q to have bits 1-7 clear, so we can rotate through
- STX P                  \ 7 loop iterations, getting a 1 each time, and then
-                        \ getting a 1 on the 8th iteration... and we can also
-                        \ use P to catch our result bits into bit 0 each time
-
-.LIL4
-
- ASL A                  \ Shift A to the left
-
- BCS LI13               \ If bit 7 of A was set, then jump straight to the
-                        \ subtraction
-
- CMP Q                  \ If A < Q, skip the following subtraction
- BCC LI14
-
-.LI13
-
- SBC Q                  \ A >= Q, so set A = A - Q
-
- SEC                    \ Set the C flag to rotate into the result in Q
-
-.LI14
-
- ROL P                  \ Rotate the counter in P to the left, and catch the
-                        \ result bit into bit 0 (which will be a 0 if we didn't
-                        \ do the subtraction, or 1 if we did)
-
- BCC LIL4               \ If we still have set bits in P, loop back to TIL2 to
-                        \ do the next iteration of 7
-
-                        \ We now have:
+                        \ using the log tables at logL and log to calculate:
                         \
-                        \   P = A / Q
-                        \     = |delta_x| / |delta_y|
+                        \   A = log(P) - log(Q)
+                        \     = log(|delta_x|) - log(|delta_y|)
                         \
-                        \ and the C flag is set
+                        \ by first subtracting the low bytes of the logarithms
+                        \ from the table at LogL, and then subtracting the high
+                        \ bytes from the table at log, before applying the
+                        \ antilog to get the result of the division and putting
+                        \ it in P
 
- LDX Q                  \ Set X = Q + 1
+ LDX P                  \ Set X = |delta_x|
+
+ BEQ LIfudge            \ If |delta_x| = 0, jump to LIfudge to return 0 as the
+                        \ result of the division
+
+ LDA logL,X             \ Set A = log(P) - log(Q)
+ LDX Q                  \       = log(|delta_x|) - log(|delta_y|)
+ SEC                    \
+ SBC logL,X             \ by first subtracting the low bytes of log(P) - log(Q)
+
+ LDX P                  \ And then subtracting the high bytes of log(P) - log(Q)
+ LDA log,X              \ so now A contains the high byte of log(P) - log(Q)
+ LDX Q
+ SBC log,X
+
+ BCS LIlog3             \ If the subtraction fitted into one byte and didn't
+                        \ underflow, then log(P) - log(Q) < 256, so we jump to
+                        \ LIlog3 to return a result of 255
+
+ TAX                    \ Otherwise we set A to the A-th entry from the antilog
+ LDA alogh,X            \ table so the result of the division is now in A
+
+ JMP LIlog2             \ Jump to LIlog2 to return the result
+
+.LIlog3
+
+ LDA #255               \ The division is very close to 1, so set A to the
+                        \ closest possible answer to 256, i.e. 255
+
+.LIlog2
+
+ STA P                  \ Store the result of the division in P, so we have:
+                        \
+                        \   P = |delta_x| / |delta_y|
+
+.LIfudge
+
+ SEC                    \ Set the C flag for the subtraction below
+
+ LDX Q                  \ Set X = Q2 + 1
  INX                    \       = |delta_y| + 1
                         \
                         \ We add 1 so we can skip the first pixel plot if the
                         \ line is being drawn with swapped coordinates
 
- LDA X2                 \ Set A = X2 - X1 (the C flag is set as we didn't take
- SBC X1                 \ the above BCC)
+ LDA X2                 \ Set A = X2 - X1
+ SBC X1
 
  BCC LFT                \ If X2 < X1 then jump to LFT, as we need to draw the
                         \ line to the left and down
+
+                        \ --- End of replacement ------------------------------>
 
 \ ******************************************************************************
 \
