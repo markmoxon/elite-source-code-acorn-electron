@@ -109,6 +109,14 @@
 
  POW = 15               \ Pulse laser power
 
+                        \ --- Mod: Code added for extra lasers: --------------->
+
+ Mlas = 50              \ Mining laser power
+
+ Armlas = INT(128.5 + 1.5*POW)  \ Military laser power
+
+                        \ --- End of added code ------------------------------->
+
                         \ --- Mod: Code added for missions: ------------------->
 
  CON = 31               \ Ship type for a Constrictor
@@ -3864,6 +3872,108 @@ ENDIF
 
 \ ******************************************************************************
 \
+\       Name: refund
+\       Type: Subroutine
+\   Category: Equipment
+\    Summary: Install a new laser, processing a refund if applicable
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   The power of the new laser to be fitted
+\
+\   X                   The view number for fitting the new laser (0-3)
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   A                   A is preserved
+\
+\   X                   X is preserved
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for extra lasers: --------------->
+
+\.ref2                  \ These instructions are commented out in the original
+\                       \ source, but they would jump to pres in the EQSHP
+\LDY #187               \ routine with Y = 187, which would show the error:
+\JMP pres               \ "LASER PRESENT" (this code was part of the refund
+\                       \ bug in the BBC Micro disc version of Elite, which
+\Belgium                \ is why it is commented out)
+                        \
+                        \ There is also a comment in the original source - the
+                        \ solitary word "Belgium"
+                        \
+                        \ This is presumably a reference to the Hitchhiker's
+                        \ Guide to the Galaxy, which says that Belgium is the
+                        \ galaxy's most unspeakably rude word, so this no doubt
+                        \ reflects the authors' strong feelings on the refund
+                        \ bug
+
+.refund
+
+ STA T1                 \ Store A in T1 so we can retrieve it later
+
+ LDA LASER,X            \ If there is no laser in view X (i.e. the laser power
+ BEQ ref3               \ is zero), jump to ref3 to skip the refund code
+
+\CMP T1                 \ These instructions are commented out in the original
+\BEQ ref2               \ source, but they would jump to ref2 above if we were
+                        \ trying to replace a laser with one of the same type
+                        \ (this code was part of the refund bug in the BBC Micro
+                        \ disc version of Elite, which is why it is commented
+                        \ out)
+
+ LDY #4                 \ If the current laser has power #POW (pulse laser),
+ CMP #POW               \ jump to ref1 with Y = 4 (the item number of a pulse
+ BEQ ref1               \ laser in the table at PRXS)
+
+ LDY #5                 \ If the current laser has power #POW+128 (beam laser),
+ CMP #POW+128           \ jump to ref1 with Y = 5 (the item number of a beam
+ BEQ ref1               \ laser in the table at PRXS)
+
+ LDY #12                \ If the current laser has power #Armlas (military
+ CMP #Armlas            \ laser), jump to ref1 with Y = 12 (the item number of a
+ BEQ ref1               \ military laser in the table at PRXS)
+
+ LDY #13                \ Otherwise this is a mining laser, so fall through into
+                        \ ref1 with Y = 13 (the item number of a mining laser in
+                        \ the table at PRXS)
+
+.ref1
+
+                        \ We now want to refund the laser of type Y that we are
+                        \ exchanging for the new laser
+
+ STX ZZ                 \ Store the view number in ZZ so we can retrieve it
+                        \ later
+
+ TYA                    \ Copy the laser type to be refunded from Y to A
+
+ JSR prx                \ Call prx to set (Y X) to the price of equipment item
+                        \ number A
+
+ JSR MCASH              \ Call MCASH to add (Y X) to the cash pot
+
+ LDX ZZ                 \ Retrieve the view number from ZZ
+
+.ref3
+
+                        \ Finally, we install the new laser
+
+ LDA T1                 \ Retrieve the new laser's power from T1 into A
+
+ STA LASER,X            \ Set the laser view to the new laser's power
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
 \       Name: PRXS
 \       Type: Variable
 \   Category: Equipment
@@ -3890,6 +4000,13 @@ ENDIF
  EQUW 15000             \ 9  Energy Unit               1500.0 Cr
  EQUW 10000             \ 10 Docking Computer          1000.0 Cr
  EQUW 50000             \ 11 Galactic Hyperspace       5000.0 Cr
+
+                        \ --- Mod: Code added for extra lasers: --------------->
+
+ EQUW 60000             \ 12 Extra Military Lasers     6000.0 Cr
+ EQUW 8000              \ 13 Extra Mining Lasers        800.0 Cr
+
+                        \ --- End of added code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -4193,11 +4310,39 @@ ENDIF
 
  LDA #103               \ Set A to token 103 ("PULSE LASER")
 
- LDX CNT                \ If the laser power for view X has bit 7 clear, then it
- LDY LASER,X            \ is a pulse laser, so skip the following instruction
- BPL P%+4
+                        \ --- Mod: Code removed for extra lasers: ------------->
 
- LDA #104               \ Set A to token 104 ("BEAM LASER")
+\LDX CNT                \ If the laser power for view X has bit 7 clear, then it
+\LDY LASER,X            \ is a pulse laser, so skip the following instruction
+\BPL P%+4
+\
+\LDA #104               \ Set A to token 104 ("BEAM LASER")
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDX CNT                \ Retrieve the view number from CNT that we stored above
+
+ LDY LASER,X            \ Set Y = the laser power for view X
+
+ CPY #128+POW           \ If the laser power for view X is not #POW+128 (beam
+ BNE P%+4               \ laser), skip the next LDA instruction
+
+ LDA #104               \ This sets A = 104 if the laser in view X is a beam
+                        \ laser (token 104 is "BEAM LASER")
+
+ CPY #Armlas            \ If the laser power for view X is not #Armlas (military
+ BNE P%+4               \ laser), skip the next LDA instruction
+
+ LDA #117               \ This sets A = 117 if the laser in view X is a military
+                        \ laser (token 117 is "MILITARY  LASER")
+
+ CPY #Mlas              \ If the laser power for view X is not #Mlas (mining
+ BNE P%+4               \ laser), skip the next LDA instruction
+
+ LDA #118               \ This sets A = 118 if the laser in view X is a mining
+                        \ laser (token 118 is "MINING  LASER")
+
+                        \ --- End of replacement ------------------------------>
 
  JSR plf2               \ Print the text token in A (which contains the laser
                         \ type) followed by a newline and an indent of 6
@@ -11939,9 +12084,19 @@ ENDIF
  CLC                    \ and add 3 (the tech level is stored as 0-14, so A is
  ADC #3                 \ now set to between 3 and 17)
 
- CMP #12                \ If A >= 12 then set A = 12, so A is now set to between
- BCC P%+4               \ 3 and 12
- LDA #12
+                        \ --- Mod: Code removed for extra lasers: ------------->
+
+\CMP #12                \ If A >= 12 then set A = 12, so A is now set to between
+\BCC P%+4               \ 3 and 12
+\LDA #12
+
+                        \ --- And replaced by: -------------------------------->
+
+ CMP #12                \ If A >= 12 then set A = 14, so A is now set to between
+ BCC P%+4               \ 3 and 14
+ LDA #14
+
+                        \ --- End of replacement ------------------------------>
 
  STA Q                  \ Set QQ25 = A (so QQ25 is in the range 3-12 and
  STA QQ25               \ represents number of the most advanced item available
@@ -12121,27 +12276,37 @@ ENDIF
                         \ prompt, and ask for a view number, which is returned
                         \ in X (which now contains 0-3)
 
- LDA #4                 \ This instruction doesn't appear to do anything, as we
-                        \ either don't need it (if we already have this laser)
-                        \ or we set A to 4 below (if we buy it)
+                        \ --- Mod: Code removed for extra lasers: ------------->
 
- LDY LASER,X            \ If there is no laser mounted in the chosen view (i.e.
- BEQ ed4                \ LASER+X, which contains the laser power for view X, is
-                        \ zero), jump to ed4 to buy a pulse laser
+\LDA #4                 \ This instruction doesn't appear to do anything, as we
+\                       \ either don't need it (if we already have this laser)
+\                       \ or we set A to 4 below (if we buy it)
+\
+\LDY LASER,X            \ If there is no laser mounted in the chosen view (i.e.
+\BEQ ed4                \ LASER+X, which contains the laser power for view X, is
+\                       \ zero), jump to ed4 to buy a pulse laser
+\
+\.ed7
+\
+\LDY #187               \ Otherwise we already have a laser mounted in this
+\BNE pres               \ view, so jump to pres with Y set to token 27
+\                       \ (" LASER") to show the error "Laser Present", beep
+\                       \ and exit to the docking bay (i.e. show the Status
+\                       \ Mode screen)
+\
+\.ed4
+\
+\LDA #POW               \ We just bought a pulse laser for view X, so we need
+\STA LASER,X            \ to fit it by storing the laser power for a pulse laser
+\                       \ (given in POW) in LASER+X
 
-.ed7
+                        \ --- And replaced by: -------------------------------->
 
- LDY #187               \ Otherwise we already have a laser mounted in this
- BNE pres               \ view, so jump to pres with Y set to token 27
-                        \ (" LASER") to show the error "Laser Present", beep
-                        \ and exit to the docking bay (i.e. show the Status
-                        \ Mode screen)
+ LDA #POW               \ Call refund with A set to the power of the new pulse
+ JSR refund             \ laser to install the new laser and process a refund if
+                        \ we already have a laser fitted to this view
 
-.ed4
-
- LDA #POW               \ We just bought a pulse laser for view X, so we need
- STA LASER,X            \ to fit it by storing the laser power for a pulse laser
-                        \ (given in POW) in LASER+X
+                        \ --- End of replacement ------------------------------>
 
  LDA #4                 \ Set A to 4 as we just overwrote the original value,
                         \ and we still need it set correctly so we can continue
@@ -12157,39 +12322,45 @@ ENDIF
                         \ prompt, and ask for a view number, which is returned
                         \ in X (which now contains 0-3)
 
- STX T1                 \ Store the view in T1 so we can retrieve it below
+                        \ --- Mod: Code removed for extra lasers: ------------->
 
- LDA #5                 \ Set A to 5 as the call to qv will have overwritten
-                        \ the original value, and we still need it set
-                        \ correctly so we can continue through the conditional
-                        \ statements for all the other equipment
+\STX T1                 \ Store the view in T1 so we can retrieve it below
+\
+\LDA #5                 \ Set A to 5 as the call to qv will have overwritten
+\                       \ the original value, and we still need it set
+\                       \ correctly so we can continue through the conditional
+\                       \ statements for all the other equipment
+\
+\LDY LASER,X            \ If there is no laser mounted in the chosen view (i.e.
+\BEQ ed5                \ LASER+X, which contains the laser power for view X,
+\                       \ is zero), jump to ed5 to buy a beam laser
+\
+\BMI ed7                \ If there is a beam laser already mounted in the chosen
+\                       \ view (i.e. LASER+X has bit 7 set, which indicates a
+\                       \ beam laser rather than a pulse laser), skip back to
+\                       \ ed7 to print a "Laser Present" error, beep and exit
+\                       \ to the docking bay (i.e. show the Status Mode screen)
+\
+\LDA #4                 \ If we get here then we already have a pulse laser in
+\JSR prx                \ the selected view, so we call prx to set (Y X) to the
+\                       \ price of equipment item number 4 (extra pulse laser)
+\                       \ so we can give a refund of the pulse laser
+\
+\JSR MCASH              \ Add (Y X) cash to the cash pot in CASH, so we refund
+\                       \ the price of the pulse laser we are exchanging for a
+\                       \ new beam laser
+\
+\.ed5
+\
+\LDA #POW+128           \ We just bought a beam laser for view X, so we need
+\LDX T1                 \ to fit it by storing the laser power for a beam laser
+\STA LASER,X            \ (given in POW+128) in LASER+X, using the view number
+\                       \ we stored in T1 earlier, as the call to prx will have
+\                       \ overwritten the original value in X
 
- LDY LASER,X            \ If there is no laser mounted in the chosen view (i.e.
- BEQ ed5                \ LASER+X, which contains the laser power for view X,
-                        \ is zero), jump to ed5 to buy a beam laser
-
- BMI ed7                \ If there is a beam laser already mounted in the chosen
-                        \ view (i.e. LASER+X has bit 7 set, which indicates a
-                        \ beam laser rather than a pulse laser), skip back to
-                        \ ed7 to print a "Laser Present" error, beep and exit
-                        \ to the docking bay (i.e. show the Status Mode screen)
-
- LDA #4                 \ If we get here then we already have a pulse laser in
- JSR prx                \ the selected view, so we call prx to set (Y X) to the
-                        \ price of equipment item number 4 (extra pulse laser)
-                        \ so we can give a refund of the pulse laser
-
- JSR MCASH              \ Add (Y X) cash to the cash pot in CASH, so we refund
-                        \ the price of the pulse laser we are exchanging for a
-                        \ new beam laser
-
-.ed5
-
- LDA #POW+128           \ We just bought a beam laser for view X, so we need
- LDX T1                 \ to fit it by storing the laser power for a beam laser
- STA LASER,X            \ (given in POW+128) in LASER+X, using the view number
-                        \ we stored in T1 earlier, as the call to prx will have
-                        \ overwritten the original value in X
+ LDA #POW+128           \ Call refund with A set to the power of the new beam
+ JSR refund             \ laser to install the new laser and process a refund if
+                        \ we already have a laser fitted to this view
 
 .et5
 
@@ -12320,6 +12491,40 @@ ENDIF
                         \ the DEC instruction)
 
 .et9
+
+                        \ --- Mod: Code added for extra lasers: --------------->
+
+ INY                    \ Increment Y to recursive token 117 ("MILITARY  LASER")
+
+ CMP #12                \ If A is not 12 (i.e. the item we've just bought is not
+ BNE et10               \ a military laser), skip to et10
+
+ JSR qv                 \ Print a menu listing the four views, with a "View ?"
+                        \ prompt, and ask for a view number, which is returned
+                        \ in X (which now contains 0-3)
+
+ LDA #Armlas            \ Call refund with A set to the power of the new
+ JSR refund             \ military laser to install the new laser and process a
+                        \ refund if we already have a laser fitted to this view
+
+.et10
+
+ INY                    \ Increment Y to recursive token 118 ("MINING  LASER")
+
+ CMP #13                \ If A is not 13 (i.e. the item we've just bought is not
+ BNE et11               \ a mining laser), skip to et11
+
+ JSR qv                 \ Print a menu listing the four views, with a "View ?"
+                        \ prompt, and ask for a view number, which is returned
+                        \ in X (which now contains 0-3)
+
+ LDA #Mlas              \ Call refund with A set to the power of the new mining
+ JSR refund             \ laser to install the new laser and process a refund if
+                        \ we already have a laser fitted to this view
+
+.et11
+
+                        \ --- End of added code ------------------------------->
 
  JSR dn                 \ We are done buying equipment, so print the amount of
                         \ cash left in the cash pot, then make a short, high
@@ -12485,6 +12690,19 @@ ENDIF
 \ ******************************************************************************
 
 .qv
+
+                        \ --- Mod: Code added for extra lasers: --------------->
+
+ LDA tek                \ If the current system's tech level is less than 8,
+ CMP #8                 \ skip the next two instructions, otherwise we clear the
+ BCC P%+7               \ screen to prevent the view menu from clashing with the
+                        \ longer equipment menu available in higher tech systems
+
+ LDA #32                \ Clear the top part of the screen, draw a border box,
+ JSR TT66               \ and set the current view type in QQ11 to 32 (Equip
+                        \ Ship screen)
+
+                        \ --- End of added code ------------------------------->
 
  LDY #16                \ Move the text cursor to row 16, and at the same time
  STY YC                 \ set Y to a counter going from 16 to 19 in the loop
