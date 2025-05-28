@@ -6760,7 +6760,7 @@ ENDIF
 \
 \ ******************************************************************************
 
-                        \ --- Mod: Code added for extended text tokens: ------->
+                        \ --- Mod: Code added for system descriptions: -------->
 
 .PDESC
 
@@ -8552,14 +8552,28 @@ ENDIF
  LDA #9                 \ Move the text cursor to column 9
  STA XC
 
- LDA #163               \ Print recursive token 3 as a title in capitals at
- JSR TT27               \ the top ("DATA ON {selected system name}")
+                        \ --- Mod: Code removed for system descriptions: ------>
 
- JSR NLIN               \ Draw a horizontal line underneath the title
+\LDA #163               \ Print recursive token 3 as a title in capitals at
+\JSR TT27               \ the top ("DATA ON {selected system name}")
+\
+\JSR NLIN               \ Draw a horizontal line underneath the title
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDA #163               \ Print recursive token 3 ("DATA ON {selected system
+ JSR NLIN3              \ name}" and draw a horizontal line at pixel row 19
+                        \ to box in the title
+
+                        \ --- End of replacement ------------------------------>
 
  JSR TTX69              \ Print a paragraph break and set Sentence Case
 
- INC YC                 \ Move the text cursor down one more line
+                        \ --- Mod: Code removed for system descriptions: ------>
+
+\INC YC                 \ Move the text cursor down one more line
+
+                        \ --- End of removed code ----------------------------->
 
  JSR TT146              \ If the distance to this system is non-zero, print
                         \ "DISTANCE", then the distance, "LIGHT YEARS" and a
@@ -8818,10 +8832,41 @@ ENDIF
 
  JSR TT162              \ Print a space
 
- LDA #'k'               \ Print "km", returning from the subroutine using a
- JSR TT26               \ tail call
+
+                        \ --- Mod: Code removed for system descriptions: ------>
+
+\LDA #'k'               \ Print "km", returning from the subroutine using a
+\JSR TT26               \ tail call
+\LDA #'m'
+\JMP TT26
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDA #'k'               \ Print "km"
+ JSR TT26
  LDA #'m'
- JMP TT26
+ JSR TT26
+
+ JSR TTX69              \ Print a paragraph break and set Sentence Case
+
+                        \ By this point, ZZ contains the current system number
+                        \ which PDESC requires. It gets put there in the TT102
+                        \ routine, which calls TT111 to populate ZZ before
+                        \ calling TT25 (this routine)
+
+ JMP PDESC              \ Jump to PDESC to print the system's extended
+                        \ description, returning from the subroutine using a
+                        \ tail call
+
+                        \ The following code doesn't appear to be called from
+                        \ anywhere, so it's presumably a remnant of code from
+                        \ an earlier version of the extended description code
+
+ LDX ZZ                 \ Fetch the system number from ZZ into X
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of replacement ------------------------------>
 
 \ ******************************************************************************
 \
