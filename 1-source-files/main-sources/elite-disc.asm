@@ -42,4 +42,5 @@
  PUTFILE "3-assembled-output/ELITEDA.bin", "ELITEDA", &FF4400, &FF5200
  PUTFILE "3-assembled-output/ELTROM.bin", "ELITERM", &FF8000, &FF8000
  PUTFILE "3-assembled-output/ELITECO.bin", "ELITECO", &000000, &FFFFFF
+ PUTFILE "1-source-files/other-files/E.MAX.bin", "E.MAX", &000000, &000000
  PUTFILE "3-assembled-output/README.txt", "README", &FFFFFF, &FFFFFF
