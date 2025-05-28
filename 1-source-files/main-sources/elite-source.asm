@@ -1631,9 +1631,20 @@ ENDMACRO
 
 .QQ18
 
- EQUB &FF EOR RE        \ Token 0 is unused in the Electron version of Elite,
- EQUB 0                 \ and it just contains &FF (plus the standard token
-                        \ obfuscation EOR) as filler
+                        \ --- Mod: Code removed for extended text tokens: ----->
+
+\EQUB &FF EOR RE        \ Token 0 is unused in the Electron version of Elite,
+\EQUB 0                 \ and it just contains &FF (plus the standard token
+\                       \ obfuscation EOR) as filler
+
+                        \ --- And replaced by: -------------------------------->
+
+
+ RTOK 111               \ Token 0:      "FUEL SCOOPS ON {beep}"
+ RTOK 131               \
+ CONT 7                 \ Encoded as:   "[111][131]{7}"
+ EQUB 0
+                        \ --- End of replacement ------------------------------>
 
  CHAR ' '               \ Token 1:      " CHART"
  CHAR 'C'               \
@@ -1948,12 +1959,25 @@ ENDMACRO
  CHAR 'H'
  EQUB 0
 
+                        \ --- Mod: Code removed for extended text tokens: ----->
+
+\CHAR ' '               \ Token 38:     " BILLION"
+\TWOK 'B', 'I'          \
+\RTOK 118               \ Encoded as:   " <134>[118]I<159>"
+\CHAR 'I'
+\TWOK 'O', 'N'
+\EQUB 0
+
+                        \ --- And replaced by: -------------------------------->
+
  CHAR ' '               \ Token 38:     " BILLION"
  TWOK 'B', 'I'          \
- RTOK 118               \ Encoded as:   " <134>[118]I<159>"
+ RTOK 129               \ Encoded as:   " <134>[129]I<159>"
  CHAR 'I'
  TWOK 'O', 'N'
  EQUB 0
+
+                        \ --- End of replacement ------------------------------>
 
  RTOK 122               \ Token 39:     "GALACTIC CHART{galaxy number}"
  RTOK 1                 \
@@ -1995,10 +2019,21 @@ ENDMACRO
  CHAR ' '
  EQUB 0
 
+                        \ --- Mod: Code removed for extended text tokens: ----->
+
+\CHAR 'S'               \ Token 45:     "SELL"
+\CHAR 'E'               \
+\RTOK 118               \ Encoded as:   "SE[118]"
+\EQUB 0
+
+                        \ --- And replaced by: -------------------------------->
+
  CHAR 'S'               \ Token 45:     "SELL"
  CHAR 'E'               \
- RTOK 118               \ Encoded as:   "SE[118]"
+ RTOK 129               \ Encoded as:   "SE[129]"
  EQUB 0
+
+                        \ --- End of replacement ------------------------------>
 
  CHAR ' '               \ Token 46:     " CARGO{sentence case}"
  CHAR 'C'               \
@@ -2167,10 +2202,21 @@ ENDMACRO
  TWOK 'C', 'E'
  EQUB 0
 
+                        \ --- Mod: Code removed for extended text tokens: ----->
+
+\CHAR 'S'               \ Token 69:     "SMALL"
+\TWOK 'M', 'A'          \
+\RTOK 118               \ Encoded as:   "S<139>[118]"
+\EQUB 0
+
+                        \ --- And replaced by: -------------------------------->
+
  CHAR 'S'               \ Token 69:     "SMALL"
  TWOK 'M', 'A'          \
- RTOK 118               \ Encoded as:   "S<139>[118]"
+ RTOK 129               \ Encoded as:   "S<139>[129]"
  EQUB 0
+
+                        \ --- End of replacement ------------------------------>
 
  CHAR 'G'               \ Token 70:     "GREEN"
  TWOK 'R', 'E'          \
@@ -2181,12 +2227,25 @@ ENDMACRO
  TWOK 'E', 'D'          \
  EQUB 0                 \ Encoded as:   "R<152>"
 
+                        \ --- Mod: Code removed for extended text tokens: ----->
+
+\CHAR 'Y'               \ Token 72:     "YELLOW"
+\CHAR 'E'               \
+\RTOK 118               \ Encoded as:   "YE[118]OW"
+\CHAR 'O'
+\CHAR 'W'
+\EQUB 0
+
+                        \ --- And replaced by: -------------------------------->
+
  CHAR 'Y'               \ Token 72:     "YELLOW"
  CHAR 'E'               \
- RTOK 118               \ Encoded as:   "YE[118]OW"
+ RTOK 129               \ Encoded as:   "YE[129]OW"
  CHAR 'O'
  CHAR 'W'
  EQUB 0
+
+                        \ --- End of replacement ------------------------------>
 
  CHAR 'B'               \ Token 73:     "BLUE"
  CHAR 'L'               \
@@ -2325,23 +2384,33 @@ ENDMACRO
  TWOK 'E', 'D'
  EQUB 0
 
- CHAR 'B'               \ Token 94:     "BY D.BRABEN & I.BELL"
- CHAR 'Y'               \
- CHAR ' '               \ Encoded as:   "BY D.B<148><147>N & I.<147>[118]"
- CHAR 'D'
- CHAR '.'
- CHAR 'B'
- TWOK 'R', 'A'
- TWOK 'B', 'E'
- CHAR 'N'
- CHAR ' '
- CHAR '&'
- CHAR ' '
- CHAR 'I'
- CHAR '.'
- TWOK 'B', 'E'
- RTOK 118
- EQUB 0
+                        \ --- Mod: Code removed for extended text tokens: ----->
+
+\CHAR 'B'               \ Token 94:     "BY D.BRABEN & I.BELL"
+\CHAR 'Y'               \
+\CHAR ' '               \ Encoded as:   "BY D.B<148><147>N & I.<147>[118]"
+\CHAR 'D'
+\CHAR '.'
+\CHAR 'B'
+\TWOK 'R', 'A'
+\TWOK 'B', 'E'
+\CHAR 'N'
+\CHAR ' '
+\CHAR '&'
+\CHAR ' '
+\CHAR 'I'
+\CHAR '.'
+\TWOK 'B', 'E'
+\RTOK 118
+\EQUB 0
+
+                        \ --- And replaced by: -------------------------------->
+
+ CHAR 'R'               \ Token 94:     "RO"
+ CHAR 'O'               \
+ EQUB 0                 \ Encoded as:   "RO"
+
+                        \ --- End of replacement ------------------------------>
 
  RTOK 14                \ Token 95:     "UNIT  QUANTITY{crlf}
  CHAR ' '               \                 PRODUCT   UNIT PRICE FOR SALE{crlf}
@@ -2497,25 +2566,66 @@ ENDMACRO
  RTOK 14                \
  EQUB 0                 \ Encoded as:   "[121][14]"
 
- RTOK 124               \ Token 115:    "DOCKING COMPUTERS"
- TWOK 'I', 'N'          \
- CHAR 'G'               \ Encoded as:   "[124]<140>G [55]"
+                        \ --- Mod: Code removed for extended text tokens: ----->
+
+\RTOK 124               \ Token 115:    "DOCKING COMPUTERS"
+\TWOK 'I', 'N'          \
+\CHAR 'G'               \ Encoded as:   "[124]<140>G [55]"
+\CHAR ' '
+\RTOK 55
+\EQUB 0
+
+                        \ --- And replaced by: -------------------------------->
+
+ CHAR 'D'               \ Token 115:    "DOCKING COMPUTERS"
+ CHAR 'O'               \
+ CHAR 'C'               \ Encoded as:   "DOCK<140>G [55]"
+ CHAR 'K'
+ TWOK 'I', 'N'
+ CHAR 'G'
  CHAR ' '
  RTOK 55
  EQUB 0
+
+                        \ --- End of replacement ------------------------------>
 
  RTOK 122               \ Token 116:    "GALACTIC HYPERSPACE "
  CHAR ' '               \
  RTOK 29                \ Encoded as:   "[122] [29]"
  EQUB 0
 
- CHAR 'A'               \ Token 117:    "ALL"
- RTOK 118               \
- EQUB 0                 \ Encoded as:   "A[118]"
+                        \ --- Mod: Code removed for extended text tokens: ----->
 
- CHAR 'L'               \ Token 118:    "LL"
- CHAR 'L'               \
- EQUB 0                 \ Encoded as:   "LL"
+\CHAR 'A'               \ Token 117:    "ALL"
+\RTOK 118               \
+\EQUB 0                 \ Encoded as:   "A[118]"
+\
+\CHAR 'L'               \ Token 118:    "LL"
+\CHAR 'L'               \
+\EQUB 0                 \ Encoded as:   "LL"
+
+                        \ --- And replaced by: -------------------------------->
+
+ CHAR 'M'               \ Token 117:    "MILITARY  LASER"
+ CHAR 'I'               \
+ CHAR 'L'               \ Encoded as:   "MILIT<138>Y [27]"
+ CHAR 'I'
+ CHAR 'T'
+ TWOK 'A', 'R'
+ CHAR 'Y'
+ CHAR ' '
+ RTOK 27
+ EQUB 0
+
+ CHAR 'M'               \ Token 118:    "MINING  LASER"
+ TWOK 'I', 'N'          \
+ TWOK 'I', 'N'          \ Encoded as:   "M<140><140>G [27]"
+ CHAR 'G'
+ CHAR ' '
+ RTOK 27
+ EQUB 0
+
+                        \ --- End of replacement ------------------------------>
 
  RTOK 37                \ Token 119:    "CASH:{cash} CR{crlf}
  CHAR ':'               \               "
@@ -2545,24 +2655,40 @@ ENDMACRO
  CHAR 'C'
  EQUB 0
 
- CONT 13                \ Token 123:    "{crlf}
- RTOK 92                \                COMMANDER'S NAME? "
- CHAR '`'               \
- CHAR 'S'               \ Encoded as:   "{13}[92]'S NAME? "
- CHAR ' '
+                        \ --- Mod: Code removed for extended text tokens: ----->
+
+\CONT 13                \ Token 123:    "{crlf}
+\RTOK 92                \                COMMANDER'S NAME? "
+\CHAR '`'               \
+\CHAR 'S'               \ Encoded as:   "{13}[92]'S NAME? "
+\CHAR ' '
+\CHAR 'N'
+\CHAR 'A'
+\CHAR 'M'
+\CHAR 'E'
+\CHAR '?'
+\CHAR ' '
+\EQUB 0
+\
+\CHAR 'D'               \ Token 124:    "DOCK"
+\CHAR 'O'               \
+\CHAR 'C'               \ Encoded as:   "DOCK"
+\CHAR 'K'
+\EQUB 0
+
+                        \ --- And replaced by: -------------------------------->
+
+ RTOK 115               \ Token 123:    "DOCKING COMPUTERS ON"
+ CHAR ' '               \
+ CHAR 'O'               \ Encoded as:   "[115] ON"
  CHAR 'N'
- CHAR 'A'
- CHAR 'M'
- CHAR 'E'
- CHAR '?'
- CHAR ' '
  EQUB 0
 
- CHAR 'D'               \ Token 124:    "DOCK"
- CHAR 'O'               \
- CHAR 'C'               \ Encoded as:   "DOCK"
- CHAR 'K'
- EQUB 0
+ CHAR 'A'               \ Token 124:    "ALL"
+ RTOK 129               \
+ EQUB 0                 \ Encoded as:   "A[129]"
+
+                        \ --- End of replacement ------------------------------>
 
  CONT 5                 \ Token 125:    "FUEL: {fuel level} LIGHT YEARS{crlf}
  TWOK 'L', 'E'          \                CASH:{cash} CR{crlf}
@@ -2606,28 +2732,42 @@ ENDMACRO
  CHAR 'M'               \ Encoded as:   "I<156>M"
  EQUB 0
 
- CHAR ' '               \ Token 128:    "  LOAD NEW COMMANDER (Y/N)?{crlf}
- CHAR ' '               \                {crlf}
- CHAR 'L'               \               "
- CHAR 'O'               \
- CHAR 'A'               \ Encoded as:   "  LOAD NEW [92] [65]{13}{13}"
- CHAR 'D'
- CHAR ' '
- CHAR 'N'
- CHAR 'E'
- CHAR 'W'
- CHAR ' '
- RTOK 92
- CHAR ' '
- RTOK 65
- CONT 13
- CONT 13
- EQUB 0
+                        \ --- Mod: Code removed for extended text tokens: ----->
 
- CONT 6                 \ Token 129:    "{sentence case}DOCKED"
- RTOK 124               \
- TWOK 'E', 'D'          \ Encoded as:   "{6}[124]<152>"
- EQUB 0
+\CHAR ' '               \ Token 128:    "  LOAD NEW COMMANDER (Y/N)?{crlf}
+\CHAR ' '               \                {crlf}
+\CHAR 'L'               \               "
+\CHAR 'O'               \
+\CHAR 'A'               \ Encoded as:   "  LOAD NEW [92] [65]{13}{13}"
+\CHAR 'D'
+\CHAR ' '
+\CHAR 'N'
+\CHAR 'E'
+\CHAR 'W'
+\CHAR ' '
+\RTOK 92
+\CHAR ' '
+\RTOK 65
+\CONT 13
+\CONT 13
+\EQUB 0
+\
+\CONT 6                 \ Token 129:    "{sentence case}DOCKED"
+\RTOK 124               \
+\TWOK 'E', 'D'          \ Encoded as:   "{6}[124]<152>"
+\EQUB 0
+
+                        \ --- And replaced by: -------------------------------->
+
+ EQUB 0                 \ Token 128:    ""
+                        \
+                        \ Encoded as:   ""
+
+ CHAR 'L'               \ Token 129:    "LL"
+ CHAR 'L'               \
+ EQUB 0                 \ Encoded as:   "LL"
+
+                        \ --- End of replacement ------------------------------>
 
  TWOK 'R', 'A'          \ Token 130:    "RATING:"
  TWOK 'T', 'I'          \
@@ -2768,45 +2908,49 @@ ENDMACRO
  CHAR 'R'
  EQUB 0
 
- CHAR 'P'               \ Token 147:    "PRESS FIRE OR SPACE,COMMANDER.{crlf}
- CHAR 'R'               \                {crlf}
- TWOK 'E', 'S'          \               "
- CHAR 'S'               \
- CHAR ' '               \ Encoded as:   "PR<137>S FI<142> <153> SPA<133>,[92].
- CHAR 'F'               \                {13}{13}"
- CHAR 'I'
- TWOK 'R', 'E'
- CHAR ' '
- TWOK 'O', 'R'
- CHAR ' '
- CHAR 'S'
- CHAR 'P'
- CHAR 'A'
- TWOK 'C', 'E'
- CHAR ','
- RTOK 92
- CHAR '.'
- CONT 13
- CONT 13
- EQUB 0
+                        \ --- Mod: Code removed for extended text tokens: ----->
 
- CHAR '('               \ Token 148:    "(C) ACORNSOFT 1984"
- CHAR 'C'               \
- CHAR ')'               \ Encoded as:   "(C) AC<153>N<135>FT 1984"
- CHAR ' '
- CHAR 'A'
- CHAR 'C'
- TWOK 'O', 'R'
- CHAR 'N'
- TWOK 'S', 'O'
- CHAR 'F'
- CHAR 'T'
- CHAR ' '
- CHAR '1'
- CHAR '9'
- CHAR '8'
- CHAR '4'
- EQUB 0
+\CHAR 'P'               \ Token 147:    "PRESS FIRE OR SPACE,COMMANDER.{crlf}
+\CHAR 'R'               \                {crlf}
+\TWOK 'E', 'S'          \               "
+\CHAR 'S'               \
+\CHAR ' '               \ Encoded as:   "PR<137>S FI<142> <153> SPA<133>,[92].
+\CHAR 'F'               \                {13}{13}"
+\CHAR 'I'
+\TWOK 'R', 'E'
+\CHAR ' '
+\TWOK 'O', 'R'
+\CHAR ' '
+\CHAR 'S'
+\CHAR 'P'
+\CHAR 'A'
+\TWOK 'C', 'E'
+\CHAR ','
+\RTOK 92
+\CHAR '.'
+\CONT 13
+\CONT 13
+\EQUB 0
+\
+\CHAR '('               \ Token 148:    "(C) ACORNSOFT 1984"
+\CHAR 'C'               \
+\CHAR ')'               \ Encoded as:   "(C) AC<153>N<135>FT 1984"
+\CHAR ' '
+\CHAR 'A'
+\CHAR 'C'
+\TWOK 'O', 'R'
+\CHAR 'N'
+\TWOK 'S', 'O'
+\CHAR 'F'
+\CHAR 'T'
+\CHAR ' '
+\CHAR '1'
+\CHAR '9'
+\CHAR '8'
+\CHAR '4'
+\EQUB 0
+
+                        \ --- End of removed code ----------------------------->
 
 \ ******************************************************************************
 \
@@ -3757,6 +3901,22 @@ ENDIF
 \
 \ ******************************************************************************
 
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+.wearedocked
+
+                        \ We call this from STATUS below if we are docked
+
+ LDA #205               \ Print extended token 205 ("DOCKED") and return from
+ JSR DETOK              \ the subroutine using a tail call
+
+ JSR TT67               \ Print a newline
+
+ JMP st6+3              \ Jump down to st6+3, to print recursive token 125 and
+                        \ continue to the rest of the Status Mode screen
+
+                        \ --- End of added code ------------------------------->
+
 .st4
 
                         \ We call this from st5 below with the high byte of the
@@ -3822,11 +3982,20 @@ ENDIF
                         \ and draw a horizontal line at pixel row 19 to box
                         \ in the title
 
- LDA #15                \ Set A to token 129 ("{sentence case}DOCKED")
+                        \ --- Mod: Code removed for extended text tokens: ----->
+
+\LDA #15                \ Set A to token 129 ("{sentence case}DOCKED")
+\
+\LDY QQ12               \ Fetch the docked status from QQ12, and if we are
+\BNE st6                \ docked, jump to st6 to print "Docked" for our
+\                       \ ship's condition
+
+                        \ --- And replaced by: -------------------------------->
 
  LDY QQ12               \ Fetch the docked status from QQ12, and if we are
- BNE st6                \ docked, jump to st6 to print "Docked" for our
-                        \ ship's condition
+ BNE wearedocked        \ docked, jump to wearedocked
+
+                       \ --- End of replacement ------------------------------>
 
  LDA #230               \ Otherwise we are in space, so start off by setting A
                         \ to token 70 ("GREEN")
@@ -11889,7 +12058,15 @@ ENDIF
 
  INX                    \ Increment X to the new number of missiles
 
- LDY #117               \ Set Y to recursive token 117 ("ALL")
+                        \ --- Mod: Code removed for extended text tokens: ----->
+
+\LDY #117               \ Set Y to recursive token 117 ("ALL")
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDY #124               \ Set Y to recursive token 124 ("ALL")
+
+                        \ --- End of replacement ------------------------------>
 
  CPX #5                 \ If buying this missile would give us 5 missiles, this
  BCS pres               \ is more than the maximum of 4 missiles that we can
@@ -15859,10 +16036,21 @@ ENDIF
  JSR FX200              \ Disable the ESCAPE key and clear memory if the BREAK
                         \ key is pressed (*FX 200,3)
 
+                        \ --- Mod: Code removed for extended text tokens: ----->
+
+\LDX #CYL               \ Call TITLE to show a rotating Cobra Mk III (#CYL) and
+\LDA #128               \ token 128 ("  LOAD NEW COMMANDER (Y/N)?{crlf}{crlf}"),
+\JSR TITLE              \ returning with the internal number of the key pressed
+\                       \ in A
+
+                        \ --- And replaced by: -------------------------------->
+
  LDX #CYL               \ Call TITLE to show a rotating Cobra Mk III (#CYL) and
- LDA #128               \ token 128 ("  LOAD NEW COMMANDER (Y/N)?{crlf}{crlf}"),
- JSR TITLE              \ returning with the internal number of the key pressed
-                        \ in A
+ LDA #6                 \ token 6 ("LOAD NEW {single cap}COMMANDER {all caps}
+ JSR TITLE              \ (Y/N)?{sentence case}{cr}{cr}"), returning with the
+                        \ internal number of the key pressed in A
+
+                        \ --- End of replacement ------------------------------>
 
  CMP #&44               \ Did we press "Y"? If not, jump to QU5, otherwise
  BNE QU5                \ continue on to load a new commander
@@ -16014,10 +16202,21 @@ ENDIF
  JSR msblob             \ Reset the dashboard's missile indicators so none of
                         \ them are targeted
 
- LDA #147               \ Call TITLE to show a rotating Mamba (#3) and token
- LDX #3                 \ 147 ("PRESS FIRE OR SPACE,COMMANDER.{crlf}{crlf}"),
- JSR TITLE              \ returning with the internal number of the key pressed
-                        \ in A
+                        \ --- Mod: Code removed for extended text tokens: ----->
+
+\LDA #147               \ Call TITLE to show a rotating Mamba (#3) and token
+\LDX #3                 \ 147 ("PRESS FIRE OR SPACE,COMMANDER.{crlf}{crlf}"),
+\JSR TITLE              \ returning with the internal number of the key pressed
+\                       \ in A
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDA #7                 \ Call TITLE to show a rotating Mamba (#3) and token
+ LDX #3                 \ 7 ("PRESS SPACE OR FIRE,{single cap}COMMANDER.{cr}
+ JSR TITLE              \ {cr}"), returning with the internal number of the key
+                        \ pressed in A
+
+                        \ --- End of replacement ------------------------------>
 
  JSR ping               \ Set the target system coordinates (QQ9, QQ10) to the
                         \ current system coordinates (QQ0, QQ1) we just loaded
@@ -16224,8 +16423,17 @@ ENDIF
  BEQ awe                \ print the author credits (PATG can be toggled by
                         \ pausing the game and pressing "X")
 
- LDA #254               \ Print recursive token 94 ("BY D.BRABEN & I.BELL")
- JSR TT27
+                        \ --- Mod: Code removed for extended text tokens: ----->
+
+\LDA #254               \ Print recursive token 94 ("BY D.BRABEN & I.BELL")
+\JSR TT27
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDA #13                \ Print extended token 13 ("BY D.BRABEN & I.BELL")
+ JSR DETOK
+
+                        \ --- End of replacement ------------------------------>
 
 .awe
 
@@ -16237,16 +16445,35 @@ ENDIF
 
  STY JSTK               \ Set JSTK = 0 (i.e. keyboard, not joystick)
 
- PLA                    \ Restore the recursive token number we stored on the
- JSR ex                 \ stack at the start of this subroutine, and print that
-                        \ token
+                        \ --- Mod: Code removed for extended text tokens: ----->
 
- LDA #148               \ Set A to recursive token 148
+\PLA                    \ Restore the recursive token number we stored on the
+\JSR ex                 \ stack at the start of this subroutine, and print that
+\                       \ token
+\
+\LDA #148               \ Set A to recursive token 148
+\
+\LDX #7                 \ Move the text cursor to column 7
+\STX XC
+\
+\JSR ex                 \ Print recursive token 148 ("(C) ACORNSOFT 1984")
+
+                        \ --- And replaced by: -------------------------------->
+
+ PLA                    \ Restore the recursive token number we stored on the
+                        \ stack at the start of this subroutine
+
+ JSR DETOK              \ Print the extended token in A
+
+ LDA #12                \ Set A to extended token 12
 
  LDX #7                 \ Move the text cursor to column 7
  STX XC
 
- JSR ex                 \ Print recursive token 148 ("(C) ACORNSOFT 1984")
+ JSR DETOK              \ Print extended token 12 ("({single cap}C) ACORNSOFT
+                        \ 1984")
+
+                        \ --- End of replacement ------------------------------>
 
 .TLL2
 
