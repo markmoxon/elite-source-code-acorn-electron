@@ -9531,6 +9531,24 @@ ENDIF
  JSR TT217              \ Scan the keyboard until a key is pressed, and return
                         \ the key's ASCII code in A (and X)
 
+                        \ --- Mod: Code added for improved selling: ----------->
+
+ ORA #%00100000         \ Set bit 5 in the value of the key pressed, which
+                        \ converts it to lower case
+
+ LDX R                  \ If R is non-zero then skip to NWDAV2, as we are
+ BNE NWDAV2             \ already building a number
+
+ CMP #'y'               \ If "Y" was pressed, jump to NWDAV1 to return the
+ BEQ NWDAV1             \ maximum number allowed (i.e. buy/sell the whole stock)
+
+ CMP #'n'               \ If "N" was pressed, jump to NWDAV3 to return from the
+ BEQ NWDAV3             \ subroutine with a result of 0 (i.e. abort transaction)
+
+.NWDAV2
+
+                        \ --- End of added code ------------------------------->
+
  STA Q                  \ Store the key pressed in Q
 
  SEC                    \ Subtract ASCII "0" from the key pressed, to leave the
@@ -9587,6 +9605,60 @@ ENDIF
 
  RTS                    \ Return from the subroutine
 
+                        \ --- Mod: Code added for improved selling: ----------->
+
+.NWDAV1
+
+                        \ If we get here then "Y" was pressed, so we return the
+                        \ maximum number allowed, which is in QQ25
+
+ JSR TT26               \ Print the character for the key that was pressed
+
+ LDA QQ25               \ Set R = QQ25, so we return the maximum value allowed
+ STA R
+
+ RTS                    \ Return from the subroutine
+
+.NWDAV3
+
+                        \ If we get here then "N" was pressed, so we return 0
+
+ JSR TT26               \ Print the character for the key that was pressed
+
+ LDA #0                 \ Set R = 0, so we return 0
+ STA R
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: NWDAV4
+\       Type: Subroutine
+\   Category: Market
+\    Summary: Print an "ITEM?" error, make a beep and rejoin the TT210 routine
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for selling cargo: -------------->
+
+.NWDAV4
+
+ JSR TT67               \ Print a newline
+
+ LDA #176               \ Print recursive token 127 ("ITEM") followed by a
+ JSR prq                \ question mark
+
+ JSR dn2                \ Call dn2 to make a short, high beep and delay for 1
+                        \ second
+
+ LDY QQ29               \ Fetch the item number we are selling from QQ29
+
+ JMP NWDAVxx            \ Jump back into the TT210 routine that called NWDAV4
+
+                        \ --- End of added code ------------------------------->
+
 \ ******************************************************************************
 \
 \       Name: TT208
@@ -9602,15 +9674,36 @@ ENDIF
  JSR TT66               \ and set the current view type in QQ11 to 4 (Sell
                         \ Cargo screen)
 
- LDA #4                 \ Move the text cursor to row 4, column 4
- STA YC
+                        \ --- Mod: Code removed for improved selling: --------->
+
+\LDA #4                 \ Move the text cursor to row 4, column 4
+\STA YC
+\STA XC
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDA #10                \ Move the text cursor to column 10
  STA XC
+
+                        \ --- End of replacement ------------------------------>
 
  LDA #205               \ Print recursive token 45 ("SELL")
  JSR TT27
 
+                        \ --- Mod: Code removed for improved selling: --------->
+
+\LDA #206               \ Print recursive token 46 (" CARGO{sentence case}")
+\JSR TT68               \ followed by a colon
+
+                        \ --- And replaced by: -------------------------------->
+
  LDA #206               \ Print recursive token 46 (" CARGO{sentence case}")
- JSR TT68               \ followed by a colon
+ JSR NLIN3              \ draw a horizontal line at pixel row 19 to box in the
+                        \ title
+
+ JSR TT67               \ Print a newline
+
+                        \ --- End of replacement ------------------------------>
 
                         \ Fall through into TT210 to show the Inventory screen
                         \ with the option to sell
@@ -9652,6 +9745,12 @@ ENDIF
 
  STY QQ29               \ Store the current item number in QQ29
 
+                        \ --- Mod: Code added for improved selling: ----------->
+
+.NWDAVxx
+
+                        \ --- End of added code ------------------------------->
+
  LDX QQ20,Y             \ Fetch into X the amount of the current item that we
  BEQ TT212              \ have in our cargo hold, which is stored in QQ20+Y,
                         \ and if there are no items of this type in the hold,
@@ -9682,6 +9781,12 @@ ENDIF
  PLA                    \ Restore the amount of item in the hold into X
  TAX
 
+                        \ --- Mod: Code added for improved selling: ----------->
+
+ STA QQ25               \ Store the amount of this item in the hold in QQ25
+
+                        \ --- End of added code ------------------------------->
+
  CLC                    \ Print the 8-bit number in X to 3 digits, without a
  JSR pr2                \ decimal point
 
@@ -9693,13 +9798,38 @@ ENDIF
  CMP #4                 \ screen), jump to TT212 to skip the option to sell
  BNE TT212              \ items
 
- LDA #205               \ Set A to recursive token 45 ("SELL")
+                        \ --- Mod: Code removed for improved selling: --------->
 
- JSR TT214              \ Call TT214 to print "Sell(Y/N)?" and return the
-                        \ response in the C flag
+\LDA #205               \ Set A to recursive token 45 ("SELL")
+\
+\JSR TT214              \ Call TT214 to print "Sell(Y/N)?" and return the
+\                       \ response in the C flag
+\
+\BCC TT212              \ If the response was "no", jump to TT212 to move on to
+\                       \ the next item
 
- BCC TT212              \ If the response was "no", jump to TT212 to move on to
+                        \ --- And replaced by: -------------------------------->
+
+ LDA #205               \ Print recursive token 45 ("SELL")
+ JSR TT27
+
+ LDA #206               \ Print extended token 206 ("{all caps}(Y/N)?")
+ JSR DETOK
+
+ JSR gnum               \ Call gnum to get a number from the keyboard, which
+                        \ will be the number of the item we want to sell,
+                        \ returning the number entered in A and R, and setting
+                        \ the C flag if the number is bigger than the available
+                        \ amount of this item in QQ25
+
+ BEQ TT212              \ If no number was entered, jump to TT212 to move on to
                         \ the next item
+
+ BCS NWDAV4             \ If the number entered was too big, jump to NWDAV4 to
+                        \ print an "ITEM?" error, make a beep and rejoin the
+                        \ routine at NWDAVxx above
+
+                        \ --- End of replacement ------------------------------>
 
  LDA QQ29               \ We are selling this item, so fetch the item number
                         \ from QQ29
@@ -9711,9 +9841,24 @@ ENDIF
                         \ routine doesn't print the item details, as we just
                         \ disabled printing)
 
- LDY QQ29               \ Set P to the amount of this item we have in our cargo
- LDA QQ20,Y             \ hold (which is the amount to sell)
+                        \ --- Mod: Code removed for improved selling: --------->
+
+\LDY QQ29               \ Set P to the amount of this item we have in our cargo
+\LDA QQ20,Y             \ hold (which is the amount to sell)
+\STA P
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDY QQ29               \ Subtract R (the number of items we just asked to buy)
+ LDA QQ20,Y             \ from the available amount of this item in QQ20, as we
+ SEC                    \ just bought them
+ SBC R
+ STA QQ20,Y
+
+ LDA R                  \ Set P to the amount of this item we just bought
  STA P
+
+                        \ --- End of replacement ------------------------------>
 
  LDA QQ24               \ Set Q to the item's price / 4
  STA Q
@@ -9728,9 +9873,19 @@ ENDIF
 
  JSR MCASH              \ Add (Y X) cash to the cash pot in CASH
 
+                        \ --- Mod: Code removed for improved selling: --------->
+
+\LDA #0                 \ We've made the sale, so set the amount
+\LDY QQ29
+\STA QQ20,Y
+
+                        \ --- And replaced by: -------------------------------->
+
  LDA #0                 \ We've made the sale, so set the amount
- LDY QQ29
- STA QQ20,Y
+
+ STA QQ17               \ Set QQ17 = 0, which enables printing again
+
+                        \ --- End of replacement ------------------------------>
 
  STA QQ17               \ Set QQ17 = 0, which enables printing again
 
@@ -9739,11 +9894,21 @@ ENDIF
  LDY QQ29               \ Fetch the item number from QQ29 into Y, and increment
  INY                    \ Y to point to the next item
 
- CPY #17                \ If Y >= 17 then skip the next instruction as we have
- BCS P%+5               \ done the last item
+                        \ --- Mod: Code removed for improved selling: --------->
 
- JMP TT211              \ Otherwise loop back to TT211 to print the next item
-                        \ in the hold
+\CPY #17                \ If Y >= 17 then skip the next instruction as we have
+\BCS P%+5               \ done the last item
+\
+\JMP TT211              \ Otherwise loop back to TT211 to print the next item
+\                       \ in the hold
+
+                        \ --- And replaced by: -------------------------------->
+
+ CPY #17                \ Loop back to TT211 to print the next item in the hold
+ BCC TT211              \ until Y = 17 (at which point we have done the last
+                        \ item)
+
+                        \ --- End of replacement ------------------------------>
 
  LDA QQ11               \ If the current view type in QQ11 is not 4 (Sell Cargo
  CMP #4                 \ screen), skip the next two instructions and just
