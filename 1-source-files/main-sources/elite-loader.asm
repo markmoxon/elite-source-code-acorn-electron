@@ -1940,11 +1940,17 @@ ENDMACRO
 
                         \ --- Mod: Code added for saving and loading: --------->
 
- LDX #LO(MESS2)         \ Set (Y X) to point to MESS2 ("DIR E")
+ LDX #LO(MESS2)         \ Set (Y X) to point to MESS2 ("DIR")
  LDY #HI(MESS2)
 
- JSR OSCLI              \ Call OSCLI to run the OS command in MESS1, which
-                        \ changes the disc directory to E
+ JSR OSCLI              \ Call OSCLI to run the OS command in MESS2, which
+                        \ changes to the user's home directory
+
+ LDX #LO(MESS3)         \ Set (Y X) to point to MESS3 ("DIR EliteCmdrs")
+ LDY #HI(MESS3)
+
+ JSR OSCLI              \ Call OSCLI to run the OS command in MESS3, which
+                        \ changes the directory to EliteCmdrs
 
                         \ --- End of added code ------------------------------->
 
@@ -2143,12 +2149,32 @@ ENDIF
 
 .MESS2
 
-                        \ --- Mod: Code added for saving and loading: --------->
+                        \ --- Mod: Code added for Econet: --------------------->
 
- EQUS "*DIR E"
+ EQUS "DIR"
  EQUB 13
 
                         \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: MESS3
+\       Type: Variable
+\   Category: Loader
+\    Summary: The OS command string for changing the disc directory to
+\             EliteCmdrs
+\
+\ ******************************************************************************
+
+.MESS3
+
+                        \ --- Mod: Code added for Econet: --------------------->
+
+ EQUS "DIR EliteCmdrs"  \ Change to the EliteCmdrs folder in the user's main
+ EQUB 13                \ directory on the network
+
+                        \ --- End of added code ------------------------------->
+
 
  SKIP 13                \ These bytes appear to be unused
 

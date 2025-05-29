@@ -5617,9 +5617,19 @@ ENDIF
                         \ bit by setting XC = 1, and we then fall through into
                         \ the line feed routine that's used by control code 10
 
+                        \ --- Mod: Code removed for Econet: ------------------->
+
+\CMP #13                \ If this is control code 13 (carriage return) then jump
+\BEQ RR4                \ RR4 to restore the registers and return from the
+\                       \ subroutine
+
+                        \ --- And replaced by: -------------------------------->
+
  CMP #13                \ If this is control code 13 (carriage return) then jump
- BEQ RR4                \ RR4 to restore the registers and return from the
+ BEQ RR4S               \ RR4 to restore the registers and return from the
                         \ subroutine
+
+                        \ --- End of replacement ------------------------------>
 
 .RRX1
 
@@ -5627,9 +5637,20 @@ ENDIF
                         \ number (y-coordinate) of the text cursor, which is
                         \ stored in YC
 
- BNE RR4                \ Jump to RR4 to restore the registers and return from
-                        \ the subroutine (this BNE is effectively a JMP as Y
-                        \ will never be zero)
+                        \ --- Mod: Code removed for Econet: ------------------->
+
+\BNE RR4                \ Jump to RR4 to restore the registers and return from
+\                       \ the subroutine (this BNE is effectively a JMP as Y
+\                       \ will never be zero)
+
+                        \ --- And replaced by: -------------------------------->
+
+.RR4S
+
+ JMP RR4                \ Jump to RR4 to restore the registers and return from
+                        \ the subroutine using a tail call
+
+                        \ --- End of replacement ------------------------------>
 
 .RR1
 
@@ -5731,16 +5752,24 @@ ENDIF
  LDA #128               \ Set SC = 128 for use in the calculation below
  STA SC
 
- LDA YC                 \ If YC < 24 then we are in the top part of the screen,
- CMP #24                \ so skip the following two instructions
- BCC P%+8
+                        \ --- Mod: Code removed for Econet: ------------------->
 
- JSR TTX66              \ We are off the bottom of the screen, so we don't want
-                        \ to print anything, so first clear the screen and draw
-                        \ a border box
+\LDA YC                 \ If YC < 24 then we are in the top part of the screen,
+\CMP #24                \ so skip the following two instructions
+\BCC P%+8
+\
+\JSR TTX66              \ We are off the bottom of the screen, so we don't want
+\                       \ to print anything, so first clear the screen and draw
+\                       \ a border box
+\
+\JMP RR4                \ Jump to RR4 to restore the registers and return from
+\                       \ the subroutine
 
- JMP RR4                \ Jump to RR4 to restore the registers and return from
-                        \ the subroutine
+                        \ --- And replaced by: -------------------------------->
+
+ LDA YC                 \ Fetch YC, the y-coordinate (row) of the text cursor
+
+                        \ --- End of replacement ------------------------------>
 
                         \ The text row is on-screen, so now to calculate the
                         \ screen address we need to write to, as follows:
@@ -5769,23 +5798,47 @@ ENDIF
  LDX CATF               \ If CATF = 0, jump to RR5, otherwise we are printing a
  BEQ RR5                \ disc catalogue
 
- CPY #' '               \ If the character we want to print in Y is a space,
- BNE RR5                \ jump to RR5
+                        \ --- Mod: Code removed for Econet: ------------------->
+
+\CPY #' '               \ If the character we want to print in Y is a space,
+\BNE RR5                \ jump to RR5
+\
+\                       \ If we get here, then CATF is non-zero, so we are
+\                       \ printing a disc catalogue and we are not printing a
+\                       \ space, so we drop column 17 from the output so the
+\                       \ catalogue will fit on-screen (column 17 is a blank
+\                       \ column in the middle of the catalogue, between the
+\                       \ two lists of filenames, so it can be dropped without
+\                       \ affecting the layout). Without this, the catalogue
+\                       \ would be one character too wide for the square screen
+\                       \ mode (it's 34 characters wide, while the screen mode
+\                       \ is only 33 characters across)
+\
+\CMP #17                \ If A = 17, i.e. the text cursor is in column 17, jump
+\BEQ RR4                \ to RR4 to restore the registers and return from the
+\                       \ subroutine, thus omitting this column
+
+                        \ --- And replaced by: -------------------------------->
+
+ CMP #21                \ If A < 21, i.e. the text cursor is in column 0-20,
+ BCC RR5                \ jump to RR5 to skip the following
 
                         \ If we get here, then CATF is non-zero, so we are
-                        \ printing a disc catalogue and we are not printing a
-                        \ space, so we drop column 17 from the output so the
-                        \ catalogue will fit on-screen (column 17 is a blank
-                        \ column in the middle of the catalogue, between the
-                        \ two lists of filenames, so it can be dropped without
-                        \ affecting the layout). Without this, the catalogue
-                        \ would be one character too wide for the square screen
-                        \ mode (it's 34 characters wide, while the screen mode
-                        \ is only 33 characters across)
+                        \ printing a disc catalogue and we have reached column
+                        \ 21, so we move to the start of the next line so the
+                        \ catalogue line-wraps to fit within the bounds of the
+                        \ screen
 
- CMP #17                \ If A = 17, i.e. the text cursor is in column 17, jump
- BEQ RR4                \ to RR4 to restore the registers and return from the
-                        \ subroutine, thus omitting this column
+ INC YC                 \ More the text cursor down a line
+
+ LDA #1                 \ Move the text cursor to column 1
+ STA XC
+
+ LDA K3                 \ Set A to the character to be printed
+
+ JMP RRNEW              \ Jump back to RRNEW to print the character
+
+                        \ --- End of replacement ------------------------------>
 
 .RR5
 
@@ -5842,10 +5895,61 @@ ENDIF
                         \ the cursor so it's in the right position following
                         \ the print
 
- EQUB &2C               \ Skip the next instruction by turning it into
-                        \ &2C &85 &08, or BIT &0885, which does nothing apart
-                        \ from affect the flags. We skip the instruction as we
-                        \ already set the value of SC+1 above
+                        \ --- Mod: Code removed for extended text tokens: ----->
+
+\EQUB &2C               \ Skip the next instruction by turning it into
+\                       \ &2C &85 &08, or BIT &0885, which does nothing apart
+\                       \ from affect the flags. We skip the instruction as we
+\                       \ already set the value of SC+1 above
+\
+\.RR3
+\
+\                       \ A contains the value of YC - the screen row where we
+\                       \ want to print this character - so now we need to
+\                       \ convert this into a screen address, so we can poke
+\                       \ the character data to the right place in screen
+\                       \ memory
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDA YC
+ CMP #24                \ If the text cursor is on the screen (i.e. YC < 24, so
+ BCC RREN+2                \ we are on rows 0-23), then jump to RR3 to print the
+                        \ character
+
+ PHA                    \ Store A on the stack so we can retrieve it below
+
+                        \ --- Mod: Code added for Econet: --------------------->
+
+ LDA CATF               \ If CATF = 0, skip the next few instructions, as we are
+ BEQ skipReturn         \ not printing a disc catalogue
+
+ LDX #&49               \ Set C to the internal key number for RETURN
+
+.checkReturn
+
+ JSR DKS4               \ Call DKS4 to check whether the key in X is being
+                        \ pressed, and if it is, set bit 7 of A
+
+ TAX                    \ We have just printed the disc catalogue, so wait until
+ BPL checkReturn        \ RETURN is pressed, looping indefinitely until it gets
+                        \ tapped
+
+.skipReturn
+                        \ --- End of added code ------------------------------->
+
+ JSR TTX66              \ Otherwise we are off the bottom of the screen, so
+                        \ clear the screen and draw a white border
+
+ PLA                    \ Retrieve A from the stack... only to overwrite it with
+                        \ the next instruction, so presumably we didn't need to
+                        \ preserve it and this and the PHA above have no effect
+
+ LDA K3                 \ Set A to the character to be printed
+
+ JMP RRNEW              \ Jump back to RRNEW to print the character
+
+                        \ --- End of replacement ------------------------------>
 
 .RR3
 
@@ -6749,6 +6853,13 @@ ENDIF
 \ ******************************************************************************
 
 .LAUN
+
+                        \ --- Mod: Code added for Scoreboard: ----------------->
+
+ JSR TransmitCmdrData   \ Transmit commander data to the scoreboard machine, if
+                        \ configured
+
+                        \ --- End of added code ------------------------------->
 
  LDA #48                \ Call the NOISE routine with A = 48 to make the sound
  JSR NOISE              \ of the ship launching from the station
@@ -12334,6 +12445,31 @@ ENDIF
 
 .TT113
 
+                        \ --- Mod: Code added for Scoreboard: ----------------->
+
+                        \ If we get here then either the transaction was an
+                        \ MCASH and the C flag is clear, or it was a successful
+                        \ LCASH and the C flag is set
+
+ TXA                    \ If both X and Y are zero, jump to cash2 to skip the
+ BNE cash1              \ transmission of data, as our credit balance will not
+ TYA                    \ have changed
+ BEQ cash2
+
+.cash1
+
+ PHP                    \ Store the flags on the stack so we can return them
+                        \ from the subroutine
+
+ JSR TransmitCmdrData   \ Transmit commander data to the scoreboard machine, if
+                        \ configured
+
+ PLP                    \ Restore the flags
+
+.cash2
+
+                        \ --- End of added code ------------------------------->
+
  RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
@@ -16389,10 +16525,21 @@ ENDIF
                         \ error that needs to be printed out on the title screen
                         \ by the TITLE routine
 
- BNE BR1                \ If brkd is non-zero then it must be &FF, which
-                        \ indicates that where is a system error that we need to
+                        \ --- Mod: Code removed for Scoreboard: --------------->
+
+\BNE BR1                \ If brkd is non-zero then it must be &FF, which
+\                       \ indicates that where is a system error that we need to
+\                       \ print, so jump to BR1 to restart the game and fall
+\                       \ through into the TITLE routine to print the error
+
+                        \ --- And replaced by: -------------------------------->
+
+ BEQ P%+5               \ If brkd is non-zero then it must be &FF, which
+ JMP BR1                \ indicates that where is a system error that we need to
                         \ print, so jump to BR1 to restart the game and fall
                         \ through into the TITLE routine to print the error
+
+                        \ --- End of replacement ------------------------------>
 
  JMP DEATH2             \ Jump to DEATH2 to restart the game
 
@@ -16541,6 +16688,15 @@ ENDIF
                         \ and fall through into the entry code for the game
                         \ to restart from the title screen
 
+                        \ --- Mod: Code added for Scoreboard: ----------------->
+
+ INC netDeaths          \ Increment the death count
+
+ JSR TransmitCmdrData   \ Transmit commander data to the scoreboard machine, if
+                        \ configured
+
+                        \ --- End of added code ------------------------------->
+
 \ ******************************************************************************
 \
 \       Name: TT170
@@ -16569,6 +16725,13 @@ ENDIF
                         \ because the loader code in elite-loader.asm pushes
                         \ code onto the stack, and this effectively removes that
                         \ code so we start afresh
+
+                        \ --- Mod: Code added for Scoreboard: ----------------->
+
+ STX netDeaths          \ Set the death count to -1 so it gets incremented to
+                        \ zero in DEATH2
+
+                        \ --- End of added code ------------------------------->
 
                         \ Fall through into BR1 to start the game
 
@@ -17502,8 +17665,17 @@ ENDIF
 
 .CTLI
 
- EQUS ".0"              \ The "0" part of the string is overwritten with the
- EQUB 13                \ actual drive number by the CATS routine
+                        \ --- Mod: Code removed for Econet: ------------------->
+
+\EQUS ".0"              \ The "0" part of the string is overwritten with the
+\EQUB 13                \ actual drive number by the CATS routine
+
+                        \ --- And replaced by: -------------------------------->
+
+ EQUS "."               \ The "0" part of the string has been removed
+ EQUB 13                \
+
+                        \ --- End of replacement ------------------------------>
 
                         \ --- End of added code ------------------------------->
 
@@ -17520,8 +17692,17 @@ ENDIF
 
 .DELI
 
- EQUS "DE.:0.E.1234567" \ Short for "*DELETE :0.E.1234567"
+                        \ --- Mod: Code removed for Econet: ------------------->
+
+\EQUS "DE.:0.E.1234567" \ Short for "*DELETE :0.E.1234567"
+\EQUB 13
+
+                        \ --- And replaced by: -------------------------------->
+
+ EQUS "DEL.  E.1234567"
  EQUB 13
+
+                        \ --- End of replacement ------------------------------>
 
                         \ --- End of added code ------------------------------->
 
@@ -17552,22 +17733,26 @@ ENDIF
 
 .CATS
 
- JSR GTDRV              \ Get an ASCII disc drive number from the keyboard in A,
-                        \ setting the C flag if an invalid drive number was
-                        \ entered
+                        \ --- Mod: Code removed for Econet: ------------------->
 
- BCS DELT-1             \ If the C flag is set, then an invalid drive number was
-                        \ entered, so return from the subroutine (as DELT-1
-                        \ contains an RTS)
+\JSR GTDRV              \ Get an ASCII disc drive number from the keyboard in A,
+\                       \ setting the C flag if an invalid drive number was
+\                       \ entered
+\
+\BCS DELT-1             \ If the C flag is set, then an invalid drive number was
+\                       \ entered, so return from the subroutine (as DELT-1
+\                       \ contains an RTS)
+\
+\STA CTLI+1             \ Store the drive number in the second byte of the
+\                       \ command string at CTLI, so it overwrites the "0" in
+\                       \ ".0" with the drive number to catalogue
+\
+\STA DTW7               \ Store the drive number in DTW7, so printing extended
+\                       \ token 4 will show the correct drive number (as token 4
+\                       \ contains the {drive number} jump code, which calls
+\                       \ MT16 to print the character in DTW7)
 
- STA CTLI+1             \ Store the drive number in the second byte of the
-                        \ command string at CTLI, so it overwrites the "0" in
-                        \ ".0" with the drive number to catalogue
-
- STA DTW7               \ Store the drive number in DTW7, so printing extended
-                        \ token 4 will show the correct drive number (as token 4
-                        \ contains the {drive number} jump code, which calls
-                        \ MT16 to print the character in DTW7)
+                        \ --- End of removed code ----------------------------->
 
  LDA #4                 \ Print extended token 4, which clears the screen and
  JSR DETOK              \ prints the boxed-out title "DRIVE {drive number}
@@ -17626,14 +17811,18 @@ ENDIF
                         \ name on the Master Compact) and catalogue that disc
                         \ or directory
 
- BCS SVE                \ If the C flag is set then an invalid drive number was
-                        \ entered as part of the catalogue process, so jump to
-                        \ SVE to display the disc access menu
+                        \ --- Mod: Code removed for Econet: ------------------->
 
- LDA CTLI+1             \ The call to CATS above put the drive number into
- STA DELI+4             \ CTLI+1, so copy the drive number into DELI+4 so that
-                        \ the drive number in the "DE.:0.E.1234567" string
-                        \ gets updated (i.e. the number after the colon)
+\BCS SVE                \ If the C flag is set then an invalid drive number was
+\                       \ entered as part of the catalogue process, so jump to
+\                       \ SVE to display the disc access menu
+\
+\LDA CTLI+1             \ The call to CATS above put the drive number into
+\STA DELI+7             \ CTLI+1, so copy the drive number into DELI+7 so that
+\                       \ the drive number in the "DELETE:0.E.1234567" string
+\                       \ gets updated (i.e. the number after the colon)
+
+                        \ --- End of removed code ----------------------------->
 
  LDA #9                 \ Print extended token 9 ("{clear bottom of screen}FILE
  JSR DETOK              \ TO DELETE?")
@@ -17947,7 +18136,8 @@ ENDIF
                         \ the ASCII code in A and X
 
  CMP #'1'               \ If A < ASCII "1", jump to SVEX to exit as the key
- BCC SVEX               \ press doesn't match a menu option
+ BCS P%+5               \ press doesn't match a menu option
+ JMP SVEX
 
  CMP #'4'               \ If "4" was pressed, jump to DELT to process option 4
  BEQ DELT               \ (delete a file)
@@ -18064,6 +18254,17 @@ ENDIF
                         \
                         \ Y is left containing &C which we use below
 
+                        \ --- Mod: Code added for Scoreboard: ----------------->
+
+ LDA netTally           \ Store the scoreboard scores in the last three bytes of
+ STA &0B00+253          \ the buffer so they get saved
+ LDA netTally+1
+ STA &0B00+254
+ LDA netDeaths
+ STA &0B00+255
+
+                        \ --- End of added code ------------------------------->
+
  LDA #0                 \ Call QUS1 with A = 0, Y = &A to save the commander
  JSR QUS1               \ file with the filename we copied to INWK at the start
                         \ of this routine
@@ -18134,24 +18335,38 @@ ENDIF
 
                         \ --- And replaced by: -------------------------------->
 
- PHA                    \ Store A on the stack so we can restore it after the
-                        \ call to GTDRV
+                        \ --- Mod: Code removed for Econet: ------------------->
 
- JSR GTDRV              \ Get an ASCII disc drive number from the keyboard in A,
-                        \ setting the C flag if an invalid drive number was
-                        \ entered
+\PHA                    \ Store A on the stack so we can restore it after the
+\                       \ call to GTDRV
+\
+\JSR GTDRV              \ Get an ASCII disc drive number from the keyboard in A,
+\                       \ setting the C flag if an invalid drive number was
+\                       \ entered
+\
+\STA INWK+1             \ Store the ASCII drive number in INWK+1, which is the
+\                       \ drive character of the filename string ":0.E."
+\
+\PLA                    \ Restore A from the stack
+\
+\BCS QUR                \ If the C flag is set, then an invalid drive number was
+\                       \ entered, so jump to QUR to return from the subroutine
 
- STA INWK+1             \ Store the ASCII drive number in INWK+1, which is the
-                        \ drive character of the filename string ":0.E."
+                        \ --- Mod: Code removed for Econet: ------------------->
 
- PLA                    \ Restore A from the stack
+\LDX #INWK              \ Store a pointer to INWK at the start of the block at
+\STX &0C00              \ &0C00, storing #INWK in the low byte because INWK is
+\                       \ in zero page
 
- BCS QUR                \ If the C flag is set, then an invalid drive number was
-                        \ entered, so jump to QUR to return from the subroutine
+                        \ --- And replaced by: -------------------------------->
 
- LDX #INWK              \ Store a pointer to INWK at the start of the block at
+ LDX #INWK+5            \ Store a pointer to INWK at the start of the block at
  STX &0C00              \ &0C00, storing #INWK in the low byte because INWK is
                         \ in zero page
+
+ LDX #0                 \ Set the low byte of  (Y X) = &0C00
+
+                        \ --- End of replacement ------------------------------>
 
  LDY #&C                \ Set the top byte of (Y X) = &0C00
 
@@ -18327,6 +18542,20 @@ ENDIF
 
 .LOR
 
+                        \ --- Mod: Code added for Scoreboard: ----------------->
+
+ LDA &0B00+253          \ Restore the scoreboard scores from the last three
+ STA netTally           \ bytes of the loaded file
+ LDA &0B00+254
+ STA netTally+1
+ LDA &0B00+255
+ STA netDeaths
+
+ LDA #0                 \ Zero scorePort to stop transmissions to the scoreboard
+ STA scorePort
+
+                        \ --- End of added code ------------------------------->
+
  SEC                    \ Set the C flag
 
  RTS                    \ Return from the subroutine
@@ -18500,14 +18729,37 @@ ENDIF
 
  INC TALLY              \ Increment the low byte of the kill count in TALLY
 
- BNE EXNO-2             \ If there is no carry, jump to the LDX #7 below (at
-                        \ EXNO-2)
+                        \ --- Mod: Code removed for Scoreboard: --------------->
+
+\BNE EXNO-2             \ If there is no carry, jump to the LDX #7 below (at
+\                       \ EXNO-2)
+
+                        \ --- And replaced by: -------------------------------->
+
+ BNE davidscockup       \ If there is no carry, jump to davidscockup
+
+                        \ --- End of replacement ------------------------------>
 
  INC TALLY+1            \ Increment the high byte of the kill count in TALLY
 
  LDA #101               \ The kill total is a multiple of 256, so it's time
  JSR MESS               \ for a pat on the back, so print recursive token 101
                         \ ("RIGHT ON COMMANDER!") as an in-flight message
+
+                        \ --- Mod: Code added for Scoreboard: ----------------->
+
+.davidscockup
+
+ INC netTally           \ Increment the kill count in netTally(1 0)
+ BNE taly1
+ INC netTally+1
+
+.taly1
+
+ JSR TransmitCmdrData   \ Transmit commander data to the scoreboard machine, if
+                        \ configured
+
+                        \ --- End of added code ------------------------------->
 
  LDX #7                 \ Set X = 7 and fall through into EXNO to make the
                         \ sound of a ship exploding
@@ -19231,6 +19483,19 @@ ENDIF
  JSR RDKEY              \ Scan the keyboard for a key press and return the
                         \ internal key number in A and X (or 0 for no key press)
 
+                        \ --- Mod: Code added for Scoreboard: ----------------->
+
+ CPX #&55               \ If "N" is not being pressed, skip to skipNetwork
+ BNE skipNetwork
+
+ JMP GetNetworkDetails  \ Get the network and station numbers for the scoreboard
+                        \ server, returning from the subroutine using a tail
+                        \ call
+
+.skipNetwork
+
+                        \ --- End of added code ------------------------------->
+
  CPX #&51               \ If "S" is not being pressed, skip to DK6
  BNE DK6
 
@@ -19267,8 +19532,19 @@ ENDIF
 
 .DK7
 
- CPX #&70               \ If ESCAPE is not being pressed, skip over the next
- BNE P%+5               \ instruction
+                        \ --- Mod: Code removed for Scoreboard: --------------->
+
+\CPX #&70               \ If ESCAPE is not being pressed, skip over the next
+\BNE P%+5               \ instruction
+
+                        \ --- And replaced by: -------------------------------->
+
+ CPX #&70               \ If ESCAPE is not being pressed, skip over the next two
+ BNE P%+8               \ instructions
+
+ INC netDeaths          \ Increment the death count
+
+                        \ --- End of replacement ------------------------------>
 
  JMP DEATH2             \ ESCAPE is being pressed, so jump to DEATH2 to end
                         \ the game
@@ -21423,14 +21699,29 @@ ENDMACRO
  ECHR ':'
  EQUB VE
 
+                        \ --- Mod: Code removed for Econet: ------------------->
+
+\ETOK 150               \ Token 4:      "{clear screen}
+\ETOK 151               \                {draw box around title}
+\ECHR ' '               \                {all caps}
+\EJMP 16                \                {tab 6}DRIVE {drive number} CATALOGUE
+\ETOK 152               \                {crlf}
+\ETWO '-', '-'          \               "
+\EQUB VE                \
+\                       \ Encoded as:   "[150][151] {16}[152]<215>"
+
+                        \ --- And replaced by: -------------------------------->
+
  ETOK 150               \ Token 4:      "{clear screen}
- ETOK 151               \                {draw box around title}
+ ECHR ' '               \                {draw box around title}
  ECHR ' '               \                {all caps}
- EJMP 16                \                {tab 6}DRIVE {drive number} CATALOGUE
+ ECHR ' '               \                {tab 6}   CATALOGUE
  ETOK 152               \                {crlf}
  ETWO '-', '-'          \               "
  EQUB VE                \
-                        \ Encoded as:   "[150][151] {16}[152]<215>"
+                        \ Encoded as:   "[150]   [152]<215>"
+
+                        \ --- End of replacement ------------------------------>
 
  ETOK 176               \ Token 5:      "{lower case}
  ERND 18                \                {justify}
@@ -21483,7 +21774,15 @@ ENDMACRO
  ETOK 200
  EQUB VE
 
- EJMP 21                \ Token 9:      "{clear bottom of screen}
+                        \ --- Mod: Code removed for Econet: ------------------->
+
+\EJMP 21                \ Token 9:      "{clear bottom of screen}
+
+                        \ --- And replaced by: -------------------------------->
+
+ EJMP 19                \ Token 9:      "{single cap}
+
+                        \ --- End of replacement ------------------------------>
  ECHR 'F'               \                FILE TO DELETE?"
  ECHR 'I'               \
  ETWO 'L', 'E'          \ Encoded as:   "{21}FI<229>[201]DEL<221>E?"
@@ -26529,6 +26828,628 @@ ENDMACRO
  FACE       19,       51,       15,         31      \ Face 1
  FACE       19,      -51,       15,         31      \ Face 2
  FACE      -56,        0,        0,         31      \ Face 3
+
+\ ******************************************************************************
+\
+\       Name: Econet variables
+\       Type: Workspace
+\   Category: Econet
+\    Summary: Variables used in Elite over Econet
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for Scoreboard: ----------------->
+
+.scorePort
+
+ SKIP 1                 \ The Econet port on which to talk to the scoreboard
+                        \ machine
+                        \
+                        \ If this is zero, the network is disabled and no
+                        \ commander data is transmitted
+
+.scoreStation
+
+ SKIP 1                 \ The Econet station number of the scoreboard machine
+
+.scoreNetwork
+
+ SKIP 1                 \ The Econet network number of the scoreboard machine
+
+.netTally
+
+ SKIP 2                 \ Stores a one-point-per-kill combat score for the
+                        \ scoreboard (so all platforms have the same point
+                        \ system)
+
+.netDeaths
+
+ SKIP 1                 \ Counts the number of deaths
+
+.oswordBlock
+
+ SKIP 12                \ The OSWORD block to use for network calls
+
+.transmitBuffer
+
+ SKIP 20                \ A buffer to hold the data we want to transmit to the
+                        \ scoreboard machine in the format:
+                        \
+                        \   * Bytes #0-7 = commander's name, terminated by a
+                        \                  carriage return
+                        \
+                        \   * Byte #8 = commander's legal status
+                        \               0 = clean, 1 = offender, 2 = fugitive
+                        \
+                        \   * Byte #9 = commander's status condition
+                        \               0 = docked, 1 = green
+                        \               2 = yellow, 3 = red
+                        \
+                        \   * Byte #10 = commander's kill count (low byte)
+                        \
+                        \   * Byte #11 = commander's death count
+                        \
+                        \   * Bytes #12-15 = commander's credits
+                        \
+                        \   * Byte #16 = machine type
+                        \                0 = BBC Micro SRAM, 1 = Master,
+                        \                2 = 6502SP, 3 = BBC Micro standard
+                        \                4 = Electron
+                        \
+                        \   * Byte #17 = reserved for the forwarding station
+                        \                number, for when packets are forwarded
+                        \
+                        \   * Byte #18 = reserved for the forwarding network
+                        \                number, for when packets are forwarded
+                        \
+                        \   * Byte #19 = commander's kill count (high byte)
+                        \
+                        \ Credits are transmitted with the low byte first
+                        \ (unlike the way that credits are stored in the game)
+
+.endBuffer
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: SendOverEconet
+\       Type: Subroutine
+\   Category: Econet
+\    Summary: Send data over the Econet
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for Scoreboard: ----------------->
+
+.SendOverEconet
+
+ LDX #LO(oswordBlock)   \ Set (Y X) to the address of the OSWORD parameter block
+ LDY #HI(oswordBlock)
+
+ JSR OSWORD             \ Call OSWORD with the command number from the stack
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: PrintToken
+\       Type: Subroutine
+\   Category: Text
+\    Summary: Print an extended recursive token from the EconetToken table
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   The recursive token to be printed, in the range 0-255
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   A                   A is preserved
+\
+\   Y                   Y is preserved
+\
+\   V(1 0)              V(1 0) is preserved
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for Scoreboard: ----------------->
+
+.PrintToken
+
+ PHA                    \ Store A on the stack, so we can retrieve it later
+
+ TAX                    \ Copy the token number from A into X
+
+ TYA                    \ Store Y on the stack
+ PHA
+
+ LDA V                  \ Store V(1 0) on the stack
+ PHA
+ LDA V+1
+ PHA
+
+ JSR MT19               \ Call MT19 to capitalise the next letter (i.e. set
+                        \ Sentence Case for this word only)
+
+ LDA #LO(EconetToken)   \ Set V to the low byte of EconetToken
+ STA V
+
+ LDA #HI(EconetToken)   \ Set A to the high byte of EconetToken
+
+ JMP DTEN               \ Call DTEN to print token number X from the
+                        \ UniverseToken table and restore the values of A, Y and
+                        \ V(1 0) from the stack, returning from the subroutine
+                        \ using a tail call
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: TransmitCmdrData
+\       Type: Subroutine
+\   Category: Econet
+\    Summary: Fill the transmit buffer with the commander data that we want to
+\             transmit to the scoreboard machine, and then transmit it
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for Scoreboard: ----------------->
+
+.TransmitCmdrData
+
+ PHP                    \ Store the flags on the stack
+
+ LDA scorePort          \ If the network is configured then the port will be
+ BNE tran1              \ non-zero, so skip the following to move on to the
+                        \ data transmission
+
+ PLP                    \ Retrieve the flags from the stack
+
+ RTS                    \ Return from the subroutine
+
+.tran1
+                        \ Copy the commander's name from NA% to transmitBuffer+0
+                        \ to transmitBuffer+7
+
+ LDX #7                 \ The commander's name can contain a maximum of 7
+                        \ characters, and is terminated by a carriage return,
+                        \ so set up a counter in X to copy 8 characters from
+                        \ NA% to dataToTransmit
+
+.trcm1
+
+ LDA NA%,X              \ Copy the X-th byte of NA% to the X-th byte of
+ STA transmitBuffer,X   \ transmitBuffer
+
+ DEX                    \ Decrement the loop counter
+
+ BPL trcm1              \ Loop back until we have copied all eight bytes
+
+ LDA FIST               \ Fetch the commander's legal status from FIST
+
+ BEQ trcm2              \ If A = 0 then we are clean, so jump to trcm2 to
+                        \ store this value
+
+ CMP #50                \ Set the C flag if A >= 50, so C is set if we have
+                        \ a legal status of 50+ (i.e. we are a fugitive)
+
+ LDA #0                 \ Set A = 1 + C, so if C is not set (i.e. we have a
+ ADC #1                 \ legal status between 1 and 49) then A is set to 1,
+                        \ and if C is set (i.e. we have a legal status of 50+)
+                        \ then A is set to 2
+
+.trcm2
+
+ STA transmitBuffer+8   \ Store the commander's legal status in transmitBuffer+8
+
+ LDX #0                 \ Set X to condition docked (0)
+
+ LDY QQ12               \ Fetch the docked status from QQ12, and if we are
+ BNE trcm3              \ docked, jump to wearedocked
+
+ INX                    \ Set X to condition green (1)
+
+ LDY MANY+AST           \ Set Y to the number of asteroids in our local bubble
+                        \ of universe
+
+ LDA FRIN+2,Y           \ The ship slots at FRIN are ordered with the first two
+                        \ slots reserved for the planet and sun/space station,
+                        \ and then any ships, so if the slot at FRIN+2+Y is not
+                        \ empty (i.e. is non-zero), then that means the number
+                        \ of non-asteroids in the vicinity is at least 1
+
+ BEQ trcm3              \ So if X = 0, there are no ships in the vicinity, so
+                        \ jump to trcm3 to set the ship's condition to green
+
+ INX                    \ Set X to condition yellow (2)
+
+ LDY ENERGY             \ Otherwise we have ships in the vicinity, so we load
+                        \ our energy levels into Y
+
+ CPY #128               \ If energy levels >= 128, jump to trcm3
+ BCS trcm3
+
+ INX                    \ Set X to condition red (3)
+
+.trcm3
+
+ STX transmitBuffer+9   \ Store the commander's condition in transmitBuffer+9
+
+ LDA netTally           \ Copy the commander's combat score from netTally(1 0)
+ STA transmitBuffer+10  \ to transmitBuffer(19 10)
+ LDA netTally+1
+ STA transmitBuffer+19
+
+ LDA netDeaths          \ Copy the commander's death count from netDeaths to
+ STA transmitBuffer+11  \ transmitBuffer+11
+
+ LDA CASH               \ Copy the cash levels from CASH(0 1 2 3) to
+ STA transmitBuffer+15  \ transmitBuffer(15 14 13 12)
+ LDA CASH+1
+ STA transmitBuffer+14
+ LDA CASH+2
+ STA transmitBuffer+13
+ LDA CASH+3
+ STA transmitBuffer+12
+
+ LDA #4                 \ Set machine type to 4 (Electron)
+ STA transmitBuffer+16
+
+                        \ Fall through into TransmitData to transmit the data
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: TransmitData
+\       Type: Subroutine
+\   Category: Econet
+\    Summary: Send the commander data to the scoreboard machine
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for Scoreboard: ----------------->
+
+.TransmitData
+
+ LDA #&80               \ Set the control byte in byte #0 of the parameter block
+ STA oswordBlock
+
+ LDA scorePort          \ Set the port number in byte #1 of the parameter block
+ STA oswordBlock+1
+
+ LDA scoreStation       \ Copy the scoreboard machine's Econet station number
+ STA oswordBlock+2      \ from scoreStation to byte #2 of the parameter block
+
+ LDA scoreNetwork       \ Copy the scoreboard machine's Econet network number
+ STA oswordBlock+3      \ from scoreNetwork to byte #3 of the parameter block
+
+ LDA #LO(transmitBuffer)    \ Put the address of the transmit buffer into bytes
+ STA oswordBlock+4          \ #4-7 of the parameter block
+ LDA #HI(transmitBuffer)
+ STA oswordBlock+5
+ LDA #0
+ STA oswordBlock+6
+ STA oswordBlock+7
+
+ STA oswordBlock+10     \ Put the end address of the transmit buffer into bytes
+ STA oswordBlock+11     \ #8-11 of the parameter block
+ LDA #LO(endBuffer)
+ STA oswordBlock+8
+ LDA #HI(endBuffer)
+ STA oswordBlock+9
+
+ LDA #16                \ Call OSWORD with A = 16 to transmit the contents of
+ JSR SendOverEconet     \ the transmit buffer to the scoreboard machine
+
+ PLP                    \ Retrieve the flags from the stack
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: GetNetworkDetails
+\       Type: Subroutine
+\   Category: Econet
+\    Summary: Edit the scoreboard machine's network, station and port numbers,
+\             in that order
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for Scoreboard: ----------------->
+
+.GetNetworkDetails
+
+ LDA #8                 \ Clear the top part of the screen, draw a border box,
+ JSR TT66               \ and set the current view type in QQ11 to 8 (Status
+                        \ Mode screen)
+
+ LDA #10                \ Move the text cursor to column 10
+ STA XC
+
+ LDA #5                 \ Print extended token 5 ("NETWORK")
+ JSR PrintToken
+
+ LDA #4                 \ Print extended token 4 (" MENU{crlf}{crlf}")
+ JSR PrintToken
+
+ JSR NLIN4              \ Draw a horizontal line at pixel row 19 to box in the
+                        \ title, and move the text cursor down one line
+
+ LDY #&FF               \ Set maximum number for gnum to 255
+ STY QQ25
+
+ LDA #&60               \ Modify gnum so that errors return rather than jumping
+ STA BAY2               \ to the inventory screen
+
+ LDA #5                 \ Print extended token 5 ("NETWORK")
+ JSR PrintToken
+
+ LDA #3                 \ Print extended token 3 (" NUMBER   ")
+ JSR PrintToken
+
+ LDX scoreNetwork       \ Get the current scoreboard network number from
+                        \ scoreNetwork
+
+ JSR GetNumber          \ Print the number in X to 4 digits, followed by a
+                        \ question mark, and wait for a number to be entered,
+                        \ returning the result in A
+
+ BEQ gnet1              \ If no number was entered, skip the following
+                        \ instruction
+
+ STA scoreNetwork       \ Store the network number in scoreNetwork
+
+.gnet1
+
+ JSR TT67               \ Print two newlines
+ JSR TT67
+
+ LDA #1                 \ Print extended token 5 ("STATION")
+ JSR PrintToken
+
+ LDA #3                 \ Print extended token 3 (" NUMBER   ")
+ JSR PrintToken
+
+ LDX scoreStation       \ Get the current scoreboard station number from the low
+                        \ byte of scoreStation
+
+ JSR GetNumber          \ Print the number in X to 4 digits, followed by a
+                        \ question mark, and wait for a number to be entered,
+                        \ returning the result in A
+
+ BEQ gnet2              \ If no number was entered, skip the following
+                        \ instruction
+
+ STA scoreStation       \ Store the station number in the low byte of
+                        \ scoreStation
+
+.gnet2
+
+ JSR TT67               \ Print two newlines
+ JSR TT67
+
+ LDA #2                 \ Print extended token 2 ("PORT")
+ JSR PrintToken
+
+ LDA #3                 \ Print extended token 3 (" NUMBER   ")
+ JSR PrintToken
+
+ LDA #7                 \ Print extended token 7 ("   ")
+ JSR PrintToken
+
+ LDX scorePort          \ Get the current scoreboard port number from scorePort
+
+ JSR GetNumber          \ Print the number in X to 4 digits, followed by a
+                        \ question mark, and wait for a number to be entered,
+                        \ returning the result in A
+
+ BEQ gnet3              \ If no number was entered, skip the following
+                        \ instruction
+
+ STA scorePort          \ Store the port number in scorePort
+
+.gnet3
+
+ JSR TT67               \ Print two newlines
+ JSR TT67
+
+ LDA #8                 \ Print extended token 8 ("RESET SCORES ")
+ JSR PrintToken
+
+ LDX netTally           \ Get the current combat score from netTally(1 0)
+ LDY netTally+1
+
+ LDA #4                 \ Call TT11 to print the score in (Y X) as a 4-digit
+ CLC                    \ number without a decimal point (by clearing the C
+ JSR TT11               \ flag)
+
+ JSR TT162              \ Print a space
+
+ LDX netDeaths          \ Get the current death count from netDeaths
+
+ CLC                    \ Call pr2 to print the death count as a 3-digit
+ JSR pr2                \ number without a decimal point (by clearing the C
+                        \ flag)
+
+ LDA #9                 \ Print extended token 9 ("  ")
+ JSR PrintToken
+
+ JSR TT214+3            \ Ask a question with a "Y/N?" prompt
+
+ BCC gnet4              \ If the answer was not "yes", jump to gnet4
+
+ LDA #0                 \ The answer was yes, so reset the combat score and
+ STA netTally           \ death count
+ STA netTally+1
+ STA netDeaths
+
+ STA CASH               \ And set the credit level to 100 Cr
+ STA CASH+1
+ LDA #&03
+ STA CASH+2
+ LDA #&E8
+ STA CASH+3
+
+.gnet4
+
+ LDA #&A9               \ Revert the modification to gnum
+ STA BAY2
+
+ JSR TransmitCmdrData   \ Fill the transmit buffer with the commander data that
+                        \ we want to transmit to the scoreboard machine, and
+                        \ then transmit it
+
+ JSR TT67               \ Print two newlines
+ JSR TT67
+
+ LDA #6                 \ Print extended token 6 ("{all caps}OK")
+ JSR PrintToken
+
+ LDY #100               \ Wait for 100/50 of a second (2 seconds)
+ JSR DELAY
+
+ LDX #&FF               \ Set the stack pointer to &01FF, which is the standard
+ TXS                    \ location for the 6502 stack, so this instruction
+                        \ effectively resets the stack
+
+ LDA #func9             \ Jump into the main loop at FRCE, setting the key
+ JMP FRCE               \ that's "pressed" to FUNC-9 (so we show the Status
+                        \ Mode screen)
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: GetNumber
+\       Type: Subroutine
+\   Category: Econet
+\    Summary: Print a number, then a question mark, and wait for a number to be
+\             entered
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   The number to print
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   Z flag              Set if no number was entered, clear otherwise
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for Scoreboard: ----------------->
+
+.GetNumber
+
+ LDA #4                 \ Print the 8-bit number in X to 4 digits, without a
+ CLC                    \ decimal point
+ JSR pr2+2
+
+ LDA #9                 \ Print extended token 9 ("  ")
+ JSR PrintToken
+
+ JSR prq+3              \ Print a question mark
+
+ JSR TT162              \ Print a space
+
+ JSR gnum               \ Call gnum to get a number from the keyboard
+
+ LDX T1                 \ If no number was entered, set the Z flag (so a BEQ
+ CPX #12                \ branch will be taken if nothing is entered)
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: EconetToken
+\       Type: Variable
+\   Category: Econet
+\    Summary: Extended recursive token table for the Econet configuration page
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for Scoreboard: ----------------->
+
+.EconetToken
+
+ EQUB VE                \ Token 0:      ""
+                        \
+                        \ Encoded as:   ""
+
+ ETWO 'S', 'T'          \ Token 1:    "STATION"
+ ETWO 'A', 'T'
+ ECHR 'I'
+ ETWO 'O', 'N'
+ EQUB VE
+
+ ECHR 'P'               \ Token 2:    "PORT"
+ ETWO 'O', 'R'
+ ECHR 'T'
+ EQUB VE
+
+ ECHR ' '               \ Token 3:    " NUMBER   "
+ ETWO 'N', 'U'
+ ECHR 'M'
+ ECHR 'B'
+ ETWO 'E', 'R'
+ ECHR ' '
+ ECHR ' '
+ ECHR ' '
+ EQUB VE
+
+ ECHR ' '               \ Token 4:    " MENU{crlf}{crlf}"
+ ECHR 'M'
+ ECHR 'E'
+ ETWO 'N', 'U'
+ ETWO '-', '-'
+ ETWO '-', '-'
+ EQUB VE
+
+ ECHR 'N'               \ Token 5:    "NETWORK"
+ ETWO 'E', 'T'
+ ECHR 'W'
+ ETWO 'O', 'R'
+ ECHR 'K'
+ EQUB VE
+
+ EJMP 1                 \ Token 6:    "{all caps}OK"
+ ECHR 'O'
+ ECHR 'K'
+ EQUB VE
+
+ ECHR ' '               \ Token 7:    "   "
+ ECHR ' '
+ ECHR ' '
+ EQUB VE
+
+ ETWO 'R', 'E'          \ Token 8:    "RESET SCORES "
+ ETWO 'S', 'E'
+ ECHR 'T'
+ ECHR ' '
+ ECHR 'S'
+ ECHR 'C'
+ ETWO 'O', 'R'
+ ETWO 'E', 'S'
+ ECHR ' '
+ EQUB VE
+
+ ECHR ' '               \ Token 9:    "  "
+ ECHR ' '
+ EQUB VE
 
 \ ******************************************************************************
 \
@@ -40359,6 +41280,13 @@ ENDMACRO
                         \ be a Cobra Mk III trader, and the other 50% of the
                         \ time it will either be an asteroid (98.5% chance) or,
                         \ very rarely, a cargo canister (1.5% chance)
+
+                        \ --- Mod: Code added for Scoreboard: ----------------->
+
+ JSR TransmitCmdrData   \ Transmit commander data to the scoreboard machine, if
+                        \ configured
+
+                        \ --- End of added code ------------------------------->
 
  JSR DORND              \ Set A and X to random numbers
 
