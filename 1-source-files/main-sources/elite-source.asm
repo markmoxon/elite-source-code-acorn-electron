@@ -8308,6 +8308,13 @@ ENDIF
 
  JSR BORDER             \ Redraw the space view's border
 
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+ LDA #%11111111         \ Set DTW2 = %11111111 to denote that we are not
+ STA DTW2               \ currently printing a word
+
+                        \ --- End of added code ------------------------------->
+
  LDA #20                \ Move the text cursor to row 20, near the bottom of
  STA YC                 \ the screen
 
