@@ -26923,12 +26923,72 @@ ENDMACRO
 
 .SendOverEconet
 
+ PHA                    \ Store the OSWORD command on the stack
+
+ LDX #LO(noblank)       \ Set (Y X) to point to the OS command at noblank
+ LDY #HI(noblank)
+
+ LDA #&FF               \ Set KEYB to &FF to indicate that we should process all
+ STA KEYB               \ interrupts
+
+ JSR OSCLI              \ Call OSCLI to execute the OS command at (Y X), which
+                        \ allows all traffic to trigger interrupts on Econet
+
  LDX #LO(oswordBlock)   \ Set (Y X) to the address of the OSWORD parameter block
  LDY #HI(oswordBlock)
 
+ PLA                    \ Retrieve the OSWORD command from the stack
+
  JSR OSWORD             \ Call OSWORD with the command number from the stack
 
+ LDX #LO(blank)         \ Set (Y X) to point to the OS command at blank
+ LDY #HI(blank)
+
+ JSR OSCLI              \ Call OSCLI to execute the OS command at (Y X), which
+                        \ restricts traffic for Econet
+
+ INC KEYB               \ Increment KEYB back to 0 to indicate we can ignore
+                        \ interrupts once again
+
  RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: blank
+\       Type: Variable
+\   Category: Econet
+\    Summary: The *BLANK command to restrict traffic from triggering interrupts
+\             for Econet in NFS 3.42e
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for Scoreboard: ----------------->
+
+.blank
+
+ EQUS "BLANK"
+ EQUB 13
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: noblank
+\       Type: Variable
+\   Category: Econet
+\    Summary: The *NOBLANK command to allow all traffic to trigger interrupts on
+\             Econet in NFS 3.42e
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for Scoreboard: ----------------->
+
+.noblank
+
+ EQUS "NOBLANK"
+ EQUB 13
 
                         \ --- End of added code ------------------------------->
 
