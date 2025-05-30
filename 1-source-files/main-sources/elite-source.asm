@@ -8009,8 +8009,21 @@ ENDIF
 
 .TTX66
 
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+ JSR MT2                \ Switch to Sentence Case when printing extended tokens
+
+                        \ --- End of added code ------------------------------->
+
  LDA #%10000000         \ Set bit 7 of QQ17 to switch to Sentence Case
  STA QQ17
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+ STA DTW2               \ Set bit 7 of DTW2 to indicate we are not currently
+                        \ printing a word
+
+                        \ --- End of added code ------------------------------->
 
  ASL A                  \ Set LAS2 to 0, as 128 << 1 = %10000000 << 1 = 0. This
  STA LAS2               \ stops any laser pulsing
