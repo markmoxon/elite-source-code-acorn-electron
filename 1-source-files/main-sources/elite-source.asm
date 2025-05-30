@@ -27059,7 +27059,7 @@ ENDMACRO
  LDX #0                 \ Set X to condition docked (0)
 
  LDY QQ12               \ Fetch the docked status from QQ12, and if we are
- BNE trcm3              \ docked, jump to wearedocked
+ BNE trcm3              \ docked, jump to trcm3
 
  INX                    \ Set X to condition green (1)
 
@@ -27106,7 +27106,7 @@ ENDMACRO
  LDA CASH+3
  STA transmitBuffer+12
 
- LDA #4                 \ Set machine type to 4 (Electron)
+ LDA #5                 \ Set machine type to 5 (Electron)
  STA transmitBuffer+16
 
                         \ Fall through into TransmitData to transmit the data
