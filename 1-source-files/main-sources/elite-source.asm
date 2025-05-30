@@ -19566,17 +19566,8 @@ ENDIF
 
 .DK7
 
-                        \ --- Mod: Code removed for Scoreboard: --------------->
-
-\CPX #&70               \ If ESCAPE is not being pressed, skip over the next
-\BNE P%+5               \ instruction
-
-                        \ --- And replaced by: -------------------------------->
-
- CPX #&70               \ If ESCAPE is not being pressed, skip over the next two
- BNE P%+8               \ instructions
-
-                        \ --- End of replacement ------------------------------>
+ CPX #&70               \ If ESCAPE is not being pressed, skip over the next
+ BNE P%+5               \ instruction
 
  JMP DEATH2             \ ESCAPE is being pressed, so jump to DEATH2 to end
                         \ the game
