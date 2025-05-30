@@ -26893,7 +26893,7 @@ ENDMACRO
                         \   * Byte #16 = machine type
                         \                0 = BBC Micro SRAM, 1 = Master,
                         \                2 = 6502SP, 3 = BBC Micro standard
-                        \                4 = Electron
+                        \                4 = Archimedes, 5 = Electron
                         \
                         \   * Byte #17 = reserved for the forwarding station
                         \                number, for when packets are forwarded
