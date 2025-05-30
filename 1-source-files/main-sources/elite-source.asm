@@ -4032,6 +4032,8 @@ ENDIF
 
                         \ We call this from STATUS below if we are docked
 
+ JSR MT2                \ Switch to Sentence Case
+
  LDA #205               \ Print extended token 205 ("DOCKED") and return from
  JSR DETOK              \ the subroutine using a tail call
 
@@ -16810,6 +16812,8 @@ ENDIF
 \                       \ in A
 
                         \ --- And replaced by: -------------------------------->
+
+ JSR MT2                \ Switch to Sentence Case
 
  LDX #CYL               \ Call TITLE to show a rotating Cobra Mk III (#CYL) and
  LDA #6                 \ token 6 ("LOAD NEW {single cap}COMMANDER {all caps}
