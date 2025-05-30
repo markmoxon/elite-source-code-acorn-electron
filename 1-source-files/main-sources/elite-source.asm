@@ -16734,13 +16734,6 @@ ENDIF
                         \ code onto the stack, and this effectively removes that
                         \ code so we start afresh
 
-                        \ --- Mod: Code added for Scoreboard: ----------------->
-
- STX netDeaths          \ Set the death count to -1 so it gets incremented to
-                        \ zero in DEATH2
-
-                        \ --- End of added code ------------------------------->
-
                         \ Fall through into BR1 to start the game
 
 \ ******************************************************************************
@@ -19549,8 +19542,6 @@ ENDIF
 
  CPX #&70               \ If ESCAPE is not being pressed, skip over the next two
  BNE P%+8               \ instructions
-
- INC netDeaths          \ Increment the death count
 
                         \ --- End of replacement ------------------------------>
 
