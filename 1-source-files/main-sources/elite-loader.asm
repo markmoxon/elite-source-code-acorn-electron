@@ -744,10 +744,14 @@ ENDMACRO
  LDX #0                 \ BREAK intercept code by poking 0 into the first value
  JSR OSB
 
- LDA #143               \ Call OSBYTE 143 to issue a paged ROM service call of
- LDX #&C                \ type &C with argument &FF, which is the "NMI claim"
- LDY #&FF               \ service call that asks the current user of the NMI
- JSR OSBYTE             \ space to clear it out
+                        \ --- Mod: Code removed for Econet: ------------------->
+
+\LDA #143               \ Call OSBYTE 143 to issue a paged ROM service call of
+\LDX #&C                \ type &C with argument &FF, which is the "NMI claim"
+\LDY #&FF               \ service call that asks the current user of the NMI
+\JSR OSBYTE             \ space to clear it out
+
+                        \ --- End of removed code ----------------------------->
 
  LDA #13                \ Set A = 13 for the next OSBYTE call
 
@@ -1982,10 +1986,14 @@ ENDMACRO
 
                         \ --- End of removed code ----------------------------->
 
- LDA #143               \ Call OSBYTE 143 to issue a paged ROM service call of
- LDX #&C                \ type &C with argument &FF, which is the "NMI claim"
- LDY #&FF               \ service call that asks the current user of the NMI
- JSR OSBYTE             \ space to clear it out
+                        \ --- Mod: Code removed for Econet: ------------------->
+
+\LDA #143               \ Call OSBYTE 143 to issue a paged ROM service call of
+\LDX #&C                \ type &C with argument &FF, which is the "NMI claim"
+\LDY #&FF               \ service call that asks the current user of the NMI
+\JSR OSBYTE             \ space to clear it out
+
+                        \ --- End of removed code ----------------------------->
 
                         \ --- Mod: Code removed for sideways RAM: ------------->
 
@@ -1995,11 +2003,6 @@ ENDMACRO
 \                       \ workspace)
 
                         \ --- And replaced by: -------------------------------->
-
- LDA #&40               \ Set &0D00 to an RTI instruction (opcode &40), so we
- STA &0D00              \ can claim the NMI workspace at &0D00 (the RTI makes
-                        \ sure we return from any spurious NMIs that still call
-                        \ this workspace)
 
  LDA sramBankNumber     \ Store the bank number of the game code in sideways RAM
  STA S%                 \ in the first byte of S%, which can be reused as the
