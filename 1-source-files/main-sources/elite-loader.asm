@@ -87,6 +87,20 @@
 
                         \ --- End of replacement ------------------------------>
 
+                        \ --- Mod: Code added for Scoreboard: ----------------->
+
+ scorePort = &54FB      \ The address of the scoreboard port
+
+ scoreStation = &54FC   \ The address of the scoreboard station
+
+ scoreNetwork = &54FD   \ The address of the scoreboard network
+
+ netTally = &54FE       \ The address of the scoreboard tally
+
+ netDeaths = &5500      \ The address of the scoreboard death count
+
+                        \ --- End of added code ------------------------------->
+
  S% = C%                \ S% points to the entry point for the main game code
 
  VIA = &FE00            \ Memory-mapped space for accessing internal hardware,
@@ -2093,6 +2107,18 @@ ENDMACRO
                         \ row and down
 
  CLI                    \ Re-enable interrupts
+
+                        \ --- Mod: Code added for Scoreboard: ----------------->
+
+ LDX #0                 \ Zero scorePort to netDeaths
+ STX scorePort
+ STX scoreStation
+ STX scoreNetwork
+ STX netTally
+ STX netTally+1
+ STX netDeaths
+
+                        \ --- End of added code ------------------------------->
 
  JMP (S%+8)             \ Jump to the address in S%+8 in the main game code,
                         \ which points to TT170, so this starts the game
