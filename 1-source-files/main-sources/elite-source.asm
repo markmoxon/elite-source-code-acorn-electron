@@ -1008,7 +1008,15 @@
 \
 \ ******************************************************************************
 
- ORG &0300
+                        \ --- Mod: Code removed for Econet: ------------------->
+
+\ORG &0300
+
+                        \ --- And replaced by: -------------------------------->
+
+ ORG &0900
+
+                        \ --- End of replacement ------------------------------>
 
 .T%
 
@@ -42178,9 +42186,13 @@ ENDMACRO
 
  DEX                    \ Decrement X to point to the next page (&A)
 
- JSR ZES1               \ Call ZES1 to zero-fill the page in X
+                        \ --- Mod: Code removed for Econet: ------------------->
 
- DEX                    \ Decrement X to point to the next page
+\JSR ZES1               \ Call ZES1 to zero-fill the page in X
+\
+\DEX                    \ Decrement X to point to the next page
+
+                        \ --- End of removed code ----------------------------->
 
                         \ Then fall through into ZES1 with X set to 9, so we
                         \ clear page &9 too
