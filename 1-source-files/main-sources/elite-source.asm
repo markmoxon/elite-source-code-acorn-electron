@@ -10278,16 +10278,29 @@ ENDIF
 
 .TT214
 
- PHA                    \ Print a space, using the stack to preserve the value
- JSR TT162              \ of A
- PLA
+                        \ --- Mod: Code removed for extended text tokens: ----->
+
+\PHA                    \ Print a space, using the stack to preserve the value
+\JSR TT162              \ of A
+\PLA
+
+                        \ --- End of removed code ----------------------------->
 
 .TT221
 
  JSR TT27               \ Print the text token in A
 
- LDA #225               \ Print recursive token 65 ("(Y/N)?")
- JSR TT27
+                        \ --- Mod: Code removed for extended text tokens: ----->
+
+\LDA #225               \ Print recursive token 65 ("(Y/N)?")
+\JSR TT27
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDA #206               \ Print extended token 206 ("{all caps}(Y/N)?")
+ JSR DETOK
+
+                        \ --- End of replacement ------------------------------>
 
  JSR TT217              \ Scan the keyboard until a key is pressed, and return
                         \ the key's ASCII code in A and X
