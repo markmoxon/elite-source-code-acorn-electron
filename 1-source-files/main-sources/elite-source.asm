@@ -7909,8 +7909,21 @@ ENDIF
 
 .TTX66
 
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+ JSR MT2                \ Switch to Sentence Case when printing extended tokens
+
+                        \ --- End of added code ------------------------------->
+
  LDA #%10000000         \ Set bit 7 of QQ17 to switch to Sentence Case
  STA QQ17
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+ STA DTW2               \ Set bit 7 of DTW2 to indicate we are not currently
+                        \ printing a word
+
+                        \ --- End of added code ------------------------------->
 
  ASL A                  \ Set LAS2 to 0, as 128 << 1 = %10000000 << 1 = 0. This
  STA LAS2               \ stops any laser pulsing
@@ -8194,6 +8207,13 @@ ENDIF
                         \ of the screen
 
  JSR BORDER             \ Redraw the space view's border
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+ LDA #%11111111         \ Set DTW2 = %11111111 to denote that we are not
+ STA DTW2               \ currently printing a word
+
+                        \ --- End of added code ------------------------------->
 
  LDA #20                \ Move the text cursor to row 20, near the bottom of
  STA YC                 \ the screen
@@ -10178,16 +10198,29 @@ ENDIF
 
 .TT214
 
- PHA                    \ Print a space, using the stack to preserve the value
- JSR TT162              \ of A
- PLA
+                        \ --- Mod: Code removed for extended text tokens: ----->
+
+\PHA                    \ Print a space, using the stack to preserve the value
+\JSR TT162              \ of A
+\PLA
+
+                        \ --- End of removed code ----------------------------->
 
 .TT221
 
  JSR TT27               \ Print the text token in A
 
- LDA #225               \ Print recursive token 65 ("(Y/N)?")
- JSR TT27
+                        \ --- Mod: Code removed for extended text tokens: ----->
+
+\LDA #225               \ Print recursive token 65 ("(Y/N)?")
+\JSR TT27
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDA #206               \ Print extended token 206 ("{all caps}(Y/N)?")
+ JSR DETOK
+
+                        \ --- End of replacement ------------------------------>
 
  JSR TT217              \ Scan the keyboard until a key is pressed, and return
                         \ the key's ASCII code in A and X
