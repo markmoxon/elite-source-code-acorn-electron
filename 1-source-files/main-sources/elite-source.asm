@@ -18399,9 +18399,7 @@ ENDIF
 \
 \BCS QUR                \ If the C flag is set, then an invalid drive number was
 \                       \ entered, so jump to QUR to return from the subroutine
-
-                        \ --- Mod: Code removed for Econet: ------------------->
-
+\
 \LDX #INWK              \ Store a pointer to INWK at the start of the block at
 \STX &0C00              \ &0C00, storing #INWK in the low byte because INWK is
 \                       \ in zero page
@@ -26931,7 +26929,7 @@ ENDMACRO
                         \
                         \   * Byte #16 = machine type
                         \                0 = BBC Micro SRAM, 1 = Master,
-                        \                2 = 6502SP, 3 = BBC Micro standard
+                        \                2 = 6502SP, 3 = BBC Micro standard,
                         \                4 = Archimedes, 5 = Electron
                         \
                         \   * Byte #17 = reserved for the forwarding station
@@ -27389,13 +27387,6 @@ ENDMACRO
  STA netTally           \ death count
  STA netTally+1
  STA netDeaths
-
- STA CASH               \ And set the credit level to 100 Cr
- STA CASH+1
- LDA #&03
- STA CASH+2
- LDA #&E8
- STA CASH+3
 
 .gnet4
 
