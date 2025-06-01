@@ -1980,9 +1980,9 @@ ENDMACRO
  LDA KEYV+1
  STA S%+5
 
- LDA #LO(S%+16)         \ Point the keyboard vector KEYV to S%+16 in the main
- STA KEYV               \ game code
- LDA #HI(S%+16)
+ LDA #LO(S%+16)         \ Point the keyboard vector KEYV to the address S%+16
+ STA KEYV               \ in the main game code, this is the KEY1 routine just
+ LDA #HI(S%+16)         \ after the S% workspace
  STA KEYV+1
 
  LDA S%+14              \ Point the break vector BRKV to the address stored in
