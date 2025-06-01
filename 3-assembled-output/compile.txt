@@ -20849,9 +20849,9 @@ End macro FACE
      555C   A5 23      LDA &23
      555E   48         PHA
      555F   20 0D 3D   JSR &3D0D
-     5562   A9 05      LDA #&05
+     5562   A9 F5      LDA #&F5
      5564   85 22      STA &22
-     5566   A9 57      LDA #&57
+     5566   A9 56      LDA #&56
      5568   4C C2 3B   JMP &3BC2
 .TransmitCmdrData
      556B   08         PHP
@@ -20948,7 +20948,7 @@ End macro FACE
      563B   A9 03      LDA #&03
      563D   20 55 55   JSR &5555
      5640   AE 03 55   LDX &5503
-     5643   20 EC 56   JSR &56EC
+     5643   20 DC 56   JSR &56DC
      5646   F0 03      BEQ &564B
      5648   8D 03 55   STA &5503
 .gnet1
@@ -20959,7 +20959,7 @@ End macro FACE
      5656   A9 03      LDA #&03
      5658   20 55 55   JSR &5555
      565B   AE 02 55   LDX &5502
-     565E   20 EC 56   JSR &56EC
+     565E   20 DC 56   JSR &56DC
      5661   F0 03      BEQ &5666
      5663   8D 02 55   STA &5502
 .gnet2
@@ -20972,7 +20972,7 @@ End macro FACE
      5676   A9 07      LDA #&07
      5678   20 55 55   JSR &5555
      567B   AE 01 55   LDX &5501
-     567E   20 EC 56   JSR &56EC
+     567E   20 DC 56   JSR &56DC
      5681   F0 03      BEQ &5686
      5683   8D 01 55   STA &5501
 .gnet3
@@ -20992,191 +20992,185 @@ End macro FACE
      56A7   A9 09      LDA #&09
      56A9   20 55 55   JSR &5555
      56AC   20 71 2A   JSR &2A71
-     56AF   90 1B      BCC &56CC
+     56AF   90 0B      BCC &56BC
      56B1   A9 00      LDA #&00
      56B3   8D 04 55   STA &5504
      56B6   8D 05 55   STA &5505
      56B9   8D 06 55   STA &5506
-     56BC   8D 11 09   STA &0911
-     56BF   8D 12 09   STA &0912
-     56C2   A9 03      LDA #&03
-     56C4   8D 13 09   STA &0913
-     56C7   A9 E8      LDA #&E8
-     56C9   8D 14 09   STA &0914
 .gnet4
-     56CC   A9 A9      LDA #&A9
-     56CE   8D 42 29   STA &2942
-     56D1   20 6B 55   JSR &556B
-     56D4   20 30 26   JSR &2630
-     56D7   20 30 26   JSR &2630
-     56DA   A9 06      LDA #&06
-     56DC   20 55 55   JSR &5555
-     56DF   A0 64      LDY #&64
-     56E1   20 7E 25   JSR &257E
-     56E4   A2 FF      LDX #&FF
-     56E6   9A         TXS
-     56E7   A9 A6      LDA #&A6
-     56E9   4C 3A A4   JMP &A43A
+     56BC   A9 A9      LDA #&A9
+     56BE   8D 42 29   STA &2942
+     56C1   20 6B 55   JSR &556B
+     56C4   20 30 26   JSR &2630
+     56C7   20 30 26   JSR &2630
+     56CA   A9 06      LDA #&06
+     56CC   20 55 55   JSR &5555
+     56CF   A0 64      LDY #&64
+     56D1   20 7E 25   JSR &257E
+     56D4   A2 FF      LDX #&FF
+     56D6   9A         TXS
+     56D7   A9 A6      LDA #&A6
+     56D9   4C 3A A4   JMP &A43A
 .GetNumber
-     56EC   A9 04      LDA #&04
-     56EE   18         CLC
-     56EF   20 FC 1E   JSR &1EFC
-     56F2   A9 09      LDA #&09
-     56F4   20 55 55   JSR &5555
-     56F7   20 02 2D   JSR &2D02
-     56FA   20 80 2D   JSR &2D80
-     56FD   20 47 29   JSR &2947
-     5700   A6 06      LDX &06
-     5702   E0 0C      CPX #&0C
-     5704   60         RTS
+     56DC   A9 04      LDA #&04
+     56DE   18         CLC
+     56DF   20 FC 1E   JSR &1EFC
+     56E2   A9 09      LDA #&09
+     56E4   20 55 55   JSR &5555
+     56E7   20 02 2D   JSR &2D02
+     56EA   20 80 2D   JSR &2D80
+     56ED   20 47 29   JSR &2947
+     56F0   A6 06      LDX &06
+     56F2   E0 0C      CPX #&0C
+     56F4   60         RTS
 .EconetToken
-     5705   57
+     56F5   57
 Macro ETWO:
-     5706   89
+     56F6   89
 End macro ETWO
 Macro ETWO:
-     5707   A2
-End macro ETWO
-Macro ECHR:
-     5708   1E
-End macro ECHR
-Macro ETWO:
-     5709   88
-End macro ETWO
-     570A   57
-Macro ECHR:
-     570B   07
-End macro ECHR
-Macro ETWO:
-     570C   AA
+     56F7   A2
 End macro ETWO
 Macro ECHR:
-     570D   03
+     56F8   1E
 End macro ECHR
+Macro ETWO:
+     56F9   88
+End macro ETWO
+     56FA   57
+Macro ECHR:
+     56FB   07
+End macro ECHR
+Macro ETWO:
+     56FC   AA
+End macro ETWO
+Macro ECHR:
+     56FD   03
+End macro ECHR
+     56FE   57
+Macro ECHR:
+     56FF   77
+End macro ECHR
+Macro ETWO:
+     5700   B6
+End macro ETWO
+Macro ECHR:
+     5701   1A
+End macro ECHR
+Macro ECHR:
+     5702   15
+End macro ECHR
+Macro ETWO:
+     5703   A3
+End macro ETWO
+Macro ECHR:
+     5704   77
+End macro ECHR
+Macro ECHR:
+     5705   77
+End macro ECHR
+Macro ECHR:
+     5706   77
+End macro ECHR
+     5707   57
+Macro ECHR:
+     5708   77
+End macro ECHR
+Macro ECHR:
+     5709   1A
+End macro ECHR
+Macro ECHR:
+     570A   12
+End macro ECHR
+Macro ETWO:
+     570B   B6
+End macro ETWO
+Macro ETWO:
+     570C   80
+End macro ETWO
+Macro ETWO:
+     570D   80
+End macro ETWO
      570E   57
 Macro ECHR:
-     570F   77
+     570F   19
 End macro ECHR
 Macro ETWO:
-     5710   B6
+     5710   8A
 End macro ETWO
 Macro ECHR:
-     5711   1A
-End macro ECHR
-Macro ECHR:
-     5712   15
+     5711   00
 End macro ECHR
 Macro ETWO:
-     5713   A3
+     5712   AA
 End macro ETWO
 Macro ECHR:
-     5714   77
+     5713   1C
 End macro ECHR
-Macro ECHR:
-     5715   77
-End macro ECHR
-Macro ECHR:
-     5716   77
-End macro ECHR
-     5717   57
-Macro ECHR:
-     5718   77
-End macro ECHR
-Macro ECHR:
-     5719   1A
-End macro ECHR
-Macro ECHR:
-     571A   12
-End macro ECHR
-Macro ETWO:
-     571B   B6
-End macro ETWO
-Macro ETWO:
-     571C   80
-End macro ETWO
-Macro ETWO:
-     571D   80
-End macro ETWO
-     571E   57
-Macro ECHR:
-     571F   19
-End macro ECHR
-Macro ETWO:
-     5720   8A
-End macro ETWO
-Macro ECHR:
-     5721   00
-End macro ECHR
-Macro ETWO:
-     5722   AA
-End macro ETWO
-Macro ECHR:
-     5723   1C
-End macro ECHR
-     5724   57
+     5714   57
 Macro EJMP:
-     5725   56
+     5715   56
 End macro EJMP
 Macro ECHR:
-     5726   18
+     5716   18
 End macro ECHR
 Macro ECHR:
-     5727   1C
+     5717   1C
 End macro ECHR
-     5728   57
+     5718   57
 Macro ECHR:
-     5729   77
-End macro ECHR
-Macro ECHR:
-     572A   77
+     5719   77
 End macro ECHR
 Macro ECHR:
-     572B   77
+     571A   77
 End macro ECHR
-     572C   57
+Macro ECHR:
+     571B   77
+End macro ECHR
+     571C   57
 Macro ETWO:
-     572D   A5
+     571D   A5
 End macro ETWO
 Macro ETWO:
-     572E   8D
+     571E   8D
 End macro ETWO
 Macro ECHR:
-     572F   03
+     571F   03
 End macro ECHR
 Macro ECHR:
-     5730   77
+     5720   77
 End macro ECHR
 Macro ECHR:
-     5731   04
+     5721   04
 End macro ECHR
 Macro ECHR:
-     5732   14
+     5722   14
 End macro ECHR
 Macro ETWO:
-     5733   AA
+     5723   AA
 End macro ETWO
 Macro ETWO:
-     5734   BA
+     5724   BA
 End macro ETWO
 Macro ECHR:
-     5735   77
+     5725   77
 End macro ECHR
-     5736   57
+     5726   57
 Macro ECHR:
-     5737   77
+     5727   77
 End macro ECHR
 Macro ECHR:
-     5738   77
+     5728   77
 End macro ECHR
-     5739   57
-Free space in MAIN = 198  bytes
+     5729   57
+Free space in MAIN = 214  bytes
 SHIPS
 Assembled at &4BD5 
-Ends at &573A 
-Code size is &B65 
+Ends at &572A 
+Code size is &B55 
 Execute at &1D00 
 Reload at &4BD5 
-S.SHIPS &4BD5  &573A  &1D00  &4BD5 
+S.SHIPS &4BD5  &572A  &1D00  &4BD5 
 Saving file '3-assembled-output/SHIPS.bin'
 .log
      8000
@@ -27894,8 +27888,8 @@ checksum0 = &4BD4
 .ships
 ships = &4BD5 
 .end
-P% = &573A 
-S.ELITECO &1D00  &573A  &1D00  &1D00 
+P% = &572A 
+S.ELITECO &1D00  &572A  &1D00  &1D00 
 Saving file '3-assembled-output/ELITECO.unprot.bin'
 .TRTB%
      0004
@@ -28609,10 +28603,10 @@ End macro FNE
      0B11   A2 B8      LDX #&B8
      0B13   A0 0B      LDY #&0B
      0B15   20 F7 FF   JSR &FFF7
-     0B18   A2 CE      LDX #&CE
+     0B18   A2 CC      LDX #&CC
      0B1A   A0 0B      LDY #&0B
      0B1C   20 F7 FF   JSR &FFF7
-     0B1F   A2 D2      LDX #&D2
+     0B1F   A2 D0      LDX #&D0
      0B21   A0 0B      LDY #&0B
      0B23   20 F7 FF   JSR &FFF7
      0B26   A9 03      LDA #&03
@@ -28673,15 +28667,15 @@ End macro FNE
      0BB7   60         RTS
 .MESS1
      0BB8   4C 4F 41 ...
-     0BCD   0D
+     0BCB   0D
 .MESS2
-     0BCE   44 49 52 
-     0BD1   0D
+     0BCC   44 49 52 
+     0BCF   0D
 .MESS3
-     0BD2   44 49 52 ...
-     0BE0   0D
-     0BE1
-S.ELITEDA &4400  &56F2  &5200  &4400 
+     0BD0   44 49 52 ...
+     0BDE   0D
+     0BDF
+S.ELITEDA &4400  &56F0  &5200  &4400 
 Saving file '3-assembled-output/ELITEDA.bin'
 .readme
      0000   0A

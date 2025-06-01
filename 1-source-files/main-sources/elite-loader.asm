@@ -2148,14 +2148,14 @@ ENDMACRO
 
 IF _DISC
 
-                        \ --- Mod: Code removed for sideways RAM: ------------->
+                        \ --- Mod: Code removed for Econet: ------------------->
 
 \EQUS "LOAD EliteCo FFFF2000"
 \EQUB 13
 
                         \ --- And replaced by: -------------------------------->
 
- EQUS "LOAD EliteCo FFFF1D00"
+ EQUS "LOAD ELTEC FFFF1D00"
  EQUB 13
 
                         \ --- End of replacement ------------------------------>
