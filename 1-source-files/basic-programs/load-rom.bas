@@ -13,6 +13,7 @@ PRINT"by Mark Moxon"
 PRINT'"Sideways RAM loader, routines and"
 PRINT"inspiration by Wouter Hobers"
 
+*BLANK
 DIM code &100
 PROCassemble
 FOR A%=15 TO 0 STEP -1
