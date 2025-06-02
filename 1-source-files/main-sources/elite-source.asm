@@ -29219,9 +29219,28 @@ ENDMACRO
  ORA #%10000000         \ that it has been killed
  STA INWK+31
 
- BCS MA8                \ If the enemy ship type is >= SST (i.e. missile,
-                        \ asteroid, canister or escape pod) then jump down
-                        \ to MA8
+                        \ --- Mod: Code removed for Scoreboard: --------------->
+
+\BCS MA8                \ If the enemy ship type is >= SST (i.e. missile,
+\                       \ asteroid, canister or escape pod) then jump down
+\                       \ to MA8
+
+                        \ --- And replaced by: -------------------------------->
+
+ BCC main1              \ If the enemy ship type is >= SST (i.e. missile,
+                        \ asteroid, canister or escape pod) then keep going so
+                        \ we increase the kill tally (which doesn't
+                        \ happen in the standard game)
+
+ JSR EXNO2              \ Call EXNO2 to process the fact that we have killed a
+                        \ ship (so increase the kill tally, make an explosion
+                        \ sound and so on)
+
+ JMP MA8                \ Jump to MA8 to skip the spawning of cargo canisters
+
+.main1
+
+                        \ --- End of replacement ------------------------------>
 
  JSR DORND              \ Fetch a random number, and jump to oh if it is
  BPL oh                 \ positive (50% chance)
