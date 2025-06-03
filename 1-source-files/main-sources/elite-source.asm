@@ -7736,23 +7736,27 @@ ENDIF
 
 .WA3
 
- LDY K%+NI%+8           \ Fetch the z_sign (byte #8) of the second ship in the
-                        \ ship data workspace at K%, which is reserved for the
-                        \ space station
+                        \ --- Mod: Code removed for Econet: ------------------->
 
- BMI WA2                \ If the station's z_sign is negative, then it is
-                        \ behind us, so jump to WA2 to skip the following
+\LDY K%+NI%+8           \ Fetch the z_sign (byte #8) of the second ship in the
+\                       \ ship data workspace at K%, which is reserved for the
+\                       \ space station
+\
+\BMI WA2                \ If the station's z_sign is negative, then it is
+\                       \ behind us, so jump to WA2 to skip the following
+\
+\LDY #NI%               \ Set Y to point to the offset of the ship data block
+\                       \ for the station, which is NI% (as each block is NI%
+\                       \ bytes long, and the station is the second block)
+\
+\JSR m                  \ Call m to set A to the largest distance to the station
+\                       \ in any of the three axes
+\
+\CMP #2                 \ If A < 2 then jump to WA1 to abort the in-system jump
+\BCC WA1                \ with a low beep, as we are facing the station and are
+\                       \ too close to jump in that direction
 
- LDY #NI%               \ Set Y to point to the offset of the ship data block
-                        \ for the station, which is NI% (as each block is NI%
-                        \ bytes long, and the station is the second block)
-
- JSR m                  \ Call m to set A to the largest distance to the station
-                        \ in any of the three axes
-
- CMP #2                 \ If A < 2 then jump to WA1 to abort the in-system jump
- BCC WA1                \ with a low beep, as we are facing the station and are
-                        \ too close to jump in that direction
+                        \ --- End of removed code ----------------------------->
 
 .WA2
 
