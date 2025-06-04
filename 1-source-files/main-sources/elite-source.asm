@@ -715,15 +715,7 @@
 
  SKIP 1                 \ Temporary storage, used in a number of places
 
-                        \ --- Mod: Code removed for Econet: ------------------->
-
-\SKIP 16                \ These bytes appear to be unused
-
-                        \ --- And replaced by: -------------------------------->
-
- SKIP 16                \ &90-9F is reserved for Econet
-
-                        \ --- End of replacement ------------------------------>
+ SKIP 16                \ These bytes appear to be unused
 
 .Q
 
