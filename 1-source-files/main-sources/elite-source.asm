@@ -6050,61 +6050,18 @@ ENDIF
                         \ the cursor so it's in the right position following
                         \ the print
 
-                        \ --- Mod: Code removed for extended text tokens: ----->
-
-\EQUB &2C               \ Skip the next instruction by turning it into
-\                       \ &2C &85 &08, or BIT &0885, which does nothing apart
-\                       \ from affect the flags. We skip the instruction as we
-\                       \ already set the value of SC+1 above
-\
-\.RR3
-\
-\                       \ A contains the value of YC - the screen row where we
-\                       \ want to print this character - so now we need to
-\                       \ convert this into a screen address, so we can poke
-\                       \ the character data to the right place in screen
-\                       \ memory
-
-                        \ --- And replaced by: -------------------------------->
-
- LDA YC                 \ If the text cursor is on the screen (i.e. YC < 24, so
- CMP #24                \ we are on rows 0-23), then jump to RR3 to print the
- BCC RREN+2             \ character
-
- PHA                    \ Store A on the stack so we can retrieve it below
-
                         \ --- Mod: Code added for Econet: --------------------->
 
- LDA CATF               \ If CATF = 0, skip the next few instructions, as we are
- BEQ skipReturn         \ not printing a disc catalogue
-
- LDX #&49               \ Set C to the internal key number for RETURN
-
-.checkReturn
-
- JSR DKS4               \ Call DKS4 to check whether the key in X is being
-                        \ pressed, and if it is, set bit 7 of A
-
- TAX                    \ We have just printed the disc catalogue, so wait until
- BPL checkReturn        \ RETURN is pressed, looping indefinitely until it gets
-                        \ tapped
-
-.skipReturn
+ LDA YC                 \ If the text cursor is on the screen (i.e. YC < 24, so
+ CMP #24                \ we are on rows 0-23), then jump to RREN+2 to print the
+ BCS RR4                \ character
 
                         \ --- End of added code ------------------------------->
 
- JSR TTX66              \ Otherwise we are off the bottom of the screen, so
-                        \ clear the screen and draw a white border
-
- PLA                    \ Retrieve A from the stack... only to overwrite it with
-                        \ the next instruction, so presumably we didn't need to
-                        \ preserve it and this and the PHA above have no effect
-
- LDA K3                 \ Set A to the character to be printed
-
- JMP RRNEW              \ Jump back to RRNEW to print the character
-
-                        \ --- End of replacement ------------------------------>
+ EQUB &2C               \ Skip the next instruction by turning it into
+                        \ &2C &85 &08, or BIT &0885, which does nothing apart
+                        \ from affect the flags. We skip the instruction as we
+                        \ already set the value of SC+1 above
 
 .RR3
 
