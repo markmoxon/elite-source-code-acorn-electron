@@ -218,11 +218,25 @@
  SKIP 4                 \ Four 8-bit seeds for the random number generation
                         \ system implemented in the DORND routine
 
-.TRTB%
+                        \ --- Mod: Code removed for Econet: ------------------->
 
- SKIP 2                 \ Contains the address of the keyboard translation
-                        \ table, which is used to translate internal key
-                        \ numbers to ASCII
+\.TRTB%
+\
+\SKIP 2                 \ Contains the address of the keyboard translation
+\                       \ table, which is used to translate internal key
+\                       \ numbers to ASCII
+
+                        \ --- And replaced by: -------------------------------->
+
+.XX4
+
+ SKIP 1                 \ Temporary storage, used in a number of places
+
+.XX20
+
+ SKIP 1                 \ Temporary storage, used in a number of places
+
+                        \ --- End of replacement ------------------------------>
 
 .T1
 
@@ -235,7 +249,9 @@
                         \ Elite draws on-screen by poking bytes directly into
                         \ screen memory, and SC(1 0) is typically set to the
                         \ address of the character block containing the pixel
-                        \ we want to draw
+                        \ we want to draw (see the deep dives on "Drawing
+                        \ monochrome pixels in mode 4" and "Drawing colour
+                        \ pixels in mode 5" for more details)
 
 .SCH
 
@@ -280,35 +296,14 @@
  SKIP 2                 \ Temporary storage, typically used for storing a 16-bit
                         \ y-coordinate
 
-                        \ --- Mod: Code removed for flicker-free planets: ----->
+                        \ --- Mod: Code moved for Econet: --------------------->
 
-\SKIP 2                 \ These bytes are unused in this version of Elite (they
-\                       \ are used to store the centre axis of the sun in the
-\                       \ other versions)
+\.SUNX
+\
+\SKIP 2                 \ The 16-bit x-coordinate of the vertical centre axis
+\                       \ of the sun (which might be off-screen)
 
-                        \ --- And replaced by: -------------------------------->
-
-.QQ29
-
- SKIP 1                 \ Temporary storage, used in a number of places
-
-.QQ3
-
- SKIP 1                 \ The selected system's economy (0-7)
-                        \
-                        \   * 0 = Rich Industrial
-                        \   * 1 = Average Industrial
-                        \   * 2 = Poor Industrial
-                        \   * 3 = Mainly Industrial
-                        \   * 4 = Mainly Agricultural
-                        \   * 5 = Rich Agricultural
-                        \   * 6 = Average Agricultural
-                        \   * 7 = Poor Agricultural
-                        \
-                        \ See the deep dive on "Generating system data" for more
-                        \ information on economies
-
-                        \ --- End of replacement ------------------------------>
+                        \ --- End of moved code ------------------------------->
 
 .BETA
 
@@ -333,7 +328,7 @@
                         \
                         \ A value of 0 denotes the leftmost column and 32 the
                         \ rightmost column, but because the top part of the
-                        \ screen (the space view) has a border box that
+                        \ screen (the space view) has a white border that
                         \ clashes with columns 0 and 32, text is only shown
                         \ in columns 1-31
 
@@ -349,7 +344,7 @@
                         \ just before the screen splits
                         \
                         \ A value of 0 denotes the top row, but because the
-                        \ top part of the screen has a border box that clashes
+                        \ top part of the screen has a white border that clashes
                         \ with row 0, text is always shown at row 1 or greater
 
 .QQ22
@@ -388,6 +383,17 @@
                         \ Only one E.C.M. can be active at any one time, so
                         \ there is only one counter
 
+.ALP1
+
+ SKIP 1                 \ Magnitude of the roll angle alpha, i.e. |alpha|,
+                        \ which is a positive value between 0 and 31
+
+.ALP2
+
+ SKIP 2                 \ Bit 7 of ALP2 = sign of the roll angle in ALPHA
+                        \
+                        \ Bit 7 of ALP2+1 = opposite sign to ALP2 and ALPHA
+
 .XX15
 
  SKIP 0                 \ Temporary storage, typically used for storing screen
@@ -409,7 +415,7 @@
 .X1
 
  SKIP 1                 \ Temporary storage, typically used for x-coordinates in
-                        \ the line-drawing routines
+                        \ line-drawing routines
 
 .Y1
 
@@ -419,7 +425,7 @@
 .X2
 
  SKIP 1                 \ Temporary storage, typically used for x-coordinates in
-                        \ the line-drawing routines
+                        \ line-drawing routines
 
 .Y2
 
@@ -436,6 +442,535 @@
 .K
 
  SKIP 4                 \ Temporary storage, used in a number of places
+
+.LAS
+
+ SKIP 1                 \ Contains the laser power of the laser fitted to the
+                        \ current space view (or 0 if there is no laser fitted
+                        \ to the current view)
+                        \
+                        \ This gets set to bits 0-6 of the laser power byte from
+                        \ the commander data block, which contains the laser's
+                        \ power (bit 7 doesn't denote laser power, just whether
+                        \ or not the laser pulses, so that is not stored here)
+
+.MSTG
+
+ SKIP 1                 \ The current missile lock target
+                        \
+                        \   * &FF = no target
+                        \
+                        \   * 1-12 = the slot number of the ship that our
+                        \            missile is locked onto
+
+.XX1
+
+ SKIP 0                 \ This is an alias for INWK that is used in the main
+                        \ ship-drawing routine at LL9
+
+.INWK
+
+ SKIP 33                \ The zero-page internal workspace for the current ship
+                        \ data block
+                        \
+                        \ As operations on zero page locations are faster and
+                        \ have smaller opcodes than operations on the rest of
+                        \ the addressable memory, Elite tends to store oft-used
+                        \ data here. A lot of the routines in Elite need to
+                        \ access and manipulate ship data, so to make this an
+                        \ efficient exercise, the ship data is first copied from
+                        \ the ship data blocks at K% into INWK (or, when new
+                        \ ships are spawned, from the blueprints at XX21). See
+                        \ the deep dive on "Ship data blocks" for details of
+                        \ what each of the bytes in the INWK data block
+                        \ represents
+
+.XX19
+
+ SKIP NI% - 34          \ XX19(1 0) shares its location with INWK(34 33), which
+                        \ contains the address of the ship line heap
+
+.NEWB
+
+ SKIP 1                 \ The ship's "new byte flags" (or NEWB flags)
+                        \
+                        \ Contains details about the ship's type and associated
+                        \ behaviour, such as whether they are a trader, a bounty
+                        \ hunter, a pirate, currently hostile, in the process of
+                        \ docking, inside the hold having been scooped, and so
+                        \ on. The default values for each ship type are taken
+                        \ from the table at E%, and you can find out more detail
+                        \ in the deep dive on "Advanced tactics with the NEWB
+                        \ flags"
+
+.LSP
+
+ SKIP 1                 \ The ball line heap pointer, which contains the number
+                        \ of the first free byte after the end of the LSX2 and
+                        \ LSY2 heaps (see the deep dive on "The ball line heap"
+                        \ for details)
+
+.QQ15
+
+ SKIP 6                 \ The three 16-bit seeds for the selected system, i.e.
+                        \ the one in the crosshairs in the Short-range Chart
+                        \
+                        \ See the deep dives on "Galaxy and system seeds" and
+                        \ "Twisting the system seeds" for more details
+
+.K5
+
+ SKIP 0                 \ Temporary storage used to store segment coordinates
+                        \ across successive calls to BLINE, the ball line
+                        \ routine
+
+.XX18
+
+ SKIP 0                 \ Temporary storage used to store coordinates in the
+                        \ LL9 ship-drawing routine
+
+.QQ17
+
+ SKIP 1                 \ Contains a number of flags that affect how text tokens
+                        \ are printed, particularly capitalisation:
+                        \
+                        \   * If all bits are set (255) then text printing is
+                        \     disabled
+                        \
+                        \   * Bit 7: 0 = ALL CAPS
+                        \            1 = Sentence Case, bit 6 determines the
+                        \                case of the next letter to print
+                        \
+                        \   * Bit 6: 0 = print the next letter in upper case
+                        \            1 = print the next letter in lower case
+                        \
+                        \   * Bits 0-5: If any of bits 0-5 are set, print in
+                        \               lower case
+                        \
+                        \ So:
+                        \
+                        \   * QQ17 = 0 means case is set to ALL CAPS
+                        \
+                        \   * QQ17 = %10000000 means Sentence Case, currently
+                        \            printing upper case
+                        \
+                        \   * QQ17 = %11000000 means Sentence Case, currently
+                        \            printing lower case
+                        \
+                        \   * QQ17 = %11111111 means printing is disabled
+
+.QQ19
+
+ SKIP 3                 \ Temporary storage, used in a number of places
+
+.K6
+
+ SKIP 5                 \ Temporary storage, typically used for storing
+                        \ coordinates during vector calculations
+
+.BET2
+
+ SKIP 2                 \ Bit 7 of BET2 = sign of the pitch angle in BETA
+                        \
+                        \ Bit 7 of BET2+1 = opposite sign to BET2 and BETA
+
+.DELTA
+
+ SKIP 1                 \ Our current speed, in the range 1-40
+
+.DELT4
+
+ SKIP 2                 \ Our current speed * 64 as a 16-bit value
+                        \
+                        \ This is stored as DELT4(1 0), so the high byte in
+                        \ DELT4+1 therefore contains our current speed / 4
+
+.U
+
+ SKIP 1                 \ Temporary storage, used in a number of places
+
+.Q
+
+ SKIP 1                 \ Temporary storage, used in a number of places
+
+.R
+
+ SKIP 1                 \ Temporary storage, used in a number of places
+
+.S
+
+ SKIP 1                 \ Temporary storage, used in a number of places
+
+                        \ --- Mod: Code moved for Econet: --------------------->
+
+\.XSAV
+\
+\SKIP 1                 \ Temporary storage for saving the value of the X
+\                       \ register, used in a number of places
+\
+\.YSAV
+\
+\SKIP 1                 \ Temporary storage for saving the value of the Y
+\                       \ register, used in a number of places
+\
+\.XX17
+\
+\SKIP 1                 \ Temporary storage, used in BPRNT to store the number
+\                       \ of characters to print, and as the edge counter in the
+\                       \ main ship-drawing routine
+
+                        \ --- End of moved code ------------------------------->
+
+.QQ11
+
+ SKIP 1                 \ The type of the current view:
+                        \
+                        \   0   = Space view
+                        \   1   = Title screen
+                        \         Get commander name ("@", save/load commander)
+                        \         In-system jump just arrived ("J")
+                        \         Data on System screen (red key f6)
+                        \   2   = Buy Cargo screen (red key f1)
+                        \   3   = Mis-jump just arrived (witchspace)
+                        \   4   = Sell Cargo screen (red key f2)
+                        \   6   = Death screen
+                        \   8   = Status Mode screen (red key f8)
+                        \         Inventory screen (red key f9)
+                        \   16  = Market Price screen (red key f7)
+                        \   32  = Equip Ship screen (red key f3)
+                        \   64  = Long-range Chart (red key f4)
+                        \   128 = Short-range Chart (red key f5)
+                        \   255 = Launch view
+                        \
+                        \ This value is typically set by calling routine TT66
+
+.ZZ
+
+ SKIP 1                 \ Temporary storage, typically used for distance values
+
+.XX13
+
+ SKIP 1                 \ Temporary storage, typically used in the line-drawing
+                        \ routines
+
+.MCNT
+
+ SKIP 1                 \ The main loop counter
+                        \
+                        \ This counter determines how often certain actions are
+                        \ performed within the main loop. See the deep dive on
+                        \ "Scheduling tasks with the main loop counter" for more
+                        \ details
+
+                        \ --- Mod: Code removed for logarithms: --------------->
+
+\.DL
+\
+\SKIP 1                 \ Vertical sync flag
+\                       \
+\                       \ DL gets set to 30 every time we reach vertical sync on
+\                       \ the video system, which happens 50 times a second
+\                       \ (50Hz). The WSCAN routine uses this to pause until the
+\                       \ vertical sync, by setting DL to 0 and then monitoring
+\                       \ its value until it changes to 30
+
+                        \ --- And replaced by: -------------------------------->
+
+.widget
+
+ SKIP 1                 \ Temporary storage, used to store the original argument
+                        \ in A in the logarithmic FMLTU and LL28 routines
+
+                        \ --- End of replacement ------------------------------>
+
+.TYPE
+
+ SKIP 1                 \ The current ship type
+                        \
+                        \ This is where we store the current ship type for when
+                        \ we are iterating through the ships in the local bubble
+                        \ as part of the main flight loop. See the table at XX21
+                        \ for information about ship types
+
+.ALPHA
+
+ SKIP 1                 \ The current roll angle alpha, which is reduced from
+                        \ JSTX to a sign-magnitude value between -31 and +31
+                        \
+                        \ This describes how fast we are rolling our ship, and
+                        \ determines how fast the universe rolls around us
+                        \
+                        \ The sign bit is also stored in ALP2, while the
+                        \ opposite sign is stored in ALP2+1
+
+.QQ12
+
+ SKIP 1                 \ Our "docked" status
+                        \
+                        \   * 0 = we are not docked
+                        \
+                        \   * &FF = we are docked
+
+.TGT
+
+ SKIP 1                 \ Temporary storage, typically used as a target value
+                        \ for counters when drawing explosion clouds and partial
+                        \ circles
+
+                        \ --- Mod: Code removed for Econet: ------------------->
+
+\.SWAP
+\
+\SKIP 1                 \ Temporary storage, used to store a flag that records
+\                       \ whether or not we had to swap a line's start and end
+\                       \ coordinates around when clipping the line in routine
+\                       \ LL145 (the flag is used in places like BLINE to swap
+\                       \ them back)
+\
+\.COL
+\
+\SKIP 1                 \ Temporary storage, used to store colour information
+\                       \ when drawing pixels in the dashboard
+\
+\.FLAG
+\
+\SKIP 1                 \ A flag that's used to define whether this is the first
+\                       \ call to the ball line routine in BLINE, so it knows
+\                       \ whether to wait for the second call before storing
+\                       \ segment data in the ball line heap
+
+                        \ --- End of removed code ----------------------------->
+
+.CNT
+
+ SKIP 1                 \ Temporary storage, typically used for storing the
+                        \ number of iterations required when looping
+
+                        \ --- Mod: Code removed for Econet: ------------------->
+
+\.CNT2
+\
+\SKIP 1                 \ Temporary storage, used in the planet-drawing routine
+\                       \ to store the segment number where the arc of a partial
+\                       \ circle should start
+\
+\.STP
+\
+\SKIP 1                 \ The step size for drawing circles
+\                       \
+\                       \ Circles in Elite are split up into 64 points, and the
+\                       \ step size determines how many points to skip with each
+\                       \ straight-line segment, so the smaller the step size,
+\                       \ the smoother the circle. The values used are:
+\                       \
+\                       \   * 2 for big planets and the circles on the charts
+\                       \   * 4 for medium planets and the launch tunnel
+\                       \   * 8 for small planets and the hyperspace tunnel
+\                       \
+\                       \ As the step size increases we move from smoother
+\                       \ circles at the top to more polygonal at the bottom.
+\                       \ See the CIRCLE2 routine for more details
+\
+\.XX4
+\
+\SKIP 1                 \ Temporary storage, used in a number of places
+\
+\.XX20
+\
+\SKIP 1                 \ Temporary storage, used in a number of places
+\
+\.XX14
+\
+\SKIP 1                 \ This byte appears to be unused
+\
+\.RAT
+\
+\SKIP 1                 \ Used to store different signs depending on the current
+\                       \ space view, for use in calculating stardust movement
+\
+\.RAT2
+\
+\SKIP 1                 \ Temporary storage, used to store the pitch and roll
+\                       \ signs when moving objects and stardust
+\
+\.K2
+\
+\SKIP 4                 \ Temporary storage, used in a number of places
+
+                        \ --- And replaced by: -------------------------------->
+
+                        \ --- Mod: Code added for flicker-free ships: --------->
+
+.LSNUM2
+
+ SKIP 0                 \ The size of the existing ship line heap for the ship
+                        \ we are drawing in LL9, i.e. the number of lines in the
+                        \ old ship that is currently shown on-screen and which
+                        \ we need to erase
+
+                        \ --- End of added code ------------------------------->
+
+.RAT
+
+ SKIP 1                 \ Used to store different signs depending on the current
+                        \ space view, for use in calculating stardust movement
+
+.RAT2
+
+ SKIP 1                 \ Temporary storage, used to store the pitch and roll
+                        \ signs when moving objects and stardust
+
+.CNT2
+
+ SKIP 1                 \ Temporary storage, used in the planet-drawing routine
+                        \ to store the segment number where the arc of a partial
+                        \ circle should start
+
+.SWAP
+
+ SKIP 1                 \ Temporary storage, used to store a flag that records
+                        \ whether or not we had to swap a line's start and end
+                        \ coordinates around when clipping the line in routine
+                        \ LL145 (the flag is used in places like BLINE to swap
+                        \ them back)
+
+                        \ --- End of replacement ------------------------------>
+
+                        \ --- Mod: Code added for flicker-free ships: --------->
+
+.LSNUM
+
+ SKIP 1                 \ The pointer to the current position in the ship line
+                        \ heap as we work our way through the new ship's edges
+                        \ (and the corresponding old ship's edges) when drawing
+                        \ the ship in the main ship-drawing routine at LL9
+
+                        \ --- End of added code ------------------------------->
+
+                        \ --- Mod: Code added for Econet: --------------------->
+
+.econet
+
+ SKIP 16                \ &90-9F is reserved for Econet
+
+                        \ --- End of added code ------------------------------->
+
+ ORG &00D1
+
+.T
+
+ SKIP 1                 \ Temporary storage, used in a number of places
+
+.K3
+
+ SKIP 0                 \ Temporary storage, used in a number of places
+
+                        \ --- Mod: Code removed for Econet: ------------------->
+
+\.XX2
+\
+\SKIP 14                \ Temporary storage, used to store the visibility of the
+\                       \ ship's faces during the ship-drawing routine at LL9
+
+                        \ --- And replaced by: -------------------------------->
+
+.XX2
+
+ SKIP 9                 \ Temporary storage, used to store the visibility of the
+                        \ ship's faces during the ship-drawing routine at LL9
+
+.COL
+
+ SKIP 1                 \ Temporary storage, used to store colour information
+                        \ when drawing pixels in the dashboard
+.K2
+
+ SKIP 4                 \ Temporary storage, used in a number of places
+
+.STP
+
+ SKIP 1                 \ The step size for drawing circles
+                        \
+                        \ Circles in Elite are split up into 64 points, and the
+                        \ step size determines how many points to skip with each
+                        \ straight-line segment, so the smaller the step size,
+                        \ the smoother the circle. The values used are:
+                        \
+                        \   * 2 for big planets and the circles on the charts
+                        \   * 4 for medium planets and the launch tunnel
+                        \   * 8 for small planets and the hyperspace tunnel
+                        \
+                        \ As the step size increases we move from smoother
+                        \ circles at the top to more polygonal at the bottom.
+                        \ See the CIRCLE2 routine for more details
+
+.FLAG
+
+ SKIP 1                 \ A flag that's used to define whether this is the first
+                        \ call to the ball line routine in BLINE, so it knows
+                        \ whether to wait for the second call before storing
+                        \ segment data in the ball line heap
+
+                        \ --- End of replacement ------------------------------>
+
+.K4
+
+ SKIP 2                 \ Temporary storage, used in a number of places
+
+ PRINT "ZP workspace from ", ~ZP, "to ", ~P%-1, "inclusive"
+
+\ ******************************************************************************
+\
+\       Name: XX3
+\       Type: Workspace
+\    Address: &0100 to the top of the descending stack
+\   Category: Workspaces
+\    Summary: Temporary storage space for complex calculations
+\
+\ ------------------------------------------------------------------------------
+\
+\ Used as heap space for storing temporary data during calculations. Shared with
+\ the descending 6502 stack, which works down from &01FF.
+\
+\ ******************************************************************************
+
+ ORG &0100
+
+.XX3
+
+ SKIP 256               \ Temporary storage, typically used for storing tables
+                        \ of values such as screen coordinates or ship data
+
+\ ******************************************************************************
+\
+\       Name: T%
+\       Type: Workspace
+\    Address: &0300 to &036C
+\   Category: Workspaces
+\    Summary: Current commander data and stardust data blocks
+\
+\ ------------------------------------------------------------------------------
+\
+\ Contains the current commander data (NT% bytes at location TP), and the
+\ stardust data blocks (NOST bytes at location SX)
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code removed for Econet: ------------------->
+
+\ORG &0300
+
+                        \ --- And replaced by: -------------------------------->
+
+ ORG &0900
+
+                        \ --- End of replacement ------------------------------>
+
+.T%
+
+ SKIP 0                 \ The start of the T% workspace
+
+                        \ --- Mod: Code moved for Econet: --------------------->
 
 .KL
 
@@ -567,157 +1102,6 @@
                         \
                         \   * Non-zero = yes
 
-.LAS
-
- SKIP 1                 \ Contains the laser power of the laser fitted to the
-                        \ current space view (or 0 if there is no laser fitted
-                        \ to the current view)
-                        \
-                        \ This gets set to bits 0-6 of the laser power byte from
-                        \ the commander data block, which contains the laser's
-                        \ power (bit 7 doesn't denote laser power, just whether
-                        \ or not the laser pulses, so that is not stored here)
-
-.MSTG
-
- SKIP 1                 \ The current missile lock target
-                        \
-                        \   * &FF = no target
-                        \
-                        \   * 1-12 = the slot number of the ship that our
-                        \            missile is locked onto
-
-.XX1
-
- SKIP 0                 \ This is an alias for INWK that is used in the main
-                        \ ship-drawing routine at LL9
-
-.INWK
-
- SKIP 33                \ The zero-page internal workspace for the current ship
-                        \ data block
-                        \
-                        \ As operations on zero page locations are faster and
-                        \ have smaller opcodes than operations on the rest of
-                        \ the addressable memory, Elite tends to store oft-used
-                        \ data here. A lot of the routines in Elite need to
-                        \ access and manipulate ship data, so to make this an
-                        \ efficient exercise, the ship data is first copied from
-                        \ the ship data blocks at K% into INWK (or, when new
-                        \ ships are spawned, from the blueprints at XX21)
-
-.XX19
-
- SKIP NI% - 33          \ XX19(1 0) shares its location with INWK(34 33), which
-                        \ contains the address of the ship line heap
-
-.LSP
-
- SKIP 1                 \ The ball line heap pointer, which contains the number
-                        \ of the first free byte after the end of the LSX2 and
-                        \ LSY2 heaps
-
-.QQ15
-
- SKIP 6                 \ The three 16-bit seeds for the selected system, i.e.
-                        \ the one in the crosshairs in the Short-range Chart
-
-.K5
-
- SKIP 0                 \ Temporary storage used to store segment coordinates
-                        \ across successive calls to BLINE, the ball line
-                        \ routine
-
-.XX18
-
- SKIP 0                 \ Temporary storage used to store coordinates in the
-                        \ LL9 ship-drawing routine
-
-.QQ17
-
- SKIP 1                 \ Contains a number of flags that affect how text tokens
-                        \ are printed, particularly capitalisation:
-                        \
-                        \   * If all bits are set (255) then text printing is
-                        \     disabled
-                        \
-                        \   * Bit 7: 0 = ALL CAPS
-                        \            1 = Sentence Case, bit 6 determines the
-                        \                case of the next letter to print
-                        \
-                        \   * Bit 6: 0 = print the next letter in upper case
-                        \            1 = print the next letter in lower case
-                        \
-                        \   * Bits 0-5: If any of bits 0-5 are set, print in
-                        \               lower case
-                        \
-                        \ So:
-                        \
-                        \   * QQ17 = 0 means case is set to ALL CAPS
-                        \
-                        \   * QQ17 = %10000000 means Sentence Case, currently
-                        \            printing upper case
-                        \
-                        \   * QQ17 = %11000000 means Sentence Case, currently
-                        \            printing lower case
-                        \
-                        \   * QQ17 = %11111111 means printing is disabled
-
-.QQ19
-
- SKIP 3                 \ Temporary storage, used in a number of places
-
-.K6
-
- SKIP 5                 \ Temporary storage, typically used for storing
-                        \ coordinates during vector calculations
-
-.ALP1
-
- SKIP 1                 \ Magnitude of the roll angle alpha, i.e. |alpha|,
-                        \ which is a positive value between 0 and 31
-
-.ALP2
-
- SKIP 2                 \ Bit 7 of ALP2 = sign of the roll angle in ALPHA
-                        \
-                        \ Bit 7 of ALP2+1 = opposite sign to ALP2 and ALPHA
-
-.BET2
-
- SKIP 2                 \ Bit 7 of BET2 = sign of the pitch angle in BETA
-                        \
-                        \ Bit 7 of BET2+1 = opposite sign to BET2 and BETA
-
-.DELTA
-
- SKIP 1                 \ Our current speed, in the range 1-40
-
-.DELT4
-
- SKIP 2                 \ Our current speed * 64 as a 16-bit value
-                        \
-                        \ This is stored as DELT4(1 0), so the high byte in
-                        \ DELT4+1 therefore contains our current speed / 4
-
-.U
-
- SKIP 1                 \ Temporary storage, used in a number of places
-
- SKIP 16                \ These bytes appear to be unused
-
-.Q
-
- SKIP 1                 \ Temporary storage, used in a number of places
-
-.R
-
- SKIP 1                 \ Temporary storage, used in a number of places
-
-.S
-
- SKIP 1                 \ Temporary storage, used in a number of places
-
 .XSAV
 
  SKIP 1                 \ Temporary storage for saving the value of the X
@@ -734,58 +1118,6 @@
                         \ of characters to print, and as the edge counter in the
                         \ main ship-drawing routine
 
-.QQ11
-
- SKIP 1                 \ The type of the current view:
-                        \
-                        \   0   = Space view
-                        \   1   = Data on System screen (FUNC-7)
-                        \         Get commander name (":", save/load commander)
-                        \         In-system jump just arrived ("J")
-                        \         Title screen
-                        \         Buy Cargo screen (FUNC-2)
-                        \   4   = Sell Cargo screen (FUNC-3)
-                        \   6   = Death screen
-                        \   8   = Status Mode screen (FUNC-9)
-                        \         Inventory screen (FUNC-0)
-                        \   16  = Market Price screen (FUNC-8)
-                        \   32  = Equip Ship screen (FUNC-4)
-                        \   64  = Long-range Chart (FUNC-5)
-                        \   128 = Short-range Chart (FUNC-6)
-                        \
-                        \ This value is typically set by calling routine TT66
-
-.ZZ
-
- SKIP 1                 \ Temporary storage, typically used for distance values
-
-.XX13
-
- SKIP 1                 \ Temporary storage, typically used in the line-drawing
-                        \ routines
-
-.MCNT
-
- SKIP 1                 \ The main loop counter
-                        \
-                        \ This counter determines how often certain actions are
-                        \ performed within the main loop
-
-.DL
-
- SKIP 1                 \ This byte is unused in this version of Elite (it is
-                        \ used to store the vertical sync flag in the BBC Micro
-                        \ versions)
-
-.TYPE
-
- SKIP 1                 \ The current ship type
-                        \
-                        \ This is where we store the current ship type for when
-                        \ we are iterating through the ships in the local bubble
-                        \ as part of the main flight loop. See the table at XX21
-                        \ for information about ship types
-
 .JSTX
 
  SKIP 1                 \ Our current roll rate
@@ -798,10 +1130,12 @@
                         \ rate, 128 means roll is not changing, and 255 means
                         \ roll is increasing at the maximum rate
                         \
-                        \ This value is updated by "<" and ">" key presses. If
+                        \ This value is updated by "<" and ">" key presses, or
+                        \ if joysticks are enabled, from the joystick. If
                         \ keyboard damping is enabled (which it is by default),
                         \ the value is slowly moved towards the centre value of
-                        \ 128 (no roll) if there are no key presses
+                        \ 128 (no roll) if there are no key presses or joystick
+                        \ movement
 
 .JSTY
 
@@ -815,212 +1149,14 @@
                         \ rate, 128 means pitch is not changing, and 255 means
                         \ pitch is increasing at the maximum rate
                         \
-                        \ This value is updated by "S" and "X" key presses. If
+                        \ This value is updated by "S" and "X" key presses, or
+                        \ if joysticks are enabled, from the joystick. If
                         \ keyboard damping is enabled (which it is by default),
                         \ the value is slowly moved towards the centre value of
-                        \ 128 (no pitch) if there are no key presses
+                        \ 128 (no pitch) if there are no key presses or joystick
+                        \ movement
 
-.ALPHA
-
- SKIP 1                 \ The current roll angle alpha, which is reduced from
-                        \ JSTX to a sign-magnitude value between -31 and +31
-                        \
-                        \ This describes how fast we are rolling our ship, and
-                        \ determines how fast the universe rolls around us
-                        \
-                        \ The sign bit is also stored in ALP2, while the
-                        \ opposite sign is stored in ALP2+1
-
-.QQ12
-
- SKIP 1                 \ Our "docked" status
-                        \
-                        \   * 0 = we are not docked
-                        \
-                        \   * &FF = we are docked
-
-.TGT
-
- SKIP 1                 \ Temporary storage, typically used as a target value
-                        \ for counters when drawing explosion clouds and partial
-                        \ circles
-
-.SWAP
-
- SKIP 1                 \ Temporary storage, used to store a flag that records
-                        \ whether or not we had to swap a line's start and end
-                        \ coordinates around when clipping the line in routine
-                        \ LL145 (the flag is used in places like BLINE to swap
-                        \ them back)
-
-                        \ --- Mod: Code removed for logarithms: --------------->
-
-\SKIP 1                 \ This byte is unused in this version of Elite (it
-\                       \ is used to store colour information when drawing
-\                       \ pixels in the dashboard, and the Electron's dashboard
-\                       \ is monochrome)
-
-                        \ --- And replaced by: -------------------------------->
-
-.widget
-
- SKIP 1                 \ Temporary storage, used to store the original argument
-                        \ in A in the logarithmic FMLTU and LL28 routines
-
-                        \ --- End of replacement ------------------------------>
-
-.FLAG
-
- SKIP 1                 \ A flag that's used to define whether this is the first
-                        \ call to the ball line routine in BLINE, so it knows
-                        \ whether to wait for the second call before storing
-                        \ segment data in the ball line heap
-
-.CNT
-
- SKIP 1                 \ Temporary storage, typically used for storing the
-                        \ number of iterations required when looping
-
-.CNT2
-
- SKIP 1                 \ Temporary storage, used in the planet-drawing routine
-                        \ to store the segment number where the arc of a partial
-                        \ circle should start
-
-.STP
-
- SKIP 1                 \ The step size for drawing circles
-                        \
-                        \ Circles in Elite are split up into 64 points, and the
-                        \ step size determines how many points to skip with each
-                        \ straight-line segment, so the smaller the step size,
-                        \ the smoother the circle. The values used are:
-                        \
-                        \   * 2 for big planets and the circles on the charts
-                        \   * 4 for medium planets and the launch tunnel
-                        \   * 8 for small planets and the hyperspace tunnel
-                        \
-                        \ As the step size increases we move from smoother
-                        \ circles at the top to more polygonal at the bottom.
-                        \ See the CIRCLE2 routine for more details
-
-.XX4
-
- SKIP 1                 \ Temporary storage, used in a number of places
-
-.XX20
-
- SKIP 1                 \ Temporary storage, used in a number of places
-
-                        \ --- Mod: Code removed for flicker-free ships: ------->
-
-\.XX14
-\
-\SKIP 1                 \ This byte appears to be unused
-
-                        \ --- And replaced by: -------------------------------->
-
-.LSNUM
-
- SKIP 1                 \ The pointer to the current position in the ship line
-                        \ heap as we work our way through the new ship's edges
-                        \ (and the corresponding old ship's edges) when drawing
-                        \ the ship in the main ship-drawing routine at LL9
-
-.LSNUM2
-
- SKIP 0                 \ The size of the existing ship line heap for the ship
-                        \ we are drawing in LL9, i.e. the number of lines in the
-                        \ old ship that is currently shown on-screen and which
-                        \ we need to erase
-
-                        \ --- End of replacement ------------------------------>
-
-.RAT
-
- SKIP 1                 \ Used to store different signs depending on the current
-                        \ space view, for use in calculating stardust movement
-
-.RAT2
-
- SKIP 1                 \ Temporary storage, used to store the pitch and roll
-                        \ signs when moving objects and stardust
-
-.K2
-
- SKIP 4                 \ Temporary storage, used in a number of places
-
- ORG &00D1
-
-.T
-
- SKIP 1                 \ Temporary storage, used in a number of places
-
-.K3
-
- SKIP 0                 \ Temporary storage, used in a number of places
-
-.XX2
-
- SKIP 14                \ Temporary storage, used to store the visibility of the
-                        \ ship's faces during the ship-drawing routine at LL9
-
-.K4
-
- SKIP 2                 \ Temporary storage, used in a number of places
-
- PRINT "ZP workspace from ", ~ZP, "to ", ~P%-1, "inclusive"
-
-\ ******************************************************************************
-\
-\       Name: XX3
-\       Type: Workspace
-\    Address: &0100 to the top of the descending stack
-\   Category: Workspaces
-\    Summary: Temporary storage space for complex calculations
-\
-\ ------------------------------------------------------------------------------
-\
-\ Used as heap space for storing temporary data during calculations. Shared with
-\ the descending 6502 stack, which works down from &01FF.
-\
-\ ******************************************************************************
-
- ORG &0100
-
-.XX3
-
- SKIP 256               \ Temporary storage, typically used for storing tables
-                        \ of values such as screen coordinates or ship data
-
-\ ******************************************************************************
-\
-\       Name: T%
-\       Type: Workspace
-\    Address: &0300 to &036C
-\   Category: Workspaces
-\    Summary: Current commander data and stardust data blocks
-\
-\ ------------------------------------------------------------------------------
-\
-\ Contains the current commander data (NT% bytes at location TP), and the
-\ stardust data blocks (NOST bytes at location SX)
-\
-\ ******************************************************************************
-
-                        \ --- Mod: Code removed for Econet: ------------------->
-
-\ORG &0300
-
-                        \ --- And replaced by: -------------------------------->
-
- ORG &0900
-
-                        \ --- End of replacement ------------------------------>
-
-.T%
-
- SKIP 0                 \ The start of the T% workspace
+                        \ --- End of moved code ------------------------------->
 
                         \ --- Mod: Code added for saving and loading: --------->
 
@@ -19443,11 +19579,23 @@ ENDIF
  LDX KYTB,Y             \ Call DKS4 to see if the KYTB key at offset Y is being
  JSR DKS4               \ pressed
 
- BPL P%+6               \ If the key isn't being pressed, skip the following two
+                        \ --- Mod: Code removed for Econet: ------------------->
+
+\BPL P%+6               \ If the key isn't being pressed, skip the following two
+\                       \ instructions
+\
+\LDX #&FF               \ Set the key logger for this key to indicate it's being
+\STX KL,Y               \ pressed
+
+                        \ --- And replaced by: -------------------------------->
+
+ BPL P%+7               \ If the key isn't being pressed, skip the following two
                         \ instructions
 
- LDX #&FF               \ Set the key logger for this key to indicate it's being
- STX KL,Y               \ pressed
+ LDA #&FF               \ Set the key logger for this key to indicate it's being
+ STA KL,Y               \ pressed
+
+                        \ --- End of replacement ------------------------------>
 
  DEY                    \ Decrement the loop counter
 
@@ -27962,6 +28110,20 @@ ENDMACRO
  SKIP NOST + 1          \ This is where we store the z_lo coordinates for all
                         \ the stardust particles
 
+                        \ --- Mod: Code moved for Econet: --------------------->
+
+\.XSAV2
+\
+\SKIP 1                 \ Temporary storage, used for storing the value of the X
+\                       \ register in the TT26 routine
+\
+\.YSAV2
+\
+\SKIP 1                 \ Temporary storage, used for storing the value of the Y
+\                       \ register in the TT26 routine
+
+                        \ --- End of moved code ------------------------------->
+
 .MCH
 
  SKIP 1                 \ The text token number of the in-flight message that is
@@ -28031,13 +28193,9 @@ ENDMACRO
                         \   * 6 = Average Agricultural
                         \   * 7 = Poor Agricultural
 
-                        \ --- Mod: Code moved for flicker-free planets: ------->
+.QQ29
 
-\.QQ29
-\
-\SKIP 1                 \ Temporary storage, used in a number of places
-
-                        \ --- End of moved code ------------------------------->
+ SKIP 1                 \ Temporary storage, used in a number of places
 
 .gov
 
@@ -28083,22 +28241,18 @@ ENDMACRO
  SKIP 6                 \ The three 16-bit seeds for the current system, i.e.
                         \ the one we are currently in
 
-                        \ --- Mod: Code moved for flicker-free planets: ------->
+.QQ3
 
-\.QQ3
-\
-\SKIP 1                 \ The selected system's economy (0-7)
-\                       \
-\                       \   * 0 = Rich Industrial
-\                       \   * 1 = Average Industrial
-\                       \   * 2 = Poor Industrial
-\                       \   * 3 = Mainly Industrial
-\                       \   * 4 = Mainly Agricultural
-\                       \   * 5 = Rich Agricultural
-\                       \   * 6 = Average Agricultural
-\                       \   * 7 = Poor Agricultural
-
-                        \ --- End of moved code ------------------------------->
+ SKIP 1                 \ The selected system's economy (0-7)
+                        \
+                        \   * 0 = Rich Industrial
+                        \   * 1 = Average Industrial
+                        \   * 2 = Poor Industrial
+                        \   * 3 = Mainly Industrial
+                        \   * 4 = Mainly Agricultural
+                        \   * 5 = Rich Agricultural
+                        \   * 6 = Average Agricultural
+                        \   * 7 = Poor Agricultural
 
 .QQ4
 
