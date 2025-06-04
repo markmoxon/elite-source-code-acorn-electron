@@ -6067,10 +6067,9 @@ ENDIF
 
                         \ --- And replaced by: -------------------------------->
 
- LDA YC
- CMP #24                \ If the text cursor is on the screen (i.e. YC < 24, so
- BCC RREN+2                \ we are on rows 0-23), then jump to RR3 to print the
-                        \ character
+ LDA YC                 \ If the text cursor is on the screen (i.e. YC < 24, so
+ CMP #24                \ we are on rows 0-23), then jump to RR3 to print the
+ BCC RREN+2             \ character
 
  PHA                    \ Store A on the stack so we can retrieve it below
 
@@ -6091,6 +6090,7 @@ ENDIF
                         \ tapped
 
 .skipReturn
+
                         \ --- End of added code ------------------------------->
 
  JSR TTX66              \ Otherwise we are off the bottom of the screen, so
