@@ -10616,11 +10616,23 @@ ENDIF
                         \ sign of A, so it can be negative if it's above the
                         \ chart's centre, or positive if it's below)
 
- ASL A                  \ Set Y1 = 90 + y-delta * 2
+                        \ --- Mod: Code removed for suns: --------------------->
+
+\ASL A                  \ Set Y1 = 90 + y-delta * 2
+\ADC #90                \
+\STA Y1                 \ 90 is the y-coordinate of the centre of the chart,
+\                       \ so this sets Y1 to the centre 90 +/- 74, the pixel
+\                       \ y-coordinate of this system
+
+                        \ --- And replaced by: -------------------------------->
+
+ ASL A                  \ Set K4 = 90 + y-delta * 2
  ADC #90                \
- STA Y1                 \ 90 is the y-coordinate of the centre of the chart,
-                        \ so this sets Y1 to the centre 90 +/- 74, the pixel
+ STA K4                 \ 90 is the y-coordinate of the centre of the chart,
+                        \ so this sets K4 to the centre 90 +/- 74, the pixel
                         \ y-coordinate of this system
+
+                        \ --- End of replacement ------------------------------>
 
  LSR A                  \ Set Y = A >> 3
  LSR A                  \       = Y1 div 8
@@ -10677,10 +10689,51 @@ ENDIF
 
 .ee1
 
- LDA XX12               \ Set X1 to the pixel x-coordinate of this system
- STA X1
+                        \ --- Mod: Code removed for suns: --------------------->
 
- JSR CPIX4              \ Draw a double-height mode 4 dot at (X1, Y1)
+\LDA XX12               \ Set X1 to the pixel x-coordinate of this system
+\STA X1
+\
+\JSR CPIX4              \ Draw a double-height mode 4 dot at (X1, Y1)
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDA #0                 \ Now to plot the star, so set the high bytes of K, K3
+ STA K3+1               \ and K4 to 0
+ STA K4+1
+ STA K+1
+
+ LDA XX12               \ Set the low byte of K3 to XX12, the pixel x-coordinate
+ STA K3                 \ of this system
+
+ LDA QQ15+5             \ Fetch s2_hi for this system from QQ15+5, extract bit 0
+ AND #1                 \ and add 2 to get the size of the star, which we store
+ ADC #2                 \ in K. This will be either 2, 3 or 4, depending on the
+ STA K                  \ value of bit 0, and whether the C flag is set (which
+                        \ will vary depending on what happens in the above call
+                        \ to cpl). Incidentally, the planet's average radius
+                        \ also uses s2_hi, bits 0-3 to be precise, but that
+                        \ doesn't mean the two sizes affect each other
+
+                        \ We now have the following:
+                        \
+                        \   K(1 0)  = radius of star (2, 3 or 4)
+                        \
+                        \   K3(1 0) = pixel x-coordinate of system
+                        \
+                        \   K4(1 0) = pixel y-coordinate of system
+                        \
+                        \ which we can now pass to the SUN routine to draw a
+                        \ small "sun" on the Short-range Chart for this system
+
+ JSR FLFLLS             \ Call FLFLLS to reset the LSO block
+
+ JSR SUN                \ Call SUN to plot a sun with radius K at pixel
+                        \ coordinate (K3, K4)
+
+ JSR FLFLLS             \ Call FLFLLS to reset the LSO block
+
+                        \ --- End of replacement ------------------------------>
 
 .TT187
 
