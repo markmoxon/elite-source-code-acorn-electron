@@ -26906,6 +26906,25 @@ ENDMACRO
                         \
                         \   * Non-zero = E.C.M. is on
 
+.CABTMP
+
+                        \ --- Mod: Code added for suns: ----------------------->
+
+ SKIP 1                 \ Cabin temperature
+                        \
+                        \ The ambient cabin temperature in deep space is 30,
+                        \ which is displayed as one notch on the dashboard bar
+                        \
+                        \ We get higher temperatures closer to the sun
+                        \
+                        \ CABTMP shares a location with MANY, but that's OK as
+                        \ MANY+0 would contain the number of ships of type 0,
+                        \ and as there is no ship type 0 (they start at 1), the
+                        \ byte at MANY+0 is not used for storing a ship type
+                        \ and can be used for the cabin temperature instead
+
+                        \ --- End of added code ------------------------------->
+
 .MSAR
 
  SKIP 1                 \ The targeting state of our leftmost missile
@@ -28804,6 +28823,95 @@ ENDMACRO
                         \ and return from the main flight loop using a tail call
 
 .MA29
+
+                        \ --- Mod: Code added for suns: ----------------------->
+
+ CMP #20                \ If this is the 20th iteration in this block of 32,
+ BNE MA23               \ do the following, otherwise jump to MA23 to skip the
+                        \ sun altitude check
+
+.MA33
+
+ CMP #20                \ If this is the 20th iteration in this block of 32,
+ BNE MA23               \ do the following, otherwise jump to MA23 to skip the
+                        \ sun altitude check
+
+ LDA #30                \ Set CABTMP to 30, the cabin temperature in deep space
+ STA CABTMP             \ (i.e. one notch on the dashboard bar)
+
+ LDA SSPR               \ If we are inside the space station safe zone, jump to
+ BNE MA23               \ MA23 to skip the following, as we can't have both the
+                        \ sun and space station at the same time, so we clearly
+                        \ can't be flying near the sun
+
+ LDY #NI%               \ Set Y to NI%, which is the offset in K% for the sun's
+                        \ data block, as the second block at K% is reserved for
+                        \ the sun (or space station)
+
+ JSR MAS2               \ Call MAS2 to calculate the largest distance to the
+ BNE MA23               \ sun in any of the three axes, and if it's non-zero,
+                        \ jump to MA23 to skip the following, as we are too far
+                        \ from the sun for scooping or temperature changes
+
+ JSR MAS3               \ Set A = x_hi^2 + y_hi^2 + z_hi^2, so using Pythagoras
+                        \ we now know that A now contains the square of the
+                        \ distance between our ship (at the origin) and the
+                        \ heart of the sun at (x_hi, y_hi, z_hi)
+
+ EOR #%11111111         \ Invert A, so A is now small if we are far from the
+                        \ sun and large if we are close to the sun, in the
+                        \ range 0 = far away to &FF = extremely close, ouch,
+                        \ hot, hot, hot!
+
+ ADC #30                \ Add the minimum cabin temperature of 30, so we get
+                        \ one of the following:
+                        \
+                        \   * If the C flag is clear, A contains the cabin
+                        \     temperature, ranging from 30 to 255, that's hotter
+                        \     the closer we are to the sun
+                        \
+                        \   * If the C flag is set, the addition has rolled over
+                        \     and the cabin temperature is over 255
+
+ STA CABTMP             \ Store the updated cabin temperature
+
+ BCS MA28               \ If the C flag is set then jump to MA28 to die, as
+                        \ our temperature is off the scale
+
+ CMP #224               \ If the cabin temperature < 224 then jump to MA23 to
+ BCC MA23               \ skip fuel scooping, as we aren't close enough
+
+ LDA BST                \ If we don't have fuel scoops fitted, jump to BA23 to
+ BEQ MA23               \ skip fuel scooping, as we can't scoop without fuel
+                        \ scoops
+
+ LDA DELT4+1            \ We are now successfully fuel scooping, so it's time
+ LSR A                  \ to work out how much fuel we're scooping. Fetch the
+                        \ high byte of DELT4, which contains our current speed
+                        \ divided by 4, and halve it to get our current speed
+                        \ divided by 8 (so it's now a value between 1 and 5, as
+                        \ our speed is normally between 1 and 40). This gives
+                        \ us the amount of fuel that's being scooped in A, so
+                        \ the faster we go, the more fuel we scoop, and because
+                        \ the fuel levels are stored as 10 * the fuel in light
+                        \ years, that means we just scooped between 0.1 and 0.5
+                        \ light years of free fuel
+
+ ADC QQ14               \ Set A = A + the current fuel level * 10 (from QQ14)
+
+ CMP #70                \ If A > 70 then set A = 70 (as 70 is the maximum fuel
+ BCC P%+4               \ level, or 7.0 light years)
+ LDA #70
+
+ STA QQ14               \ Store the updated fuel level in QQ14
+
+ LDA #160               \ Set A to token 160 ("FUEL SCOOPS ON")
+
+.MA34
+
+ JSR MESS               \ Print the token in A as an in-flight message
+
+                        \ --- End of added code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -34208,8 +34316,18 @@ ENDMACRO
  JSR DILX+2             \ and increment SC to point to the next indicator (the
                         \ cabin temperature)
 
- SEC                    \ Call NEXTR with the C flag set to move the screen
- JSR NEXTR              \ address in SC(1 0) down by one character row
+                        \ --- Mod: Code removed for suns: --------------------->
+
+\SEC                    \ Call NEXTR with the C flag set to move the screen
+\JSR NEXTR              \ address in SC(1 0) down by one character row
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDA CABTMP             \ Draw the cabin temperature indicator using a range of
+ JSR DILX               \ 0-255, and increment SC to point to the next indicator
+                        \ (the laser temperature)
+
+                        \ --- End of replacement ------------------------------>
 
  LDA GNTMP              \ Draw the laser temperature indicator using a range of
  JSR DILX               \ 0-255, and increment SC to point to the next indicator
@@ -43571,17 +43689,35 @@ ENDMACRO
 
 .FAROF2
 
- CMP INWK+1             \ If A < x_hi, C will be clear so jump to MA34 to
- BCC MA34               \ return from the subroutine with C clear, otherwise
+                        \ --- Mod: Code removed for suns: --------------------->
+
+\CMP INWK+1             \ If A < x_hi, C will be clear so jump to MA34 to
+\BCC MA34               \ return from the subroutine with C clear, otherwise
+\                       \ C will be set so move on to the next one
+\
+\CMP INWK+4             \ If A < y_hi, C will be clear so jump to MA34 to
+\BCC MA34               \ return from the subroutine with C clear, otherwise
+\                       \ C will be set so move on to the next one
+\
+\CMP INWK+7             \ If A < z_hi, C will be clear, otherwise C will be set
+\
+\.MA34
+
+                        \ --- And replaced by: -------------------------------->
+
+ CMP INWK+1             \ If A < x_hi, C will be clear so jump to FA1 to
+ BCC FA1                \ return from the subroutine with C clear, otherwise
                         \ C will be set so move on to the next one
 
- CMP INWK+4             \ If A < y_hi, C will be clear so jump to MA34 to
- BCC MA34               \ return from the subroutine with C clear, otherwise
+ CMP INWK+4             \ If A < y_hi, C will be clear so jump to FA1 to
+ BCC FA1                \ return from the subroutine with C clear, otherwise
                         \ C will be set so move on to the next one
 
  CMP INWK+7             \ If A < z_hi, C will be clear, otherwise C will be set
 
-.MA34
+.FA1
+
+                        \ --- End of replacement ------------------------------>
 
  RTS                    \ Return from the subroutine
 
