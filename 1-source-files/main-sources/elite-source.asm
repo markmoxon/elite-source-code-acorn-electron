@@ -176,6 +176,12 @@
 
                         \ --- End of added code ------------------------------->
 
+                        \ --- Mod: Code added for faster pixel plotting: ------>
+
+ SCBASE = &5800         \ The address of screen memory
+
+                        \ --- End of added code ------------------------------->
+
  VIA = &FE00            \ Memory-mapped space for accessing internal hardware,
                         \ such as the video ULA, 6845 CRTC and 6522 VIAs (also
                         \ known as SHEILA)
@@ -31014,60 +31020,90 @@ ENDMACRO
                         \ X1 < X2, so we're going from left to right as we go
                         \ from X1 to X2
 
-                        \ We now calculate the address of the character block
-                        \ containing the pixel (X1, Y1) and put it in SC(1 0),
-                        \ as follows:
-                        \
-                        \   SC = &5800 + (Y1 div 8 * 256) + (Y1 div 8 * 64) + 32
+                        \ --- Mod: Code removed for faster pixel plotting: ---->
 
- LDA Y1                 \ Set A to the y-coordinate in Y1
+\                       \ We now calculate the address of the character block
+\                       \ containing the pixel (X1, Y1) and put it in SC(1 0),
+\                       \ as follows:
+\                       \
+\                       \   SC = &5800 + (Y1 div 8 * 256) + (Y1 div 8 * 64) + 32
+\
+\LDA Y1                 \ Set A to the y-coordinate in Y1
+\
+\LSR A                  \ Set A = A >> 3
+\LSR A                  \       = y div 8
+\LSR A                  \
+\                       \ So A now contains the number of the character row
+\                       \ that will contain the start of the line
+\
+\STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
+\                       \                           = char row * 256
+\
+\LSR A                  \ Set (A SC) = (A SC) / 4
+\ROR SC                 \            = (4 * ((char row * 64) + 32)) / 4
+\LSR A                  \            = char row * 64 + 32
+\ROR SC
+\
+\ADC SC+1               \ Set SC(1 0) = (A SC) + (SC+1 0) + &5800
+\ADC #&58               \             = (char row * 64 + 32)
+\STA SC+1               \               + char row * 256
+\                       \               + &5800
+\                       \
+\                       \ which is what we want, so SC(1 0) contains the address
+\                       \ of the first visible pixel on the character row
+\                       \ containing the point (X1, Y1)
+\
+\TXA                    \ Each character block contains 8 pixel rows, so to get
+\AND #%11111000         \ the address of the first byte in the character block
+\                       \ that we need to draw into, as an offset from the start
+\                       \ of the row, we clear bits 0-2
+\
+\ADC SC                 \ And add the result to SC(1 0) to get the character
+\STA SC                 \ block on the row we want
+\
+\BCC P%+4               \ If the addition of the low bytes overflowed, increment
+\INC SC+1               \ the high byte
+\
+\                       \ So SC(1 0) now contains the address of the first pixel
+\                       \ in the character block containing the (X1, Y1), taking
+\                       \ the screen borders into consideration
+\
+\LDA Y1                 \ Set Y = Y1 mod 8, which is the pixel row within the
+\AND #7                 \ character block at which we want to draw the start of
+\TAY                    \ our line (as each character block has 8 rows)
+\
+\TXA                    \ Set X = X1 mod 8, which is the horizontal pixel number
+\AND #7                 \ within the character block where the line starts (as
+\TAX                    \ each pixel line in the character block is 8 pixels
+\                       \ wide)
 
- LSR A                  \ Set A = A >> 3
- LSR A                  \       = y div 8
- LSR A                  \
-                        \ So A now contains the number of the character row
-                        \ that will contain the start of the line
+                        \ --- And replaced by: -------------------------------->
 
- STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
-                        \                           = char row * 256
+ LDY Y1                 \ Set Y to the y-coordinate in Y1
 
- LSR A                  \ Set (A SC) = (A SC) / 4
- ROR SC                 \            = (4 * ((char row * 64) + 32)) / 4
- LSR A                  \            = char row * 64 + 32
- ROR SC
+ LDA X1                 ; Each character block contains 8 pixel rows, so to get
+ AND #%11111000         ; the address of the first byte in the character block
+                        ; that we need to draw into, as an offset from the start
+                        ; of the row, we clear bits 0-2 of the x-coordinate in
+                        ; X1
 
- ADC SC+1               \ Set SC(1 0) = (A SC) + (SC+1 0) + &5800
- ADC #&58               \             = (char row * 64 + 32)
- STA SC+1               \               + char row * 256
-                        \               + &5800
-                        \
-                        \ which is what we want, so SC(1 0) contains the address
-                        \ of the first visible pixel on the character row
-                        \ containing the point (X1, Y1)
+ CLC                    ; The ylookup table lets us look up the 16-bit address
+ ADC ylookupl,Y         ; of the start of a character row containing a specific
+ STA SC                 ; pixel, so this fetches the address for the start of
+ LDA ylookuph,Y         ; the character row containing the y-coordinate in Y,
+ ADC #0                 ; and adds it to the row offset we just calculated in A
+ STA SC+1
 
- TXA                    \ Each character block contains 8 pixel rows, so to get
- AND #%11111000         \ the address of the first byte in the character block
-                        \ that we need to draw into, as an offset from the start
-                        \ of the row, we clear bits 0-2
+ TYA                    ; Set Y = Y mod 8, which is the pixel row within the
+ AND #7                 ; character block at which we want to draw the start of
+ TAY                    ; our line (as each character block has 8 rows)
 
- ADC SC                 \ And add the result to SC(1 0) to get the character
- STA SC                 \ block on the row we want
+ LDA X1                 ; Set X = X1 mod 8, which is the horizontal pixel number
+ AND #7                 ; within the character block where the line starts (as
+ TAX                    ; each pixel line in the character block is 8 pixels
+                        ; wide)
 
- BCC P%+4               \ If the addition of the low bytes overflowed, increment
- INC SC+1               \ the high byte
-
-                        \ So SC(1 0) now contains the address of the first pixel
-                        \ in the character block containing the (X1, Y1), taking
-                        \ the screen borders into consideration
-
- LDA Y1                 \ Set Y = Y1 mod 8, which is the pixel row within the
- AND #7                 \ character block at which we want to draw the start of
- TAY                    \ our line (as each character block has 8 rows)
-
- TXA                    \ Set X = X1 mod 8, which is the horizontal pixel number
- AND #7                 \ within the character block where the line starts (as
- TAX                    \ each pixel line in the character block is 8 pixels
-                        \ wide)
+                        \ --- End of replacement ------------------------------>
 
  LDA TWOS,X             \ Fetch a one-pixel byte from TWOS where pixel X is set,
  STA R                  \ and store it in R
@@ -31128,6 +31164,7 @@ ENDMACRO
 \                       \ line is being drawn with swapped coordinates
 
                         \ --- And replaced by: -------------------------------->
+
                         \ The following section calculates:
                         \
                         \   Q = Q / P
@@ -31481,57 +31518,85 @@ ENDMACRO
                         \ Y1 >= Y2, so we're going from top to bottom as we go
                         \ from Y1 to Y2
 
-                        \ We now calculate the address of the character block
-                        \ containing the pixel (X1, Y1) and put it in SC(1 0),
-                        \ as follows:
-                        \
-                        \   SC = &5800 + (Y1 div 8 * 256) + (Y1 div 8 * 64) + 32
+                        \ --- Mod: Code removed for faster pixel plotting: ---->
 
- LSR A                  \ Set A = A >> 3
- LSR A                  \       = y div 8
- LSR A                  \
-                        \ So A now contains the number of the character row
-                        \ that will contain the (X1, Y1) pixel
+\                       \ We now calculate the address of the character block
+\                       \ containing the pixel (X1, Y1) and put it in SC(1 0),
+\                       \ as follows:
+\                       \
+\                       \   SC = &5800 + (Y1 div 8 * 256) + (Y1 div 8 * 64) + 32
+\
+\LSR A                  \ Set A = A >> 3
+\LSR A                  \       = y div 8
+\LSR A                  \
+\                       \ So A now contains the number of the character row
+\                       \ that will contain the (X1, Y1) pixel
+\
+\STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
+\                       \                           = char row * 256
+\
+\LSR A                  \ Set (A SC) = (A SC) / 4
+\ROR SC                 \            = (4 * ((char row * 64) + 32)) / 4
+\LSR A                  \            = char row * 64 + 32
+\ROR SC
+\
+\ADC SC+1               \ Set SC(1 0) = (A SC) + (SC+1 0) + &5800
+\ADC #&58               \             = (char row * 64 + 32)
+\STA SC+1               \               + char row * 256
+\                       \               + &5800
+\                       \
+\                       \ which is what we want, so SC(1 0) contains the address
+\                       \ of the first visible pixel on the character row
+\                       \ containing the point (X1, Y1)
+\
+\TXA                    \ Each character block contains 8 pixel rows, so to get
+\AND #%11111000         \ the address of the first byte in the character block
+\                       \ that we need to draw into, as an offset from the start
+\                       \ of the row, we clear bits 0-2
+\
+\ADC SC                 \ And add the result to SC(1 0) to get the character
+\STA SC                 \ block on the row we want
+\
+\BCC P%+4               \ If the addition of the low bytes overflowed, increment
+\INC SC+1               \ the high byte
+\
+\                       \ So SC(1 0) now contains the address of the first pixel
+\                       \ in the character block containing the (X1, Y1), taking
+\                       \ the screen borders into consideration
+\
+\LDA Y1                 \ Set Y = Y1 mod 8, which is the pixel row within the
+\AND #7                 \ character block at which we want to draw the start of
+\TAY                    \ our line (as each character block has 8 rows)
+\
+\TXA                    \ Set X = X1 mod 8, which is the pixel column within the
+\AND #7                 \ character block at which we want to draw the start of
+\TAX                    \ our line (as each character block has 8 rows)
 
- STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
-                        \                           = char row * 256
+                        \ --- And replaced by: -------------------------------->
 
- LSR A                  \ Set (A SC) = (A SC) / 4
- ROR SC                 \            = (4 * ((char row * 64) + 32)) / 4
- LSR A                  \            = char row * 64 + 32
- ROR SC
-
- ADC SC+1               \ Set SC(1 0) = (A SC) + (SC+1 0) + &5800
- ADC #&58               \             = (char row * 64 + 32)
- STA SC+1               \               + char row * 256
-                        \               + &5800
-                        \
-                        \ which is what we want, so SC(1 0) contains the address
-                        \ of the first visible pixel on the character row
-                        \ containing the point (X1, Y1)
-
- TXA                    \ Each character block contains 8 pixel rows, so to get
+ LDA X1                 \ Each character block contains 8 pixel rows, so to get
  AND #%11111000         \ the address of the first byte in the character block
                         \ that we need to draw into, as an offset from the start
-                        \ of the row, we clear bits 0-2
+                        \ of the row, we clear bits 0-2 of the x-coordinate in
+                        \ X1
 
- ADC SC                 \ And add the result to SC(1 0) to get the character
- STA SC                 \ block on the row we want
+ CLC                    \ The ylookup table lets us look up the 16-bit address
+ ADC ylookupl,Y         \ of the start of a character row containing a specific
+ STA SC                 \ pixel, so this fetches the address for the start of
+ LDA ylookuph,Y         \ the character row containing the y-coordinate in Y,
+ ADC #0                 \ and adds it to the row offset we just calculated in A
+ STA SC+1
 
- BCC P%+4               \ If the addition of the low bytes overflowed, increment
- INC SC+1               \ the high byte
-
-                        \ So SC(1 0) now contains the address of the first pixel
-                        \ in the character block containing the (X1, Y1), taking
-                        \ the screen borders into consideration
-
- LDA Y1                 \ Set Y = Y1 mod 8, which is the pixel row within the
+ TYA                    \ Set Y = Y mod 8, which is the pixel row within the
  AND #7                 \ character block at which we want to draw the start of
  TAY                    \ our line (as each character block has 8 rows)
 
- TXA                    \ Set X = X1 mod 8, which is the pixel column within the
- AND #7                 \ character block at which we want to draw the start of
- TAX                    \ our line (as each character block has 8 rows)
+ LDA X1                 \ Set X = X1 mod 8, which is the horizontal pixel number
+ AND #7                 \ within the character block where the line starts (as
+ TAX                    \ each pixel line in the character block is 8 pixels
+                        \ wide)
+
+                        \ --- End of replacement ------------------------------>
 
  LDA TWOS,X             \ Fetch a mode 4 one-pixel byte with the pixel position
  STA R                  \ at X and store it in R to act as a mask
@@ -31951,29 +32016,344 @@ ENDMACRO
 \       Type: Subroutine
 \   Category: Drawing lines
 \    Summary: Draw a horizontal line from (X1, Y1) to (X2, Y1)
-\  Deep dive: Drawing monochrome pixels on the BBC Micro
-\
-\ ------------------------------------------------------------------------------
-\
-\ We do not draw a pixel at the right end of the line.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   Y                   Y is preserved
 \
 \ ******************************************************************************
 
 .HLOIN
 
- LDX Y1                 \ Set Y2 = Y1, so we can use the normal line-drawing
- STX Y2                 \ routine to draw a horizontal line
+                        \ --- Mod: Code removed for faster pixel plotting: ---->
+
+\LDX Y1                 \ Set Y2 = Y1, so we can use the normal line-drawing
+\STX Y2                 \ routine to draw a horizontal line
+\
+\.HL1
+\
+\JMP LL30               \ Draw a line from (X1, Y1) to (X2, Y2), which will be
+\                       \ horizontal because we set Y2 to Y1 above
+
+                        \ --- And replaced by: -------------------------------->
+
+ STY YSAV               \ Store Y into YSAV, so we can preserve it across the
+                        \ call to this subroutine
+
+ LDX X1                 \ Set X = X1
+
+ CPX X2                 \ If X1 = X2 then the start and end points are the same,
+ BEQ HL6                \ so return from the subroutine (as HL6 contains an RTS)
+
+ BCC HL5                \ If X1 < X2, jump to HL5 to skip the following code, as
+                        \ (X1, Y1) is already the left point
+
+ LDA X2                 \ Swap the values of X1 and X2, so we know that (X1, Y1)
+ STA X1                 \ is on the left and (X2, Y1) is on the right
+ STX X2
+
+ TAX                    \ Set X = X1
+
+.HL5
+
+ DEC X2                 \ Decrement X2 so we do not draw a pixel at the end
+                        \ point
+
+ LDA Y1                 \ Set the low byte of SC(1 0) to Y1 mod 8, which is the
+ TAY                    \ pixel row within the character block at which we want
+ AND #7                 \ to draw our line (as each character block has 8 rows)
+ STA SC
+
+ LDA ylookuph,Y         \ Set the top byte of SC(1 0) to the address of the
+ STA SC+1               \ start of the character row to draw in, from the
+                        \ ylookup table
+
+ TXA                    \ Set A = bits 3-7 of X1
+ AND #%11111000
+
+ CLC                    \ The ylookup table lets us look up the 16-bit address
+ ADC ylookupl,Y         \ of the start of a character row containing a specific
+ TAY                    \ pixel, so this fetches the address for the start of
+                        \ the character row containing the y-coordinate in Y,
+                        \ and adds it to the row offset we just calculated in A,
+                        \ storing the result in Y
+
+ BCC P%+4               \ If the addition overflowed, increment the high byte
+ INC SC+1               \ of SC(1 0), so SC(1 0) + Y gives us the correct
+                        \ address of the start of the line
 
 .HL1
 
- JMP LL30               \ Draw a line from (X1, Y1) to (X2, Y2), which will be
-                        \ horizontal because we set Y2 to Y1 above
+ TXA                    \ Set T = bits 3-7 of X1, which will contain the
+ AND #%11111000         \ character number of the start of the line * 8
+ STA T
+
+ LDA X2                 \ Set A = bits 3-7 of X2, which will contain the
+ AND #%11111000         \ character number of the end of the line * 8
+
+ SEC                    \ Set A = A - T, which will contain the number of
+ SBC T                  \ character blocks we need to fill - 1 * 8
+
+ BEQ HL2                \ If A = 0 then the start and end character blocks are
+                        \ the same, so the whole line fits within one block, so
+                        \ jump down to HL2 to draw the line
+
+                        \ Otherwise the line spans multiple characters, so we
+                        \ start with the left character, then do any characters
+                        \ in the middle, and finish with the right character
+
+ LSR A                  \ Set R = A / 8, so R now contains the number of
+ LSR A                  \ character blocks we need to fill - 1
+ LSR A
+ STA R
+
+ LDA X1                 \ Set X = X1 mod 8, which is the horizontal pixel number
+ AND #7                 \ within the character block where the line starts (as
+ TAX                    \ each pixel line in the character block is 8 pixels
+                        \ wide)
+
+ LDA TWFR,X             \ Fetch a ready-made byte with X pixels filled in at the
+                        \ right end of the byte (so the filled pixels start at
+                        \ point X and go all the way to the end of the byte),
+                        \ which is the shape we want for the left end of the
+                        \ line
+
+ EOR (SC),Y             \ Store this into screen memory at SC(1 0), using EOR
+ STA (SC),Y             \ logic so it merges with whatever is already on-screen,
+                        \ so we have now drawn the line's left cap
+
+ TYA                    \ Set Y = Y + 8 so (SC),Y points to the next character
+ ADC #8                 \ block along, on the same pixel row as before
+ TAY
+
+ BCC P%+4               \ If the addition overflowed, increment the high byte
+ INC SC+1               \ of SC(1 0), so SC(1 0) + Y gives us the correct
+                        \ address of the pixel
+
+ LDX R                  \ Fetch the number of character blocks we need to fill
+                        \ from R
+
+ DEX                    \ Decrement the number of character blocks in X
+
+ BEQ HL3                \ If X = 0 then we only have the last block to do (i.e.
+                        \ the right cap), so jump down to HL3 to draw it
+
+ CLC                    \ Otherwise clear the C flag so we can do some additions
+                        \ while we draw the character blocks with full-width
+                        \ lines in them
+
+.HLL1
+
+ LDA #%11111111         \ Store a full-width eight-pixel horizontal line in
+ EOR (SC),Y             \ SC(1 0) so that it draws the line on-screen, using EOR
+ STA (SC),Y             \ logic so it merges with whatever is already on-screen
+
+ TYA                    \ Set Y = Y + 8 so (SC),Y points to the next character
+ ADC #8                 \ block along, on the same pixel row as before
+ TAY
+
+ BCC P%+5               \ If the addition overflowed, increment the high byte
+ INC SC+1               \ of SC(1 0), so SC(1 0) + Y gives us the correct
+ CLC                    \ address of the start of the line
+                        \
+                        \ We also clear the C flag so additions will work
+                        \ properly if we loop back for more
+
+ DEX                    \ Decrement the number of character blocks in X
+
+ BNE HLL1               \ Loop back to draw more full-width lines, if we have
+                        \ any more to draw
+
+.HL3
+
+ LDA X2                 \ Now to draw the last character block at the right end
+ AND #7                 \ of the line, so set X = X2 mod 8, which is the
+ TAX                    \ horizontal pixel number where the line ends
+
+ LDA TWFL,X             \ Fetch a ready-made byte with X pixels filled in at the
+                        \ left end of the byte (so the filled pixels start at
+                        \ the left edge and go up to point X), which is the
+                        \ shape we want for the right end of the line
+
+ EOR (SC),Y             \ Store this into screen memory at SC(1 0), using EOR
+ STA (SC),Y             \ logic so it merges with whatever is already on-screen,
+                        \ so we have now drawn the line's right cap
+
+ LDY YSAV               \ Restore Y from YSAV, so that it's preserved across the
+                        \ call to this subroutine
+
+ RTS                    \ Return from the subroutine
+
+.HL2
+
+                        \ If we get here then the entire horizontal line fits
+                        \ into one character block
+
+ LDA X1                 \ Set X = X1 mod 8, which is the horizontal pixel number
+ AND #7                 \ within the character block where the line starts (as
+ TAX                    \ each pixel line in the character block is 8 pixels
+                        \ wide)
+
+ LDA TWFR,X             \ Fetch a ready-made byte with X pixels filled in at the
+ STA T                  \ right end of the byte (so the filled pixels start at
+                        \ point X and go all the way to the end of the byte)
+
+ LDA X2                 \ Set X = X2 mod 8, which is the horizontal pixel number
+ AND #7                 \ where the line ends
+ TAX
+
+ LDA TWFL,X             \ Fetch a ready-made byte with X pixels filled in at the
+                        \ left end of the byte (so the filled pixels start at
+                        \ the left edge and go up to point X)
+
+ AND T                  \ We now have two bytes, one (T) containing pixels from
+                        \ the starting point X1 onwards, and the other (A)
+                        \ containing pixels up to the end point at X2, so we can
+                        \ get the actual line we want to draw by AND'ing them
+                        \ together. For example, if we want to draw a line from
+                        \ point 2 to point 5 (within the row of 8 pixels
+                        \ numbered from 0 to 7), we would have this:
+                        \
+                        \   T        = %00111111
+                        \   A        = %11111100
+                        \   T AND A  = %00111100
+                        \
+                        \ So we can stick T AND A in screen memory to get the
+                        \ line we want, which is what we do here by setting
+                        \ A = A AND T
+
+ EOR (SC),Y             \ Store our horizontal line byte into screen memory at
+ STA (SC),Y             \ SC(1 0), using EOR logic so it merges with whatever is
+                        \ already on-screen
+
+ LDY YSAV               \ Restore Y from YSAV, so that it's preserved
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of replacement ------------------------------>
+
+\ ******************************************************************************
+\
+\       Name: TWFL
+\       Type: Variable
+\   Category: Drawing lines
+\    Summary: Ready-made character rows for the left end of a horizontal line in
+\             the space view
+\
+\ ------------------------------------------------------------------------------
+\
+\ Ready-made bytes for plotting horizontal line end caps in the space view. This
+\ table provides a byte with pixels at the left end, which is used for the right
+\ end of the line.
+\
+\ See the HLOIN routine for details.
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for faster pixel plotting: ------>
+
+.TWFL
+
+ EQUB %10000000
+ EQUB %11000000
+ EQUB %11100000
+ EQUB %11110000
+ EQUB %11111000
+ EQUB %11111100
+ EQUB %11111110
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: TWFR
+\       Type: Variable
+\   Category: Drawing lines
+\    Summary: Ready-made character rows for the right end of a horizontal line
+\             in the space view
+\
+\ ------------------------------------------------------------------------------
+\
+\ Ready-made bytes for plotting horizontal line end caps in the space view. This
+\ table provides a byte with pixels at the right end, which is used for the left
+\ end of the line.
+\
+\ See the HLOIN routine for details.
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for faster pixel plotting: ------>
+
+.TWFR
+
+ EQUB %11111111
+ EQUB %01111111
+ EQUB %00111111
+ EQUB %00011111
+ EQUB %00001111
+ EQUB %00000111
+ EQUB %00000011
+ EQUB %00000001
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: ylookupl
+\       Type: Variable
+\   Category: Drawing pixels
+\    Summary: Lookup table for converting a pixel y-coordinate to the low byte
+\             of a screen address (within the 256-pixel wide game screen)
+\
+\ ------------------------------------------------------------------------------
+\
+\ The address returned is indented by four character blocks from the edge of the
+\ screen (that's the &20 part, as each character is 8 bytes, and 4 * 8 = &20).
+\
+\ This is because the first four characters of every character line are blank,
+\ so the 256-pixel wide game screen is centred in the Electron's screen width of
+\ 320 pixels.
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for faster pixel plotting: ------>
+
+.ylookupl
+
+ FOR I%, 0, 255
+
+  EQUB LO(SCBASE + &20 + ((I% AND &F8) * 40))
+
+ NEXT
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: ylookuph
+\       Type: Variable
+\   Category: Drawing pixels
+\    Summary: Lookup table for converting a pixel y-coordinate to the high byte
+\             of a screen address (within the 256-pixel wide game screen)
+\
+\ ------------------------------------------------------------------------------
+\
+\ The address returned is indented by four character blocks from the edge of the
+\ screen (that's the &20 part, as each character is 8 bytes, and 4 * 8 = &20).
+\
+\ This is because the first four characters of every character line are blank,
+\ so the 256-pixel wide game screen is centred in the Electron's screen width of
+\ 320 pixels.
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for faster pixel plotting: ------>
+
+.ylookuph
+
+ FOR I%, 0, 255
+
+  EQUB HI(SCBASE + &20 + ((I% AND &F8) * 40))
+
+ NEXT
+
+                        \ --- End of added code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -32199,44 +32579,64 @@ ENDMACRO
  STY T1                 \ Store Y in T1 so we can restore it at the end of the
                         \ subroutine
 
- LDY #128               \ Set SC = 128 for use in the calculation below
- STY SC
+                        \ --- Mod: Code removed for faster pixel plotting: ---->
 
- TAY                    \ Copy A into Y, for use later
+\LDY #128               \ Set SC = 128 for use in the calculation below
+\STY SC
+\
+\TAY                    \ Copy A into Y, for use later
+\
+\LSR A                  \ Set A = A >> 3
+\LSR A                  \       = y div 8
+\LSR A                  \
+\                       \ So A now contains the number of the character row
+\                       \ that will contain the pixel we want to draw
+\
+\STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
+\                       \                           = char row * 256
+\
+\LSR A                  \ Set (A SC) = (A SC) / 4
+\ROR SC                 \            = (4 * ((char row * 64) + 32)) / 4
+\LSR A                  \            = char row * 64 + 32
+\ROR SC
+\
+\ADC SC+1               \ Set SC(1 0) = (A SC) + (SC+1 0) + &5800
+\ADC #&58               \             = (char row * 64 + 32)
+\STA SC+1               \               + char row * 256
+\                       \               + &5800
+\                       \
+\                       \ which is what we want, so SC(1 0) contains the address
+\                       \ of the first visible pixel on the character row
+\                       \ containing the point (x, y)
+\
+\TXA                    \ Each character block contains 8 pixel rows, so to get
+\AND #%11111000         \ the address of the first byte in the character block
+\                       \ that we need to draw into, as an offset from the start
+\                       \ of the row, we clear bits 0-2
+\
+\ADC SC                 \ And add the result to SC(1 0) to get the character
+\STA SC                 \ block on the row we want
+\
+\BCC P%+4               \ If the addition of the low bytes overflowed, increment
+\INC SC+1               \ the high byte
 
- LSR A                  \ Set A = A >> 3
- LSR A                  \       = y div 8
- LSR A                  \
-                        \ So A now contains the number of the character row
-                        \ that will contain the pixel we want to draw
+                        \ --- And replaced by: -------------------------------->
 
- STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
-                        \                           = char row * 256
-
- LSR A                  \ Set (A SC) = (A SC) / 4
- ROR SC                 \            = (4 * ((char row * 64) + 32)) / 4
- LSR A                  \            = char row * 64 + 32
- ROR SC
-
- ADC SC+1               \ Set SC(1 0) = (A SC) + (SC+1 0) + &5800
- ADC #&58               \             = (char row * 64 + 32)
- STA SC+1               \               + char row * 256
-                        \               + &5800
-                        \
-                        \ which is what we want, so SC(1 0) contains the address
-                        \ of the first visible pixel on the character row
-                        \ containing the point (x, y)
+ TAY                    \ Copy the screen y-coordinate from A into Y
 
  TXA                    \ Each character block contains 8 pixel rows, so to get
  AND #%11111000         \ the address of the first byte in the character block
                         \ that we need to draw into, as an offset from the start
                         \ of the row, we clear bits 0-2
 
- ADC SC                 \ And add the result to SC(1 0) to get the character
- STA SC                 \ block on the row we want
+ CLC                    \ The ylookup table lets us look up the 16-bit address
+ ADC ylookupl,Y         \ of the start of a character row containing a specific
+ STA SC                 \ pixel, so this fetches the address for the start of
+ LDA ylookuph,Y         \ the character row containing the y-coordinate in Y,
+ ADC #0                 \ and adds it to the row offset we just calculated in A
+ STA SC+1
 
- BCC P%+4               \ If the addition of the low bytes overflowed, increment
- INC SC+1               \ the high byte
+                        \ --- End of replacement ------------------------------>
 
                         \ So SC(1 0) now contains the address of the first pixel
                         \ in the character block containing the (x, y), taking
@@ -39232,69 +39632,98 @@ ENDMACRO
 
 .CPIX2
 
- LDY #128               \ Set SC = 128 for use in the calculation below
- STY SC
+                        \ --- Mod: Code removed for faster pixel plotting: ---->
 
- LDA Y1                 \ Fetch the y-coordinate into A
+\LDY #128               \ Set SC = 128 for use in the calculation below
+\STY SC
+\
+\LDA Y1                 \ Fetch the y-coordinate into A
+\
+\                       \ We now calculate the address of the character block
+\                       \ containing the pixel (x, y) and put it in SC(1 0), as
+\                       \ follows:
+\                       \
+\                       \   SC = &5800 + (y div 8 * 256) + (y div 8 * 64) + 32
+\
+\LSR A                  \ Set A = A >> 3
+\LSR A                  \       = y div 8
+\LSR A                  \
+\                       \ So A now contains the number of the character row
+\                       \ that will contain the pixel we want to draw
+\
+\                       \ Also, as SC = 128, we have:
+\                       \
+\                       \   (A SC) = (A 128)
+\                       \          = (A * 256) + 128
+\                       \          = 4 * ((A * 64) + 32)
+\                       \          = 4 * ((char row * 64) + 32)
+\
+\STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
+\                       \                           = char row * 256
+\
+\LSR A                  \ Set (A SC) = (A SC) / 4
+\ROR SC                 \            = (4 * ((char row * 64) + 32)) / 4
+\LSR A                  \            = char row * 64 + 32
+\ROR SC
+\
+\ADC SC+1               \ Set SC(1 0) = (A SC) + (SC+1 0) + &5800
+\ADC #&58               \             = (char row * 64 + 32)
+\STA SC+1               \               + char row * 256
+\                       \               + &5800
+\                       \
+\                       \ which is what we want, so SC(1 0) contains the address
+\                       \ of the first visible pixel on the character row
+\                       \ containing the point (x, y)
+\
+\LDA X1                 \ Each character block contains 8 pixel rows, so to get
+\AND #%11111000         \ the address of the first byte in the character block
+\                       \ that we need to draw into, as an offset from the start
+\                       \ of the row, we clear bits 0-2
+\
+\ADC SC                 \ And add the result to SC(1 0) to get the character
+\STA SC                 \ block on the row we want
+\
+\BCC P%+4               \ If the addition of the low bytes overflowed, increment
+\INC SC+1               \ the high byte
+\
+\                       \ So SC(1 0) now contains the address of the first pixel
+\                       \ in the character block containing the (x, y), taking
+\                       \ the screen borders into consideration
+\
+\LDA Y1                 \ Set Y to the y-coordinate mod 8, which will be the
+\AND #7                 \ number of the pixel row we need to draw within the
+\TAY                    \ character block
+\
+\LDA X1                 \ Set X to X1 mod 8, which will be the pixel number
+\AND #7                 \ within the character row we need to draw
+\TAX
 
-                        \ We now calculate the address of the character block
-                        \ containing the pixel (x, y) and put it in SC(1 0), as
-                        \ follows:
-                        \
-                        \   SC = &5800 + (y div 8 * 256) + (y div 8 * 64) + 32
+                        \ --- And replaced by: -------------------------------->
 
- LSR A                  \ Set A = A >> 3
- LSR A                  \       = y div 8
- LSR A                  \
-                        \ So A now contains the number of the character row
-                        \ that will contain the pixel we want to draw
-
-                        \ Also, as SC = 128, we have:
-                        \
-                        \   (A SC) = (A 128)
-                        \          = (A * 256) + 128
-                        \          = 4 * ((A * 64) + 32)
-                        \          = 4 * ((char row * 64) + 32)
-
- STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
-                        \                           = char row * 256
-
- LSR A                  \ Set (A SC) = (A SC) / 4
- ROR SC                 \            = (4 * ((char row * 64) + 32)) / 4
- LSR A                  \            = char row * 64 + 32
- ROR SC
-
- ADC SC+1               \ Set SC(1 0) = (A SC) + (SC+1 0) + &5800
- ADC #&58               \             = (char row * 64 + 32)
- STA SC+1               \               + char row * 256
-                        \               + &5800
-                        \
-                        \ which is what we want, so SC(1 0) contains the address
-                        \ of the first visible pixel on the character row
-                        \ containing the point (x, y)
+ LDY Y1                 \ Fetch the y-coordinate into Y
 
  LDA X1                 \ Each character block contains 8 pixel rows, so to get
  AND #%11111000         \ the address of the first byte in the character block
                         \ that we need to draw into, as an offset from the start
                         \ of the row, we clear bits 0-2
 
- ADC SC                 \ And add the result to SC(1 0) to get the character
- STA SC                 \ block on the row we want
+ CLC                    \ The ylookup table lets us look up the 16-bit address
+ ADC ylookupl,Y         \ of the start of a character row containing a specific
+ STA SC                 \ pixel, so this fetches the address for the start of
+ LDA ylookuph,Y         \ the character row containing the y-coordinate in Y,
+ ADC #0                 \ and adds it to the row offset we just calculated in A
+ STA SC+1
 
- BCC P%+4               \ If the addition of the low bytes overflowed, increment
- INC SC+1               \ the high byte
-
-                        \ So SC(1 0) now contains the address of the first pixel
-                        \ in the character block containing the (x, y), taking
-                        \ the screen borders into consideration
-
- LDA Y1                 \ Set Y to the y-coordinate mod 8, which will be the
+ TYA                    \ Set Y to the y-coordinate mod 8, which will be the
  AND #7                 \ number of the pixel row we need to draw within the
  TAY                    \ character block
 
- LDA X1                 \ Set X to X1 mod 8, which will be the pixel number
- AND #7                 \ within the character row we need to draw
- TAX
+ LDA X1                 \ Set X = X1 mod 8, which is the horizontal pixel number
+ AND #7                 \ within the character block where the pixel lies (as
+ TAX                    \ each pixel line in the character block is 8 pixels
+                        \ wide)
+
+                        \ --- End of replacement ------------------------------>
 
  LDA TWOS,X             \ Fetch a mode 4 one-pixel byte with the pixel position
                         \ at X
