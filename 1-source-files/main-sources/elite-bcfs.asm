@@ -138,8 +138,12 @@ ENDIF
 
 .ships
 
+                        \ --- Mod: Code removed for additional ships: --------->
+
  PRINT "ships = ", ~P%
  INCBIN "3-assembled-output/SHIPS.bin"
+
+                        \ --- End of removed code ----------------------------->
 
 .end
 

@@ -70,8 +70,9 @@ data_block[eliteb_offset + commander_offset + 1] = CH
 
 # Skip one byte for checksum0
 
+# Don't insert checksum0 for Compendium
 checksum0_offset = len(data_block)
-data_block.append(0)
+# data_block.append(0)
 
 # Skip another byte for the unused byte after checksum0 for IB Disc variant
 

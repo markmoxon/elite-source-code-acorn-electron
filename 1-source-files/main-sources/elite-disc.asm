@@ -44,3 +44,20 @@
  PUTFILE "3-assembled-output/ELITECO.bin", "ELITECO", &000000, &FFFFFF
  PUTFILE "1-source-files/other-files/E.MAX.bin", "E.MAX", &000000, &000000
  PUTFILE "3-assembled-output/README.txt", "README", &FFFFFF, &FFFFFF
+
+ PUTFILE "3-assembled-output/D.MOA.bin", "D.MOA", &004E00, &004E00
+ PUTFILE "3-assembled-output/D.MOB.bin", "D.MOB", &004E00, &004E00
+ PUTFILE "3-assembled-output/D.MOC.bin", "D.MOC", &004E00, &004E00
+ PUTFILE "3-assembled-output/D.MOD.bin", "D.MOD", &004E00, &004E00
+ PUTFILE "3-assembled-output/D.MOE.bin", "D.MOE", &004E00, &004E00
+ PUTFILE "3-assembled-output/D.MOF.bin", "D.MOF", &004E00, &004E00
+ PUTFILE "3-assembled-output/D.MOG.bin", "D.MOG", &004E00, &004E00
+ PUTFILE "3-assembled-output/D.MOH.bin", "D.MOH", &004E00, &004E00
+ PUTFILE "3-assembled-output/D.MOI.bin", "D.MOI", &004E00, &004E00
+ PUTFILE "3-assembled-output/D.MOJ.bin", "D.MOJ", &004E00, &004E00
+ PUTFILE "3-assembled-output/D.MOK.bin", "D.MOK", &004E00, &004E00
+ PUTFILE "3-assembled-output/D.MOL.bin", "D.MOL", &004E00, &004E00
+ PUTFILE "3-assembled-output/D.MOM.bin", "D.MOM", &004E00, &004E00
+ PUTFILE "3-assembled-output/D.MON.bin", "D.MON", &004E00, &004E00
+ PUTFILE "3-assembled-output/D.MOO.bin", "D.MOO", &004E00, &004E00
+ PUTFILE "3-assembled-output/D.MOP.bin", "D.MOP", &004E00, &004E00
