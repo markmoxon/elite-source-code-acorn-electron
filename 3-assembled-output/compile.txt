@@ -17609,6 +17609,14 @@ End macro ECHR
      4C6A   4C 2E 44 ...
      4C71   0D
 Free space in MAIN = 142  bytes
+ELITE G
+Assembled at &3E69 
+Ends at &4C72 
+Code size is &E09 
+Execute at &1D00 
+Reload at &3E69 
+S.ELTG &3E69  &4C72  &1D00  &3E69 
+Saving file '3-assembled-output/ELTG.bin'
 .SHIP_MISSILE
      4D00   00
      4D01   40 06
@@ -17965,15 +17973,14 @@ Macro FACE:
      4DFC   00
      4DFD   B0
 End macro FACE
-ELITE G
-Assembled at &3E69 
+SHIPS
+Assembled at &4D00 
 Ends at &4DFE 
-Code size is &F95 
+Code size is &FE 
 Execute at &1D00 
-Reload at &3E69 
-S.ELTG &3E69  &4DFE  &1D00  &3E69 
-Saving file '3-assembled-output/ELTG.bin'
-.checksum0
+Reload at &4D00 
+S.SHIPS &4D00  &4DFE  &1D00  &4D00 
+Saving file '3-assembled-output/SHIPS.bin'
 .log
      8000
      8001   00
@@ -26054,14 +26061,11 @@ elitee = &30CF
 elitef = &345B 
 .eliteg
 eliteg = &3E69 
-.checksum0
-checksum0 = &4DFE 
-     4DFE
 .ships
-ships = &4DFF 
+ships = &4C72 
 .end
-P% = &572B 
-S.ELITECO &1D00  &572B  &1D00  &1D00 
+P% = &4D70 
+S.ELITECO &1D00  &4D70  &1D00  &1D00 
 Saving file '3-assembled-output/ELITECO.unprot.bin'
 .TRTB%
      0004

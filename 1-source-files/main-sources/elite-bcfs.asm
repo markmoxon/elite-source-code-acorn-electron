@@ -123,27 +123,27 @@
  PRINT "eliteg = ", ~P%
  INCBIN "3-assembled-output/ELTG.bin"
 
-.checksum0
+                        \ --- Mod: Code removed for additional ships: --------->
 
- PRINT "checksum0 = ", ~P%
+\.checksum0
+\
+\PRINT "checksum0 = ", ~P%
+\
+\SKIP 1                 \ We skip this byte so we can insert the checksum later
+\                       \ in elite-checksum.py
+\
+\IF _IB_ACORNSOFT
+\
+\SKIP 1                 \ This byte appears to be unused
+\
+\ENDIF
 
- SKIP 1                 \ We skip this byte so we can insert the checksum later
-                        \ in elite-checksum.py
-
-IF _IB_ACORNSOFT
-
- SKIP 1                 \ This byte appears to be unused
-
-ENDIF
+                        \ --- End of removed code ----------------------------->
 
 .ships
 
-                        \ --- Mod: Code removed for additional ships: --------->
-
  PRINT "ships = ", ~P%
  INCBIN "3-assembled-output/SHIPS.bin"
-
-                        \ --- End of removed code ----------------------------->
 
 .end
 

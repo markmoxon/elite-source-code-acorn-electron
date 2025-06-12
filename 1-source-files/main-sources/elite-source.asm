@@ -26025,9 +26025,104 @@ ENDMACRO
 
  PRINT "Free space in MAIN = ", &4D00 - P%, " bytes"
 
- ORG &4D00
-
                         \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\ Save ELTG.bin
+\
+\ ******************************************************************************
+
+ PRINT "ELITE G"
+ PRINT "Assembled at ", ~CODE_G%
+ PRINT "Ends at ", ~P%
+ PRINT "Code size is ", ~(P% - CODE_G%)
+ PRINT "Execute at ", ~LOAD%
+ PRINT "Reload at ", ~LOAD_G%
+
+ PRINT "S.ELTG ", ~CODE_G%, " ", ~P%, " ", ~LOAD%, " ", ~LOAD_G%
+ SAVE "3-assembled-output/ELTG.bin", CODE_G%, P%, LOAD%
+
+\ ******************************************************************************
+\
+\       Name: checksum0
+\       Type: Variable
+\   Category: Copy protection
+\    Summary: Checksum for the entire main game code
+\
+\ ------------------------------------------------------------------------------
+\
+\ This byte contains a checksum for the entire main game code. It is populated
+\ by elite-checksum.py and is used by the encryption checks in elite-loader.asm
+\ (see the CHK routine in the loader for more details).
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\.checksum0
+\
+\SKIP 1                 \ This value is checked against the calculated checksum
+\                       \ in part 5 of the loader in elite-loader.asm (or it
+\                       \ would be if this weren't an unprotected version)
+\
+\IF _IB_ACORNSOFT
+\
+\SKIP 1                 \ This byte appears to be unused
+\
+\ENDIF
+
+                        \ --- End of removed code ----------------------------->
+
+\ ******************************************************************************
+\
+\ ELITE SHIP BLUEPRINTS FILE
+\
+\ Produces the binary file SHIPS.bin that gets loaded by elite-bcfs.asm.
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\CODE_SHIPS% = P%
+\
+\LOAD_SHIPS% = LOAD% + P% - CODE%
+
+                        \ --- And replaced by: -------------------------------->
+
+ CODE_SHIPS% = &4D00
+ 
+ LOAD_SHIPS% = &4D00
+
+ ORG CODE_SHIPS%
+
+                        \ --- End of replacement ------------------------------>
+
+\ ******************************************************************************
+\
+\       Name: XX21
+\       Type: Variable
+\   Category: Drawing ships
+\    Summary: Ship blueprints lookup table
+\  Deep dive: Ship blueprints
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\.XX21
+\
+\EQUW SHIP_SIDEWINDER   \         1 = Sidewinder
+\EQUW SHIP_VIPER        \ COPS =  2 = Viper
+\EQUW SHIP_MAMBA        \         3 = Mamba
+\EQUW SHIP_PYTHON       \         4 = Python
+\EQUW SHIP_COBRA_MK_3   \         5 = Cobra Mk III (bounty hunter)
+\EQUW SHIP_COBRA_MK_3   \ CYL  =  6 = Cobra Mk III (trader)
+\EQUW SHIP_CORIOLIS     \ SST  =  7 = Coriolis space station
+\EQUW SHIP_MISSILE      \ MSL  =  8 = Missile
+\EQUW SHIP_ASTEROID     \ AST  =  9 = Asteroid
+\EQUW SHIP_CANISTER     \ OIL  = 10 = Cargo canister
+\EQUW SHIP_ESCAPE_POD   \ ESC  = 11 = Escape pod
 
 \ ******************************************************************************
 \
@@ -26070,8 +26165,6 @@ ENDMACRO
 \
 \ ******************************************************************************
 
-                        \ --- Mod: Code moved for additional ships: ----------->
-
 MACRO VERTEX x, y, z, face1, face2, face3, face4, visibility
 
  IF x < 0
@@ -26102,8 +26195,6 @@ MACRO VERTEX x, y, z, face1, face2, face3, face4, visibility
  EQUB ax, ay, az, s, f1, f2
 
 ENDMACRO
-
-                        \ --- End of moved code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -26140,16 +26231,12 @@ ENDMACRO
 \
 \ ******************************************************************************
 
-                        \ --- Mod: Code moved for additional ships: ----------->
-
 MACRO EDGE vertex1, vertex2, face1, face2, visibility
 
  f = face1 + (face2 << 4)
  EQUB visibility, f, vertex1 << 2, vertex2 << 2
 
 ENDMACRO
-
-                        \ --- End of moved code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -26184,8 +26271,6 @@ ENDMACRO
 \
 \ ******************************************************************************
 
-                        \ --- Mod: Code moved for additional ships: ----------->
-
 MACRO FACE normal_x, normal_y, normal_z, visibility
 
  IF normal_x < 0
@@ -26215,7 +26300,18 @@ MACRO FACE normal_x, normal_y, normal_z, visibility
 
 ENDMACRO
 
-                        \ --- End of moved code ------------------------------->
+                        \ --- Mod: Code removed for additional ships: --------->
+
+                        \ The following ship blueprints have been removed:
+                        \
+                        \   * SHIP_SIDEWINDER
+                        \   * SHIP_VIPER
+                        \   * SHIP_MAMBA
+                        \   * SHIP_PYTHON
+                        \   * SHIP_COBRA_MK_3
+                        \   * SHIP_CORIOLIS
+
+                        \ --- End of removed code ----------------------------->
 
 \ ******************************************************************************
 \
@@ -26226,8 +26322,6 @@ ENDMACRO
 \  Deep dive: Ship blueprints
 \
 \ ******************************************************************************
-
-                        \ --- Mod: Code moved for additional ships: ----------->
 
 .SHIP_MISSILE
 
@@ -26317,82 +26411,31 @@ ENDMACRO
  FACE        0,       32,        0,         31      \ Face 7
  FACE        0,        0,     -176,         31      \ Face 8
 
-                        \ --- End of moved code ------------------------------->
-
-\ ******************************************************************************
-\
-\ Save ELTG.bin
-\
-\ ******************************************************************************
-
- PRINT "ELITE G"
- PRINT "Assembled at ", ~CODE_G%
- PRINT "Ends at ", ~P%
- PRINT "Code size is ", ~(P% - CODE_G%)
- PRINT "Execute at ", ~LOAD%
- PRINT "Reload at ", ~LOAD_G%
-
- PRINT "S.ELTG ", ~CODE_G%, " ", ~P%, " ", ~LOAD%, " ", ~LOAD_G%
- SAVE "3-assembled-output/ELTG.bin", CODE_G%, P%, LOAD%
-
-\ ******************************************************************************
-\
-\       Name: checksum0
-\       Type: Variable
-\   Category: Copy protection
-\    Summary: Checksum for the entire main game code
-\
-\ ------------------------------------------------------------------------------
-\
-\ This byte contains a checksum for the entire main game code. It is populated
-\ by elite-checksum.py and is used by the encryption checks in elite-loader.asm
-\ (see the CHK routine in the loader for more details).
-\
-\ ******************************************************************************
-
-.checksum0
-
                         \ --- Mod: Code removed for additional ships: --------->
 
-\SKIP 1                 \ This value is checked against the calculated checksum
-\                       \ in part 5 of the loader in elite-loader.asm (or it
-\                       \ would be if this weren't an unprotected version)
-
-                        \ --- End of removed code ----------------------------->
-
-IF _IB_ACORNSOFT
-
- SKIP 1                 \ This byte appears to be unused
-
-ENDIF
-
-\ ******************************************************************************
-\
-\ ELITE SHIP BLUEPRINTS FILE
-\
-\ Produces the binary file SHIPS.bin that gets loaded by elite-bcfs.asm.
-\
-\ ******************************************************************************
-
-                        \ This entire section has been removed and replaced by
-                        \ the individual ship files
+                        \ The following ship blueprints have been removed:
                         \
-                        \ So the following have been removed:
-                        \
-                        \   * XX21
-                        \   * SHIP_SIDEWINDER
-                        \   * SHIP_VIPER
-                        \   * SHIP_MAMBA
-                        \   * SHIP_PYTHON
-                        \   * SHIP_COBRA_MK_3
-                        \   * SHIP_CORIOLIS
                         \   * SHIP_ASTEROID
                         \   * SHIP_CANISTER
                         \   * SHIP_ESCAPE_POD
-                        \
-                        \ and the following ship has been moved:
-                        \
-                        \   * SHIP_MISSILE
+
+                        \ --- End of removed code ----------------------------->
+
+\ ******************************************************************************
+\
+\ Save SHIPS.bin
+\
+\ ******************************************************************************
+
+ PRINT "SHIPS"
+ PRINT "Assembled at ", ~CODE_SHIPS%
+ PRINT "Ends at ", ~P%
+ PRINT "Code size is ", ~(P% - CODE_SHIPS%)
+ PRINT "Execute at ", ~LOAD%
+ PRINT "Reload at ", ~LOAD_SHIPS%
+
+ PRINT "S.SHIPS ", ~CODE_SHIPS%, " ", ~P%, " ", ~LOAD%, " ", ~LOAD_SHIPS%
+ SAVE "3-assembled-output/SHIPS.bin", CODE_SHIPS%, P%, LOAD%
 
 \ ******************************************************************************
 \
