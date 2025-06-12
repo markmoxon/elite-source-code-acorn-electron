@@ -536,147 +536,139 @@
 
  SKIP 4                 \ Temporary storage, used in a number of places
 
-.KL
+                        \ --- Mod: Code removed for additional ships: --------->
 
- SKIP 1                 \ The following bytes implement a key logger that
-                        \ enables Elite to scan for concurrent key presses of
-                        \ the primary flight keys, plus a secondary flight key
-                        \
-                        \ If a key is being pressed that is not in the keyboard
-                        \ table at KYTB, it can be stored here (as seen in
-                        \ routine DK4, for example)
+\.KL
+\
+\SKIP 1                 \ The following bytes implement a key logger that
+\                       \ enables Elite to scan for concurrent key presses of
+\                       \ the primary flight keys, plus a secondary flight key
+\                       \
+\                       \ If a key is being pressed that is not in the keyboard
+\                       \ table at KYTB, it can be stored here (as seen in
+\                       \ routine DK4, for example)
+\
+\.KY1
+\
+\SKIP 1                 \ "?" is being pressed (slow down)
+\                       \
+\                       \   * 0 = no
+\                       \
+\                       \   * Non-zero = yes
+\
+\.KY2
+\
+\SKIP 1                 \ Space is being pressed (speed up)
+\                       \
+\                       \   * 0 = no
+\                       \
+\                       \   * Non-zero = yes
+\
+\.KY3
+\
+\SKIP 1                 \ "<" is being pressed (roll left)
+\                       \
+\                       \   * 0 = no
+\                       \
+\                       \   * Non-zero = yes
+\
+\.KY4
+\
+\SKIP 1                 \ ">" is being pressed (roll right)
+\                       \
+\                       \   * 0 = no
+\                       \
+\                       \   * Non-zero = yes
+\
+\.KY5
+\
+\SKIP 1                 \ "X" is being pressed (pull up)
+\                       \
+\                       \   * 0 = no
+\                       \
+\                       \   * Non-zero = yes
+\
+\.KY6
+\
+\SKIP 1                 \ "S" is being pressed (pitch down)
+\                       \
+\                       \   * 0 = no
+\                       \
+\                       \   * Non-zero = yes
+\
+\.KY7
+\
+\SKIP 1                 \ "A" is being pressed (fire lasers)
+\                       \
+\                       \   * 0 = no
+\                       \
+\                       \   * Non-zero = yes
+\
+\.KY12
+\
+\SKIP 1                 \ "-" is being pressed (energy bomb)
+\                       \
+\                       \   * 0 = no
+\                       \
+\                       \   * Non-zero = yes
+\
+\.KY13
+\
+\SKIP 1                 \ ESCAPE is being pressed (launch escape pod)
+\                       \
+\                       \   * 0 = no
+\                       \
+\                       \   * Non-zero = yes
+\
+\.KY14
+\
+\SKIP 1                 \ "T" is being pressed (target missile)
+\                       \
+\                       \   * 0 = no
+\                       \
+\                       \   * Non-zero = yes
+\
+\.KY15
+\
+\SKIP 1                 \ "U" is being pressed (unarm missile)
+\                       \
+\                       \   * 0 = no
+\                       \
+\                       \   * Non-zero = yes
+\
+\.KY16
+\
+\SKIP 1                 \ "M" is being pressed (fire missile)
+\                       \
+\                       \   * 0 = no
+\                       \
+\                       \   * Non-zero = yes
+\
+\.KY17
+\
+\SKIP 1                 \ "E" is being pressed (activate E.C.M.)
+\                       \
+\                       \   * 0 = no
+\                       \
+\                       \   * Non-zero = yes
+\
+\.KY18
+\
+\SKIP 1                 \ "J" is being pressed (in-system jump)
+\                       \
+\                       \   * 0 = no
+\                       \
+\                       \   * Non-zero = yes
+\
+\.KY19
+\
+\SKIP 1                 \ "C" is being pressed (activate docking computer)
+\                       \
+\                       \   * 0 = no
+\                       \
+\                       \   * Non-zero = yes
 
-.KY1
-
- SKIP 1                 \ "?" is being pressed (slow down)
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-.KY2
-
- SKIP 1                 \ Space is being pressed (speed up)
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-.KY3
-
- SKIP 1                 \ "<" is being pressed (roll left)
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-.KY4
-
- SKIP 1                 \ ">" is being pressed (roll right)
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-.KY5
-
- SKIP 1                 \ "X" is being pressed (pull up)
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-.KY6
-
- SKIP 1                 \ "S" is being pressed (pitch down)
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-.KY7
-
- SKIP 1                 \ "A" is being pressed (fire lasers)
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-.KY12
-
- SKIP 1                 \ "-" is being pressed (energy bomb)
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-.KY13
-
- SKIP 1                 \ ESCAPE is being pressed (launch escape pod)
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-.KY14
-
- SKIP 1                 \ "T" is being pressed (target missile)
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-.KY15
-
- SKIP 1                 \ "U" is being pressed (unarm missile)
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-.KY16
-
- SKIP 1                 \ "M" is being pressed (fire missile)
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-.KY17
-
- SKIP 1                 \ "E" is being pressed (activate E.C.M.)
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-.KY18
-
- SKIP 1                 \ "J" is being pressed (in-system jump)
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-.KY19
-
- SKIP 1                 \ "C" is being pressed (activate docking computer)
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-                        \ --- Mod: Code added for docking computer: ----------->
-
-.KY20
-
- SKIP 1                 \ "P" is being pressed
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-                        \ --- End of added code ------------------------------->
+                        \ --- End of moved code ------------------------------->
 
 .LAS
 
@@ -839,7 +831,11 @@
 
  SKIP 1                 \ Temporary storage, used in a number of places
 
- SKIP 16                \ These bytes appear to be unused
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\SKIP 16                \ These bytes appear to be unused
+
+                        \ --- End of removed code ----------------------------->
 
 .Q
 
@@ -1152,6 +1148,157 @@
 .T%
 
  SKIP 0                 \ The start of the T% workspace
+
+                        \ --- Mod: Code moved for additional ships: ----------->
+
+.KL
+
+ SKIP 1                 \ The following bytes implement a key logger that
+                        \ enables Elite to scan for concurrent key presses of
+                        \ the primary flight keys, plus a secondary flight key
+                        \
+                        \ See the deep dive on "The key logger" for more details
+                        \
+                        \ If a key is being pressed that is not in the keyboard
+                        \ table at KYTB, it can be stored here (as seen in
+                        \ routine DK4, for example)
+
+.KY1
+
+ SKIP 1                 \ "?" is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+.KY2
+
+ SKIP 1                 \ Space is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+.KY3
+
+ SKIP 1                 \ "<" is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+.KY4
+
+ SKIP 1                 \ ">" is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+.KY5
+
+ SKIP 1                 \ "X" is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+.KY6
+
+ SKIP 1                 \ "S" is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+.KY7
+
+ SKIP 1                 \ "A" is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+                        \
+                        \ This is also set when the joystick fire button has
+                        \ been pressed
+
+.KY12
+
+ SKIP 1                 \ TAB is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+.KY13
+
+ SKIP 1                 \ ESCAPE is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+.KY14
+
+ SKIP 1                 \ "T" is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+.KY15
+
+ SKIP 1                 \ "U" is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+.KY16
+
+ SKIP 1                 \ "M" is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+.KY17
+
+ SKIP 1                 \ "E" is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+.KY18
+
+ SKIP 1                 \ "J" is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+.KY19
+
+ SKIP 1                 \ "C" is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+                        \ --- End of moved code ------------------------------->
+
+                        \ --- Mod: Code added for docking computer: ----------->
+
+.KY20
+
+ SKIP 1                 \ "P" is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+                        \ --- End of added code ------------------------------->
 
                         \ --- Mod: Code added for saving and loading: --------->
 
@@ -3258,6 +3405,16 @@ ENDMACRO
 \
 \ ******************************************************************************
 
+                        \ --- Mod: Code added for witchspace: ----------------->
+
+.NOSTM
+
+ SKIP 1                 \ The number of stardust particles shown on screen,
+                        \ which is 10 (#NOST) for normal space, and 3 for
+                        \ witchspace
+
+                        \ --- End of added code ------------------------------->
+
 .COMC
 
  SKIP 1                 \ The shape (i.e. thickness) of the dot on the compass
@@ -4256,8 +4413,18 @@ ENDIF
  LDA #230               \ Otherwise we are in space, so start off by setting A
                         \ to token 70 ("GREEN")
 
- LDY MANY+AST           \ Set Y to the number of asteroids in our local bubble
-                        \ of universe
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\LDY MANY+AST           \ Set Y to the number of asteroids in our local bubble
+\                       \ of universe
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDY JUNK               \ Set Y to the number of junk items in our local bubble
+                        \ of universe (where junk is asteroids, canisters,
+                        \ escape pods and so on)
+
+                        \ --- End of replacement ------------------------------>
 
  LDX FRIN+2,Y           \ The ship slots at FRIN are ordered with the first two
                         \ slots reserved for the planet and space station, and
@@ -6329,512 +6496,15 @@ ENDIF
                         \   * TACTICS (Part 7 of 7)
                         \   * TAS1
                         \   * HITCH
+                        \   * FRS1
+                        \   * FRMIS
+                        \   * ANGRY
+                        \   * FR1
+                        \   * SESCP
+                        \   * SFS1
+                        \   * SFS2
 
                         \ --- End of moved code ------------------------------->
-
-\ ******************************************************************************
-\
-\       Name: FRS1
-\       Type: Subroutine
-\   Category: Tactics
-\    Summary: Launch a ship straight ahead of us, below the laser sights
-\
-\ ------------------------------------------------------------------------------
-\
-\ This is used in two places:
-\
-\   * When we launch a missile, in which case the missile is the ship that is
-\     launched ahead of us
-\
-\   * When we launch our escape pod, in which case it's our abandoned Cobra Mk
-\     III that is launched ahead of us
-\
-\   * The fq1 entry point is used to launch a bunch of cargo canisters ahead of
-\     us as part of the death screen
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   X                   The type of ship to launch ahead of us
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   C flag              Set if the ship was successfully launched, clear if it
-\                       wasn't (as there wasn't enough free memory)
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   fq1                 Used to add a cargo canister to the universe
-\
-\ ******************************************************************************
-
-.FRS1
-
- JSR ZINF               \ Call ZINF to reset the INWK ship workspace
-
- LDA #28                \ Set y_lo = 28
- STA INWK+3
-
- LSR A                  \ Set z_lo = 14, so the launched ship starts out
- STA INWK+6             \ ahead of us
-
- LDA #%10000000         \ Set y_sign to be negative, so the launched ship is
- STA INWK+5             \ launched just below our line of sight
-
- LDA MSTG               \ Set A to the missile lock target, shifted left so the
- ASL A                  \ slot number is in bits 1-5
-
- ORA #%10000000         \ Set bit 7 and store the result in byte #32, the AI
- STA INWK+32            \ flag launched ship for the launched ship. For missiles
-                        \ this enables AI (bit 7), makes it friendly towards us
-                        \ (bit 6), sets the target to the value of MSTG (bits
-                        \ 1-5), and sets its lock status as launched (bit 0).
-                        \ It doesn't matter what it does for our abandoned
-                        \ Cobra, as the AI flag gets overwritten once we return
-                        \ from the subroutine back to the ESCAPE routine that
-                        \ called FRS1 in the first place
-
-.fq1
-
- LDA #&60               \ Set byte #14 (nosev_z_hi) to 1 (&60), so the launched
- STA INWK+14            \ ship is pointing away from us
-
- ORA #128               \ Set byte #22 (sidev_x_hi) to -1 (&D0), so the launched
- STA INWK+22            \ ship has the same orientation as spawned ships, just
-                        \ pointing away from us (if we set sidev to +1 instead,
-                        \ this ship would be a mirror image of all the other
-                        \ ships, which are spawned with -1 in nosev and +1 in
-                        \ sidev)
-
- LDA DELTA              \ Set byte #27 (speed) to 2 * DELTA, so the launched
- ROL A                  \ ship flies off at twice our speed
- STA INWK+27
-
- TXA                    \ Add a new ship of type X to our local bubble of
- JMP NWSHP              \ universe and return from the subroutine using a tail
-                        \ call
-
-\ ******************************************************************************
-\
-\       Name: FRMIS
-\       Type: Subroutine
-\   Category: Tactics
-\    Summary: Fire a missile from our ship
-\
-\ ------------------------------------------------------------------------------
-\
-\ We fired a missile, so send it streaking away from us to unleash mayhem and
-\ destruction on our sworn enemies.
-\
-\ ******************************************************************************
-
-.FRMIS
-
- LDX #MSL               \ Call FRS1 to launch a missile straight ahead of us
- JSR FRS1
-
- BCC FR1                \ If FRS1 returns with the C flag clear, then there
-                        \ isn't room in the universe for our missile, so jump
-                        \ down to FR1 to display a "missile jammed" message
-
- LDX MSTG               \ Fetch the slot number of the missile's target
-
- JSR GINF               \ Get the address of the data block for the target ship
-                        \ and store it in INF
-
- LDA FRIN,X             \ Fetch the ship type of the missile's target into A
-
- JSR ANGRY              \ Call ANGRY to make the target ship hostile
-
- LDY #&04               \ We have just launched a missile, so we need to remove
- JSR ABORT              \ missile lock and hide the leftmost indicator on the
-                        \ dashboard by setting it to black (Y = &04)
-
- DEC NOMSL              \ Reduce the number of missiles we have by 1
-
- LDA #48                \ Call the NOISE routine with A = 48 to make the sound
- JMP NOISE              \ of a missile launch, returning from the subroutine
-                        \ using a tail call
-
-\ ******************************************************************************
-\
-\       Name: ANGRY
-\       Type: Subroutine
-\   Category: Tactics
-\    Summary: Make a ship hostile
-\
-\ ------------------------------------------------------------------------------
-\
-\ All this routine does is set the ship's hostile flag, start it turning and
-\ give it a kick of acceleration - later calls to TACTICS will make the ship
-\ start to attack us.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   A                   The type of ship we're going to irritate
-\
-\   INF                 The address of the data block for the ship we're going
-\                       to infuriate
-\
-\ ******************************************************************************
-
-.ANGRY
-
- CMP #SST               \ If this is the space station, jump to AN2 to make the
- BEQ AN2                \ space station hostile
-
-                        \ --- Mod: Code removed for sideways RAM: ------------->
-
-\BCS HI1                \ If A >= #SST then this is a missile, asteroid, cargo
-\                       \ canister or escape pod, and they can't get hostile,
-\                       \ so return from the subroutine (as HI1 contains an RTS)
-
-                        \ --- And replaced by: -------------------------------->
-
- BCS AN2-1              \ If A >= #SST then this is a missile, asteroid, cargo
-                        \ canister or escape pod, and they can't get hostile,
-                        \ so return from the subroutine (as AN2-1 contains an
-                        \ RTS)
-
-                        \ --- End of replacement ------------------------------>
-
- CMP #CYL               \ If this is not a Cobra Mk III trader, skip the
- BNE P%+5               \ following instruction
-
- JSR AN2                \ Call AN2 to make the space station hostile
-
- LDY #32                \ Fetch the ship's byte #32 (AI flag)
- LDA (INF),Y
-
-                        \ --- Mod: Code removed for sideways RAM: ------------->
-
-\BEQ HI1                \ If the AI flag is zero then this ship has no AI and
-\                       \ it can't get hostile, so return from the subroutine
-\                       \ (as HI1 contains an RTS)
-
-                        \ --- And replaced by: -------------------------------->
-
- BEQ AN2-1              \ If the AI flag is zero then this ship has no AI and
-                        \ it can't get hostile, so return from the subroutine
-                        \ (as AN2-1 contains an RTS)
-
-                        \ --- End of replacement ------------------------------>
-
- ORA #%10000000         \ Otherwise set bit 7 (AI enabled) to ensure AI is
- STA (INF),Y            \ definitely enabled
-
- LDY #28                \ Set the ship's byte #28 (acceleration) to 2, so it
- LDA #2                 \ speeds up
- STA (INF),Y
-
- ASL A                  \ Set the ship's byte #30 (pitch counter) to 4, so it
- LDY #30                \ starts diving
- STA (INF),Y
-
- RTS                    \ Return from the subroutine
-
-.AN2
-
- ASL K%+NI%+32          \ Fetch the AI counter (byte #32) of the second ship
- SEC                    \ in the ship data workspace at K%, which is reserved
- ROR K%+NI%+32          \ for the space station, and set bit 7 to make it
-                        \ hostile
-
- CLC                    \ Clear the C flag, which isn't used by calls to this
-                        \ routine, but it does set up the entry point FR1-2
-                        \ so that it clears the C flag and does an RTS
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: FR1
-\       Type: Subroutine
-\   Category: Tactics
-\    Summary: Display the "missile jammed" message
-\
-\ ------------------------------------------------------------------------------
-\
-\ This is shown if there isn't room in the local bubble of universe for a new
-\ missile.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   FR1-2               Clear the C flag and return from the subroutine
-\
-\ ******************************************************************************
-
-.FR1
-
- LDA #201               \ Print recursive token 41 ("MISSILE JAMMED") as an
- JMP MESS               \ in-flight message and return from the subroutine using
-                        \ a tail call
-
-\ ******************************************************************************
-\
-\       Name: SESCP
-\       Type: Subroutine
-\   Category: Flight
-\    Summary: Spawn an escape pod from the current (parent) ship
-\
-\ ------------------------------------------------------------------------------
-\
-\ This is called when an enemy ship has run out of both energy and luck, so it's
-\ time to bail.
-\
-\ ******************************************************************************
-
-.SESCP
-
- LDX #ESC               \ Set X to the ship type for an escape pod
-
- LDA #%11111110         \ Set A to an AI flag that has AI enabled, is hostile,
-                        \ but has no E.C.M.
-
-                        \ Fall through into SFS1 to spawn the escape pod
-
-\ ******************************************************************************
-\
-\       Name: SFS1
-\       Type: Subroutine
-\   Category: Universe
-\    Summary: Spawn a child ship from the current (parent) ship
-\
-\ ------------------------------------------------------------------------------
-\
-\ If the parent is a space station then the child ship is spawned coming out of
-\ the slot, and if the child is a cargo canister, it is sent tumbling through
-\ space. Otherwise the child ship is spawned with the same ship data as the
-\ parent, just with damping disabled and the ship type and AI flag that are
-\ passed in A and X.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   A                   AI flag for the new ship (see the documentation on ship
-\                       data byte #32 for details)
-\
-\   X                   The ship type of the child to spawn
-\
-\   INF                 Address of the parent's ship data block
-\
-\   TYPE                The type of the parent ship
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   C flag              Set if ship successfully added, clear if it failed
-\
-\   INF                 INF is preserved
-\
-\   XX0                 XX0 is preserved
-\
-\   INWK                The whole INWK workspace is preserved
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   SFS1-2              Add a missile to the local bubble that has AI enabled,
-\                       is hostile, but has no E.C.M.
-\
-\ ******************************************************************************
-
-.SFS1
-
- STA T1                 \ Store the child ship's AI flag in T1
-
-                        \ Before spawning our child ship, we need to save the
-                        \ INF and XX00 variables and the whole INWK workspace,
-                        \ so we can restore them later when returning from the
-                        \ subroutine
-
- LDA XX0                \ Store XX0(1 0) on the stack, so we can restore it
- PHA                    \ later when returning from the subroutine
- LDA XX0+1
- PHA
-
- LDA INF                \ Store INF(1 0) on the stack, so we can restore it
- PHA                    \ later when returning from the subroutine
- LDA INF+1
- PHA
-
- LDY #NI%-1             \ Now we want to store the current INWK data block in
-                        \ temporary memory so we can restore it when we are
-                        \ done, and we also want to copy the parent's ship data
-                        \ into INWK, which we can do at the same time, so set up
-                        \ a counter in Y for NI% bytes
-
-.FRL2
-
- LDA INWK,Y             \ Copy the Y-th byte of INWK to the Y-th byte of
- STA XX3,Y              \ temporary memory in XX3, so we can restore it later
-                        \ when returning from the subroutine
-
- LDA (INF),Y            \ Copy the Y-th byte of the parent ship's data block to
- STA INWK,Y             \ the Y-th byte of INWK
-
- DEY                    \ Decrement the loop counter
-
- BPL FRL2               \ Loop back to copy the next byte until we have done
-                        \ them all
-
-                        \ INWK now contains the ship data for the parent ship,
-                        \ so now we need to tweak the data before creating the
-                        \ new child ship (in this way, the child inherits things
-                        \ like location from the parent)
-
- LDA TYPE               \ Fetch the ship type of the parent into A
-
- CMP #SST               \ If the parent is not a space station, jump to rx to
- BNE rx                 \ skip the following
-
-                        \ The parent is a space station, so the child needs to
-                        \ launch out of the space station's slot. The space
-                        \ station's nosev vector points out of the station's
-                        \ slot, so we want to move the ship along this vector.
-                        \ We do this by taking the unit vector in nosev and
-                        \ doubling it, so we spawn our ship 2 units along the
-                        \ vector from the space station's centre
-
- TXA                    \ Store the child's ship type in X on the stack
- PHA
-
- LDA #32                \ Set the child's byte #27 (speed) to 32
- STA INWK+27
-
- LDX #0                 \ Add 2 * nosev_x_hi to (x_lo, x_hi, x_sign) to get the
- LDA INWK+10            \ child's x-coordinate
- JSR SFS2
-
- LDX #3                 \ Add 2 * nosev_y_hi to (y_lo, y_hi, y_sign) to get the
- LDA INWK+12            \ child's y-coordinate
- JSR SFS2
-
- LDX #6                 \ Add 2 * nosev_z_hi to (z_lo, z_hi, z_sign) to get the
- LDA INWK+14            \ child's z-coordinate
- JSR SFS2
-
- PLA                    \ Restore the child's ship type from the stack into X
- TAX
-
-.rx
-
- LDA T1                 \ Restore the child ship's AI flag from T1 and store it
- STA INWK+32            \ in the child's byte #32 (AI)
-
- LSR INWK+29            \ Clear bit 0 of the child's byte #29 (roll counter) so
- ASL INWK+29            \ that its roll dampens (so if we are spawning from a
-                        \ space station, for example, the spawned ship won't
-                        \ keep rolling forever)
-
- TXA                    \ Copy the child's ship type from X into A
-
- CMP #OIL               \ If the child we are spawning is not a cargo canister,
- BNE NOIL               \ jump to NOIL to skip us setting up the pitch and roll
-                        \ for the canister
-
- JSR DORND              \ Set A and X to random numbers
-
- ASL A                  \ Set the child's byte #30 (pitch counter) to a random
- STA INWK+30            \ value, and at the same time set the C flag randomly
-
- TXA                    \ Set the child's byte #27 (speed) to a random value
- AND #%00001111         \ between 0 and 15
- STA INWK+27
-
- LDA #&FF               \ Set the child's byte #29 (roll counter) to a full
- ROR A                  \ roll with no damping (as bits 0 to 6 are set), so the
- STA INWK+29            \ canister tumbles through space, with the direction in
-                        \ bit 7 set randomly, depending on the C flag from above
-
- LDA #OIL               \ Set A to the ship type of a cargo canister
-
-.NOIL
-
- JSR NWSHP              \ Add a new ship of type A to the local bubble
-
-                        \ We have now created our child ship, so we need to
-                        \ restore all the variables we saved at the start of
-                        \ the routine, so they are preserved when we return
-                        \ from the subroutine
-
- PLA                    \ Restore INF(1 0) from the stack
- STA INF+1
- PLA
- STA INF
-
- LDX #NI%-1             \ Now to restore the INWK workspace that we saved into
-                        \ XX3 above, so set a counter in X for NI% bytes
-
-.FRL3
-
- LDA XX3,X              \ Copy the Y-th byte of XX3 to the Y-th byte of INWK
- STA INWK,X
-
- DEX                    \ Decrement the loop counter
-
- BPL FRL3               \ Loop back to copy the next byte until we have done
-                        \ them all
-
- PLA                    \ Restore XX0(1 0) from the stack
- STA XX0+1
- PLA
- STA XX0
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: SFS2
-\       Type: Subroutine
-\   Category: Moving
-\    Summary: Move a ship in space along one of the coordinate axes
-\
-\ ------------------------------------------------------------------------------
-\
-\ Move a ship's coordinates by a certain amount in the direction of one of the
-\ axes, where X determines the axis. Mathematically speaking, this routine
-\ translates the ship along a single axis by a signed delta.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   A                   The amount of movement, i.e. the signed delta
-\
-\   X                   Determines which coordinate axis of INWK to move:
-\
-\                         * X = 0 moves the ship along the x-axis
-\
-\                         * X = 3 moves the ship along the y-axis
-\
-\                         * X = 6 moves the ship along the z-axis
-\
-\ ******************************************************************************
-
-.SFS2
-
- ASL A                  \ Set R = |A * 2|, with the C flag set to bit 7 of A
- STA R
-
- LDA #0                 \ Set bit 7 of A to the C flag, i.e. the sign bit from
- ROR A                  \ the original argument in A
-
- JMP MVT1               \ Add the delta R with sign A to (x_lo, x_hi, x_sign)
-                        \ (or y or z, depending on the value in X) and return
-                        \ from the subroutine using a tail call
 
 \ ******************************************************************************
 \
@@ -7704,12 +7374,22 @@ ENDIF
 
 .WARP
 
- LDA MANY+AST           \ Set X to the total number of asteroids, escape pods
- CLC                    \ and cargo canisters in the vicinity
- ADC MANY+ESC
- CLC                    \ The second CLC instruction has no effect, as there is
- ADC MANY+OIL           \ no way that adding the number of asteroids and the
- TAX                    \ number escape pods will cause a carry
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\LDA MANY+AST           \ Set X to the total number of asteroids, escape pods
+\CLC                    \ and cargo canisters in the vicinity
+\ADC MANY+ESC
+\CLC                    \ The second CLC instruction has no effect, as there is
+\ADC MANY+OIL           \ no way that adding the number of asteroids and the
+\TAX                    \ number escape pods will cause a carry
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDX JUNK               \ Set X to the total number of junk items in the
+                        \ vicinity (e.g. asteroids, escape pods, cargo
+                        \ canisters, Shuttles, Transporters and so on)
+
+                        \ --- End of replacement ------------------------------>
 
  LDA FRIN+2,X           \ If the slot at FRIN+2+X is non-zero, then we have
                         \ something else in the vicinity besides asteroids,
@@ -7719,6 +7399,14 @@ ENDIF
  ORA SSPR               \ If there is a space station nearby, then SSPR will
                         \ be non-zero, so OR'ing with SSPR will produce a
                         \ non-zero result if either A or SSPR are non-zero
+
+                        \ --- Mod: Code added for witchspace: ----------------->
+
+ ORA MJ                 \ If we are in witchspace, then MJ will be non-zero, so
+                        \ OR'ing with MJ will produce a non-zero result if
+                        \ either A or SSPR or MJ are non-zero
+
+                        \ --- End of added code ------------------------------->
 
  BNE WA1                \ A is non-zero if we have either a ship or a space
                         \ station in the vicinity, in which case jump to WA1 to
@@ -8419,6 +8107,60 @@ ENDIF
  CODE_D% = P%
 
  LOAD_D% = LOAD% + P% - CODE%
+
+\ ******************************************************************************
+\
+\       Name: tnpr1
+\       Type: Subroutine
+\   Category: Market
+\    Summary: Work out if we have space for one tonne of cargo
+\
+\ ------------------------------------------------------------------------------
+\
+\ Given a market item, work out whether there is room in the cargo hold for one
+\ tonne of this item.
+\
+\ For standard tonne canisters, the limit is given by the type of cargo hold we
+\ have, with a standard cargo hold having a capacity of 20t and an extended
+\ cargo bay being 35t.
+\
+\ For items measured in kg (gold, platinum), g (gem-stones) and alien items,
+\ the individual limit on each of these is 200 units.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   The type of market item (see QQ23 for a list of market
+\                       item numbers)
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   A                   A = 1
+\
+\   C flag              Returns the result:
+\
+\                         * Set if there is no room for this item
+\
+\                         * Clear if there is room for this item
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for additional ships: ----------->
+
+.tnpr1
+
+ STA QQ29               \ Store the type of market item in QQ29
+
+ LDA #1                 \ Set the number of units of this market item to 1
+
+                        \ Fall through into tnpr to work out whether there is
+                        \ room in the cargo hold for A tonnes of the item of
+                        \ type QQ29
+
+                        \ --- End of added code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -12296,6 +12038,118 @@ ENDIF
 
 \ ******************************************************************************
 \
+\       Name: GTHG
+\       Type: Subroutine
+\   Category: Universe
+\    Summary: Spawn a Thargoid ship and a Thargon companion
+\  Deep dive: Fixing ship positions
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for additional ships: ----------->
+
+.GTHG
+
+ JSR Ze                 \ Call Ze to initialise INWK
+                        \
+                        \ Note that because Ze uses the value of X returned by
+                        \ DORND, and X contains the value of A returned by the
+                        \ previous call to DORND, this does not set the new ship
+                        \ to a totally random location. See the deep dive on
+                        \ "Fixing ship positions" for details
+
+ LDA #%11111111         \ Set the AI flag in byte #32 so that the ship has AI,
+ STA INWK+32            \ is extremely and aggressively hostile, and has E.C.M.
+
+ LDA #THG               \ Call NWSHP to add a new Thargoid ship to our local
+ JSR NWSHP              \ bubble of universe
+
+ LDA #TGL               \ Call NWSHP to add a new Thargon ship to our local
+ JMP NWSHP              \ bubble of universe, and return from the subroutine
+                        \ using a tail call
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: MJP
+\       Type: Subroutine
+\   Category: Flight
+\    Summary: Process a mis-jump into witchspace
+\
+\ ------------------------------------------------------------------------------
+\
+\ Process a mis-jump into witchspace (which happens very rarely). Witchspace has
+\ a strange, almost dust-free aspect to it, and it is populated by hostile
+\ Thargoids. Using our escape pod will be fatal, and our position on the
+\ galactic chart is in-between systems. It is a scary place...
+\
+\ There is a 0.78% chance that this routine is called from TT18 instead of doing
+\ a normal hyperspace, or we can manually trigger a mis-jump by holding down
+\ CTRL after first enabling the "author display" configuration option ("X") when
+\ paused.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   ptg                 Called when the user manually forces a mis-jump
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for witchspace: ----------------->
+
+.ptg
+
+ LSR COK                \ Set bit 0 of the competition flags in COK, so that the
+ SEC                    \ competition code will include the fact that we have
+ ROL COK                \ manually forced a mis-jump into witchspace
+
+.MJP
+
+ LDA #3                 \ Call SHIPinA to load ship blueprints file D, which is
+ JSR SHIPinA            \ one of the two files that contain Thargoids
+
+ LDA #3                 \ Clear the top part of the screen, draw a white border,
+ JSR TT66               \ and set the current view type in QQ11 to 3
+
+ JSR LL164              \ Call LL164 to show the hyperspace tunnel and make the
+                        \ hyperspace sound for a second time (as we already
+                        \ called LL164 in TT18)
+
+ JSR RES2               \ Reset a number of flight variables and workspaces, as
+                        \ well as setting Y to &FF
+
+ STY MJ                 \ Set the mis-jump flag in MJ to &FF, to indicate that
+                        \ we are now in witchspace
+
+.MJP1
+
+ JSR GTHG               \ Call GTHG to spawn a Thargoid ship and a Thargon
+                        \ companion
+
+ LDA #3                 \ Fetch the number of Thargoid ships from MANY+THG, and
+ CMP MANY+THG           \ if it is less than or equal to 3, loop back to MJP1 to
+ BCS MJP1               \ spawn another one, until we have four Thargoids
+
+ STA NOSTM              \ Set NOSTM (the maximum number of stardust particles)
+                        \ to 3, so there are fewer bits of stardust in
+                        \ witchspace (normal space has a maximum of 18)
+
+ LDX #0                 \ Initialise the front space view
+ JSR LOOK1
+
+ LDA QQ1                \ Fetch the current system's galactic y-coordinate in
+ EOR #%00011111         \ QQ1 and flip bits 0-5, so we end up somewhere in the
+ STA QQ1                \ vicinity of our original destination, but above or
+                        \ below it in the galactic chart
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
 \       Name: TT18
 \       Type: Subroutine
 \   Category: Flight
@@ -12328,7 +12182,38 @@ ENDIF
 
 .ee5
 
- JSR hyp1               \ Jump straight to the system at (QQ9, QQ10)
+                        \ --- Mod: Code removed for witchspace: --------------->
+
+\JSR hyp1               \ Jump straight to the system at (QQ9, QQ10)
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDX #1                 \ Set X to the internal key number for CTRL
+
+ JSR DKS4               \ Scan the keyboard to see if the key in X (i.e. CTRL)
+                        \ is currently pressed
+
+ AND PATG               \ If the game is configured to show the author's names
+                        \ on the start-up screen, then PATG will contain &FF,
+                        \ otherwise it will be 0
+
+ BMI ptg                \ By now, A will be negative if we are holding down CTRL
+                        \ and author names are configured, which is what we have
+                        \ to do in order to trigger a manual mis-jump, so jump
+                        \ to ptg to do a mis-jump (ptg not only mis-jumps, but
+                        \ updates the competition flags, so Acornsoft could tell
+                        \ from the competition code whether this feature had
+                        \ been used)
+
+ JSR DORND              \ Set A and X to random numbers
+
+ CMP #253               \ If A >= 253 (0.78% chance) then jump to MJP to trigger
+ BCS MJP                \ a mis-jump into witchspace
+
+ JSR hyp1+3             \ Jump straight to the system at (QQ9, QQ10) without
+                        \ first calculating which system is closest
+
+                        \ --- End of replacement ------------------------------>
 
  JSR GVL                \ Calculate the availability for each market item in the
                         \ new system
@@ -12344,9 +12229,20 @@ ENDIF
 
                         \ --- End of added code ------------------------------->
 
+                        \ --- Mod: Code removed for witchspace: --------------->
+
+\LDA QQ11               \ If the current view in QQ11 is not a space view (0) or
+\AND #%00111111         \ one of the charts (64 or 128), return from the
+\BNE hyR                \ subroutine (as hyR contains an RTS)
+
+                        \ --- And replaced by: -------------------------------->
+
+
  LDA QQ11               \ If the current view in QQ11 is not a space view (0) or
  AND #%00111111         \ one of the charts (64 or 128), return from the
- BNE hyR                \ subroutine (as hyR contains an RTS)
+ BNE TT18-1             \ subroutine (as TT18-1 contains an RTS)
+
+                        \ --- End of replacement ------------------------------>
 
  JSR TTX66              \ Otherwise clear the screen and draw a border box
 
@@ -14913,11 +14809,26 @@ ENDIF
 
  JSR SPBLB              \ Light up the space station bulb on the dashboard
 
- LDX #%00000001         \ Set the AI flag in byte #32 to %00000001 (friendly, no
- STX INWK+32            \ AI, has an E.C.M.)
+                        \ --- Mod: Code removed for additional ships: --------->
 
- DEX                    \ Set pitch counter to 0 (no pitch, roll only)
+\LDX #%00000001         \ Set the AI flag in byte #32 to %00000001 (friendly, no
+\STX INWK+32            \ AI, has an E.C.M.)
+\
+\DEX                    \ Set pitch counter to 0 (no pitch, roll only)
+\STX INWK+30
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDX #%10000001         \ Set the AI flag in byte #32 to %10000001 (hostile,
+ STX INWK+32            \ no AI, has an E.C.M.)
+
+ LDX #0                 \ Set pitch counter to 0 (no pitch, roll only)
  STX INWK+30
+
+ STX NEWB               \ Set NEWB to %00000000, though this gets overridden by
+                        \ the default flags from E% in NWSHP below
+
+                        \ --- End of replacement ------------------------------>
 
  STX FRIN+1             \ Set the second slot in the FRIN table to 0, so when we
                         \ fall through into NWSHP below, the new station that
@@ -15042,14 +14953,36 @@ ENDIF
  ASL A                  \ Set Y = ship type * 2
  TAY
 
- LDA XX21-2,Y           \ The ship blueprints at XX21 start with a lookup
- STA XX0                \ table that points to the individual ship blueprints,
-                        \ so this fetches the low byte of this particular ship
-                        \ type's blueprint and stores it in XX0
+                        \ --- Mod: Code removed for additional ships: --------->
 
- LDA XX21-1,Y           \ Fetch the high byte of this particular ship type's
- STA XX0+1              \ blueprint and store it in XX0+1, so XX0(1 0) now
+\LDA XX21-2,Y           \ The ship blueprints at XX21 start with a lookup
+\STA XX0                \ table that points to the individual ship blueprints,
+\                       \ so this fetches the low byte of this particular ship
+\                       \ type's blueprint and stores it in XX0
+\
+\LDA XX21-1,Y           \ Fetch the high byte of this particular ship type's
+\STA XX0+1              \ blueprint and store it in XX0+1, so XX0(1 0) now
+\                       \ contains the address of this ship's blueprint
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDA XX21-1,Y           \ The ship blueprints at XX21 start with a lookup
+                        \ table that points to the individual ship blueprints,
+                        \ so this fetches the high byte of this particular ship
+                        \ type's blueprint
+
+ BEQ NW3                \ If the high byte is 0 then this is not a valid ship
+                        \ type, so jump to NW3 to clear the C flag and return
+                        \ from the subroutine
+
+ STA XX0+1              \ This is a valid ship type, so store the high byte in
+                        \ XX0+1
+
+ LDA XX21-2,Y           \ Fetch the low byte of this particular ship type's
+ STA XX0                \ blueprint and store it in XX0, so XX0(1 0) now
                         \ contains the address of this ship's blueprint
+
+                        \ --- End of replacement ------------------------------>
 
  CPY #2*SST             \ If the ship type is a space station (SST), then jump
  BEQ NW6                \ to NW6, skipping the heap space steps below, as the
@@ -15176,10 +15109,48 @@ ENDIF
 
  TAX                    \ Copy the ship type into X
 
- BMI P%+5               \ If the ship type is negative (i.e. the planet), then
-                        \ skip the following instruction
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\BMI P%+5               \ If the ship type is negative (i.e. the planet), then
+\                       \ skip the following instruction
+
+                        \ --- And replaced by: -------------------------------->
+
+ BMI NW8                \ If the ship type is negative (planet or sun), then
+                        \ jump to NW8 to skip the following instructions
+
+ CPX #JL                \ If JL <= X < JH, i.e. the type of ship we killed in X
+ BCC NW7                \ is junk (escape pod, alloy plate, cargo canister,
+ CPX #JH                \ asteroid, splinter, Shuttle or Transporter), then keep
+ BCS NW7                \ going, otherwise jump to NW7
+
+.gangbang
+
+ INC JUNK               \ We're adding junk, so increase the junk counter
+
+.NW7
+
+                        \ --- End of replacement ------------------------------>
 
  INC MANY,X             \ Increment the total number of ships of type X
+
+                        \ --- Mod: Code added for additional ships: ----------->
+
+.NW8
+
+ LDY T                  \ Restore the ship type we stored above
+
+ LDA E%-1,Y             \ Fetch the E% byte for this ship to get the default
+                        \ settings for the ship's NEWB flags
+
+ AND #%01101111         \ Zero bits 4 and 7 (so the new ship is not docking, has
+                        \ not been scooped, and has not just docked)
+
+ ORA NEWB               \ Apply the result to the ship's NEWB flags, which sets
+ STA NEWB               \ bits 0-3 and 5-6 in NEWB if they are set in the E%
+                        \ byte
+
+                        \ --- End of added code ------------------------------->
 
  LDY #NI%-1             \ The final step is to copy the new ship's data block
                         \ from INWK to INF, so set up a counter for NI% bytes
@@ -15968,6 +15939,28 @@ ENDIF
  CPX #SST               \ If this is the space station, then jump to KS4 to
  BEQ KS4                \ remove the space station
 
+                        \ --- Mod: Code added for additional ships: ----------->
+
+ CPX #CON               \ Did we just kill the Constrictor from mission 1? If
+ BNE lll                \ not, jump to lll
+
+ LDA TP                 \ We just killed the Constrictor from mission 1, so set
+ ORA #%00000010         \ bit 1 of TP to indicate that we have successfully
+ STA TP                 \ completed mission 1
+
+.lll
+
+ CPX #JL                \ If JL <= X < JH, i.e. the type of ship we killed in X
+ BCC KS7                \ is junk (escape pod, alloy plate, cargo canister,
+ CPX #JH                \ asteroid, splinter, Shuttle or Transporter), then keep
+ BCS KS7                \ going, otherwise jump to KS7
+
+ DEC JUNK               \ We just killed junk, so decrease the junk counter
+
+.KS7
+
+                        \ --- End of added code ------------------------------->
+
  DEC MANY,X             \ Decrease the number of this type of ship in our little
                         \ bubble, which is stored in MANY+X (where X is the ship
                         \ type)
@@ -16044,9 +16037,21 @@ ENDIF
  LDA FRIN,X             \ Copy the contents of the source slot into the
  STA FRIN-1,X           \ destination slot
 
- BEQ KS2                \ If the slot we just shuffled down contains 0, then
-                        \ the source slot is empty and we are done shuffling,
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\BEQ KS2                \ If the slot we just shuffled down contains 0, then
+\                       \ the source slot is empty and we are done shuffling,
+\                       \ so jump to KS2 to move on to processing missiles
+
+                        \ --- And replaced by: -------------------------------->
+
+ BNE P%+5               \ If the slot we just shuffled down is not empty, then
+                        \ skip the following instruction
+
+ JMP KS2                \ The source slot is empty and we are done shuffling,
                         \ so jump to KS2 to move on to processing missiles
+
+                        \ --- End of replacement ------------------------------>
 
  ASL A                  \ Otherwise we have a source ship to shuffle down into
  TAY                    \ the destination, so set Y = A * 2 so it can act as an
@@ -16101,6 +16106,21 @@ ENDIF
                         \
                         \ so let's start copying data from the source to the
                         \ destination
+
+                        \ --- Mod: Code added for additional ships: ----------->
+
+ LDY #36                \ We are going to be using Y as a counter for the 37
+                        \ bytes of ship data we want to copy from the source
+                        \ to the destination, so we set it to 36 to start things
+                        \ off, and will decrement Y for each byte we copy
+
+ LDA (SC),Y             \ Fetch byte #36 of the source's ship data block at SC,
+ STA (INF),Y            \ and store it in byte #36 of the destination's block
+ DEY                    \ at INF, so that's the ship's NEWB flags copied from
+                        \ the source to the destination. One down, quite a few
+                        \ to go...
+
+                        \ --- End of added code ------------------------------->
 
  LDY #35                \ We are going to be using Y as a counter for the 36
                         \ bytes of ship data we want to copy from the source
@@ -19538,11 +19558,23 @@ ENDIF
  LDX KYTB,Y             \ Call DKS4 to see if the KYTB key at offset Y is being
  JSR DKS4               \ pressed
 
- BPL P%+6               \ If the key isn't being pressed, skip the following two
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\BPL P%+6               \ If the key isn't being pressed, skip the following two
+\                       \ instructions
+\
+\LDX #&FF               \ Set the key logger for this key to indicate it's being
+\STX KL,Y               \ pressed
+
+                        \ --- And replaced by: -------------------------------->
+
+ BPL P%+7               \ If the key isn't being pressed, skip the following two
                         \ instructions
 
- LDX #&FF               \ Set the key logger for this key to indicate it's being
- STX KL,Y               \ pressed
+ LDA #&FF               \ Set the key logger for this key to indicate it's being
+ STA KL,Y               \ pressed
+
+                        \ --- End of replacement ------------------------------>
 
  DEY                    \ Decrement the loop counter
 
@@ -26638,13 +26670,30 @@ ENDMACRO
                         \ are in our local bubble, which is the same as saying
                         \ "space station present"
 
-                        \ --- Mod: Code removed for docking computer: --------->
+                        \ --- Mod: Code removed for additional ships: --------->
 
 \SKIP 2                 \ These bytes appear to be unused
 
                         \ --- And replaced by: -------------------------------->
+.JUNK
 
- SKIP 1                 \ This byte appears to be unused
+ SKIP 1                 \ The amount of junk in the local bubble
+                        \
+                        \ "Junk" is defined as being one of these:
+                        \
+                        \   * Escape pod
+                        \   * Alloy plate
+                        \   * Cargo canister
+                        \   * Asteroid
+                        \   * Splinter
+                        \   * Shuttle
+                        \   * Transporter
+                        \
+                        \ Junk is the range of ship types from #JL to #JH - 1
+
+                        \ --- End of replacement ------------------------------>
+
+                        \ --- Mod: Code added for docking computer: ----------->
 
 .auto
 
@@ -26676,9 +26725,21 @@ ENDMACRO
                         \
                         \   * Non-zero = E.C.M. is on
 
-.CABTMP
+                        \ --- Mod: Code added for witchspace: ----------------->
+
+.MJ
+
+ SKIP 1                 \ Are we in witchspace (i.e. have we mis-jumped)?
+                        \
+                        \   * 0 = no, we are in normal space
+                        \
+                        \   * &FF = yes, we are in witchspace
+
+                        \ --- End of added code ------------------------------->
 
                         \ --- Mod: Code added for suns: ----------------------->
+
+.CABTMP
 
  SKIP 1                 \ Cabin temperature
                         \
@@ -26987,6 +27048,17 @@ ENDMACRO
                         \     of the planet is 6
                         \
                         \   * 0 = we have crashed into the surface
+
+                        \ --- Mod: Code added for additional ships: ----------->
+
+.CPIR
+
+ SKIP 1                 \ A counter used when spawning pirates, to work our way
+                        \ through the list of pirate ship blueprints until we
+                        \ find one that has been loaded
+
+
+                        \ --- End of added code ------------------------------->
 
 .QQ2
 
@@ -27699,9 +27771,19 @@ ENDMACRO
  AND #%00100000         \ byte #31, then it is already exploding, so jump to
  BNE MA21               \ BA21 as ships can't explode more than once
 
- LDA INWK+31            \ The energy bomb is killing this ship, so set bit 7 of
- ORA #%10000000         \ the ship byte #31 to indicate that it has now been
- STA INWK+31            \ killed
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\LDA INWK+31            \ The energy bomb is killing this ship, so set bit 7 of
+\ORA #%10000000         \ the ship byte #31 to indicate that it has now been
+\STA INWK+31            \ killed
+
+                        \ --- And replaced by: -------------------------------->
+
+ ASL INWK+31            \ The energy bomb is killing this ship, so set bit 7 of
+ SEC                    \ the ship byte #31 to indicate that it has now been
+ ROR INWK+31            \ killed
+
+                        \ --- End of replacement ------------------------------>
 
  JSR EXNO2              \ Call EXNO2 to process the fact that we have killed a
                         \ ship (so increase the kill tally, make an explosion
@@ -27854,13 +27936,44 @@ ENDMACRO
 \
 \ ******************************************************************************
 
- LDA #3                 \ Set A to 3 to denote we may be scooping an escape pod
+                        \ --- Mod: Code removed for additional ships: --------->
 
- CPX #ESC               \ If this is not an escape pod, jump to oily to randomly
- BNE oily               \ decide the canister's contents
+\LDA #3                 \ Set A to 3 to denote we may be scooping an escape pod
+\
+\CPX #ESC               \ If this is not an escape pod, jump to oily to randomly
+\BNE oily               \ decide the canister's contents
+\
+\BEQ slvy2              \ This is an escape pod, so jump to slvy2 with A set to
+\                       \ 3, so we scoop up the escape pod as slaves
 
- BEQ slvy2              \ This is an escape pod, so jump to slvy2 with A set to
-                        \ 3, so we scoop up the escape pod as slaves
+                        \ --- And replaced by: -------------------------------->
+
+ CPX #OIL               \ If this is a cargo canister, jump to oily to randomly
+ BEQ oily               \ decide the canister's contents
+
+ LDY #0                 \ Fetch byte #0 of the ship's blueprint
+ LDA (XX0),Y
+
+ LSR A                  \ Shift it right four times, so A now contains the high
+ LSR A                  \ nibble (i.e. bits 4-7)
+ LSR A
+ LSR A
+
+ BEQ MA58               \ If A = 0, jump to MA58 to skip all the docking and
+                        \ scooping checks
+
+                        \ Only the Thargon, alloy plate, splinter and escape pod
+                        \ have non-zero high nibbles in their blueprint byte #0
+                        \ so if we get here, our ship is one of those, and the
+                        \ high nibble gives the market item number of the item
+                        \ when scooped, less 1
+
+ ADC #1                 \ Add 1 to the high nibble to get the market item
+                        \ number
+
+ BNE slvy2              \ Skip to slvy2 so we scoop the ship as a market item
+
+                        \ --- End of replacement ------------------------------>
 
 .oily
 
@@ -27878,10 +27991,21 @@ ENDMACRO
                         \ anything from food to computers, while escape pods
                         \ contain slaves
 
- STA QQ29               \ Call tnpr with the scooped cargo type stored in QQ29
- LDA #1                 \ and A set to 1, to work out whether we have room in
- JSR tnpr               \ the hold for the scooped item (A is preserved by this
-                        \ call, and the C flag contains the result)
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\STA QQ29               \ Call tnpr with the scooped cargo type stored in QQ29
+\LDA #1                 \ and A set to 1, to work out whether we have room in
+\JSR tnpr               \ the hold for the scooped item (A is preserved by this
+\                       \ call, and the C flag contains the result)
+
+                        \ --- And replaced by: -------------------------------->
+
+ JSR tnpr1              \ Call tnpr1 with the scooped cargo type stored in A
+                        \ to work out whether we have room in the hold for one
+                        \ tonne of this cargo (A is set to 1 by this call, and
+                        \ the C flag contains the result)
+
+                        \ --- End of replacement ------------------------------>
 
  LDY #78                \ This instruction has no effect, so presumably it used
                         \ to do something, but didn't get removed
@@ -27902,9 +28026,19 @@ ENDMACRO
  ADC #208               \ which will be in the range 48 ("FOOD") to 64 ("ALIEN
  JSR MESS               \ ITEMS"), so this prints the scooped item's name
 
- JMP MA60               \ We are done scooping, so jump down to MA60 to set the
-                        \ kill flag on the canister, as it no longer exists in
-                        \ the local bubble
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\JMP MA60               \ We are done scooping, so jump down to MA60 to set the
+\                       \ kill flag on the canister, as it no longer exists in
+\                       \ the local bubble
+
+                        \ --- And replaced by: -------------------------------->
+
+ ASL NEWB               \ The item has now been scooped, so set bit 7 of its
+ SEC                    \ NEWB flags to indicate this
+ ROR NEWB
+
+                        \ --- End of replacement ------------------------------>
 
 .MA65
 
@@ -27941,12 +28075,26 @@ ENDMACRO
 
 .ISDK
 
- LDA K%+NI%+32          \ 1. Fetch the AI counter (byte #32) of the second ship
- BMI MA62               \ in the ship data workspace at K%, which is reserved
-                        \ for the space station, and if it's negative, i.e. bit
-                        \ 7 is set, meaning the station is hostile, jump down
-                        \ to MA62 to fail docking (so trying to dock at a
-                        \ station that we have annoyed does not end well)
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\LDA K%+NI%+32          \ 1. Fetch the AI counter (byte #32) of the second ship
+\BMI MA62               \ in the ship data workspace at K%, which is reserved
+\                       \ for the space station, and if it's negative, i.e. bit
+\                       \ 7 is set, meaning the station is hostile, jump down
+\                       \ to MA62 to fail docking (so trying to dock at a
+\                       \ station that we have annoyed does not end well)
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDA K%+NI%+36          \ 1. Fetch the NEWB flags (byte #36) of the second ship
+ AND #%00000100         \ in the ship data workspace at K%, which is reserved
+ BNE MA62               \ for the sun or the space station (in this case it's
+                        \ the latter), and if bit 2 is set, meaning the station
+                        \ is hostile, jump down to MA62 to fail docking (so
+                        \ trying to dock at a station that we have annoyed does
+                        \ not end well)
+
+                        \ --- End of replacement ------------------------------>
 
  LDA INWK+14            \ 2. If nosev_z_hi < 214, jump down to MA62 to fail
  CMP #214               \ docking, as the angle of approach is greater than 26
@@ -28105,6 +28253,17 @@ ENDMACRO
 
 .MA26
 
+                        \ --- Mod: Code added for additional ships: ----------->
+
+ LDA NEWB               \ If bit 7 of the ship's NEWB flags is clear, skip the
+ BPL P%+5               \ following instruction
+
+ JSR SCAN               \ Bit 7 of the ship's NEWB flags is set, which means the
+                        \ ship has docked or been scooped, so we draw the ship
+                        \ on the scanner, which has the effect of removing it
+
+                        \ --- End of added code ------------------------------->
+
  LDA QQ11               \ If this is not a space view, jump to MA15 to skip
  BNE MA15               \ missile and laser locking
 
@@ -28145,52 +28304,126 @@ ENDMACRO
  JSR EXNO               \ the crosshairs, so call EXNO to make the sound of
                         \ us making a laser strike on another ship
 
- LDA INWK+35            \ Fetch the hit ship's energy from byte #35 and subtract
- SEC                    \ our current laser power, and if the result is greater
- SBC LAS                \ than zero, the other ship has survived the hit, so
- BCS MA14               \ jump down to MA14 to make it angry
+                        \ --- Mod: Code added for extra lasers: --------------->
 
  LDA TYPE               \ Did we just hit the space station? If so, jump to
  CMP #SST               \ MA14+2 to make the station hostile, skipping the
  BEQ MA14+2             \ following as we can't destroy a space station
 
- LDA INWK+31            \ Set bit 7 of the enemy ship's byte #31, to indicate
- ORA #%10000000         \ that it has been killed
- STA INWK+31
+                        \ --- End of added code ------------------------------->
 
- BCS MA8                \ If the enemy ship type is >= SST (i.e. missile,
-                        \ asteroid, canister or escape pod) then jump down
-                        \ to MA8
+                        \ --- Mod: Code added for missions: ------------------->
 
- JSR DORND              \ Fetch a random number, and jump to oh if it is
- BPL oh                 \ positive (50% chance)
+ CMP #CON               \ If the ship we hit is not a Constrictor, jump to BURN
+ BNE BURN               \ to skip the following
 
- LDY #0                 \ Fetch the first byte of the hit ship's blueprint,
- AND (XX0),Y            \ which determines the maximum number of bits of
-                        \ debris shown when the ship is destroyed, and AND
-                        \ with the random number we just fetched
+ LDA LAS                \ Set A to the power of the laser we just used to hit
+                        \ the ship (i.e. the laser in the current view)
 
- STA CNT                \ Store the result in CNT, so CNT contains a random
-                        \ number between 0 and the maximum number of bits of
-                        \ debris that this ship will release when destroyed
+ CMP #(Armlas AND 127)  \ If the laser is not a military laser, jump to MA8
+ BNE MA8                \ to skip the following, as only military lasers have
+                        \ any effect on the Constrictor
 
-.um
+ LSR LAS                \ Divide the laser power of the current view by 4, so
+ LSR LAS                \ the damage inflicted on the super-ship is a quarter of
+                        \ the damage our military lasers would inflict on a
+                        \ normal ship
 
- BEQ oh                 \ We're going to go round a loop using CNT as a counter
-                        \ so this checks whether the counter is zero and jumps
-                        \ to oh when it gets there (which might be straight
-                        \ away)
+.BURN
 
- LDX #OIL               \ Call SFS1 to spawn a cargo canister from the now
- LDA #0                 \ deceased parent ship, giving the spawned canister an
- JSR SFS1               \ AI flag of 0 (no AI, no E.C.M., non-hostile)
+                        \ --- End of added code ------------------------------->
 
- DEC CNT                \ Decrease the loop counter
+ LDA INWK+35            \ Fetch the hit ship's energy from byte #35 and subtract
+ SEC                    \ our current laser power, and if the result is greater
+ SBC LAS                \ than zero, the other ship has survived the hit, so
+ BCS MA14               \ jump down to MA14 to make it angry
 
- BPL um                 \ Jump back up to um (this BPL is effectively a JMP as
-                        \ CNT will never be negative)
+                        \ --- Mod: Code removed for extra lasers: ------------->
 
-.oh
+\LDA TYPE               \ Did we just hit the space station? If so, jump to
+\CMP #SST               \ MA14+2 to make the station hostile, skipping the
+\BEQ MA14+2             \ following as we can't destroy a space station
+
+                        \ --- End of removed code ----------------------------->
+
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\LDA INWK+31            \ Set bit 7 of the enemy ship's byte #31, to indicate
+\ORA #%10000000         \ that it has been killed
+\STA INWK+31
+
+                        \ --- And replaced by: -------------------------------->
+
+ ASL INWK+31            \ Set bit 7 of the ship byte #31 to indicate that it has
+ SEC                    \ now been killed
+ ROR INWK+31
+
+                        \ --- End of replacement ------------------------------>
+
+                        \ --- Mod: Code removed for mining: ------------------->
+
+\BCS MA8                \ If the enemy ship type is >= SST (i.e. missile,
+\                       \ asteroid, canister or escape pod) then jump down
+\                       \ to MA8
+\
+\JSR DORND              \ Fetch a random number, and jump to oh if it is
+\BPL oh                 \ positive (50% chance)
+\
+\LDY #0                 \ Fetch the first byte of the hit ship's blueprint,
+\AND (XX0),Y            \ which determines the maximum number of bits of
+\                       \ debris shown when the ship is destroyed, and AND
+\                       \ with the random number we just fetched
+\
+\STA CNT                \ Store the result in CNT, so CNT contains a random
+\                       \ number between 0 and the maximum number of bits of
+\                       \ debris that this ship will release when destroyed
+\
+\.um
+\
+\BEQ oh                 \ We're going to go round a loop using CNT as a counter
+\                       \ so this checks whether the counter is zero and jumps
+\                       \ to oh when it gets there (which might be straight
+\                       \ away)
+\
+\LDX #OIL               \ Call SFS1 to spawn a cargo canister from the now
+\LDA #0                 \ deceased parent ship, giving the spawned canister an
+\JSR SFS1               \ AI flag of 0 (no AI, no E.C.M., non-hostile)
+\
+\DEC CNT                \ Decrease the loop counter
+\
+\BPL um                 \ Jump back up to um (this BPL is effectively a JMP as
+\                       \ CNT will never be negative)
+\
+\.oh
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDA TYPE               \ Did we just kill an asteroid? If not, jump to nosp,
+ CMP #AST               \ otherwise keep going
+ BNE nosp
+
+ LDA LAS                \ Did we kill the asteroid using mining lasers? If not,
+ CMP #Mlas              \ jump to nosp, otherwise keep going
+ BNE nosp
+
+ JSR DORND              \ Set A and X to random numbers
+
+ LDX #SPL               \ Set X to the ship type for a splinter
+
+ AND #3                 \ Reduce the random number in A to the range 0-3
+
+ JSR SPIN2              \ Call SPIN2 to spawn A items of type X (i.e. spawn
+                        \ 0-3 splinters)
+
+.nosp
+
+ LDY #PLT               \ Randomly spawn some alloy plates
+ JSR SPIN
+
+ LDY #OIL               \ Randomly spawn some cargo canisters
+ JSR SPIN
+
+                        \ --- End of replacement ------------------------------>
 
  JSR EXNO2              \ Call EXNO2 to process the fact that we have killed a
                         \ ship (so increase the kill tally, make an explosion
@@ -28238,6 +28471,15 @@ ENDMACRO
  LDA INWK+35            \ byte #35 in INF (so the ship's data in K% gets
  STA (INF),Y            \ updated)
 
+                        \ --- Mod: Code added for additional ships: ----------->
+
+ LDA NEWB               \ If bit 7 of the ship's NEWB flags is set, which means
+ BMI KS1S               \ the ship has docked or been scooped, jump to KS1S to
+                        \ skip the following, as we can't get a bounty for a
+                        \ ship that's no longer around
+
+                        \ --- End of added code ------------------------------->
+
  LDA INWK+31            \ If bit 7 of the ship's byte #31 is clear, then the
  BPL MAC1               \ ship hasn't been killed by energy bomb, collision or
                         \ laser fire, so jump to MAC1 to skip the following
@@ -28246,19 +28488,46 @@ ENDMACRO
  BEQ NBOUN              \ ship is no longer exploding, so jump to NBOUN to skip
                         \ the following
 
- LDA TYPE               \ If the ship we just destroyed was a cop, keep going,
- CMP #COPS              \ otherwise jump to q2 to skip the following
- BNE q2
+                        \ --- Mod: Code removed for additional ships: --------->
 
- LDA FIST               \ We shot the sheriff, so update our FIST flag
- ORA #64                \ ("fugitive/innocent status") to at least 64, which
- STA FIST               \ will instantly make us a fugitive
+\LDA TYPE               \ If the ship we just destroyed was a cop, keep going,
+\CMP #COPS              \ otherwise jump to q2 to skip the following
+\BNE q2
+\
+\LDA FIST               \ We shot the sheriff, so update our FIST flag
+\ORA #64                \ ("fugitive/innocent status") to at least 64, which
+\STA FIST               \ will instantly make us a fugitive
+\
+\.q2
 
-.q2
+                        \ --- And replaced by: -------------------------------->
+
+ LDA NEWB               \ Extract bit 6 of the ship's NEWB flags, so A = 64 if
+ AND #%01000000         \ bit 6 is set, or 0 if it is clear. Bit 6 is set if
+                        \ this ship is a cop, so A = 64 if we just killed a
+                        \ policeman, otherwise it is 0
+
+ ORA FIST               \ Update our FIST flag ("fugitive/innocent status") to
+ STA FIST               \ at least the value in A, which will instantly make us
+                        \ a fugitive if we just shot the sheriff, but won't
+                        \ affect our status if the enemy wasn't a copper
+
+                        \ --- End of replacement ------------------------------>
+
+                        \ --- Mod: Code removed for witchspace: --------------->
+
+\LDA DLY                \ If we already have an in-flight message on-screen (in
+\BNE KS1S               \ which case DLY > 0), jump to KS1S to skip showing an
+\                       \ on-screen bounty for this kill
+
+                        \ --- And replaced by: -------------------------------->
 
  LDA DLY                \ If we already have an in-flight message on-screen (in
- BNE KS1S               \ which case DLY > 0), jump to KS1S to skip showing an
+ ORA MJ                 \ which case DLY > 0), or we are in witchspace (in
+ BNE KS1S               \ which case MJ > 0), jump to KS1S to skip showing an
                         \ on-screen bounty for this kill
+
+                        \ --- End of replacement ------------------------------>
 
  LDY #10                \ Fetch byte #10 of the ship's blueprint, which is the
  LDA (XX0),Y            \ low byte of the bounty awarded when this ship is
@@ -28390,6 +28659,14 @@ ENDMACRO
 \     iterations of the main loop)
 \
 \ ******************************************************************************
+
+                        \ --- Mod: Code added for witchspace: ----------------->
+
+ LDA MJ                 \ If we are in witchspace, jump down to MA23S to skip
+ BNE MA23S              \ the following, as there are no space stations in
+                        \ witchspace
+
+                        \ --- End of added code ------------------------------->
 
  LDA MCNT               \ Fetch the main loop counter and calculate MCNT mod 32,
  AND #31                \ jumping to MA93 if it is on-zero (so the following
@@ -28530,6 +28807,14 @@ ENDMACRO
 \ ******************************************************************************
 
 .MA22
+
+                        \ --- Mod: Code added for witchspace: ----------------->
+
+ LDA MJ                 \ If we are in witchspace, jump down to MA23S to skip
+ BNE MA23S              \ the following, as there are no planets or suns to
+                        \ bump into in witchspace
+
+                        \ --- End of added code ------------------------------->
 
  LDA MCNT               \ Fetch the main loop counter and calculate MCNT mod 32,
  AND #31                \ which tells us the position of this loop in each block
@@ -28807,6 +29092,82 @@ ENDMACRO
  JMP STARS              \ This is a space view, so jump to the STARS routine to
                         \ process the stardust, and return from the main flight
                         \ loop using a tail call
+
+\ ******************************************************************************
+\
+\       Name: SPIN
+\       Type: Subroutine
+\   Category: Universe
+\    Summary: Randomly spawn cargo from a destroyed ship
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   Y                   The type of cargo to consider spawning (typically #PLT
+\                       or #OIL)
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   oh                  Contains an RTS
+\
+\   SPIN2               Remove any randomness: spawn cargo of a specific type
+\                       (given in X), and always spawn the number given in A
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for additional ships: ----------->
+
+.SPIN
+
+ JSR DORND              \ Fetch a random number, and jump to oh if it is
+ BPL oh                 \ positive (50% chance)
+
+ PHA                    \ Store A on the stack so we can restore it after the
+                        \ following transfers
+
+ TYA                    \ Copy the cargo type from Y into A and X
+ TAX
+
+ PLA                    \ Restore A from the stack
+
+ LDY #0                 \ Fetch the first byte of the hit ship's blueprint,
+ AND (XX0),Y            \ which determines the maximum number of bits of
+                        \ debris shown when the ship is destroyed, and AND
+                        \ with the random number we just fetched
+
+ AND #15                \ Reduce the random number in A to the range 0-15
+
+.SPIN2
+
+ STA CNT                \ Store the result in CNT, so CNT contains a random
+                        \ number between 0 and the maximum number of bits of
+                        \ debris that this ship will release when destroyed
+                        \ (to a maximum of 15 bits of debris)
+
+.spl
+
+ BEQ oh                 \ We're going to go round a loop using CNT as a counter
+                        \ so this checks whether the counter is zero and jumps
+                        \ to oh when it gets there (which might be straight
+                        \ away)
+
+ LDA #0                 \ Call SFS1 to spawn the specified cargo from the now
+ JSR SFS1               \ deceased parent ship, giving the spawned canister an
+                        \ AI flag of 0 (no AI, no E.C.M., non-hostile)
+
+ DEC CNT                \ Decrease the loop counter
+
+ BNE spl+2              \ Jump back up to the LDA &0 instruction above (this BPL
+                        \ is effectively a JMP as CNT will never be negative)
+
+.oh
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -34517,14 +34878,31 @@ ENDMACRO
  LDA UNIV+1,X
  STA V+1
 
- LDY #2                 \ K3(2 1 0) = (x_sign x_hi x_lo) - x-coordinate of
- JSR TAS1               \ target ship
+                        \ --- Mod: Code removed for docking computer: --------->
 
- LDY #5                 \ K3(5 4 3) = (y_sign y_hi z_lo) - y-coordinate of
- JSR TAS1               \ target ship
+\LDY #2                 \ K3(2 1 0) = (x_sign x_hi x_lo) - x-coordinate of
+\JSR TAS1               \ target ship
+\
+\LDY #5                 \ K3(5 4 3) = (y_sign y_hi z_lo) - y-coordinate of
+\JSR TAS1               \ target ship
+\
+\LDY #8                 \ K3(8 7 6) = (z_sign z_hi z_lo) - z-coordinate of
+\JSR TAS1               \ target ship
 
- LDY #8                 \ K3(8 7 6) = (z_sign z_hi z_lo) - z-coordinate of
- JSR TAS1               \ target ship
+                        \ --- And replaced by: -------------------------------->
+
+ JSR VCSUB              \ Calculate vector K3 as follows:
+                        \
+                        \ K3(2 1 0) = (x_sign x_hi x_lo) - x-coordinate of
+                        \ target ship
+                        \
+                        \ K3(5 4 3) = (y_sign y_hi z_lo) - y-coordinate of
+                        \ target ship
+                        \
+                        \ K3(8 7 6) = (z_sign z_hi z_lo) - z-coordinate of
+                        \ target ship
+
+                        \ --- End of replacement ------------------------------>
 
                         \ So K3 now contains the vector from the target ship to
                         \ the missile
@@ -34594,8 +34972,17 @@ ENDMACRO
 
  JSR DORND              \ Set A and X to random numbers
 
- CMP #16                \ If A >= 16 (94% chance), jump down to TA19 with the
- BCS TA19               \ vector from the target to the missile in K3
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\CMP #16                \ If A >= 16 (94% chance), jump down to TA19 with the
+\BCS TA19               \ vector from the target to the missile in K3
+
+                        \ --- And replaced by: -------------------------------->
+
+ CMP #16                \ If A >= 16 (94% chance), jump down to TA19S with the
+ BCS TA19S              \ vector from the target to the missile in K3
+
+                        \ --- End of replacement ------------------------------>
 
 .M32
 
@@ -34603,9 +34990,24 @@ ENDMACRO
  LDA (V),Y              \ into the C flag
  LSR A
 
- BCC TA19               \ If the C flag is clear then the target does not have
-                        \ E.C.M. fitted, so jump down to TA19 with the vector
-                        \ from the target to the missile in K3
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\BCC TA19               \ If the C flag is clear then the target does not have
+\                       \ E.C.M. fitted, so jump down to TA19 with the vector
+\                       \ from the target to the missile in K3
+
+                        \ --- And replaced by: -------------------------------->
+
+ BCS P%+5               \ If the C flag is set then the target has E.C.M.
+                        \ fitted, so skip the next instruction
+
+.TA19S
+
+ JMP TA19               \ The target does not have E.C.M. fitted, so jump down
+                        \ to TA19 with the vector from the target to the missile
+                        \ in K3
+
+                        \ --- End of replacement ------------------------------>
 
  JMP ECBLB2             \ The target has E.C.M., so jump to ECBLB2 to set it
                         \ off, returning from the subroutine using a tail call
@@ -34647,19 +35049,84 @@ ENDMACRO
 
 .TACTICS
 
+                        \ --- Mod: Code added for additional ships: ----------->
+
+ LDY #3                 \ Set RAT = 3, which is the magnitude we set the pitch
+ STY RAT                \ or roll counter to in part 7 when turning a ship
+                        \ towards a vector (a higher value giving a longer
+                        \ turn). This value is not changed in the TACTICS
+                        \ routine, but it is set to different values by the
+                        \ DOCKIT routine
+
+ INY                    \ Set RAT2 = 4, which is the threshold below which we
+ STY RAT2               \ don't apply pitch and roll to the ship (so a lower
+                        \ value means we apply pitch and roll more often, and a
+                        \ value of 0 means we always apply them). The value is
+                        \ compared with double the high byte of sidev . XX15,
+                        \ where XX15 is the vector from the ship to the enemy
+                        \ or planet. This value is set to different values by
+                        \ both the TACTICS and DOCKIT routines
+
+ LDA #22                \ Set CNT2 = 22, which is the maximum angle beyond which
+ STA CNT2               \ a ship will slow down to start turning towards its
+                        \ prey (a lower value means a ship will start to slow
+                        \ down even if its angle with the enemy ship is large,
+                        \ which gives a tighter turn). This value is not changed
+                        \ in the TACTICS routine, but it is set to different
+                        \ values by the DOCKIT routine
+
+                        \ --- End of added code ------------------------------->
+
  CPX #MSL               \ If this is a missile, jump up to TA18 to implement
  BEQ TA18               \ missile tactics
 
- CPX #ESC               \ If this is not an escape pod, skip the following two
- BNE P%+8               \ instructions
+                        \ --- Mod: Code removed for additional ships: --------->
 
- JSR SPS1               \ This is an escape pod, so call SPS1 to calculate the
-                        \ vector to the planet and store it in XX15
+\CPX #ESC               \ If this is not an escape pod, skip the following two
+\BNE P%+8               \ instructions
+\
+\JSR SPS1               \ This is an escape pod, so call SPS1 to calculate the
+\                       \ vector to the planet and store it in XX15
+\
+\JMP TA15               \ Jump down to TA15
 
- JMP TA15               \ Jump down to TA15
+                        \ --- End of removed code ----------------------------->
 
  CPX #SST               \ If this is not the space station, jump down to TA13
  BNE TA13
+
+                        \ --- Mod: Code added for additional ships: ----------->
+
+ LDA NEWB               \ This is the space station, so check whether bit 2 of
+ AND #%00000100         \ the ship's NEWB flags is set, and if it is (i.e. the
+ BNE TN5                \ station is hostile), jump to TN5 to spawn some cops
+
+ LDA MANY+SHU+1         \ The station is not hostile, so check how many
+ BNE TA1                \ Transporters there are in the vicinity, and if we
+                        \ already have one, return from the subroutine (as TA1
+                        \ contains an RTS)
+
+                        \ If we get here then the station is not hostile, so we
+                        \ can consider spawning a Transporter or Shuttle
+
+ JSR DORND              \ Set A and X to random numbers
+
+ CMP #253               \ If A < 253 (99.2% chance), return from the subroutine
+ BCC TA1                \ (as TA1 contains an RTS)
+
+ AND #1                 \ Set A = a random number that's either 0 or 1
+
+ ADC #SHU-1             \ The C flag is set (as we didn't take the BCC above),
+ TAX                    \ so this sets X to a value of either #SHU or #SHU + 1,
+                        \ which is the ship type for a Shuttle or a Transporter
+
+ BNE TN6                \ Jump to TN6 to spawn this ship type and return from
+                        \ the subroutine using a tail call (this BNE is
+                        \ effectively a JMP as A is never zero)
+
+.TN5
+
+                        \ --- End of added code ------------------------------->
 
                         \ We only call the tactics routine for the space station
                         \ when it is hostile, so if we get here then this is the
@@ -34679,6 +35146,12 @@ ENDMACRO
 
  LDX #COPS              \ Set X to the ship type for a cop
 
+                        \ --- Mod: Code added for additional ships: ----------->
+
+.TN6
+
+                        \ --- End of added code ------------------------------->
+
  LDA #%11100001         \ Set the AI flag to give the ship E.C.M., enable AI and
                         \ make it pretty aggressive (56 out of 63)
 
@@ -34687,23 +35160,27 @@ ENDMACRO
 
 .TA13
 
- CPX #CYL               \ If A >= #CYL, i.e. this is a Cobra Mk III trader (as
- BCS TA62               \ asteroids and cargo canisters never have AI), jump
-                        \ down to TA62
+                        \ --- Mod: Code removed for additional ships: --------->
 
- CPX #COPS              \ If this is a cop, jump down to TA62
- BEQ TA62
+\CPX #CYL               \ If A >= #CYL, i.e. this is a Cobra Mk III trader (as
+\BCS TA62               \ asteroids and cargo canisters never have AI), jump
+\                       \ down to TA62
+\
+\CPX #COPS              \ If this is a cop, jump down to TA62
+\BEQ TA62
+\
+\LDA SSPR               \ If we aren't within range of the space station, jump
+\BEQ TA62               \ down to TA62
+\
+\LDA INWK+32            \ This is a pirate or bounty hunter, but we are inside
+\AND #%10000001         \ the space station's safe zone, so clear bits 1-6 of
+\STA INWK+32            \ the AI flag to stop it being hostile, because even
+\                       \ pirates aren't crazy enough to breach the station's
+\                       \ no-fire zone
+\
+\.TA62
 
- LDA SSPR               \ If we aren't within range of the space station, jump
- BEQ TA62               \ down to TA62
-
- LDA INWK+32            \ This is a pirate or bounty hunter, but we are inside
- AND #%10000001         \ the space station's safe zone, so clear bits 1-6 of
- STA INWK+32            \ the AI flag to stop it being hostile, because even
-                        \ pirates aren't crazy enough to breach the station's
-                        \ no-fire zone
-
-.TA62
+                        \ --- End of removed code ----------------------------->
 
  LDY #14                \ If the ship's energy is greater or equal to the
  LDA INWK+35            \ maximum value from the ship's blueprint pointed to by
@@ -34734,10 +35211,68 @@ ENDMACRO
 
 .TA21
 
-                        \ --- Mod: Code added for docking computer: ----------->
+                        \ --- Mod: Code added for additional ships: ----------->
 
- JMP TN4                \ Temporary jump to skip the GOPL routine that's used by
-                        \ the docking computer
+ CPX #TGL               \ If this is not a Thargon, jump down to TA14
+ BNE TA14
+
+ LDA MANY+THG           \ If there is at least one Thargoid in the vicinity,
+ BNE TA14               \ jump down to TA14
+
+ LSR INWK+32            \ This is a Thargon but there is no Thargoid mothership,
+ ASL INWK+32            \ so clear bit 0 of the AI flag to disable its E.C.M.
+
+ LSR INWK+27            \ And halve the Thargon's speed
+
+.TA22
+
+ RTS                    \ Return from the subroutine
+
+.TA14
+
+ JSR DORND              \ Set A and X to random numbers
+
+ LDA NEWB               \ Extract bit 0 of the ship's NEWB flags into the C flag
+ LSR A                  \ and jump to TN1 if it is clear (i.e. if this is not a
+ BCC TN1                \ trader)
+
+
+ CPX #100               \ This is a trader, so if X >= 100 (61% chance), return
+ BCS TA22               \ from the subroutine (as TA22 contains an RTS)
+
+.TN1
+
+ LSR A                  \ Extract bit 1 of the ship's NEWB flags into the C flag
+ BCC TN2                \ and jump to TN2 if it is clear (i.e. if this is not a
+                        \ bounty hunter)
+
+ LDX FIST               \ This is a bounty hunter, so check whether our FIST
+ CPX #40                \ rating is < 40 (where 50 is a fugitive), and jump to
+ BCC TN2                \ TN2 if we are not 100% evil
+
+ LDA NEWB               \ We are a fugitive or a bad offender, and this ship is
+ ORA #%00000100         \ a bounty hunter, so set bit 2 of the ship's NEWB flags
+ STA NEWB               \ to make it hostile
+
+ LSR A                  \ Shift A right twice so the next test in TN2 will check
+ LSR A                  \ bit 2
+
+.TN2
+
+ LSR A                  \ Extract bit 2 of the ship's NEWB flags into the C flag
+ BCS TN3                \ and jump to TN3 if it is set (i.e. if this ship is
+                        \ hostile)
+
+ LSR A                  \ The ship is not hostile, so extract bit 4 of the
+ LSR A                  \ ship's NEWB flags into the C flag, and jump to GOPL if
+ BCC GOPL               \ it is clear (i.e. if this ship is not docking)
+
+ JMP DOCKIT             \ The ship is not hostile and is docking, so jump to
+                        \ DOCKIT to apply the docking algorithm to this ship
+
+                        \ --- End of added code ------------------------------->
+
+                        \ --- Mod: Code added for docking computer: ----------->
 
 .GOPL
 
@@ -34746,6 +35281,26 @@ ENDMACRO
                         \ it in XX15
 
  JMP TA151              \ Jump to TA151 to make the ship head towards the planet
+
+                        \ --- Mod: Code added for additional ships: ----------->
+
+.TN3
+
+ LSR A                  \ Extract bit 2 of the ship's NEWB flags into the C flag
+ BCC TN4                \ and jump to TN4 if it is clear (i.e. if this ship is
+                        \ not a pirate)
+
+ LDA SSPR               \ If we are not inside the space station safe zone, jump
+ BEQ TN4                \ to TN4
+
+                        \ If we get here then this is a pirate and we are inside
+                        \ the space station safe zone
+
+ LDA INWK+32            \ Set bits 0 and 7 of the AI flag in byte #32 (has AI
+ AND #%10000001         \ enabled and has an E.C.M.)
+ STA INWK+32
+
+                        \ --- End of added code ------------------------------->
 
 .TN4
 
@@ -34819,6 +35374,25 @@ ENDMACRO
  JMP TA20               \ This is a missile, so jump down to TA20 to get
                         \ straight into some aggressive manoeuvring
 
+                        \ --- Mod: Code added for additional ships: ----------->
+
+ CMP #ANA               \ If this is not an Anaconda, jump down to TN7 to skip
+ BNE TN7                \ the following
+
+ JSR DORND              \ Set A and X to random numbers
+
+ CMP #200               \ If A < 200 (78% chance), jump down to TN7 to skip the
+ BCC TN7                \ following
+
+ LDX #WRM               \ Set X to the ship type for a Worm
+
+ JMP TN6                \ Jump to TN6 to spawn the Worm and return from
+                        \ the subroutine using a tail call
+
+.TN7
+
+                        \ --- End of added code ------------------------------->
+
  JSR DORND              \ Set A and X to random numbers
 
  CMP #250               \ If A < 250 (97.5% chance), jump down to TA7 to skip
@@ -34848,6 +35422,15 @@ ENDMACRO
 
  CMP #230               \ If A < 230 (90% chance), jump down to ta3 to consider
  BCC ta3                \ firing a missile
+
+                        \ --- Mod: Code added for additional ships: ----------->
+
+ LDX TYPE               \ Fetch the ship blueprint's default NEWB flags from the
+ LDA E%-1,X             \ table at E%, and if bit 7 is clear (i.e. this ship
+ BPL ta3                \ does not have an escape pod), jump to ta3 to skip the
+                        \ spawning of an escape pod
+
+                        \ --- End of added code ------------------------------->
 
                         \ By this point, the ship has run out of both energy and
                         \ luck, so it's time to bail
@@ -34906,6 +35489,18 @@ ENDMACRO
                         \ missile, so reduce the missile count in byte #31 by 1
 
  LDA TYPE               \ Fetch the ship type into A
+
+                        \ --- Mod: Code added for additional ships: ----------->
+
+ CMP #THG               \ If this is not a Thargoid, jump down to TA16 to launch
+ BNE TA16               \ a missile
+
+ LDX #TGL               \ This is a Thargoid, so instead of launching a missile,
+ LDA INWK+32            \ the mothership launches a Thargon, so call SFS1 to
+ JMP SFS1               \ spawn a Thargon from the parent ship, and return from
+                        \ the subroutine using a tail call
+
+                        \ --- End of added code ------------------------------->
 
 .TA16
 
@@ -34974,6 +35569,19 @@ ENDMACRO
  BCC TA4                \ ship's line of fire, so jump to TA4 to skip the laser
                         \ checks
 
+                        \ --- Mod: Code added for additional ships: ----------->
+
+ LDY #19                \ Fetch the enemy ship's byte #19 from their ship's
+ LDA (XX0),Y            \ blueprint into A
+
+ AND #%11111000         \ Extract bits 3-7, which contain the enemy's laser
+                        \ power
+
+ BEQ TA4                \ If the enemy has no laser power, jump to TA4 to skip
+                        \ the laser checks
+
+                        \ --- End of added code ------------------------------->
+
  LDA INWK+31            \ Set bit 6 in byte #31 to denote that the ship is
  ORA #%01000000         \ firing its laser at us
  STA INWK+31
@@ -34982,11 +35590,20 @@ ENDMACRO
  BCC TA4                \ ship's crosshairs, so jump to TA4 to skip the laser
                         \ checks
 
-.HIT
+                        \ --- Mod: Code removed for additional ships: --------->
 
- LDY #19                \ We are being hit by enemy laser fire, so fetch the
- LDA (XX0),Y            \ enemy ship's byte #19 from their ship's blueprint
-                        \ into A
+\.HIT
+\
+\LDY #19                \ We are being hit by enemy laser fire, so fetch the
+\LDA (XX0),Y            \ enemy ship's byte #19 from their ship's blueprint
+\                       \ into A
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDA (XX0),Y            \ Fetch the enemy ship's byte #19 from their ship's
+                        \ blueprint into A
+
+                        \ --- End of replacement ------------------------------>
 
  LSR A                  \ Halve the enemy ship's byte #19 (which contains both
                         \ the laser power and number of missiles) to get the
@@ -35581,9 +36198,9 @@ ENDMACRO
                         \ code that gets skipped if K3+10 is non-zero, but as
                         \ to what this means... that's not yet clear
 
-\ASL NEWB               \ Set bit 7 of the ship's NEWB flags to indicate that
-\SEC                    \ the ship has now docked, which only has meaning if
-\ROR NEWB               \ this is an NPC trying to dock
+ ASL NEWB               \ Set bit 7 of the ship's NEWB flags to indicate that
+ SEC                    \ the ship has now docked, which only has meaning if
+ ROR NEWB               \ this is an NPC trying to dock
 
 .TNRTS
 
@@ -36105,7 +36722,7 @@ ENDMACRO
                         \
                         \   (A R) = (S R) + (A P) = x_lo^2 + y_lo^2
 
-                        \ --- Mod: Code removed for sideways RAM: ------------->
+                        \ --- Mod: Code removed for additional ships: --------->
 
 \BCS FR1-2              \ If the addition just overflowed then there is no way
 \                       \ our crosshairs are within the ship's targetable area,
@@ -36114,9 +36731,10 @@ ENDMACRO
 
                         \ --- And replaced by: -------------------------------->
 
- BCC P%+4               \ If the addition just overflowed then there is no way
- CLC                    \ our crosshairs are within the ship's targetable area,
- RTS                    \ so return from the subroutine with the C flag clear
+ BCS TN10               \ If the addition just overflowed then there is no way
+                        \ our crosshairs are within the ship's targetable area,
+                        \ so return from the subroutine with the C flag clear
+                        \ (as TN10 contains a CLC then an RTS)
 
                         \ --- End of replacement ------------------------------>
 
@@ -36148,6 +36766,17 @@ ENDMACRO
 .HI1
 
  RTS                    \ Return from the subroutine
+
+                        \ --- Mod: Code added for additional ships: ----------->
+
+.TN10
+
+ CLC                    \ Clear the C flag to indicate the ship is not in our
+                        \ crosshairs
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -43415,6 +44044,12 @@ ENDMACRO
 
 .MTT4
 
+                        \ --- Mod: Code added for additional ships: ----------->
+
+ JSR DORND              \ Set A and X to random numbers
+
+                        \ --- End of added code ------------------------------->
+
  LSR A                  \ Clear bit 7 of our random number in A and set the C
                         \ flag to bit 0 of A, which is random
 
@@ -43429,12 +44064,54 @@ ENDMACRO
                         \ C flag was set), giving the ship either no missiles or
                         \ one missile
 
- AND #31                \ Set the ship speed to our random number, set to a
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\AND #31                \ Set the ship speed to our random number, set to a
+\ORA #16                \ minimum of 16 and a maximum of 31
+\STA INWK+27
+\
+\LDA #CYL               \ Add a new Cobra Mk III to the local bubble and fall
+\JSR NWSHP              \ through into the main game loop again
+
+                        \ --- And replaced by: -------------------------------->
+
+ AND #15                \ Set the ship speed to our random number, set to a
  ORA #16                \ minimum of 16 and a maximum of 31
  STA INWK+27
 
- LDA #CYL               \ Add a new Cobra Mk III to the local bubble and fall
- JSR NWSHP              \ through into the main game loop again
+ JSR DORND              \ Set A and X to random numbers, plus the C flag
+
+ BMI nodo               \ If A is negative (50% chance), jump to nodo to skip
+                        \ the following
+
+                        \ If we get here then we are going to spawn a ship that
+                        \ is minding its own business and trying to dock
+
+ LDA INWK+32            \ Set bits 6 and 7 of the ship's AI flag, to make it
+ ORA #%11000000         \ aggressive if attacked, and enable its AI
+ STA INWK+32
+
+ LDX #%00010000         \ Set bit 4 of the ship's NEWB flags, to indicate that
+ STX NEWB               \ this ship is docking
+
+.nodo
+
+ AND #2                 \ If we jumped here with a random value of A from the
+                        \ BMI above, then this reduces A to a random value of
+                        \ either 0 or 2; if we didn't take the BMI and made the
+                        \ ship hostile, then A will be 0
+
+ ADC #CYL               \ Set A = A + C + #CYL
+                        \
+                        \ where A is 0 or 2 and C is 0 or 1, so this gives us a
+                        \ ship type from the following: Cobra Mk III, Python,
+                        \ Boa or Anaconda
+
+ JSR NWSHP              \ Add a new ship of type A to the local bubble and fall
+                        \ through into the main game loop again
+
+
+                        \ --- End of replacement ------------------------------>
 
 \ ******************************************************************************
 \
@@ -43523,15 +44200,32 @@ ENDMACRO
                         \ time it will either be an asteroid (98.5% chance) or,
                         \ very rarely, a cargo canister (1.5% chance)
 
+                        \ --- Mod: Code added for witchspace: ----------------->
+
+ LDA MJ                 \ If we are in witchspace following a mis-jump, skip the
+ BNE ytq                \ following by jumping down to MLOOP (via ytq above)
+
+                        \ --- End of added code ------------------------------->
+
  JSR DORND              \ Set A and X to random numbers
 
  CMP #35                \ If A >= 35 (87% chance), jump down to MTT1 to skip
  BCS MTT1               \ the spawning of an asteroid or cargo canister and
                         \ potentially spawn something else
 
- LDA MANY+AST           \ If we already have 3 or more asteroids in the local
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\LDA MANY+AST           \ If we already have 3 or more asteroids in the local
+\CMP #3                 \ bubble, jump down to MTT1 to skip the following and
+\BCS MTT1               \ potentially spawn something else
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDA JUNK               \ If we already have 3 or more bits of junk in the local
  CMP #3                 \ bubble, jump down to MTT1 to skip the following and
  BCS MTT1               \ potentially spawn something else
+
+                        \ --- End of replacement ------------------------------>
 
  JSR ZINF               \ Call ZINF to reset the INWK ship workspace
 
@@ -43600,11 +44294,26 @@ ENDMACRO
 
  JSR DORND              \ Set A and X to random numbers
 
- CMP #5                 \ Set A to the ship number of an asteroid, and keep
- LDA #AST               \ this value for 98.5% of the time (i.e. if random
- BCS P%+4               \ A >= 5 then skip the following instruction)
+                        \ --- Mod: Code removed for additional ships: --------->
 
- LDA #OIL               \ Set A to the ship number of a cargo canister
+\CMP #5                 \ Set A to the ship number of an asteroid, and keep
+\LDA #AST               \ this value for 98.5% of the time (i.e. if random
+\BCS P%+4               \ A >= 5 then skip the following instruction)
+\
+\LDA #OIL               \ Set A to the ship number of a cargo canister
+
+                        \ --- And replaced by: -------------------------------->
+
+ CMP #10                \ If random A >= 10 (96% of the time), set the C flag
+
+ AND #1                 \ Reduce A to a random number that's 0 or 1
+
+ ADC #OIL               \ Set A = #OIL + A + C, so there's a tiny chance of us
+                        \ spawning a cargo canister (#OIL) and an even chance of
+                        \ us spawning either a boulder (#OIL + 1) or an asteroid
+                        \ (#OIL + 2)
+
+                        \ --- End of replacement ------------------------------>
 
  JSR NWSHP              \ Add our new asteroid or canister to the universe
 
@@ -43630,8 +44339,21 @@ ENDMACRO
 
 .MTT1
 
- LDA SSPR               \ If we are inside the space station's safe zone, jump
- BNE MLOOP              \ to MLOOP to skip the following
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\LDA SSPR               \ If we are inside the space station's safe zone, jump
+\BNE MLOOP              \ to MLOOP to skip the following
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDA SSPR               \ If we are outside the space station's safe zone, skip
+ BEQ P%+5               \ the following instruction
+
+.MLOOPS
+
+ JMP MLOOP              \ Jump to MLOOP to skip the following
+
+                        \ --- End of replacement ------------------------------>
 
  JSR BAD                \ Call BAD to work out how much illegal contraband we
                         \ are carrying in our hold (A is up to 40 for a
@@ -43669,9 +44391,20 @@ ENDMACRO
  LDA #COPS              \ Add a new police ship to the local bubble
  JSR NWSHP
 
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\LDA MANY+COPS          \ If we now have at least one cop in the local bubble,
+\BNE MLOOP              \ jump down to MLOOP, otherwise fall through into the
+\                       \ next part to look at spawning something else
+
+                        \ --- And replaced by: -------------------------------->
+
  LDA MANY+COPS          \ If we now have at least one cop in the local bubble,
- BNE MLOOP              \ jump down to MLOOP, otherwise fall through into the
-                        \ next part to look at spawning something else
+ BNE MLOOPS             \ jump down to MLOOPS to stop spawning, otherwise fall
+                        \ through into the next part to look at spawning
+                        \ something else
+
+                        \ --- End of replacement ------------------------------>
 
 \ ******************************************************************************
 \
@@ -43693,12 +44426,48 @@ ENDMACRO
 \
 \ ******************************************************************************
 
- DEC EV                 \ Decrement EV, the extra vessels spawning delay, and
- BPL MLOOP              \ jump to MLOOP if it is still positive, so we only
-                        \ do the following when the EV counter runs down
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\DEC EV                 \ Decrement EV, the extra vessels spawning delay, and
+\BPL MLOOP              \ jump to MLOOP if it is still positive, so we only
+\                       \ do the following when the EV counter runs down
+
+                        \ --- And replaced by: -------------------------------->
+
+ DEC EV                 \ Decrement EV, the extra vessels spawning delay, and if
+ BPL MLOOPS             \ it is still positive, jump to MLOOPS to stop spawning,
+                        \ so we only do the following when the EV counter runs
+                        \ down
+
+                        \ --- End of replacement ------------------------------>
 
  INC EV                 \ EV is negative, so bump it up again, setting it back
                         \ to 0
+
+                        \ --- Mod: Code added for missions: ------------------->
+
+ LDA TP                 \ Fetch bits 2 and 3 of TP, which contain the status of
+ AND #%00001100         \ mission 2
+
+ CMP #%00001000         \ If bit 3 is set and bit 2 is clear, keep going to
+ BNE nopl               \ spawn a Thargoid as we are transporting the plans in
+                        \ mission 2 and the Thargoids are trying to stop us,
+                        \ otherwise jump to nopl to skip spawning a Thargoid
+
+
+ JSR DORND              \ Set A and X to random numbers
+
+ CMP #200               \ If the random number in A < 200 (78% chance), jump to
+ BCC nopl               \ nopl to skip spawning a Thargoid
+
+.fothg2
+
+ JSR GTHG               \ Call GTHG to spawn a Thargoid ship and a Thargon
+                        \ companion
+
+.nopl
+
+                        \ --- End of added code ------------------------------->
 
  JSR DORND              \ Set A and X to random numbers
 
@@ -43706,17 +44475,36 @@ ENDMACRO
  BEQ LABEL_2            \ straight to LABEL_2 to start spawning pirates or a
                         \ lone bounty hunter
 
- CMP #90                \ If the random number in A >= 90 (65% chance), jump to
- BCS MLOOP              \ MLOOP to stop spawning (so there's a 35% chance of
+                        \ --- Mod: Code removed for additional ships: --------->
+
+
+\CMP #90                \ If the random number in A >= 90 (65% chance), jump to
+\BCS MLOOP              \ MLOOP to stop spawning (so there's a 35% chance of
+\                       \ spawning pirates or a lone bounty hunter)
+\
+\AND #7                 \ Reduce the random number in A to the range 0-7, and
+\CMP gov                \ if A is less than government of this system, jump
+\BCC MLOOP              \ to MLOOP to stop spawning (so safer governments with
+\                       \ larger gov numbers have a greater chance of jumping
+\                       \ out, which is another way of saying that more
+\                       \ dangerous systems spawn pirates and bounty hunters
+\                       \ more often)
+
+                        \ --- And replaced by: -------------------------------->
+
+ CMP #120               \ If the random number in A >= 120 (53% chance), jump to
+ BCS MLOOPS             \ MLOOPS to stop spawning (so there's a 47% chance of
                         \ spawning pirates or a lone bounty hunter)
 
  AND #7                 \ Reduce the random number in A to the range 0-7, and
  CMP gov                \ if A is less than government of this system, jump
- BCC MLOOP              \ to MLOOP to stop spawning (so safer governments with
+ BCC MLOOPS             \ to MLOOPS to stop spawning (so safer governments with
                         \ larger gov numbers have a greater chance of jumping
                         \ out, which is another way of saying that more
                         \ dangerous systems spawn pirates and bounty hunters
                         \ more often)
+
+                        \ --- End of replacement ------------------------------>
 
 .LABEL_2
 
@@ -43731,33 +44519,158 @@ ENDMACRO
                         \ previous call to DORND, this does not set the new ship
                         \ to a totally random location
 
- CMP #200               \ If the random number in A >= 200 (13% chance), jump
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\CMP #200               \ If the random number in A >= 200 (13% chance), jump
+\BCS mt1                \ to mt1 to spawn pirates, otherwise keep going to
+\                       \ spawn a lone bounty hunter
+\
+\INC EV                 \ Increase the extra vessels spawning counter, to
+\                       \ prevent the next attempt to spawn extra vessels
+\
+\AND #3                 \ Set A = Y = random number in the range 3-6, which
+\ADC #3                 \ we will use to determine the type of ship
+\TAY
+\
+\                       \ We now build the AI flag for this ship in A
+\
+\TXA                    \ First, copy the random number in X to A
+\
+\CMP #200               \ First, set the C flag if X >= 200 (22% chance)
+\
+\ROL A                  \ Set bit 0 of A to the C flag (i.e. there's a 22%
+\                       \ chance of this ship having E.C.M.)
+\
+\ORA #%11000000         \ Set bits 6 and 7 of A, so the ship is hostile (bit 6)
+\                       \ and has AI (bit 7)
+\
+\STA INWK+32            \ Store A in the AI flag of this ship
+\
+\TYA                    \ Add a new ship of type Y to the local bubble, so
+\JSR NWSHP              \ that's a Mamba, Cobra Mk III or Python
+\
+\.mj1
+\
+\JMP MLOOP              \ Jump down to MLOOP, as we are done spawning ships
+\
+\.mt1
+\
+\AND #3                 \ It's time to spawn a group of pirates, so set A to a
+\                       \ random number in the range 0-3, which will be the
+\                       \ loop counter for spawning pirates below (so we will
+\                       \ spawn 1-4 pirates)
+\
+\STA EV                 \ Delay further spawnings by this number
+\
+\STA XX13               \ Store the number in XX13, the pirate counter
+\
+\.mt3
+\
+\JSR DORND              \ Set A and X to random numbers
+\
+\AND #3                 \ Set A to a random number in the range 0-3
+\
+\ORA #1                 \ Set A to %01 or %11 (Sidewinder or Mamba)
+\
+\JSR NWSHP              \ Try adding a new ship of type A to the local bubble
+
+                        \ --- And replaced by: -------------------------------->
+
+ CMP #100               \ If the random number in A >= 100 (61% chance), jump
  BCS mt1                \ to mt1 to spawn pirates, otherwise keep going to
                         \ spawn a lone bounty hunter
 
  INC EV                 \ Increase the extra vessels spawning counter, to
                         \ prevent the next attempt to spawn extra vessels
 
- AND #3                 \ Set A = Y = random number in the range 3-6, which
- ADC #3                 \ we will use to determine the type of ship
- TAY
+ AND #3                 \ Set A = random number in the range 0-3, which we
+                        \ will now use to determine the type of ship
 
-                        \ We now build the AI flag for this ship in A
+ ADC #CYL2              \ Add A to #CYL2 (we know the C flag is clear as we
+                        \ passed through the BCS above), so A is now one of the
+                        \ lone bounty hunter ships, i.e. Cobra Mk III (pirate),
+                        \ Asp Mk II, Python (pirate) or Fer-de-lance
+                        \
+                        \ Interestingly, this logic means that the Moray, which
+                        \ is the ship after the Fer-de-lance in the XX21 table,
+                        \ never spawns, as the above logic chooses a blueprint
+                        \ number in the range CYL2 to CYL2+3 (i.e. 24 to 27),
+                        \ and the Moray is blueprint 28
+                        \
+                        \ No other code spawns the ship with blueprint 28, so
+                        \ this means the Moray is never seen in Elite
+                        \
+                        \ This is presumably a bug, which could be very easily
+                        \ fixed by inserting one of the following instructions
+                        \ before the ADC #CYL2 instruction above:
+                        \
+                        \   * SEC would change the range to 25 to 28, which
+                        \     would cover the Asp Mk II, Python (pirate),
+                        \     Fer-de-lance and Moray
+                        \
+                        \   * LSR A would set the C flag to a random number to
+                        \     give a range of 24 to 28, which would cover the
+                        \     Cobra Mk III (pirate), Asp Mk II, Python (pirate),
+                        \     Fer-de-lance and Moray
+                        \
+                        \ It's hard to know what the authors' original intent
+                        \ was, but the second approach makes the Moray and Cobra
+                        \ Mk III the rarest choices, with the Asp Mk II, Python
+                        \ and Fer-de-Lance being more likely, and as the Moray
+                        \ is described in the literature as a rare ship, and the
+                        \ Cobra can already be spawned as part of a group of
+                        \ pirates (see mt1 below), I tend to favour the LSR A
+                        \ solution over the SEC approach
 
- TXA                    \ First, copy the random number in X to A
+ TAY                    \ Copy the new ship type to Y
 
- CMP #200               \ First, set the C flag if X >= 200 (22% chance)
+ JSR THERE              \ Call THERE to see if we are in the Constrictor's
+                        \ system in mission 1
 
- ROL A                  \ Set bit 0 of A to the C flag (i.e. there's a 22%
-                        \ chance of this ship having E.C.M.)
+ BCC NOCON              \ If the C flag is clear then we are not in the
+                        \ Constrictor's system, so skip to NOCON
 
- ORA #%11000000         \ Set bits 6 and 7 of A, so the ship is hostile (bit 6)
-                        \ and has AI (bit 7)
+ LDA #%11111001         \ Set the AI flag of this ship so that it has E.C.M.,
+ STA INWK+32            \ has a very high aggression level of 28 out of 31, is
+                        \ hostile, and has AI enabled - nasty stuff!
 
- STA INWK+32            \ Store A in the AI flag of this ship
+ LDA TP                 \ Fetch bits 0 and 1 of TP, which contain the status of
+ AND #%00000011         \ mission 1
 
- TYA                    \ Add a new ship of type Y to the local bubble, so
- JSR NWSHP              \ that's a Mamba, Cobra Mk III or Python
+ LSR A                  \ Shift bit 0 into the C flag
+
+ BCC NOCON              \ If bit 0 is clear, skip to NOCON as mission 1 is not
+                        \ in progress
+
+ ORA MANY+CON           \ Bit 0 of A now contains bit 1 of TP, so this will be
+                        \ set if we have already completed mission 1, so this OR
+                        \ will be non-zero if we have either completed mission
+                        \ 1, or there is already a Constrictor in our local
+                        \ bubble of universe (in which case MANY+CON will be
+                        \ non-zero)
+
+ BEQ YESCON             \ If A = 0 then mission 1 is in progress, we haven't
+                        \ completed it yet, and there is no Constrictor in the
+                        \ vicinity, so jump to YESCON to spawn the Constrictor
+
+.NOCON
+
+ TYA                    \ Set A to the new ship type in Y
+
+ EQUB &2C               \ Skip the next instruction by turning it into
+                        \ &2C &A9 &1F, or BIT &1FA9, which does nothing apart
+                        \ from affect the flags
+
+.YESCON
+
+ LDA #CON               \ If we jump straight here, we are in the mission 1
+                        \ endgame and it's time to spawn the Constrictor, so
+                        \ set A to the Constrictor's type
+
+.focoug
+
+ JSR NWSHP              \ Spawn the new ship, whether it's a pirate or
+                        \ Constrictor
 
 .mj1
 
@@ -43778,11 +44691,45 @@ ENDMACRO
 
  JSR DORND              \ Set A and X to random numbers
 
- AND #3                 \ Set A to a random number in the range 0-3
+ STA T                  \ Set T to a random number
 
- ORA #1                 \ Set A to %01 or %11 (Sidewinder or Mamba)
+ JSR DORND              \ Set A and X to random numbers
+
+ AND T                  \ Set A to the AND of two random numbers, so each bit
+                        \ has 25% chance of being set which makes the chances
+                        \ of a smaller number higher
+
+ AND #7                 \ Reduce A to a random number in the range 0-7, though
+                        \ with a bigger chance of a smaller number in this range
+
+ STA CPIR               \ Set CPIR to this random number in the range 0-7
+
+.more
+
+ LDA CPIR               \ Set A to the ship type in CPIR
+
+ ADC #PACK              \ #PACK is set to #SH3, the ship type for a Sidewinder,
+                        \ so this sets our new ship type to one of the pack
+                        \ hunters, namely a Sidewinder, Mamba, Krait, Adder,
+                        \ Gecko, Cobra Mk I, Worm or Cobra Mk III (pirate)
 
  JSR NWSHP              \ Try adding a new ship of type A to the local bubble
+
+ BCS P%+7               \ If the ship was successfully added, skip the following
+                        \ two instructions
+
+ DEC CPIR               \ The ship wasn't added, which might be because the ship
+                        \ blueprint for this ship type isn't in the currently
+                        \ loaded ship blueprints file, so decrement CPIR to
+                        \ point to the previous ship type, so we can try
+                        \ spawning that type of pirate instead
+
+ BPL more               \ Loop back to more to have another go at spawning this
+                        \ pirate, until we have tried spawning a Sidewinder when
+                        \ CPIR is 0, in which case give up and move on to the
+                        \ next pirate to spawn
+
+                        \ --- End of replacement ------------------------------>
 
  DEC XX13               \ Decrement the pirate counter
 
@@ -43823,15 +44770,19 @@ ENDMACRO
 
 .MLOOP
 
- LDA LASCT              \ Set A to the value of LASCT, the laser pulse count
+                        \ --- Mod: Code removed for extra lasers: ------------->
 
- SBC #4                 \ Decrement the value of LASCT by 4
+\LDA LASCT              \ Set A to the value of LASCT, the laser pulse count
+\
+\SBC #4                 \ Decrement the value of LASCT by 4
+\
+\BCS P%+4               \ If we just reduced LASCT below 0, set it to 0
+\LDA #0
+\
+\STA LASCT              \ Store the decremented value of X in LASCT, so LASCT
+\                       \ gets reduced by 4, but not into negative territory
 
- BCS P%+4               \ If we just reduced LASCT below 0, set it to 0
- LDA #0
-
- STA LASCT              \ Store the decremented value of X in LASCT, so LASCT
-                        \ gets reduced by 4, but not into negative territory
+                        \ --- End of removed code ----------------------------->
 
  LDX #&FF               \ Set the stack pointer to &01FF, which is the standard
  TXS                    \ location for the 6502 stack, so this instruction
@@ -44836,11 +45787,10 @@ ENDMACRO
  BPL P%+4               \ If the result of the call to CAPSL was positive, then
                         \ CAPS LOCK isn't being pressed, so skip the next
                         \ instruction
-
+ 
  ORA #%10000000         \ CAPS LOCK is being pressed, so set bit 7 of A
 
- TAX                    \ Copy A into X to return the key number of CAPS LOCK
-                        \ with bit 7 set
+ TAX                    \ Copy the key value into X
 
  RTS                    \ Return from the subroutine
 
@@ -49513,6 +50463,588 @@ ENDMACRO
                         \ fit on-screen
 
  RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: FRS1
+\       Type: Subroutine
+\   Category: Tactics
+\    Summary: Launch a ship straight ahead of us, below the laser sights
+\
+\ ------------------------------------------------------------------------------
+\
+\ This is used in two places:
+\
+\   * When we launch a missile, in which case the missile is the ship that is
+\     launched ahead of us
+\
+\   * When we launch our escape pod, in which case it's our abandoned Cobra Mk
+\     III that is launched ahead of us
+\
+\   * The fq1 entry point is used to launch a bunch of cargo canisters ahead of
+\     us as part of the death screen
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   The type of ship to launch ahead of us
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   C flag              Set if the ship was successfully launched, clear if it
+\                       wasn't (as there wasn't enough free memory)
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   fq1                 Used to add a cargo canister to the universe
+\
+\ ******************************************************************************
+
+.FRS1
+
+ JSR ZINF               \ Call ZINF to reset the INWK ship workspace
+
+ LDA #28                \ Set y_lo = 28
+ STA INWK+3
+
+ LSR A                  \ Set z_lo = 14, so the launched ship starts out
+ STA INWK+6             \ ahead of us
+
+ LDA #%10000000         \ Set y_sign to be negative, so the launched ship is
+ STA INWK+5             \ launched just below our line of sight
+
+ LDA MSTG               \ Set A to the missile lock target, shifted left so the
+ ASL A                  \ slot number is in bits 1-5
+
+ ORA #%10000000         \ Set bit 7 and store the result in byte #32, the AI
+ STA INWK+32            \ flag launched ship for the launched ship. For missiles
+                        \ this enables AI (bit 7), makes it friendly towards us
+                        \ (bit 6), sets the target to the value of MSTG (bits
+                        \ 1-5), and sets its lock status as launched (bit 0).
+                        \ It doesn't matter what it does for our abandoned
+                        \ Cobra, as the AI flag gets overwritten once we return
+                        \ from the subroutine back to the ESCAPE routine that
+                        \ called FRS1 in the first place
+
+.fq1
+
+ LDA #&60               \ Set byte #14 (nosev_z_hi) to 1 (&60), so the launched
+ STA INWK+14            \ ship is pointing away from us
+
+ ORA #128               \ Set byte #22 (sidev_x_hi) to -1 (&D0), so the launched
+ STA INWK+22            \ ship has the same orientation as spawned ships, just
+                        \ pointing away from us (if we set sidev to +1 instead,
+                        \ this ship would be a mirror image of all the other
+                        \ ships, which are spawned with -1 in nosev and +1 in
+                        \ sidev)
+
+ LDA DELTA              \ Set byte #27 (speed) to 2 * DELTA, so the launched
+ ROL A                  \ ship flies off at twice our speed
+ STA INWK+27
+
+ TXA                    \ Add a new ship of type X to our local bubble of
+ JMP NWSHP              \ universe and return from the subroutine using a tail
+                        \ call
+
+\ ******************************************************************************
+\
+\       Name: FRMIS
+\       Type: Subroutine
+\   Category: Tactics
+\    Summary: Fire a missile from our ship
+\
+\ ------------------------------------------------------------------------------
+\
+\ We fired a missile, so send it streaking away from us to unleash mayhem and
+\ destruction on our sworn enemies.
+\
+\ ******************************************************************************
+
+.FRMIS
+
+ LDX #MSL               \ Call FRS1 to launch a missile straight ahead of us
+ JSR FRS1
+
+ BCC FR1                \ If FRS1 returns with the C flag clear, then there
+                        \ isn't room in the universe for our missile, so jump
+                        \ down to FR1 to display a "missile jammed" message
+
+ LDX MSTG               \ Fetch the slot number of the missile's target
+
+ JSR GINF               \ Get the address of the data block for the target ship
+                        \ and store it in INF
+
+ LDA FRIN,X             \ Fetch the ship type of the missile's target into A
+
+ JSR ANGRY              \ Call ANGRY to make the target ship hostile
+
+ LDY #&04               \ We have just launched a missile, so we need to remove
+ JSR ABORT              \ missile lock and hide the leftmost indicator on the
+                        \ dashboard by setting it to black (Y = &04)
+
+ DEC NOMSL              \ Reduce the number of missiles we have by 1
+
+ LDA #48                \ Call the NOISE routine with A = 48 to make the sound
+ JMP NOISE              \ of a missile launch, returning from the subroutine
+                        \ using a tail call
+
+\ ******************************************************************************
+\
+\       Name: ANGRY
+\       Type: Subroutine
+\   Category: Tactics
+\    Summary: Make a ship hostile
+\
+\ ------------------------------------------------------------------------------
+\
+\ All this routine does is set the ship's hostile flag, start it turning and
+\ give it a kick of acceleration - later calls to TACTICS will make the ship
+\ start to attack us.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   The type of ship we're going to irritate
+\
+\   INF                 The address of the data block for the ship we're going
+\                       to infuriate
+\
+\ ******************************************************************************
+
+.ANGRY
+
+ CMP #SST               \ If this is the space station, jump to AN2 to make the
+ BEQ AN2                \ space station hostile
+
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\BCS HI1                \ If A >= #SST then this is a missile, asteroid, cargo
+\                       \ canister or escape pod, and they can't get hostile,
+\                       \ so return from the subroutine (as HI1 contains an RTS)
+\
+\CMP #CYL               \ If this is not a Cobra Mk III trader, skip the
+\BNE P%+5               \ following instruction
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDY #36                \ Fetch the ship's NEWB flags from byte #36
+ LDA (INF),Y
+
+ AND #%00100000         \ If bit 5 of the ship's NEWB flags is clear, skip the
+ BEQ P%+5               \ following instruction, otherwise bit 5 is set, meaning
+                        \ this ship is an innocent bystander, and attacking it
+                        \ will annoy the space station
+
+                        \ --- End of replacement ------------------------------>
+
+ JSR AN2                \ Call AN2 to make the space station hostile
+
+ LDY #32                \ Fetch the ship's byte #32 (AI flag)
+ LDA (INF),Y
+
+                        \ --- Mod: Code removed for sideways RAM: ------------->
+
+\BEQ HI1                \ If the AI flag is zero then this ship has no AI and
+\                       \ it can't get hostile, so return from the subroutine
+\                       \ (as HI1 contains an RTS)
+
+                        \ --- And replaced by: -------------------------------->
+
+ BEQ AN2-1              \ If the AI flag is zero then this ship has no AI and
+                        \ it can't get hostile, so return from the subroutine
+                        \ (as AN2-1 contains an RTS)
+
+                        \ --- End of replacement ------------------------------>
+
+ ORA #%10000000         \ Otherwise set bit 7 (AI enabled) to ensure AI is
+ STA (INF),Y            \ definitely enabled
+
+ LDY #28                \ Set the ship's byte #28 (acceleration) to 2, so it
+ LDA #2                 \ speeds up
+ STA (INF),Y
+
+ ASL A                  \ Set the ship's byte #30 (pitch counter) to 4, so it
+ LDY #30                \ starts diving
+ STA (INF),Y
+
+                        \ --- Mod: Code added for additional ships: ----------->
+
+ LDA TYPE               \ If the ship's type is < #CYL (i.e. a missile, Coriolis
+ CMP #CYL               \ space station, escape pod, plate, cargo canister,
+ BCC AN3                \ boulder, asteroid, splinter, Shuttle or Transporter),
+                        \ then jump to AN3 to skip the following
+
+ LDY #36                \ Set bit 2 of the ship's NEWB flags in byte #36 to
+ LDA (INF),Y            \ make this ship hostile
+ ORA #%00000100
+ STA (INF),Y
+
+.AN3
+
+                        \ --- End of added code ------------------------------->
+
+ RTS                    \ Return from the subroutine
+
+.AN2
+
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\ASL K%+NI%+32          \ Fetch the AI counter (byte #32) of the second ship
+\SEC                    \ in the ship data workspace at K%, which is reserved
+\ROR K%+NI%+32          \ for the space station, and set bit 7 to make it
+\                       \ hostile
+\
+\CLC                    \ Clear the C flag, which isn't used by calls to this
+\                       \ routine, but it does set up the entry point FR1-2
+\                       \ so that it clears the C flag and does an RTS
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDA K%+NI%+36          \ Set bit 2 of the NEWB flags in byte #36 of the second
+ ORA #%00000100         \ ship in the ship data workspace at K%, which is
+ STA K%+NI%+36          \ reserved for the sun or the space station (in this
+                        \ case it's the latter), to make it hostile
+
+                        \ --- End of replacement ------------------------------>
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: FR1
+\       Type: Subroutine
+\   Category: Tactics
+\    Summary: Display the "missile jammed" message
+\
+\ ------------------------------------------------------------------------------
+\
+\ This is shown if there isn't room in the local bubble of universe for a new
+\ missile.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   FR1-2               Clear the C flag and return from the subroutine
+\
+\ ******************************************************************************
+
+.FR1
+
+ LDA #201               \ Print recursive token 41 ("MISSILE JAMMED") as an
+ JMP MESS               \ in-flight message and return from the subroutine using
+                        \ a tail call
+
+\ ******************************************************************************
+\
+\       Name: SESCP
+\       Type: Subroutine
+\   Category: Flight
+\    Summary: Spawn an escape pod from the current (parent) ship
+\
+\ ------------------------------------------------------------------------------
+\
+\ This is called when an enemy ship has run out of both energy and luck, so it's
+\ time to bail.
+\
+\ ******************************************************************************
+
+.SESCP
+
+ LDX #ESC               \ Set X to the ship type for an escape pod
+
+ LDA #%11111110         \ Set A to an AI flag that has AI enabled, is hostile,
+                        \ but has no E.C.M.
+
+                        \ Fall through into SFS1 to spawn the escape pod
+
+\ ******************************************************************************
+\
+\       Name: SFS1
+\       Type: Subroutine
+\   Category: Universe
+\    Summary: Spawn a child ship from the current (parent) ship
+\
+\ ------------------------------------------------------------------------------
+\
+\ If the parent is a space station then the child ship is spawned coming out of
+\ the slot, and if the child is a cargo canister, it is sent tumbling through
+\ space. Otherwise the child ship is spawned with the same ship data as the
+\ parent, just with damping disabled and the ship type and AI flag that are
+\ passed in A and X.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   AI flag for the new ship (see the documentation on ship
+\                       data byte #32 for details)
+\
+\   X                   The ship type of the child to spawn
+\
+\   INF                 Address of the parent's ship data block
+\
+\   TYPE                The type of the parent ship
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   C flag              Set if ship successfully added, clear if it failed
+\
+\   INF                 INF is preserved
+\
+\   XX0                 XX0 is preserved
+\
+\   INWK                The whole INWK workspace is preserved
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   SFS1-2              Add a missile to the local bubble that has AI enabled,
+\                       is hostile, but has no E.C.M.
+\
+\ ******************************************************************************
+
+.SFS1
+
+ STA T1                 \ Store the child ship's AI flag in T1
+
+                        \ --- Mod: Code added for additional ships: ----------->
+ TXA                    \ Store X, the ship type to spawn, on the stack so we
+ PHA                    \ can preserve it through the routine
+
+                        \ --- End of added code ------------------------------->
+
+                        \ Before spawning our child ship, we need to save the
+                        \ INF and XX00 variables and the whole INWK workspace,
+                        \ so we can restore them later when returning from the
+                        \ subroutine
+
+ LDA XX0                \ Store XX0(1 0) on the stack, so we can restore it
+ PHA                    \ later when returning from the subroutine
+ LDA XX0+1
+ PHA
+
+ LDA INF                \ Store INF(1 0) on the stack, so we can restore it
+ PHA                    \ later when returning from the subroutine
+ LDA INF+1
+ PHA
+
+ LDY #NI%-1             \ Now we want to store the current INWK data block in
+                        \ temporary memory so we can restore it when we are
+                        \ done, and we also want to copy the parent's ship data
+                        \ into INWK, which we can do at the same time, so set up
+                        \ a counter in Y for NI% bytes
+
+.FRL2
+
+ LDA INWK,Y             \ Copy the Y-th byte of INWK to the Y-th byte of
+ STA XX3,Y              \ temporary memory in XX3, so we can restore it later
+                        \ when returning from the subroutine
+
+ LDA (INF),Y            \ Copy the Y-th byte of the parent ship's data block to
+ STA INWK,Y             \ the Y-th byte of INWK
+
+ DEY                    \ Decrement the loop counter
+
+ BPL FRL2               \ Loop back to copy the next byte until we have done
+                        \ them all
+
+                        \ INWK now contains the ship data for the parent ship,
+                        \ so now we need to tweak the data before creating the
+                        \ new child ship (in this way, the child inherits things
+                        \ like location from the parent)
+
+                        \ --- Mod: Code added for additional ships: ----------->
+
+ LDA NEWB               \ Clear bits 0-1 and 5-7 of the ship's NEWB flags,
+ AND #%00011100         \ leaving only the hostile, pirate and docking flags
+ STA NEWB               \ (so the child inherits these flags from the parent,
+                        \ meaning pirates spawn pirates, angry ships spawn
+                        \ angry ships, and ships that are docking spawn ships
+                        \ that are also docking)
+
+                        \ --- End of added code ------------------------------->
+
+ LDA TYPE               \ Fetch the ship type of the parent into A
+
+ CMP #SST               \ If the parent is not a space station, jump to rx to
+ BNE rx                 \ skip the following
+
+                        \ The parent is a space station, so the child needs to
+                        \ launch out of the space station's slot. The space
+                        \ station's nosev vector points out of the station's
+                        \ slot, so we want to move the ship along this vector.
+                        \ We do this by taking the unit vector in nosev and
+                        \ doubling it, so we spawn our ship 2 units along the
+                        \ vector from the space station's centre
+
+ TXA                    \ Store the child's ship type in X on the stack
+ PHA
+
+ LDA #32                \ Set the child's byte #27 (speed) to 32
+ STA INWK+27
+
+ LDX #0                 \ Add 2 * nosev_x_hi to (x_lo, x_hi, x_sign) to get the
+ LDA INWK+10            \ child's x-coordinate
+ JSR SFS2
+
+ LDX #3                 \ Add 2 * nosev_y_hi to (y_lo, y_hi, y_sign) to get the
+ LDA INWK+12            \ child's y-coordinate
+ JSR SFS2
+
+ LDX #6                 \ Add 2 * nosev_z_hi to (z_lo, z_hi, z_sign) to get the
+ LDA INWK+14            \ child's z-coordinate
+ JSR SFS2
+
+ PLA                    \ Restore the child's ship type from the stack into X
+ TAX
+
+.rx
+
+ LDA T1                 \ Restore the child ship's AI flag from T1 and store it
+ STA INWK+32            \ in the child's byte #32 (AI)
+
+ LSR INWK+29            \ Clear bit 0 of the child's byte #29 (roll counter) so
+ ASL INWK+29            \ that its roll dampens (so if we are spawning from a
+                        \ space station, for example, the spawned ship won't
+                        \ keep rolling forever)
+
+ TXA                    \ Copy the child's ship type from X into A
+
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\CMP #OIL               \ If the child we are spawning is not a cargo canister,
+\BNE NOIL               \ jump to NOIL to skip us setting up the pitch and roll
+\                       \ for the canister
+
+                        \ --- And replaced by: -------------------------------->
+
+ CMP #SPL+1             \ If the type of the child we are spawning is less than
+ BCS NOIL               \ #PLT or greater than #SPL - i.e. not an alloy plate,
+ CMP #PLT               \ cargo canister, boulder, asteroid or splinter - then
+ BCC NOIL               \ jump to NOIL to skip us setting up some pitch and roll
+                        \ for it
+
+ PHA                    \ Store the child's ship type on the stack so we can
+                        \ retrieve it below
+
+                        \ --- End of replacement ------------------------------>
+
+ JSR DORND              \ Set A and X to random numbers
+
+ ASL A                  \ Set the child's byte #30 (pitch counter) to a random
+ STA INWK+30            \ value, and at the same time set the C flag randomly
+
+ TXA                    \ Set the child's byte #27 (speed) to a random value
+ AND #%00001111         \ between 0 and 15
+ STA INWK+27
+
+ LDA #&FF               \ Set the child's byte #29 (roll counter) to a full
+ ROR A                  \ roll with no damping (as bits 0 to 6 are set), so the
+ STA INWK+29            \ canister tumbles through space, with the direction in
+                        \ bit 7 set randomly, depending on the C flag from above
+
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\LDA #OIL               \ Set A to the ship type of a cargo canister
+
+                        \ --- And replaced by: -------------------------------->
+
+ PLA                    \ Retrieve the child's ship type from the stack
+
+                        \ --- End of replacement ------------------------------>
+
+.NOIL
+
+ JSR NWSHP              \ Add a new ship of type A to the local bubble
+
+                        \ We have now created our child ship, so we need to
+                        \ restore all the variables we saved at the start of
+                        \ the routine, so they are preserved when we return
+                        \ from the subroutine
+
+ PLA                    \ Restore INF(1 0) from the stack
+ STA INF+1
+ PLA
+ STA INF
+
+ LDX #NI%-1             \ Now to restore the INWK workspace that we saved into
+                        \ XX3 above, so set a counter in X for NI% bytes
+
+.FRL3
+
+ LDA XX3,X              \ Copy the Y-th byte of XX3 to the Y-th byte of INWK
+ STA INWK,X
+
+ DEX                    \ Decrement the loop counter
+
+ BPL FRL3               \ Loop back to copy the next byte until we have done
+                        \ them all
+
+ PLA                    \ Restore XX0(1 0) from the stack
+ STA XX0+1
+ PLA
+ STA XX0
+
+                        \ --- Mod: Code added for additional ships: ----------->
+
+ PLA                    \ Retrieve the ship type to spawn from the stack into X
+ TAX                    \ so it is preserved through calls to this routine
+
+                        \ --- End of added code ------------------------------->
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: SFS2
+\       Type: Subroutine
+\   Category: Moving
+\    Summary: Move a ship in space along one of the coordinate axes
+\
+\ ------------------------------------------------------------------------------
+\
+\ Move a ship's coordinates by a certain amount in the direction of one of the
+\ axes, where X determines the axis. Mathematically speaking, this routine
+\ translates the ship along a single axis by a signed delta.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   The amount of movement, i.e. the signed delta
+\
+\   X                   Determines which coordinate axis of INWK to move:
+\
+\                         * X = 0 moves the ship along the x-axis
+\
+\                         * X = 3 moves the ship along the y-axis
+\
+\                         * X = 6 moves the ship along the z-axis
+\
+\ ******************************************************************************
+
+.SFS2
+
+ ASL A                  \ Set R = |A * 2|, with the C flag set to bit 7 of A
+ STA R
+
+ LDA #0                 \ Set bit 7 of A to the C flag, i.e. the sign bit from
+ ROR A                  \ the original argument in A
+
+ JMP MVT1               \ Add the delta R with sign A to (x_lo, x_hi, x_sign)
+                        \ (or y or z, depending on the value in X) and return
+                        \ from the subroutine using a tail call
+
 
 .endSRAM
 
