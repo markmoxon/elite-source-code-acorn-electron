@@ -12128,9 +12128,9 @@ ENDIF
  JSR GTHG               \ Call GTHG to spawn a Thargoid ship and a Thargon
                         \ companion
 
- LDA #3                 \ Fetch the number of Thargoid ships from MANY+THG, and
- CMP MANY+THG           \ if it is less than or equal to 3, loop back to MJP1 to
- BCS MJP1               \ spawn another one, until we have four Thargoids
+ LDA #1                 \ Fetch the number of Thargoid ships from MANY+THG, and
+ CMP MANY+THG           \ if it is less than or equal to 1, loop back to MJP1 to
+ BCS MJP1               \ spawn another one, until we have two Thargoids
 
  STA NOSTM              \ Set NOSTM (the maximum number of stardust particles)
                         \ to 3, so there are fewer bits of stardust in
