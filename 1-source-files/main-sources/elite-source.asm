@@ -44770,19 +44770,15 @@ ENDMACRO
 
 .MLOOP
 
-                        \ --- Mod: Code removed for extra lasers: ------------->
+ LDA LASCT              \ Set A to the value of LASCT, the laser pulse count
 
-\LDA LASCT              \ Set A to the value of LASCT, the laser pulse count
-\
-\SBC #4                 \ Decrement the value of LASCT by 4
-\
-\BCS P%+4               \ If we just reduced LASCT below 0, set it to 0
-\LDA #0
-\
-\STA LASCT              \ Store the decremented value of X in LASCT, so LASCT
-\                       \ gets reduced by 4, but not into negative territory
+ SBC #4                 \ Decrement the value of LASCT by 4
 
-                        \ --- End of removed code ----------------------------->
+ BCS P%+4               \ If we just reduced LASCT below 0, set it to 0
+ LDA #0
+
+ STA LASCT              \ Store the decremented value of X in LASCT, so LASCT
+                        \ gets reduced by 4, but not into negative territory
 
  LDX #&FF               \ Set the stack pointer to &01FF, which is the standard
  TXS                    \ location for the 6502 stack, so this instruction
