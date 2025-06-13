@@ -28363,8 +28363,7 @@ ENDIF
 
  ORA #%10000000         \ CAPS LOCK is being pressed, so set bit 7 of A
 
- TAX                    \ Copy A into X to return the key number of CAPS LOCK
-                        \ with bit 7 set
+ TAX                    \ Copy the key value into X
 
  RTS                    \ Return from the subroutine
 
