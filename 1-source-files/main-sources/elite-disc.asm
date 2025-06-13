@@ -42,8 +42,11 @@
  PUTFILE "3-assembled-output/ELITEDA.bin", "ELITEDA", &FF4400, &FF5200
  PUTFILE "3-assembled-output/ELTROM.bin", "ELITERM", &FF8000, &FF8000
  PUTFILE "3-assembled-output/ELITECO.bin", "ELITECO", &000000, &FFFFFF
+
  PUTFILE "1-source-files/other-files/E.MAX.bin", "E.MAX", &000000, &000000
- PUTFILE "3-assembled-output/README.txt", "README", &FFFFFF, &FFFFFF
+ PUTFILE "1-source-files/other-files/E.MISS1.bin", "E.MISS1", &000000, &000000
+ PUTFILE "1-source-files/other-files/E.MISS2.bin", "E.MISS2", &000000, &000000
+ PUTFILE "1-source-files/other-files/E.FIGHT.bin", "E.FIGHT", &000000, &000000
 
  PUTFILE "3-assembled-output/D.MOA.bin", "D.MOA", &004E00, &004E00
  PUTFILE "3-assembled-output/D.MOB.bin", "D.MOB", &004E00, &004E00
@@ -61,3 +64,5 @@
  PUTFILE "3-assembled-output/D.MON.bin", "D.MON", &004E00, &004E00
  PUTFILE "3-assembled-output/D.MOO.bin", "D.MOO", &004E00, &004E00
  PUTFILE "3-assembled-output/D.MOP.bin", "D.MOP", &004E00, &004E00
+
+ PUTFILE "3-assembled-output/README.txt", "README", &FFFFFF, &FFFFFF
