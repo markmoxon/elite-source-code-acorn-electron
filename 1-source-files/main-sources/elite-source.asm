@@ -3547,6 +3547,18 @@ ENDMACRO
 
                         \ --- End of added code ------------------------------->
 
+                        \ --- Mod: Code added for ADFS: ----------------------->
+
+.ADFS
+
+ SKIP 1                 \ The ADFS flag:
+                        \
+                        \   * 0 = Not ADFS (i.e. DFS or MMFS)
+                        \
+                        \   * Non-zero = ADFS
+
+                        \ --- End of added code ------------------------------->
+
 \ ******************************************************************************
 \
 \       Name: IRQ1
@@ -5885,13 +5897,14 @@ ENDIF
 
  TAY                    \ Set Y = the character to be printed
 
- BNE P%+5               \ If the character is zero, which is typically a string
- JMP RR4                \ terminator character, jump down to RR4 to restore the
-                        \ registers and return from the subroutine
+ BEQ RR4S               \ If the character is zero, which is typically a string
+                        \ terminator character, jump down to RR4 (via the JMP in
+                        \ RR4S) to restore the registers and return from the
+                        \ subroutine using a tail call
 
- BPL P%+5               \ If A > 127 then there is nothing to print, so jump to
- JMP RR4                \ RR4 to restore the registers and return from the
-                        \ subroutine
+ BMI RR4S               \ If A > 127 then there is nothing to print, so jump to
+                        \ RR4 (via the JMP in RR4S) to restore the registers and
+                        \ return from the subroutine
 
                         \ --- End of replacement ------------------------------>
 
@@ -5915,9 +5928,19 @@ ENDIF
                         \ bit by setting XC = 1, and we then fall through into
                         \ the line feed routine that's used by control code 10
 
+                        \ --- Mod: Code removed for ADFS: --------------------->
+
+\CMP #13                \ If this is control code 13 (carriage return) then jump
+\BEQ RR4                \ RR4 to restore the registers and return from the
+\                       \ subroutine
+
+                        \ --- And replaced by: -------------------------------->
+
  CMP #13                \ If this is control code 13 (carriage return) then jump
- BEQ RR4                \ RR4 to restore the registers and return from the
+ BEQ RR4S               \ RR4 to restore the registers and return from the
                         \ subroutine
+
+                        \ --- End of replacement ------------------------------>
 
 .RRX1
 
@@ -5925,9 +5948,20 @@ ENDIF
                         \ number (y-coordinate) of the text cursor, which is
                         \ stored in YC
 
- BNE RR4                \ Jump to RR4 to restore the registers and return from
-                        \ the subroutine (this BNE is effectively a JMP as Y
-                        \ will never be zero)
+                        \ --- Mod: Code removed for ADFS: --------------------->
+
+\BNE RR4                \ Jump to RR4 to restore the registers and return from
+\                       \ the subroutine (this BNE is effectively a JMP as Y
+\                       \ will never be zero)
+
+                        \ --- And replaced by: -------------------------------->
+
+.RR4S
+
+ JMP RR4                \ Jump to RR4 to restore the registers and return from
+                        \ the subroutine using a tail call
+
+                        \ --- End of replacement ------------------------------>
 
 .RR1
 
@@ -6026,19 +6060,35 @@ ENDIF
  STA P+1                \ Store the address of this character's definition in
  STX P+2                \ P(2 1)
 
+                        \ --- Mod: Code added for ADFS: ----------------------->
+
+.printADFS
+
+                        \ --- End of added code ------------------------------->
+
  LDA #128               \ Set SC = 128 for use in the calculation below
  STA SC
 
- LDA YC                 \ If YC < 24 then we are in the top part of the screen,
- CMP #24                \ so skip the following two instructions
- BCC P%+8
+                        \ --- Mod: Code removed for ADFS: --------------------->
 
- JSR TTX66              \ We are off the bottom of the screen, so we don't want
-                        \ to print anything, so first clear the screen and draw
-                        \ a border box
+\LDA YC                 \ If YC < 24 then we are in the top part of the screen,
+\CMP #24                \ so skip the following two instructions
+\BCC P%+8
+\
+\JSR TTX66              \ We are off the bottom of the screen, so we don't want
+\                       \ to print anything, so first clear the screen and draw
+\                       \ a border box
+\
+\JMP RR4                \ Jump to RR4 to restore the registers and return from
+\                       \ the subroutine
 
- JMP RR4                \ Jump to RR4 to restore the registers and return from
-                        \ the subroutine
+                        \ --- And replaced by: -------------------------------->
+
+ LDA YC                 \ If YC >= 24 then we are off the screen part of the
+ CMP #24                \ screen, so jump to RR4 to restore the registers and
+ BCS RR4                \ return from the subroutine using a tail call
+
+                        \ --- End of replacement ------------------------------>
 
                         \ The text row is on-screen, so now to calculate the
                         \ screen address we need to write to, as follows:
@@ -6062,10 +6112,41 @@ ENDIF
  LDA XC                 \ Fetch XC, the x-coordinate (column) of the text cursor
                         \ into A
 
-                        \ --- Mod: Code added for extended text tokens: ------->
+                        \ --- Mod: Code added for saving and loading: --------->
 
  LDX CATF               \ If CATF = 0, jump to RR5, otherwise we are printing a
  BEQ RR5                \ disc catalogue
+
+                        \ --- End of added code ------------------------------->
+
+                        \ --- Mod: Code added for ADFS: ----------------------->
+
+ LDX ADFS               \ If this is not ADFS, skip the following
+ BEQ notADFS
+
+ CMP #21                \ If A < 21, i.e. the text cursor is in column 0-20,
+ BCC RR5                \ jump to RR5 to skip the following
+
+                        \ If we get here, then CATF is non-zero, so we are
+                        \ printing a disc catalogue and we have reached column
+                        \ 21, so we move to the start of the next line so the
+                        \ catalogue line-wraps to fit within the bounds of the
+                        \ screen
+
+ INC YC                 \ More the text cursor down a line
+
+ LDA #1                 \ Move the text cursor to column 1
+ STA XC
+
+ BNE printADFS          \ Jump to printADFS to recalculate the value of SC(1 0)
+                        \ and keep printing (this BNE is effectively a JMP as A
+                        \ is never zero)
+
+.notADFS
+
+                        \ --- End of added code ------------------------------->
+
+                        \ --- Mod: Code added for saving and loading: --------->
 
  CPY #' '               \ If the character we want to print in Y is a space,
  BNE RR5                \ jump to RR5
@@ -17944,8 +18025,15 @@ ENDIF
 
 .CTLI
 
- EQUS ".0"              \ The "0" part of the string is overwritten with the
+ EQUS ". 0"             \ The "0" part of the string is overwritten with the
  EQUB 13                \ actual drive number by the CATS routine
+
+                        \ --- End of added code ------------------------------->
+
+                        \ --- Mod: Code added for ADFS: ----------------------->
+
+ EQUS "E"               \ This extension supports ADFS by letting us modify the
+ EQUB 13                \ command string from ". 0" to ".:0.E"
 
                         \ --- End of added code ------------------------------->
 
@@ -18002,9 +18090,9 @@ ENDIF
                         \ entered, so return from the subroutine (as DELT-1
                         \ contains an RTS)
 
- STA CTLI+1             \ Store the drive number in the second byte of the
+ STA CTLI+2             \ Store the drive number in the third byte of the
                         \ command string at CTLI, so it overwrites the "0" in
-                        \ ".0" with the drive number to catalogue
+                        \ ". 0" with the drive number to catalogue
 
  STA DTW7               \ Store the drive number in DTW7, so printing extended
                         \ token 4 will show the correct drive number (as token 4
@@ -18072,8 +18160,8 @@ ENDIF
                         \ entered as part of the catalogue process, so jump to
                         \ SVE to display the disc access menu
 
- LDA CTLI+1             \ The call to CATS above put the drive number into
- STA DELI+4             \ CTLI+1, so copy the drive number into DELI+4 so that
+ LDA CTLI+2             \ The call to CATS above put the drive number into
+ STA DELI+4             \ CTLI+2, so copy the drive number into DELI+4 so that
                         \ the drive number in the "DE.:0.E.1234567" string
                         \ gets updated (i.e. the number after the colon)
 
@@ -26261,67 +26349,11 @@ ENDMACRO
 
 \ ******************************************************************************
 \
-\       Name: UNWISE
-\       Type: Subroutine
-\   Category: Ship hangar
-\    Summary: Switch the main line-drawing routine between EOR and OR logic
-\
-\ ------------------------------------------------------------------------------
-\
-\ This routine toggles the main line-drawing routine between EOR and OR logic,
-\ for use when drawing the ship hangar.
-\
-\ It does this by modifying the instructions in the main line-drawing routine at
-\ LOIN/LL30, flipping the drawing logic between the default EOR logic (which
-\ merges with whatever is already on screen, allowing us to erase anything we
-\ draw for animation purposes) and OR logic (which overwrites the screen,
-\ ignoring anything that's already there). We want to use OR logic for drawing
-\ the ship hangar, as it looks better and we don't need to animate it).
-\
-\ The routine name, UNWISE, sums up this approach - if anything goes wrong, the
-\ results would be messy.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   HA1                 Contains an RTS
-\
-\ ******************************************************************************
-
-                        \ --- Mod: Code added for ship hangar: ---------------->
-
-.UNWISE
-
- LDA LIL2+2             \ Flip bit 6 of LIL2+2 to change the EOR (SC),Y in LIL2
- EOR #%01000000         \ to an ORA (SC),Y (or back again)
- STA LIL2+2
-
- LDA LIL3+2             \ Flip bit 6 of LIL3+2 to change the EOR (SC),Y in LIL3
- EOR #%01000000         \ to an ORA (SC),Y (or back again)
- STA LIL3+2
-
- LDA LIL5+2             \ Flip bit 6 of LIL2+2 to change the EOR (SC),Y in LIL5
- EOR #%01000000         \ to an ORA (SC),Y (or back again)
- STA LIL5+2
-
- LDA LIL6+2             \ Flip bit 6 of LIL2+2 to change the EOR (SC),Y in LIL6
- EOR #%01000000         \ to an ORA (SC),Y (or back again)
- STA LIL6+2
-
-\.HA1
-
- RTS                    \ Return from the subroutine
-
- PRINT "Free space in MAIN = ", &4D00 - P%, " bytes"
-
-                        \ --- End of added code ------------------------------->
-
-\ ******************************************************************************
-\
 \ Save ELTG.bin
 \
 \ ******************************************************************************
+
+ PRINT "Free space in MAIN = ", &4D00 - P%, " bytes"
 
  PRINT "ELITE G"
  PRINT "Assembled at ", ~CODE_G%
@@ -33382,27 +33414,27 @@ ENDMACRO
 
  LDY Y1                 \ Set Y to the y-coordinate in Y1
 
- LDA X1                 ; Each character block contains 8 pixel rows, so to get
- AND #%11111000         ; the address of the first byte in the character block
-                        ; that we need to draw into, as an offset from the start
-                        ; of the row, we clear bits 0-2 of the x-coordinate in
-                        ; X1
+ LDA X1                 \ Each character block contains 8 pixel rows, so to get
+ AND #%11111000         \ the address of the first byte in the character block
+                        \ that we need to draw into, as an offset from the start
+                        \ of the row, we clear bits 0-2 of the x-coordinate in
+                        \ X1
 
- CLC                    ; The ylookup table lets us look up the 16-bit address
- ADC ylookupl,Y         ; of the start of a character row containing a specific
- STA SC                 ; pixel, so this fetches the address for the start of
- LDA ylookuph,Y         ; the character row containing the y-coordinate in Y,
- ADC #0                 ; and adds it to the row offset we just calculated in A
+ CLC                    \ The ylookup table lets us look up the 16-bit address
+ ADC ylookupl,Y         \ of the start of a character row containing a specific
+ STA SC                 \ pixel, so this fetches the address for the start of
+ LDA ylookuph,Y         \ the character row containing the y-coordinate in Y,
+ ADC #0                 \ and adds it to the row offset we just calculated in A
  STA SC+1
 
- TYA                    ; Set Y = Y mod 8, which is the pixel row within the
- AND #7                 ; character block at which we want to draw the start of
- TAY                    ; our line (as each character block has 8 rows)
+ TYA                    \ Set Y = Y mod 8, which is the pixel row within the
+ AND #7                 \ character block at which we want to draw the start of
+ TAY                    \ our line (as each character block has 8 rows)
 
- LDA X1                 ; Set X = X1 mod 8, which is the horizontal pixel number
- AND #7                 ; within the character block where the line starts (as
- TAX                    ; each pixel line in the character block is 8 pixels
-                        ; wide)
+ LDA X1                 \ Set X = X1 mod 8, which is the horizontal pixel number
+ AND #7                 \ within the character block where the line starts (as
+ TAX                    \ each pixel line in the character block is 8 pixels
+                        \ wide)
 
                         \ --- End of replacement ------------------------------>
 
@@ -53294,6 +53326,62 @@ ENDMACRO
 .BOMBTBY
 
  SKIP 10
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: UNWISE
+\       Type: Subroutine
+\   Category: Ship hangar
+\    Summary: Switch the main line-drawing routine between EOR and OR logic
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine toggles the main line-drawing routine between EOR and OR logic,
+\ for use when drawing the ship hangar.
+\
+\ It does this by modifying the instructions in the main line-drawing routine at
+\ LOIN/LL30, flipping the drawing logic between the default EOR logic (which
+\ merges with whatever is already on screen, allowing us to erase anything we
+\ draw for animation purposes) and OR logic (which overwrites the screen,
+\ ignoring anything that's already there). We want to use OR logic for drawing
+\ the ship hangar, as it looks better and we don't need to animate it).
+\
+\ The routine name, UNWISE, sums up this approach - if anything goes wrong, the
+\ results would be messy.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   HA1                 Contains an RTS
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for ship hangar: ---------------->
+
+.UNWISE
+
+ LDA LIL2+2             \ Flip bit 6 of LIL2+2 to change the EOR (SC),Y in LIL2
+ EOR #%01000000         \ to an ORA (SC),Y (or back again)
+ STA LIL2+2
+
+ LDA LIL3+2             \ Flip bit 6 of LIL3+2 to change the EOR (SC),Y in LIL3
+ EOR #%01000000         \ to an ORA (SC),Y (or back again)
+ STA LIL3+2
+
+ LDA LIL5+2             \ Flip bit 6 of LIL2+2 to change the EOR (SC),Y in LIL5
+ EOR #%01000000         \ to an ORA (SC),Y (or back again)
+ STA LIL5+2
+
+ LDA LIL6+2             \ Flip bit 6 of LIL2+2 to change the EOR (SC),Y in LIL6
+ EOR #%01000000         \ to an ORA (SC),Y (or back again)
+ STA LIL6+2
+
+\.HA1
+
+ RTS                    \ Return from the subroutine
 
                         \ --- End of added code ------------------------------->
 

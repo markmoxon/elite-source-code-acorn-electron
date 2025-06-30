@@ -93,6 +93,16 @@
                         \ such as the video ULA, 6845 CRTC and 6522 VIAs (also
                         \ known as SHEILA)
 
+                        \ --- Mod: Code added for ADFS: ----------------------->
+
+ CTLI = &37DE           \ The address of the CTLI command in the main game code
+
+ ADFS = S%+&27          \ The address of the ADFS variable in the main game code
+
+ OSARGS = &FFDA         \ The address for the OSARGS routine
+
+                        \ --- End of added code ------------------------------->
+
  OSWRCH = &FFEE         \ The address for the OSWRCH routine
 
  OSBYTE = &FFF4         \ The address for the OSBYTE routine
@@ -1938,6 +1948,30 @@ ENDMACRO
  JSR OSCLI              \ Call OSCLI to run the OS command in MESS1, which loads
                         \ the main game code at location &2000
 
+                        \ --- Mod: Code added for ADFS: ----------------------->
+
+ LDA #0                 \ Fetch the filing system type into A
+ LDY #0
+ JSR OSARGS
+
+ CMP #8                 \ If this is not ADFS (type 8), jump to entr1 to skip the
+ BNE entr1              \ code modifications and do the *DIR E command
+
+ LDA #':'               \ Convert the CTLI command from ". 0{cr}E{cr}" to
+ STA CTLI+1             \ ".:0.E{cr}" so it will work on ADFS
+ LDA #'.'
+ STA CTLI+3
+
+ LDA #&FF               \ Set the ADFS variable in the main game binary to &FF
+ STA ADFS               \ to indicate that ADFS is being used
+
+ BNE entr2              \ Jump to entr2 to skip the *DIR E command (this BNE is
+                        \ effectively a JMP as A is never zero)
+
+.entr1
+
+                        \ --- End of added code ------------------------------->
+
                         \ --- Mod: Code added for saving and loading: --------->
 
  LDX #LO(MESS2)         \ Set (Y X) to point to MESS2 ("DIR E")
@@ -1945,6 +1979,8 @@ ENDMACRO
 
  JSR OSCLI              \ Call OSCLI to run the OS command in MESS1, which
                         \ changes the disc directory to E
+
+.entr2
 
                         \ --- End of added code ------------------------------->
 
