@@ -17560,7 +17560,7 @@ End macro ECHR
      4C41   A9 10      LDA #&10
      4C43   20 1E 4C   JSR &4C1E
      4C46   20 87 56   JSR &5687
-     4C49   A0 2C      LDY #&2C
+     4C49   A0 F4      LDY #&F4
      4C4B   20 7E 24   JSR &247E
      4C4E   AD 19 03   LDA &0319
      4C51   29 03      AND #&03

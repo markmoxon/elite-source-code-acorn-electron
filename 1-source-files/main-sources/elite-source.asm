@@ -26127,7 +26127,7 @@ ENDMACRO
 
  JSR HALL               \ Show the ship hangar
 
- LDY #44                \ Wait for 44/50 of a second (0.88 seconds)
+ LDY #244               \ Wait for 244 delay loops
  JSR DELAY
 
  LDA TP                 \ Fetch bits 0 and 1 of TP, and if they are non-zero
