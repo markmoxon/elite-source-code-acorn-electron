@@ -43,15 +43,7 @@
  _IB_SUPERIOR           = (_VARIANT = 1)
  _IB_ACORNSOFT          = (_VARIANT = 2)
 
-                        \ --- Mod: Code removed for additional ships: --------->
-
-\GUARD &5800            \ Guard against assembling over screen memory
-
-                        \ --- And replaced by: -------------------------------->
-
- GUARD &4E00            \ Guard against assembling over the ship blueprint file
-
-                        \ --- End of replacement ------------------------------>
+ GUARD &5800            \ Guard against assembling over screen memory
 
                         \ --- Mod: Code added for sideways RAM: --------------->
 
@@ -17049,8 +17041,9 @@ ENDIF
 
                         \ --- Mod: Code added for additional ships: ----------->
 
- LDA #6                 \ Call SHIPinA to load ship blueprints file G, which is
- JSR SHIPinA            \ the file that contains the Constrictor
+ LDA #16                \ Call SHIPinA to load ship blueprints file Q, which is
+ JSR SHIPinA            \ the file that contains the Constrictor and the ship
+                        \ hangar code
 
                         \ --- End of added code ------------------------------->
 
@@ -26128,10 +26121,14 @@ ENDMACRO
 
  STA QQ22+1             \ Reset the on-screen hyperspace counter
 
-\JSR HALL               \ Show the ship hangar
-\
-\LDY #44                \ Wait for 44/50 of a second (0.88 seconds)
-\JSR DELAY
+ LDA #16                \ Call SHIPinA to load ship blueprints file Q, which is
+ JSR SHIPinA            \ the file that contains the Constrictor and the ship
+                        \ hangar code
+
+ JSR HALL               \ Show the ship hangar
+
+ LDY #44                \ Wait for 44/50 of a second (0.88 seconds)
+ JSR DELAY
 
  LDA TP                 \ Fetch bits 0 and 1 of TP, and if they are non-zero
  AND #%00000011         \ (i.e. mission 1 is either in progress or has been
@@ -26260,6 +26257,62 @@ ENDMACRO
                         \ so jump to BAY to go to the docking bay (i.e. show the
                         \ Status Mode screen)
 
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: UNWISE
+\       Type: Subroutine
+\   Category: Ship hangar
+\    Summary: Switch the main line-drawing routine between EOR and OR logic
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine toggles the main line-drawing routine between EOR and OR logic,
+\ for use when drawing the ship hangar.
+\
+\ It does this by modifying the instructions in the main line-drawing routine at
+\ LOIN/LL30, flipping the drawing logic between the default EOR logic (which
+\ merges with whatever is already on screen, allowing us to erase anything we
+\ draw for animation purposes) and OR logic (which overwrites the screen,
+\ ignoring anything that's already there). We want to use OR logic for drawing
+\ the ship hangar, as it looks better and we don't need to animate it).
+\
+\ The routine name, UNWISE, sums up this approach - if anything goes wrong, the
+\ results would be messy.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   HA1                 Contains an RTS
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for ship hangar: ---------------->
+
+.UNWISE
+
+ LDA LIL2+2             \ Flip bit 6 of LIL2+2 to change the EOR (SC),Y in LIL2
+ EOR #%01000000         \ to an ORA (SC),Y (or back again)
+ STA LIL2+2
+
+ LDA LIL3+2             \ Flip bit 6 of LIL3+2 to change the EOR (SC),Y in LIL3
+ EOR #%01000000         \ to an ORA (SC),Y (or back again)
+ STA LIL3+2
+
+ LDA LIL5+2             \ Flip bit 6 of LIL2+2 to change the EOR (SC),Y in LIL5
+ EOR #%01000000         \ to an ORA (SC),Y (or back again)
+ STA LIL5+2
+
+ LDA LIL6+2             \ Flip bit 6 of LIL2+2 to change the EOR (SC),Y in LIL6
+ EOR #%01000000         \ to an ORA (SC),Y (or back again)
+ STA LIL6+2
+
+\.HA1
+
+ RTS                    \ Return from the subroutine
+
  PRINT "Free space in MAIN = ", &4D00 - P%, " bytes"
 
                         \ --- End of added code ------------------------------->
@@ -26360,6 +26413,8 @@ ENDMACRO
 \EQUW SHIP_ASTEROID     \ AST  =  9 = Asteroid
 \EQUW SHIP_CANISTER     \ OIL  = 10 = Cargo canister
 \EQUW SHIP_ESCAPE_POD   \ ESC  = 11 = Escape pod
+
+                        \ --- End of removed code ----------------------------->
 
 \ ******************************************************************************
 \
@@ -26673,6 +26728,1731 @@ ENDMACRO
 
  PRINT "S.SHIPS ", ~CODE_SHIPS%, " ", ~P%, " ", ~LOAD%, " ", ~LOAD_SHIPS%
  SAVE "3-assembled-output/SHIPS.bin", CODE_SHIPS%, P%, LOAD%
+
+\ ******************************************************************************
+\
+\ ELITE SHIP HANGAR BLUEPRINTS FILE
+\
+\ Produces the binary file D.MOQ.bin that gets loaded to show the ship hangar.
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for ship hangar: ---------------->
+
+ ORG XX21
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: XX21 for the ship hangar
+\       Type: Variable
+\   Category: Drawing ships
+\    Summary: Ship blueprints lookup table for the D.MOQ file
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for ship hangar: ---------------->
+
+ EQUW SHIP_MISSILE      \ MSL  =  1 = Missile
+ EQUW 0
+ EQUW 0
+ EQUW 0
+ EQUW SHIP_CANISTER     \ OIL  =  5 = Cargo canister
+ EQUW 0
+ EQUW 0
+ EQUW 0
+ EQUW SHIP_SHUTTLE      \ SHU  =  9 = Shuttle
+ EQUW SHIP_TRANSPORTER  \        10 = Transporter
+ EQUW SHIP_COBRA_MK_3   \ CYL  = 11 = Cobra Mk III
+ EQUW 0
+ EQUW 0
+ EQUW 0
+ EQUW 0
+ EQUW SHIP_VIPER        \ COPS = 16 = Viper
+ EQUW 0
+ EQUW 0
+ EQUW SHIP_KRAIT        \ KRA  = 19 = Krait
+ EQUW 0
+ EQUW 0
+ EQUW 0
+ EQUW 0
+ EQUW 0
+ EQUW 0
+ EQUW 0
+ EQUW 0
+ EQUW 0
+ EQUW 0
+ EQUW 0
+ EQUW SHIP_CONSTRICTOR  \ CON  = 31 = Constrictor
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: E% for the ship hangar
+\       Type: Variable
+\   Category: Drawing ships
+\    Summary: Ship blueprints default NEWB flags for the D.MOQ file
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for ship hangar: ---------------->
+
+ EQUB %00000000         \ Missile
+ EQUB 0
+ EQUB 0
+ EQUB 0
+ EQUB %00000000         \ Cargo canister
+ EQUB 0
+ EQUB 0
+ EQUB 0
+ EQUB %00100001         \ Shuttle                               Trader, innocent
+ EQUB %01100001         \ Transporter                      Trader, innocent, cop
+ EQUB %10100000         \ Cobra Mk III                      Innocent, escape pod
+ EQUB 0
+ EQUB 0
+ EQUB 0
+ EQUB 0
+ EQUB %11000010         \ Viper                   Bounty hunter, cop, escape pod
+ EQUB 0
+ EQUB 0
+ EQUB %10001100         \ Krait                      Hostile, pirate, escape pod
+ EQUB 0
+ EQUB 0
+ EQUB 0
+ EQUB 0
+ EQUB 0
+ EQUB 0
+ EQUB 0
+ EQUB 0
+ EQUB 0
+ EQUB 0
+ EQUB 0
+ EQUB %00000100         \ Constrictor                                    Hostile
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: SHIP_CANISTER
+\       Type: Variable
+\   Category: Drawing ships
+\    Summary: Ship blueprint for a cargo canister
+\  Deep dive: Ship blueprints
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for ship hangar: ---------------->
+
+.SHIP_CANISTER
+
+ EQUB 0                 \ Max. canisters on demise = 0
+ EQUW 20 * 20           \ Targetable area          = 20 * 20
+
+ EQUB LO(SHIP_CANISTER_EDGES - SHIP_CANISTER)      \ Edges data offset (low)
+ EQUB LO(SHIP_CANISTER_FACES - SHIP_CANISTER)      \ Faces data offset (low)
+
+ EQUB 49                \ Max. edge count          = (49 - 1) / 4 = 12
+ EQUB 0                 \ Gun vertex               = 0
+ EQUB 18                \ Explosion count          = 3, as (4 * n) + 6 = 18
+ EQUB 60                \ Number of vertices       = 60 / 6 = 10
+ EQUB 15                \ Number of edges          = 15
+ EQUW 0                 \ Bounty                   = 0
+ EQUB 28                \ Number of faces          = 28 / 4 = 7
+ EQUB 12                \ Visibility distance      = 12
+ EQUB 17                \ Max. energy              = 17
+ EQUB 15                \ Max. speed               = 15
+
+ EQUB HI(SHIP_CANISTER_EDGES - SHIP_CANISTER)      \ Edges data offset (high)
+ EQUB HI(SHIP_CANISTER_FACES - SHIP_CANISTER)      \ Faces data offset (high)
+
+ EQUB 2                 \ Normals are scaled by    = 2^2 = 4
+ EQUB %00000000         \ Laser power              = 0
+                        \ Missiles                 = 0
+
+.SHIP_CANISTER_VERTICES
+
+      \    x,    y,    z, face1, face2, face3, face4, visibility
+ VERTEX   24,   16,    0,     0,      1,    5,     5,         31    \ Vertex 0
+ VERTEX   24,    5,   15,     0,      1,    2,     2,         31    \ Vertex 1
+ VERTEX   24,  -13,    9,     0,      2,    3,     3,         31    \ Vertex 2
+ VERTEX   24,  -13,   -9,     0,      3,    4,     4,         31    \ Vertex 3
+ VERTEX   24,    5,  -15,     0,      4,    5,     5,         31    \ Vertex 4
+ VERTEX  -24,   16,    0,     1,      5,    6,     6,         31    \ Vertex 5
+ VERTEX  -24,    5,   15,     1,      2,    6,     6,         31    \ Vertex 6
+ VERTEX  -24,  -13,    9,     2,      3,    6,     6,         31    \ Vertex 7
+ VERTEX  -24,  -13,   -9,     3,      4,    6,     6,         31    \ Vertex 8
+ VERTEX  -24,    5,  -15,     4,      5,    6,     6,         31    \ Vertex 9
+
+.SHIP_CANISTER_EDGES
+
+    \ vertex1, vertex2, face1, face2, visibility
+ EDGE       0,       1,     0,     1,         31    \ Edge 0
+ EDGE       1,       2,     0,     2,         31    \ Edge 1
+ EDGE       2,       3,     0,     3,         31    \ Edge 2
+ EDGE       3,       4,     0,     4,         31    \ Edge 3
+ EDGE       0,       4,     0,     5,         31    \ Edge 4
+ EDGE       0,       5,     1,     5,         31    \ Edge 5
+ EDGE       1,       6,     1,     2,         31    \ Edge 6
+ EDGE       2,       7,     2,     3,         31    \ Edge 7
+ EDGE       3,       8,     3,     4,         31    \ Edge 8
+ EDGE       4,       9,     4,     5,         31    \ Edge 9
+ EDGE       5,       6,     1,     6,         31    \ Edge 10
+ EDGE       6,       7,     2,     6,         31    \ Edge 11
+ EDGE       7,       8,     3,     6,         31    \ Edge 12
+ EDGE       8,       9,     4,     6,         31    \ Edge 13
+ EDGE       9,       5,     5,     6,         31    \ Edge 14
+
+.SHIP_CANISTER_FACES
+
+    \ normal_x, normal_y, normal_z, visibility
+ FACE       96,        0,        0,         31    \ Face 0
+ FACE        0,       41,       30,         31    \ Face 1
+ FACE        0,      -18,       48,         31    \ Face 2
+ FACE        0,      -51,        0,         31    \ Face 3
+ FACE        0,      -18,      -48,         31    \ Face 4
+ FACE        0,       41,      -30,         31    \ Face 5
+ FACE      -96,        0,        0,         31    \ Face 6
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: SHIP_SHUTTLE
+\       Type: Variable
+\   Category: Drawing ships
+\    Summary: Ship blueprint for a Shuttle
+\  Deep dive: Ship blueprints
+\             Comparing ship specifications
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for ship hangar: ---------------->
+
+.SHIP_SHUTTLE
+
+ EQUB 15                \ Max. canisters on demise = 15
+ EQUW 50 * 50           \ Targetable area          = 50 * 50
+
+ EQUB LO(SHIP_SHUTTLE_EDGES - SHIP_SHUTTLE)        \ Edges data offset (low)
+ EQUB LO(SHIP_SHUTTLE_FACES - SHIP_SHUTTLE)        \ Faces data offset (low)
+
+ EQUB 109               \ Max. edge count          = (109 - 1) / 4 = 27
+ EQUB 0                 \ Gun vertex               = 0
+ EQUB 38                \ Explosion count          = 8, as (4 * n) + 6 = 38
+ EQUB 114               \ Number of vertices       = 114 / 6 = 19
+ EQUB 30                \ Number of edges          = 30
+ EQUW 0                 \ Bounty                   = 0
+ EQUB 52                \ Number of faces          = 52 / 4 = 13
+ EQUB 22                \ Visibility distance      = 22
+ EQUB 32                \ Max. energy              = 32
+ EQUB 8                 \ Max. speed               = 8
+
+ EQUB HI(SHIP_SHUTTLE_EDGES - SHIP_SHUTTLE)        \ Edges data offset (high)
+ EQUB HI(SHIP_SHUTTLE_FACES - SHIP_SHUTTLE)        \ Faces data offset (high)
+
+ EQUB 2                 \ Normals are scaled by    = 2^2 = 4
+ EQUB %00000000         \ Laser power              = 0
+                        \ Missiles                 = 0
+
+.SHIP_SHUTTLE_VERTICES
+
+      \    x,    y,    z, face1, face2, face3, face4, visibility
+ VERTEX    0,  -35,   47,    15,    15,    15,    15,         31     \ Vertex 0
+ VERTEX  -35,    0,   47,    15,    15,    15,    15,         31     \ Vertex 1
+ VERTEX    0,   35,   47,    15,    15,    15,    15,         31     \ Vertex 2
+ VERTEX   35,    0,   47,    15,    15,    15,    15,         31     \ Vertex 3
+ VERTEX  -40,  -40,  -53,     2,     1,     9,     3,         31     \ Vertex 4
+ VERTEX  -40,   40,  -53,     4,     3,     9,     5,         31     \ Vertex 5
+ VERTEX   40,   40,  -53,     6,     5,     9,     7,         31     \ Vertex 6
+ VERTEX   40,  -40,  -53,     7,     1,     9,     8,         31     \ Vertex 7
+ VERTEX   10,    0,  -53,     9,     9,     9,     9,         16     \ Vertex 8
+ VERTEX    0,   -5,  -53,     9,     9,     9,     9,         16     \ Vertex 9
+ VERTEX  -10,    0,  -53,     9,     9,     9,     9,          8     \ Vertex 10
+ VERTEX    0,    5,  -53,     9,     9,     9,     9,          8     \ Vertex 11
+ VERTEX    0,  -17,   71,    10,     0,    12,    11,         16     \ Vertex 12
+ VERTEX    5,   -2,   61,    15,    15,     2,     0,          6     \ Vertex 13
+ VERTEX    7,   23,   49,     1,     0,     4,    15,          7     \ Vertex 14
+ VERTEX   21,    9,   49,     1,    10,    15,     3,          7     \ Vertex 15
+ VERTEX   -5,   -2,   61,    11,     6,     3,     2,          6     \ Vertex 16
+ VERTEX   -7,   23,   49,     8,    15,     0,    12,          7     \ Vertex 17
+ VERTEX  -21,    9,   49,    15,     4,     8,     1,          7     \ Vertex 18
+
+.SHIP_SHUTTLE_EDGES
+
+    \ vertex1, vertex2, face1, face2, visibility
+ EDGE       0,       1,     2,     0,         31    \ Edge 0
+ EDGE       1,       2,    10,     4,         31    \ Edge 1
+ EDGE       2,       3,    11,     6,         31    \ Edge 2
+ EDGE       0,       3,    12,     8,         31    \ Edge 3
+ EDGE       0,       7,     8,     1,         31    \ Edge 4
+ EDGE       0,       4,     2,     1,         24    \ Edge 5
+ EDGE       1,       4,     3,     2,         31    \ Edge 6
+ EDGE       1,       5,     4,     3,         24    \ Edge 7
+ EDGE       2,       5,     5,     4,         31    \ Edge 8
+ EDGE       2,       6,     6,     5,         12    \ Edge 9
+ EDGE       3,       6,     7,     6,         31    \ Edge 10
+ EDGE       3,       7,     8,     7,         24    \ Edge 11
+ EDGE       4,       5,     9,     3,         31    \ Edge 12
+ EDGE       5,       6,     9,     5,         31    \ Edge 13
+ EDGE       6,       7,     9,     7,         31    \ Edge 14
+ EDGE       4,       7,     9,     1,         31    \ Edge 15
+ EDGE       0,      12,    12,     0,         16    \ Edge 16
+ EDGE       1,      12,    10,     0,         16    \ Edge 17
+ EDGE       2,      12,    11,    10,         16    \ Edge 18
+ EDGE       3,      12,    12,    11,         16    \ Edge 19
+ EDGE       8,       9,     9,     9,         16    \ Edge 20
+ EDGE       9,      10,     9,     9,          6    \ Edge 21
+ EDGE      10,      11,     9,     9,          8    \ Edge 22
+ EDGE       8,      11,     9,     9,          6    \ Edge 23
+ EDGE      13,      14,    11,    11,          4    \ Edge 24
+ EDGE      14,      15,    11,    11,          7    \ Edge 25
+ EDGE      13,      15,    11,    11,          6    \ Edge 26
+ EDGE      16,      17,    10,    10,          4    \ Edge 27
+ EDGE      17,      18,    10,    10,          7    \ Edge 28
+ EDGE      16,      18,    10,    10,          6    \ Edge 29
+
+.SHIP_SHUTTLE_FACES
+
+    \ normal_x, normal_y, normal_z, visibility
+ FACE     -110,     -110,       80,         31      \ Face 0
+ FACE        0,     -149,        7,         31      \ Face 1
+ FACE     -102,     -102,       46,         31      \ Face 2
+ FACE     -149,        0,        7,         31      \ Face 3
+ FACE     -102,      102,       46,         31      \ Face 4
+ FACE        0,      149,        7,         31      \ Face 5
+ FACE      102,      102,       46,         31      \ Face 6
+ FACE      149,        0,        7,         31      \ Face 7
+ FACE      102,     -102,       46,         31      \ Face 8
+ FACE        0,        0,     -213,         31      \ Face 9
+ FACE      -81,       81,      177,         31      \ Face 10
+ FACE       81,       81,      177,         31      \ Face 11
+ FACE      110,     -110,       80,         31      \ Face 12
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: SHIP_TRANSPORTER
+\       Type: Variable
+\   Category: Drawing ships
+\    Summary: Ship blueprint for a Transporter
+\  Deep dive: Ship blueprints
+\             Comparing ship specifications
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for ship hangar: ---------------->
+
+.SHIP_TRANSPORTER
+
+ EQUB 0                 \ Max. canisters on demise = 0
+ EQUW 50 * 50           \ Targetable area          = 50 * 50
+
+ EQUB LO(SHIP_TRANSPORTER_EDGES - SHIP_TRANSPORTER)   \ Edges data offset (low)
+ EQUB LO(SHIP_TRANSPORTER_FACES - SHIP_TRANSPORTER)   \ Faces data offset (low)
+
+ EQUB 145               \ Max. edge count          = (145 - 1) / 4 = 36
+ EQUB 48                \ Gun vertex               = 48 / 4 = 12
+ EQUB 26                \ Explosion count          = 5, as (4 * n) + 6 = 26
+ EQUB 222               \ Number of vertices       = 222 / 6 = 37
+ EQUB 46                \ Number of edges          = 46
+ EQUW 0                 \ Bounty                   = 0
+ EQUB 56                \ Number of faces          = 56 / 4 = 14
+ EQUB 16                \ Visibility distance      = 16
+ EQUB 32                \ Max. energy              = 32
+ EQUB 10                \ Max. speed               = 10
+
+ EQUB HI(SHIP_TRANSPORTER_EDGES - SHIP_TRANSPORTER)   \ Edges data offset (high)
+ EQUB HI(SHIP_TRANSPORTER_FACES - SHIP_TRANSPORTER)   \ Faces data offset (high)
+
+ EQUB 1                 \ Normals are scaled by    = 2^1 = 2
+ EQUB %00000000         \ Laser power              = 0
+                        \ Missiles                 = 0
+
+.SHIP_TRANSPORTER_VERTICES
+
+      \    x,    y,    z, face1, face2, face3, face4, visibility
+ VERTEX    0,   19,  -51,     6,     0,     7,     7,         31     \ Vertex 0
+ VERTEX  -51,    7,  -51,     1,     0,     7,     7,         31     \ Vertex 1
+ VERTEX  -57,   -7,  -51,     1,     0,     2,     2,         31     \ Vertex 2
+ VERTEX  -51,  -17,  -51,     2,     0,     3,     3,         31     \ Vertex 3
+ VERTEX   51,  -17,  -51,     3,     0,     4,     4,         31     \ Vertex 4
+ VERTEX   57,   -7,  -51,     4,     0,     5,     5,         31     \ Vertex 5
+ VERTEX   51,    7,  -51,     5,     0,     6,     6,         31     \ Vertex 6
+ VERTEX    0,   12,   24,    15,    15,    15,    15,         18     \ Vertex 7
+ VERTEX  -60,   -2,   24,     7,     1,     9,     8,         31     \ Vertex 8
+ VERTEX  -66,  -17,   24,     2,     1,     9,     3,         31     \ Vertex 9
+ VERTEX   66,  -17,   24,     4,     3,    10,     5,         31     \ Vertex 10
+ VERTEX   60,   -2,   24,     6,     5,    11,    10,         31     \ Vertex 11
+ VERTEX  -22,   -5,   61,     9,     8,    13,    12,         31     \ Vertex 12
+ VERTEX  -27,  -17,   61,     9,     3,    13,    13,         31     \ Vertex 13
+ VERTEX   27,  -17,   61,    10,     3,    13,    13,         31     \ Vertex 14
+ VERTEX   22,   -5,   61,    11,    10,    13,    12,         31     \ Vertex 15
+ VERTEX  -10,   11,    5,     7,     7,     7,     7,          6     \ Vertex 16
+ VERTEX  -36,    5,    5,     7,     7,     7,     7,          6     \ Vertex 17
+ VERTEX  -10,   13,  -14,     7,     7,     7,     7,          6     \ Vertex 18
+ VERTEX  -36,    7,  -14,     7,     7,     7,     7,          6     \ Vertex 19
+ VERTEX  -23,   12,  -29,     7,     7,     7,     7,          6     \ Vertex 20
+ VERTEX  -23,   10,  -14,     7,     7,     7,     7,          6     \ Vertex 21
+ VERTEX   10,   15,  -29,     6,     6,     6,     6,          6     \ Vertex 22
+ VERTEX   36,    9,  -29,     6,     6,     6,     6,          6     \ Vertex 23
+ VERTEX   23,   10,  -14,     6,     6,     6,     6,          6     \ Vertex 24
+ VERTEX   10,   12,   -6,     6,     6,     6,     6,          6     \ Vertex 25
+ VERTEX   36,    6,   -6,     6,     6,     6,     6,          6     \ Vertex 26
+ VERTEX   23,    7,   16,     6,     6,     6,     6,          6     \ Vertex 27
+ VERTEX   23,    9,   -6,     6,     6,     6,     6,          6     \ Vertex 28
+ VERTEX  -33,  -17,  -26,     3,     3,     3,     3,          5     \ Vertex 29
+ VERTEX  -33,  -17,   33,     3,     3,     3,     3,          5     \ Vertex 30
+ VERTEX   33,  -17,  -26,     3,     3,     3,     3,          5     \ Vertex 31
+ VERTEX   33,  -17,   33,     3,     3,     3,     3,          5     \ Vertex 32
+ VERTEX  -25,   -6,  -51,     0,     0,     0,     0,          7     \ Vertex 33
+ VERTEX   26,   -6,  -51,     0,     0,     0,     0,          7     \ Vertex 34
+ VERTEX   17,    6,  -51,     0,     0,     0,     0,          4     \ Vertex 35
+ VERTEX  -17,    6,  -51,     0,     0,     0,     0,          4     \ Vertex 36
+
+.SHIP_TRANSPORTER_EDGES
+
+    \ vertex1, vertex2, face1, face2, visibility
+ EDGE       0,       1,     7,     0,         31    \ Edge 0
+ EDGE       1,       2,     1,     0,         31    \ Edge 1
+ EDGE       2,       3,     2,     0,         31    \ Edge 2
+ EDGE       3,       4,     3,     0,         31    \ Edge 3
+ EDGE       4,       5,     4,     0,         31    \ Edge 4
+ EDGE       5,       6,     5,     0,         31    \ Edge 5
+ EDGE       0,       6,     6,     0,         31    \ Edge 6
+ EDGE       0,       7,     7,     6,         15    \ Edge 7
+ EDGE       1,       8,     7,     1,         31    \ Edge 8
+ EDGE       2,       9,     2,     1,         10    \ Edge 9
+ EDGE       3,       9,     3,     2,         31    \ Edge 10
+ EDGE       4,      10,     4,     3,         31    \ Edge 11
+ EDGE       5,      10,     5,     4,         10    \ Edge 12
+ EDGE       6,      11,     6,     5,         31    \ Edge 13
+ EDGE       7,       8,     8,     7,         16    \ Edge 14
+ EDGE       8,       9,     9,     1,         16    \ Edge 15
+ EDGE      10,      11,    10,     5,         16    \ Edge 16
+ EDGE       7,      11,    11,     6,         16    \ Edge 17
+ EDGE       7,      15,    12,    11,         18    \ Edge 18
+ EDGE       7,      12,    12,     8,         18    \ Edge 19
+ EDGE       8,      12,     9,     8,         16    \ Edge 20
+ EDGE       9,      13,     9,     3,         31    \ Edge 21
+ EDGE      10,      14,    10,     3,         31    \ Edge 22
+ EDGE      11,      15,    11,    10,         16    \ Edge 23
+ EDGE      12,      13,    13,     9,         31    \ Edge 24
+ EDGE      13,      14,    13,     3,         31    \ Edge 25
+ EDGE      14,      15,    13,    10,         31    \ Edge 26
+ EDGE      12,      15,    13,    12,         31    \ Edge 27
+ EDGE      16,      17,     7,     7,          6    \ Edge 28
+ EDGE      18,      19,     7,     7,          6    \ Edge 29
+ EDGE      19,      20,     7,     7,          6    \ Edge 30
+ EDGE      18,      20,     7,     7,          6    \ Edge 31
+ EDGE      20,      21,     7,     7,          6    \ Edge 32
+ EDGE      22,      23,     6,     6,          6    \ Edge 33
+ EDGE      23,      24,     6,     6,          6    \ Edge 34
+ EDGE      24,      22,     6,     6,          6    \ Edge 35
+ EDGE      25,      26,     6,     6,          6    \ Edge 36
+ EDGE      26,      27,     6,     6,          6    \ Edge 37
+ EDGE      25,      27,     6,     6,          6    \ Edge 38
+ EDGE      27,      28,     6,     6,          6    \ Edge 39
+ EDGE      29,      30,     3,     3,          5    \ Edge 40
+ EDGE      31,      32,     3,     3,          5    \ Edge 41
+ EDGE      33,      34,     0,     0,          7    \ Edge 42
+ EDGE      34,      35,     0,     0,          4    \ Edge 43
+ EDGE      35,      36,     0,     0,          4    \ Edge 44
+ EDGE      36,      33,     0,     0,          4    \ Edge 45
+
+.SHIP_TRANSPORTER_FACES
+
+    \ normal_x, normal_y, normal_z, visibility
+ FACE        0,        0,     -103,         31      \ Face 0
+ FACE     -111,       48,       -7,         31      \ Face 1
+ FACE     -105,      -63,      -21,         31      \ Face 2
+ FACE        0,      -34,        0,         31      \ Face 3
+ FACE      105,      -63,      -21,         31      \ Face 4
+ FACE      111,       48,       -7,         31      \ Face 5
+ FACE        8,       32,        3,         31      \ Face 6
+ FACE       -8,       32,        3,         31      \ Face 7
+ FACE       -8,       34,       11,         18      \ Face 8
+ FACE      -75,       32,       79,         31      \ Face 9
+ FACE       75,       32,       79,         31      \ Face 10
+ FACE        8,       34,       11,         18      \ Face 11
+ FACE        0,       38,       17,         31      \ Face 12
+ FACE        0,        0,      121,         31      \ Face 13
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: SHIP_COBRA_MK_3
+\       Type: Variable
+\   Category: Drawing ships
+\    Summary: Ship blueprint for a Cobra Mk III
+\  Deep dive: Ship blueprints
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for ship hangar: ---------------->
+
+.SHIP_COBRA_MK_3
+
+ EQUB 3                 \ Max. canisters on demise = 3
+ EQUW 95 * 95           \ Targetable area          = 95 * 95
+
+ EQUB LO(SHIP_COBRA_MK_3_EDGES - SHIP_COBRA_MK_3)  \ Edges data offset (low)
+ EQUB LO(SHIP_COBRA_MK_3_FACES - SHIP_COBRA_MK_3)  \ Faces data offset (low)
+
+ EQUB 153               \ Max. edge count          = (153 - 1) / 4 = 38
+ EQUB 84                \ Gun vertex               = 84 / 4 = 21
+ EQUB 42                \ Explosion count          = 9, as (4 * n) + 6 = 42
+ EQUB 168               \ Number of vertices       = 168 / 6 = 28
+ EQUB 38                \ Number of edges          = 38
+ EQUW 0                 \ Bounty                   = 0
+ EQUB 52                \ Number of faces          = 52 / 4 = 13
+ EQUB 50                \ Visibility distance      = 50
+ EQUB 150               \ Max. energy              = 150
+ EQUB 28                \ Max. speed               = 28
+
+ EQUB HI(SHIP_COBRA_MK_3_EDGES - SHIP_COBRA_MK_3)  \ Edges data offset (low)
+ EQUB HI(SHIP_COBRA_MK_3_FACES - SHIP_COBRA_MK_3)  \ Faces data offset (low)
+
+ EQUB 1                 \ Normals are scaled by    = 2^1 = 2
+ EQUB %00010011         \ Laser power              = 2
+                        \ Missiles                 = 3
+
+.SHIP_COBRA_MK_3_VERTICES
+
+      \    x,    y,    z, face1, face2, face3, face4, visibility
+ VERTEX   32,    0,   76,    15,     15,   15,    15,         31    \ Vertex 0
+ VERTEX  -32,    0,   76,    15,     15,   15,    15,         31    \ Vertex 1
+ VERTEX    0,   26,   24,    15,     15,   15,    15,         31    \ Vertex 2
+ VERTEX -120,   -3,   -8,     3,      7,   10,    10,         31    \ Vertex 3
+ VERTEX  120,   -3,   -8,     4,      8,   12,    12,         31    \ Vertex 4
+ VERTEX  -88,   16,  -40,    15,     15,   15,    15,         31    \ Vertex 5
+ VERTEX   88,   16,  -40,    15,     15,   15,    15,         31    \ Vertex 6
+ VERTEX  128,   -8,  -40,     8,      9,   12,    12,         31    \ Vertex 7
+ VERTEX -128,   -8,  -40,     7,      9,   10,    10,         31    \ Vertex 8
+ VERTEX    0,   26,  -40,     5,      6,    9,     9,         31    \ Vertex 9
+ VERTEX  -32,  -24,  -40,     9,     10,   11,    11,         31    \ Vertex 10
+ VERTEX   32,  -24,  -40,     9,     11,   12,    12,         31    \ Vertex 11
+ VERTEX  -36,    8,  -40,     9,      9,    9,     9,         20    \ Vertex 12
+ VERTEX   -8,   12,  -40,     9,      9,    9,     9,         20    \ Vertex 13
+ VERTEX    8,   12,  -40,     9,      9,    9,     9,         20    \ Vertex 14
+ VERTEX   36,    8,  -40,     9,      9,    9,     9,         20    \ Vertex 15
+ VERTEX   36,  -12,  -40,     9,      9,    9,     9,         20    \ Vertex 16
+ VERTEX    8,  -16,  -40,     9,      9,    9,     9,         20    \ Vertex 17
+ VERTEX   -8,  -16,  -40,     9,      9,    9,     9,         20    \ Vertex 18
+ VERTEX  -36,  -12,  -40,     9,      9,    9,     9,         20    \ Vertex 19
+ VERTEX    0,    0,   76,     0,     11,   11,    11,          6    \ Vertex 20
+ VERTEX    0,    0,   90,     0,     11,   11,    11,         31    \ Vertex 21
+ VERTEX  -80,   -6,  -40,     9,      9,    9,     9,          8    \ Vertex 22
+ VERTEX  -80,    6,  -40,     9,      9,    9,     9,          8    \ Vertex 23
+ VERTEX  -88,    0,  -40,     9,      9,    9,     9,          6    \ Vertex 24
+ VERTEX   80,    6,  -40,     9,      9,    9,     9,          8    \ Vertex 25
+ VERTEX   88,    0,  -40,     9,      9,    9,     9,          6    \ Vertex 26
+ VERTEX   80,   -6,  -40,     9,      9,    9,     9,          8    \ Vertex 27
+
+.SHIP_COBRA_MK_3_EDGES
+
+    \ vertex1, vertex2, face1, face2, visibility
+ EDGE       0,       1,     0,    11,         31    \ Edge 0
+ EDGE       0,       4,     4,    12,         31    \ Edge 1
+ EDGE       1,       3,     3,    10,         31    \ Edge 2
+ EDGE       3,       8,     7,    10,         31    \ Edge 3
+ EDGE       4,       7,     8,    12,         31    \ Edge 4
+ EDGE       6,       7,     8,     9,         31    \ Edge 5
+ EDGE       6,       9,     6,     9,         31    \ Edge 6
+ EDGE       5,       9,     5,     9,         31    \ Edge 7
+ EDGE       5,       8,     7,     9,         31    \ Edge 8
+ EDGE       2,       5,     1,     5,         31    \ Edge 9
+ EDGE       2,       6,     2,     6,         31    \ Edge 10
+ EDGE       3,       5,     3,     7,         31    \ Edge 11
+ EDGE       4,       6,     4,     8,         31    \ Edge 12
+ EDGE       1,       2,     0,     1,         31    \ Edge 13
+ EDGE       0,       2,     0,     2,         31    \ Edge 14
+ EDGE       8,      10,     9,    10,         31    \ Edge 15
+ EDGE      10,      11,     9,    11,         31    \ Edge 16
+ EDGE       7,      11,     9,    12,         31    \ Edge 17
+ EDGE       1,      10,    10,    11,         31    \ Edge 18
+ EDGE       0,      11,    11,    12,         31    \ Edge 19
+ EDGE       1,       5,     1,     3,         29    \ Edge 20
+ EDGE       0,       6,     2,     4,         29    \ Edge 21
+ EDGE      20,      21,     0,    11,          6    \ Edge 22
+ EDGE      12,      13,     9,     9,         20    \ Edge 23
+ EDGE      18,      19,     9,     9,         20    \ Edge 24
+ EDGE      14,      15,     9,     9,         20    \ Edge 25
+ EDGE      16,      17,     9,     9,         20    \ Edge 26
+ EDGE      15,      16,     9,     9,         19    \ Edge 27
+ EDGE      14,      17,     9,     9,         17    \ Edge 28
+ EDGE      13,      18,     9,     9,         19    \ Edge 29
+ EDGE      12,      19,     9,     9,         19    \ Edge 30
+ EDGE       2,       9,     5,     6,         30    \ Edge 31
+ EDGE      22,      24,     9,     9,          6    \ Edge 32
+ EDGE      23,      24,     9,     9,          6    \ Edge 33
+ EDGE      22,      23,     9,     9,          8    \ Edge 34
+ EDGE      25,      26,     9,     9,          6    \ Edge 35
+ EDGE      26,      27,     9,     9,          6    \ Edge 36
+ EDGE      25,      27,     9,     9,          8    \ Edge 37
+
+.SHIP_COBRA_MK_3_FACES
+
+    \ normal_x, normal_y, normal_z, visibility
+ FACE        0,       62,       31,         31    \ Face 0
+ FACE      -18,       55,       16,         31    \ Face 1
+ FACE       18,       55,       16,         31    \ Face 2
+ FACE      -16,       52,       14,         31    \ Face 3
+ FACE       16,       52,       14,         31    \ Face 4
+ FACE      -14,       47,        0,         31    \ Face 5
+ FACE       14,       47,        0,         31    \ Face 6
+ FACE      -61,      102,        0,         31    \ Face 7
+ FACE       61,      102,        0,         31    \ Face 8
+ FACE        0,        0,      -80,         31    \ Face 9
+ FACE       -7,      -42,        9,         31    \ Face 10
+ FACE        0,      -30,        6,         31    \ Face 11
+ FACE        7,      -42,        9,         31    \ Face 12
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: SHIP_VIPER
+\       Type: Variable
+\   Category: Drawing ships
+\    Summary: Ship blueprint for a Viper
+\  Deep dive: Ship blueprints
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for ship hangar: ---------------->
+
+.SHIP_VIPER
+
+ EQUB 0                 \ Max. canisters on demise = 0
+ EQUW 75 * 75           \ Targetable area          = 75 * 75
+
+ EQUB LO(SHIP_VIPER_EDGES - SHIP_VIPER)            \ Edges data offset (low)
+ EQUB LO(SHIP_VIPER_FACES - SHIP_VIPER)            \ Faces data offset (low)
+
+ EQUB 77                \ Max. edge count          = (77 - 1) / 4 = 19
+ EQUB 0                 \ Gun vertex               = 0
+ EQUB 42                \ Explosion count          = 9, as (4 * n) + 6 = 42
+ EQUB 90                \ Number of vertices       = 90 / 6 = 15
+ EQUB 20                \ Number of edges          = 20
+ EQUW 0                 \ Bounty                   = 0
+ EQUB 28                \ Number of faces          = 28 / 4 = 7
+ EQUB 23                \ Visibility distance      = 23
+ EQUB 100               \ Max. energy              = 100
+ EQUB 32                \ Max. speed               = 32
+
+ EQUB HI(SHIP_VIPER_EDGES - SHIP_VIPER)            \ Edges data offset (high)
+ EQUB HI(SHIP_VIPER_FACES - SHIP_VIPER)            \ Faces data offset (high)
+
+ EQUB 1                 \ Normals are scaled by    = 2^1 = 2
+ EQUB %00010001         \ Laser power              = 2
+                        \ Missiles                 = 1
+
+.SHIP_VIPER_VERTICES
+
+      \    x,    y,    z, face1, face2, face3, face4, visibility
+ VERTEX    0,    0,   72,     1,      2,    3,     4,         31    \ Vertex 0
+ VERTEX    0,   16,   24,     0,      1,    2,     2,         30    \ Vertex 1
+ VERTEX    0,  -16,   24,     3,      4,    5,     5,         30    \ Vertex 2
+ VERTEX   48,    0,  -24,     2,      4,    6,     6,         31    \ Vertex 3
+ VERTEX  -48,    0,  -24,     1,      3,    6,     6,         31    \ Vertex 4
+ VERTEX   24,  -16,  -24,     4,      5,    6,     6,         30    \ Vertex 5
+ VERTEX  -24,  -16,  -24,     5,      3,    6,     6,         30    \ Vertex 6
+ VERTEX   24,   16,  -24,     0,      2,    6,     6,         31    \ Vertex 7
+ VERTEX  -24,   16,  -24,     0,      1,    6,     6,         31    \ Vertex 8
+ VERTEX  -32,    0,  -24,     6,      6,    6,     6,         19    \ Vertex 9
+ VERTEX   32,    0,  -24,     6,      6,    6,     6,         19    \ Vertex 10
+ VERTEX    8,    8,  -24,     6,      6,    6,     6,         19    \ Vertex 11
+ VERTEX   -8,    8,  -24,     6,      6,    6,     6,         19    \ Vertex 12
+ VERTEX   -8,   -8,  -24,     6,      6,    6,     6,         18    \ Vertex 13
+ VERTEX    8,   -8,  -24,     6,      6,    6,     6,         18    \ Vertex 14
+
+.SHIP_VIPER_EDGES
+
+    \ vertex1, vertex2, face1, face2, visibility
+ EDGE       0,       3,     2,     4,         31    \ Edge 0
+ EDGE       0,       1,     1,     2,         30    \ Edge 1
+ EDGE       0,       2,     3,     4,         30    \ Edge 2
+ EDGE       0,       4,     1,     3,         31    \ Edge 3
+ EDGE       1,       7,     0,     2,         30    \ Edge 4
+ EDGE       1,       8,     0,     1,         30    \ Edge 5
+ EDGE       2,       5,     4,     5,         30    \ Edge 6
+ EDGE       2,       6,     3,     5,         30    \ Edge 7
+ EDGE       7,       8,     0,     6,         31    \ Edge 8
+ EDGE       5,       6,     5,     6,         30    \ Edge 9
+ EDGE       4,       8,     1,     6,         31    \ Edge 10
+ EDGE       4,       6,     3,     6,         30    \ Edge 11
+ EDGE       3,       7,     2,     6,         31    \ Edge 12
+ EDGE       3,       5,     6,     4,         30    \ Edge 13
+ EDGE       9,      12,     6,     6,         19    \ Edge 14
+ EDGE       9,      13,     6,     6,         18    \ Edge 15
+ EDGE      10,      11,     6,     6,         19    \ Edge 16
+ EDGE      10,      14,     6,     6,         18    \ Edge 17
+ EDGE      11,      14,     6,     6,         16    \ Edge 18
+ EDGE      12,      13,     6,     6,         16    \ Edge 19
+
+.SHIP_VIPER_FACES
+
+    \ normal_x, normal_y, normal_z, visibility
+ FACE        0,       32,        0,         31    \ Face 0
+ FACE      -22,       33,       11,         31    \ Face 1
+ FACE       22,       33,       11,         31    \ Face 2
+ FACE      -22,      -33,       11,         31    \ Face 3
+ FACE       22,      -33,       11,         31    \ Face 4
+ FACE        0,      -32,        0,         31    \ Face 5
+ FACE        0,        0,      -48,         31    \ Face 6
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: SHIP_KRAIT
+\       Type: Variable
+\   Category: Drawing ships
+\    Summary: Ship blueprint for a Krait
+\  Deep dive: Ship blueprints
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for ship hangar: ---------------->
+
+.SHIP_KRAIT
+
+ EQUB 1                 \ Max. canisters on demise = 1
+ EQUW 60 * 60           \ Targetable area          = 60 * 60
+
+ EQUB LO(SHIP_KRAIT_EDGES - SHIP_KRAIT)            \ Edges data offset (low)
+ EQUB LO(SHIP_KRAIT_FACES - SHIP_KRAIT)            \ Faces data offset (low)
+
+ EQUB 85                \ Max. edge count          = (85 - 1) / 4 = 21
+ EQUB 0                 \ Gun vertex               = 0
+ EQUB 18                \ Explosion count          = 3, as (4 * n) + 6 = 18
+ EQUB 102               \ Number of vertices       = 102 / 6 = 17
+ EQUB 21                \ Number of edges          = 21
+ EQUW 100               \ Bounty                   = 100
+ EQUB 24                \ Number of faces          = 24 / 4 = 6
+ EQUB 25                \ Visibility distance      = 25
+ EQUB 80                \ Max. energy              = 80
+ EQUB 30                \ Max. speed               = 30
+
+ EQUB HI(SHIP_KRAIT_EDGES - SHIP_KRAIT)            \ Edges data offset (high)
+ EQUB HI(SHIP_KRAIT_FACES - SHIP_KRAIT)            \ Faces data offset (high)
+
+ EQUB 1                 \ Normals are scaled by    = 2^1 = 2
+ EQUB %00010000         \ Laser power              = 2
+                        \ Missiles                 = 0
+
+.SHIP_KRAIT_VERTICES
+
+      \    x,    y,    z, face1, face2, face3, face4, visibility
+ VERTEX    0,    0,   96,     1,      0,    3,     2,         31    \ Vertex 0
+ VERTEX    0,   18,  -48,     3,      0,    5,     4,         31    \ Vertex 1
+ VERTEX    0,  -18,  -48,     2,      1,    5,     4,         31    \ Vertex 2
+ VERTEX   90,    0,   -3,     1,      0,    4,     4,         31    \ Vertex 3
+ VERTEX  -90,    0,   -3,     3,      2,    5,     5,         31    \ Vertex 4
+ VERTEX   90,    0,   87,     1,      0,    1,     1,         30    \ Vertex 5
+ VERTEX  -90,    0,   87,     3,      2,    3,     3,         30    \ Vertex 6
+ VERTEX    0,    5,   53,     0,      0,    3,     3,          9    \ Vertex 7
+ VERTEX    0,    7,   38,     0,      0,    3,     3,          6    \ Vertex 8
+ VERTEX  -18,    7,   19,     3,      3,    3,     3,          9    \ Vertex 9
+ VERTEX   18,    7,   19,     0,      0,    0,     0,          9    \ Vertex 10
+ VERTEX   18,   11,  -39,     4,      4,    4,     4,          8    \ Vertex 11
+ VERTEX   18,  -11,  -39,     4,      4,    4,     4,          8    \ Vertex 12
+ VERTEX   36,    0,  -30,     4,      4,    4,     4,          8    \ Vertex 13
+ VERTEX  -18,   11,  -39,     5,      5,    5,     5,          8    \ Vertex 14
+ VERTEX  -18,  -11,  -39,     5,      5,    5,     5,          8    \ Vertex 15
+ VERTEX  -36,    0,  -30,     5,      5,    5,     5,          8    \ Vertex 16
+
+.SHIP_KRAIT_EDGES
+
+    \ vertex1, vertex2, face1, face2, visibility
+ EDGE       0,       1,     3,     0,         31    \ Edge 0
+ EDGE       0,       2,     2,     1,         31    \ Edge 1
+ EDGE       0,       3,     1,     0,         31    \ Edge 2
+ EDGE       0,       4,     3,     2,         31    \ Edge 3
+ EDGE       1,       4,     5,     3,         31    \ Edge 4
+ EDGE       4,       2,     5,     2,         31    \ Edge 5
+ EDGE       2,       3,     4,     1,         31    \ Edge 6
+ EDGE       3,       1,     4,     0,         31    \ Edge 7
+ EDGE       3,       5,     1,     0,         30    \ Edge 8
+ EDGE       4,       6,     3,     2,         30    \ Edge 9
+ EDGE       1,       2,     5,     4,          8    \ Edge 10
+ EDGE       7,      10,     0,     0,          9    \ Edge 11
+ EDGE       8,      10,     0,     0,          6    \ Edge 12
+ EDGE       7,       9,     3,     3,          9    \ Edge 13
+ EDGE       8,       9,     3,     3,          6    \ Edge 14
+ EDGE      11,      13,     4,     4,          8    \ Edge 15
+ EDGE      13,      12,     4,     4,          8    \ Edge 16
+ EDGE      12,      11,     4,     4,          7    \ Edge 17
+ EDGE      14,      15,     5,     5,          7    \ Edge 18
+ EDGE      15,      16,     5,     5,          8    \ Edge 19
+ EDGE      16,      14,     5,     5,          8    \ Edge 20
+
+.SHIP_KRAIT_FACES
+
+    \ normal_x, normal_y, normal_z, visibility
+ FACE        3,       24,        3,         31    \ Face 0
+ FACE        3,      -24,        3,         31    \ Face 1
+ FACE       -3,      -24,        3,         31    \ Face 2
+ FACE       -3,       24,        3,         31    \ Face 3
+ FACE       38,        0,      -77,         31    \ Face 4
+ FACE      -38,        0,      -77,         31    \ Face 5
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: SHIP_CONSTRICTOR
+\       Type: Variable
+\   Category: Drawing ships
+\    Summary: Ship blueprint for a Constrictor
+\  Deep dive: Ship blueprints
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for ship hangar: ---------------->
+
+.SHIP_CONSTRICTOR
+
+ EQUB 3                 \ Max. canisters on demise = 3
+ EQUW 65 * 65           \ Targetable area          = 65 * 65
+
+ EQUB LO(SHIP_CONSTRICTOR_EDGES - SHIP_CONSTRICTOR)   \ Edges data offset (low)
+ EQUB LO(SHIP_CONSTRICTOR_FACES - SHIP_CONSTRICTOR)   \ Faces data offset (low)
+
+ EQUB 77                \ Max. edge count          = (77 - 1) / 4 = 19
+ EQUB 0                 \ Gun vertex               = 0
+ EQUB 46                \ Explosion count          = 10, as (4 * n) + 6 = 46
+ EQUB 102               \ Number of vertices       = 102 / 6 = 17
+ EQUB 24                \ Number of edges          = 24
+ EQUW 0                 \ Bounty                   = 0
+ EQUB 40                \ Number of faces          = 40 / 4 = 10
+ EQUB 45                \ Visibility distance      = 45
+ EQUB 252               \ Max. energy              = 252
+ EQUB 36                \ Max. speed               = 36
+
+ EQUB HI(SHIP_CONSTRICTOR_EDGES - SHIP_CONSTRICTOR)   \ Edges data offset (high)
+ EQUB HI(SHIP_CONSTRICTOR_FACES - SHIP_CONSTRICTOR)   \ Faces data offset (high)
+
+ EQUB 2                 \ Normals are scaled by    = 2^2 = 4
+ EQUB %00110100         \ Laser power              = 6
+                        \ Missiles                 = 4
+
+.SHIP_CONSTRICTOR_VERTICES
+
+      \    x,    y,    z, face1, face2, face3, face4, visibility
+ VERTEX   20,   -7,   80,     2,      0,    9,     9,         31    \ Vertex 0
+ VERTEX  -20,   -7,   80,     1,      0,    9,     9,         31    \ Vertex 1
+ VERTEX  -54,   -7,   40,     4,      1,    9,     9,         31    \ Vertex 2
+ VERTEX  -54,   -7,  -40,     5,      4,    9,     8,         31    \ Vertex 3
+ VERTEX  -20,   13,  -40,     6,      5,    8,     8,         31    \ Vertex 4
+ VERTEX   20,   13,  -40,     7,      6,    8,     8,         31    \ Vertex 5
+ VERTEX   54,   -7,  -40,     7,      3,    9,     8,         31    \ Vertex 6
+ VERTEX   54,   -7,   40,     3,      2,    9,     9,         31    \ Vertex 7
+ VERTEX   20,   13,    5,    15,     15,   15,    15,         31    \ Vertex 8
+ VERTEX  -20,   13,    5,    15,     15,   15,    15,         31    \ Vertex 9
+ VERTEX   20,   -7,   62,     9,      9,    9,     9,         18    \ Vertex 10
+ VERTEX  -20,   -7,   62,     9,      9,    9,     9,         18    \ Vertex 11
+ VERTEX   25,   -7,  -25,     9,      9,    9,     9,         18    \ Vertex 12
+ VERTEX  -25,   -7,  -25,     9,      9,    9,     9,         18    \ Vertex 13
+ VERTEX   15,   -7,  -15,     9,      9,    9,     9,         10    \ Vertex 14
+ VERTEX  -15,   -7,  -15,     9,      9,    9,     9,         10    \ Vertex 15
+ VERTEX    0,   -7,    0,    15,      9,    1,     0,          0    \ Vertex 16
+
+.SHIP_CONSTRICTOR_EDGES
+
+    \ vertex1, vertex2, face1, face2, visibility
+ EDGE       0,       1,     9,     0,         31    \ Edge 0
+ EDGE       1,       2,     9,     1,         31    \ Edge 1
+ EDGE       1,       9,     1,     0,         31    \ Edge 2
+ EDGE       0,       8,     2,     0,         31    \ Edge 3
+ EDGE       0,       7,     9,     2,         31    \ Edge 4
+ EDGE       7,       8,     3,     2,         31    \ Edge 5
+ EDGE       2,       9,     4,     1,         31    \ Edge 6
+ EDGE       2,       3,     9,     4,         31    \ Edge 7
+ EDGE       6,       7,     9,     3,         31    \ Edge 8
+ EDGE       6,       8,     7,     3,         31    \ Edge 9
+ EDGE       5,       8,     7,     6,         31    \ Edge 10
+ EDGE       4,       9,     6,     5,         31    \ Edge 11
+ EDGE       3,       9,     5,     4,         31    \ Edge 12
+ EDGE       3,       4,     8,     5,         31    \ Edge 13
+ EDGE       4,       5,     8,     6,         31    \ Edge 14
+ EDGE       5,       6,     8,     7,         31    \ Edge 15
+ EDGE       3,       6,     9,     8,         31    \ Edge 16
+ EDGE       8,       9,     6,     0,         31    \ Edge 17
+ EDGE      10,      12,     9,     9,         18    \ Edge 18
+ EDGE      12,      14,     9,     9,          5    \ Edge 19
+ EDGE      14,      10,     9,     9,         10    \ Edge 20
+ EDGE      11,      15,     9,     9,         10    \ Edge 21
+ EDGE      13,      15,     9,     9,          5    \ Edge 22
+ EDGE      11,      13,     9,     9,         18    \ Edge 23
+
+.SHIP_CONSTRICTOR_FACES
+
+    \ normal_x, normal_y, normal_z, visibility
+ FACE        0,       55,       15,         31    \ Face 0
+ FACE      -24,       75,       20,         31    \ Face 1
+ FACE       24,       75,       20,         31    \ Face 2
+ FACE       44,       75,        0,         31    \ Face 3
+ FACE      -44,       75,        0,         31    \ Face 4
+ FACE      -44,       75,        0,         31    \ Face 5
+ FACE        0,       53,        0,         31    \ Face 6
+ FACE       44,       75,        0,         31    \ Face 7
+ FACE        0,        0,     -160,         31    \ Face 8
+ FACE        0,      -27,        0,         31    \ Face 9
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: HATB
+\       Type: Variable
+\   Category: Ship hangar
+\    Summary: Ship hangar group table
+\
+\ ------------------------------------------------------------------------------
+\
+\ This table contains groups of ships to show in the ship hangar. A group of
+\ ships is shown half the time (the other half shows a solo ship), and each of
+\ the four groups is equally likely.
+\
+\ The bytes for each ship in the group contain the following information:
+\
+\   Byte #0             Non-zero = Ship type to draw
+\                       0        = don't draw anything
+\
+\   Byte #1             Bits 0-7 = Ship's x_hi
+\                       Bit 0    = Ship's z_hi (1 if clear, or 2 if set)
+\
+\   Byte #2             Bits 0-7 = Ship's z_lo
+\                       Bit 0    = Ship's x_sign
+\
+\ The ship's y-coordinate is calculated in the has1 routine from the size of
+\ its targetable area. Ships of type 0 are not shown.
+\
+\ Note that ship numbers are for the ship hangar blueprints at XX21 in the
+\ docked code, rather than the full set of ships in the flight code. They are:
+\
+\   1 = Cargo canister
+\   2 = Shuttle
+\   3 = Transporter
+\   4 = Cobra Mk III
+\   5 = Python
+\   6 = Viper
+\   7 = Krait
+\
+\ There is one more ship blueprint in the docked code, for the Constrictor, but
+\ this is only used for showing the rotating ship in the mission 1 briefing. The
+\ Constrictor does not appear in the ship hangar.
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for ship hangar: ---------------->
+
+.HATB
+
+                        \ Hangar group for X = 0
+                        \
+                        \ Shuttle (left) and Transporter (right)
+
+ EQUB 2                 \ Ship type in the hangar = 2 = Shuttle
+ EQUB %01010100         \ x_hi = %01010100 = 84, z_hi   = 1     -> x = -84
+ EQUB %00111011         \ z_lo = %00111011 = 59, x_sign = 1        z = +315
+
+ EQUB 3                 \ Ship type in the hangar = 3 = Transporter
+ EQUB %10000010         \ x_hi = %10000010 = 130, z_hi   = 1    -> x = +130
+ EQUB %10110000         \ z_lo = %10110000 = 176, x_sign = 0       z = +432
+
+ EQUB 0                 \ No third ship
+ EQUB 0
+ EQUB 0
+
+                        \ Hangar group for X = 9
+                        \
+                        \ Three cargo canisters (left, far right and forward,
+                        \ right)
+
+ EQUB 1                 \ Ship type in the hangar = 1 = Cargo canister
+ EQUB %01010000         \ x_hi = %01010000 = 80, z_hi   = 1     -> x = -80
+ EQUB %00010001         \ z_lo = %00010001 = 17, x_sign = 1        z = +273
+
+ EQUB 1                 \ Ship type in the hangar = 1 = Cargo canister
+ EQUB %11010001         \ x_hi = %11010001 = 209, z_hi = 2      -> x = +209
+ EQUB %00101000         \ z_lo = %00101000 =  40, x_sign = 0       z = +552
+
+ EQUB 1                 \ Ship type in the hangar = 1 = Cargo canister
+ EQUB %01000000         \ x_hi = %01000000 = 64, z_hi   = 1     -> x = +64
+ EQUB %00000110         \ z_lo = %00000110 = 6,  x_sign = 0        z = +262
+
+                        \ Hangar group for X = 18
+                        \
+                        \ Transporter (right) and Cobra Mk III (left)
+
+ EQUB 3                 \ Ship type in the hangar = 3 = Transporter
+ EQUB %01100000         \ x_hi = %01100000 =  96, z_hi   = 1    -> x = +96
+ EQUB %10010000         \ z_lo = %10010000 = 144, x_sign = 0       z = +400
+
+ EQUB 4                 \ Ship type in the hangar = 4 = Cobra Mk III
+ EQUB %00010000         \ x_hi = %00010000 =  16, z_hi   = 1    -> x = -16
+ EQUB %11010001         \ z_lo = %11010001 = 209, x_sign = 1       z = +465
+
+ EQUB 0                 \ No third ship
+ EQUB 0
+ EQUB 0
+
+                        \ Hangar group for X = 27
+                        \
+                        \ Viper (right and forward) and Krait (left)
+
+ EQUB 6                 \ Ship type in the hangar = 6 = Viper
+ EQUB %01010001         \ x_hi = %01010001 =  81, z_hi  = 2     -> x = +81
+ EQUB %11111000         \ z_lo = %11111000 = 248, x_sign = 0       z = +760
+
+ EQUB 7                 \ Ship type in the hangar = 7 = Krait
+ EQUB %01100000         \ x_hi = %01100000 = 96,  z_hi   = 1    -> x = -96
+ EQUB %01110101         \ z_lo = %01110101 = 117, x_sign = 1       z = +373
+
+ EQUB 0                 \ No third ship
+ EQUB 0
+ EQUB 0
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: HALL
+\       Type: Subroutine
+\   Category: Ship hangar
+\    Summary: Draw the ships in the ship hangar, then draw the hangar
+\
+\ ------------------------------------------------------------------------------
+\
+\ Half the time this will draw one of the four pre-defined ship hangar groups in
+\ HATB, and half the time this will draw a solitary Sidewinder, Mamba, Krait or
+\ Adder on a random position. In all cases, the ships will be randomly spun
+\ around on the ground so they can face in any direction, and larger ships are
+\ drawn higher up off the ground than smaller ships.
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for ship hangar: ---------------->
+
+.HALL
+
+ JSR UNWISE             \ Call UNWISE to switch the main line-drawing routine
+                        \ between EOR and OR logic (in this case, switching it
+                        \ to OR logic so that it overwrites anything that's
+                        \ on-screen)
+
+ LDA #0                 \ Clear the top part of the screen, draw a border box,
+ JSR TT66               \ and set the current view type in QQ11 to 0 (space
+                        \ view)
+
+ JSR DORND              \ Set A and X to random numbers
+
+ BPL HA7                \ Jump to HA7 if A is positive (50% chance)
+
+ AND #3                 \ Reduce A to a random number in the range 0-3
+
+ STA T                  \ Set X = A * 8 + A
+ ASL A                  \       = 9 * A
+ ASL A                  \
+ ASL A                  \ so X is a random number, either 0, 9, 18 or 27
+ ADC T
+ TAX
+
+                        \ The following double loop calls the HAS1 routine three
+                        \ times to display three ships on screen. For each call,
+                        \ the values passed to HAS1 in XX15+2 to XX15 are taken
+                        \ from the HATB table, depending on the value in X, as
+                        \ follows:
+                        \
+                        \   * If X = 0,  pass bytes #0 to #2 of HATB to HAS1
+                        \                then bytes #3 to #5
+                        \                then bytes #6 to #8
+                        \
+                        \   * If X = 9,  pass bytes  #9 to #11 of HATB to HAS1
+                        \                then bytes #12 to #14
+                        \                then bytes #15 to #17
+                        \
+                        \   * If X = 18, pass bytes #18 to #20 of HATB to HAS1
+                        \                then bytes #21 to #23
+                        \                then bytes #24 to #26
+                        \
+                        \   * If X = 27, pass bytes #27 to #29 of HATB to HAS1
+                        \                then bytes #30 to #32
+                        \                then bytes #33 to #35
+                        \
+                        \ Note that the values are passed in reverse, so for the
+                        \ first call, for example, where we pass bytes #0 to #2
+                        \ of HATB to HAS1, we call HAS1 with:
+                        \
+                        \   XX15   = HATB+2
+                        \   XX15+1 = HATB+1
+                        \   XX15+2 = HATB
+
+ LDY #3                 \ Set CNT2 = 3 to act as an outer loop counter going
+ STY CNT2               \ from 3 to 1, so the HAL8 loop is run 3 times
+
+.HAL8
+
+ LDY #2                 \ Set Y = 2 to act as an inner loop counter going from
+                        \ 2 to 0
+
+.HAL9
+
+ LDA HATB,X             \ Copy the X-th byte of HATB to the Y-th byte of XX15,
+ STA XX15,Y             \ as described above
+
+ INX                    \ Increment X to point to the next byte in HATB
+
+ DEY                    \ Decrement Y to point to the previous byte in XX15
+
+ BPL HAL9               \ Loop back to copy the next byte until we have copied
+                        \ three of them (i.e. Y was 3 before the DEY)
+
+ TXA                    \ Store X on the stack so we can retrieve it after the
+ PHA                    \ call to HAS1 (as it contains the index of the next
+                        \ byte in HATB
+
+ JSR HAS1               \ Call HAS1 to draw this ship in the hangar
+
+ PLA                    \ Restore the value of X, so X points to the next byte
+ TAX                    \ in HATB after the three bytes we copied into XX15
+
+ DEC CNT2               \ Decrement the outer loop counter in CNT2
+
+ BNE HAL8               \ Loop back to HAL8 to do it 3 times, once for each ship
+                        \ in the HATB table
+
+ LDY #128               \ Set Y = 128 to send as byte #2 of the parameter block
+                        \ to the OSWORD 248 command below, to tell the I/O
+                        \ processor that there are multiple ships in the hangar
+
+ BNE HA9                \ Jump to HA9 to display the ship hangar (this BNE is
+                        \ effectively a JMP as Y is never zero)
+
+.HA7
+
+                        \ If we get here, A is a positive random number in the
+                        \ range 0-127
+
+ LSR A                  \ Set XX15+1 = A / 2 (random number 0-63)
+ STA XX15+1
+
+ JSR DORND              \ Set XX15 = random number 0-255
+ STA XX15
+
+ JSR DORND              \ Set XX15+2 = random number 0-6
+ AND #7                 \
+ CMP #7                 \ which is either 0 (no ships in the hangar) or one of
+ BNE P%+4               \ the first 6 ship types in the ship hangar blueprints
+ AND #3                 \ table, i.e. a cargo canister, Shuttle, Transporter,
+ STA XX15+2             \ Cobra Mk III, Viper or Krait
+
+ JSR HAS1               \ Call HAS1 to draw this ship in the hangar, with the
+                        \ following properties:
+                        \
+                        \   * Random x-coordinate from -63 to +63
+                        \
+                        \   * Randomly chosen cargo canister, Shuttle,
+                        \     Transporter, Cobra Mk III, Python, Viper or Krait
+                        \
+                        \   * Random z-coordinate from +256 to +639
+
+ LDY #0                 \ Set Y = 0 to use in the following instruction, to tell
+                        \ the hangar-drawing routine that there is just one ship
+                        \ in the hangar, so it knows not to draw between the
+                        \ ships
+
+.HA9
+
+ STY YSAV               \ Store Y in YSAV to specify whether there are multiple
+                        \ ships in the hangar
+
+ JSR UNWISE             \ Call UNWISE to switch the main line-drawing routine
+                        \ between EOR and OR logic (in this case, switching it
+                        \ back to EOR logic so that we can erase anything we
+                        \ draw on-screen)
+
+                        \ Fall through into HANGER to draw the hangar background
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: HANGER
+\       Type: Subroutine
+\   Category: Ship hangar
+\    Summary: Display the ship hangar
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine is called after the ships in the hangar have been drawn, so all
+\ it has to do is draw the hangar's background.
+\
+\ The hangar background is made up of two parts:
+\
+\   * The hangar floor consists of 11 screen-wide horizontal lines, which start
+\     out quite spaced out near the bottom of the screen, and bunch ever closer
+\     together as the eye moves up towards the horizon, where they merge to give
+\     a sense of perspective
+\
+\   * The back wall of the hangar consists of 15 equally spaced vertical lines
+\     that join the horizon to the top of the screen
+\
+\ The ships in the hangar have already been drawn by this point, so the lines
+\ are drawn so they don't overlap anything that's already there, which makes
+\ them look like they are behind and below the ships. This is achieved by
+\ drawing the lines in from the screen edges until they bump into something
+\ already on-screen. For the horizontal lines, when there are multiple ships in
+\ the hangar, this also means drawing lines between the ships, as well as in
+\ from each side.
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for ship hangar: ---------------->
+
+.HANGER
+
+                        \ We start by drawing the floor
+
+ LDX #2                 \ We start with a loop using a counter in XSAV that goes
+                        \ from 2 to 12, one for each of the 11 horizontal lines
+                        \ in the floor, so set the initial value in X
+
+.HAL1
+
+ STX XSAV               \ Store the loop counter in XSAV
+
+ LDA #130               \ Set A = 130
+
+ LDX XSAV               \ Retrieve the loop counter from XSAV
+
+ STX Q                  \ Set Q to the value of the loop counter
+
+ JSR DVID4              \ Calculate the following:
+                        \
+                        \   (P R) = 256 * A / Q
+                        \         = 256 * 130 / Q
+                        \
+                        \ so P = 130 / Q, and as the counter Q goes from 2 to
+                        \ 12, P goes 65, 43, 32 ... 13, 11, 10, with the
+                        \ difference between two consecutive numbers getting
+                        \ smaller as P gets smaller
+                        \
+                        \ We can use this value as a y-coordinate to draw a set
+                        \ of horizontal lines, spaced out near the bottom of the
+                        \ screen (high value of P, high y-coordinate, lower down
+                        \ the screen) and bunching up towards the horizon (low
+                        \ value of P, low y-coordinate, higher up the screen)
+
+ LDA P                  \ Set Y = #Y + P
+ CLC                    \
+ ADC #Y                 \ where #Y is the y-coordinate of the centre of the
+ TAY                    \ screen, so Y is now the horizontal pixel row of the
+                        \ line we want to draw to display the hangar floor
+
+ LDA P                  \ Set the A to the y-coordinate mod 8, which determines
+ AND #7                 \ the pixel row in the character block
+
+ JSR GetRowAddress      \ Set SC(1 0) to the address in screen memory of the
+                        \ start of the line
+
+ LDY #0                 \ Set Y = 0 so the call to HAS2 starts drawing the line
+                        \ in the first byte of the screen row, at the left edge
+                        \ of the screen
+
+ JSR HAS2               \ Draw a horizontal line from the left edge of the
+                        \ screen, going right until we bump into something
+                        \ already on-screen, at which point stop drawing
+
+ LDA #%00000100         \ Now to draw the same line but from the right edge of
+                        \ the screen, so set a pixel mask in A to check the
+                        \ sixth pixel of the last byte, so we skip the two-pixel
+                        \ screen border at the right edge of the screen
+
+ LDY #248               \ Set Y = 248 so the call to HAS3 starts drawing the
+                        \ line in the last byte of the screen row, at the right
+                        \ edge of the screen
+
+ JSR HAS3               \ Draw a horizontal line from the right edge of the
+                        \ screen, going left until we bump into something
+                        \ already on-screen, at which point stop drawing
+
+ LDY YSAV               \ Fetch the value of YSAV, which gets set to 0 in the
+                        \ HALL routine above if there is only one ship
+
+ BEQ HA2                \ If YSAV is zero, jump to HA2 to skip the following
+                        \ as there is only one ship in the hangar
+
+                        \ If we get here then there are multiple ships in the
+                        \ hangar, so we also need to draw the horizontal line in
+                        \ the gap between the ships
+
+ JSR HAS2               \ Call HAS2 to draw a line to the right, starting with
+                        \ the third pixel of the pixel row at screen address
+                        \ SC(1 0), so this draws a line from just after the
+                        \ halfway point across the right half of the screen,
+                        \ going right until we bump into something already
+                        \ on-screen, at which point it stops drawing
+
+ LDY #128               \ We now draw the line from the centre of the screen
+                        \ to the left. SC(1 0) points to the start address of
+                        \ the screen row, so we set Y to 128 so the call to
+                        \ HAS3 starts drawing from halfway along the row (i.e.
+                        \ from the centre of the screen)
+
+ LDA #%01000000         \ We want to start drawing from the second pixel, to
+                        \ avoid the border, so we set a pixel mask accordingly
+
+ JSR HAS3               \ Call HAS3, which draws a line from the halfway point
+                        \ across the left half of the screen, going left until
+                        \ we bump into something already on-screen, at which
+                        \ point it stops drawing
+
+.HA2
+
+                        \ We have finished threading our horizontal line behind
+                        \ the ships already on-screen, so now for the next line
+
+ LDX XSAV               \ Fetch the loop counter from XSAV and increment it
+ INX
+
+ CPX #13                \ If the loop counter is less than 13 (i.e. 2 to 12)
+ BCC HAL1               \ then loop back to HAL1 to draw the next line
+
+                        \ The floor is done, so now we move on to the back wall
+
+ LDA #16                \ We want to draw 15 vertical lines, one every 16 pixels
+                        \ across the screen, with the first at x-coordinate 16,
+                        \ so set this in A to act as the x-coordinate of each
+                        \ line as we work our way through them from left to
+                        \ right, incrementing by 16 for each new line
+
+.HAL6
+
+ LDX ylookuph           \ Set the high byte of SC(1 0) to the high byte of the
+ STX SCH                \ first line at the top of the screen
+
+ STA XSAV               \ Store this value in XSAV, so we can retrieve it later
+
+ AND #%11111000         \ Each character block contains 8 pixel rows, so to get
+                        \ the address of the first byte in the character block
+                        \ that we need to draw into, as an offset from the start
+                        \ of the row, we clear bits 0-2
+
+ LDY #0                 \ Set SC(1 0) to the address in screen memory of the
+ JSR GetRowAddress      \ start of the line on pixel row 0
+
+ LDX #%10000000         \ Set a mask in X to the first pixel the eight-pixel
+                        \ byte
+
+ LDY #1                 \ We are going to start drawing the line from the second
+                        \ pixel from the top (to avoid drawing on the one-pixel
+                        \ border), so set Y to 1 to point to the second row in
+                        \ the first character block
+
+.HAL7
+
+ TXA                    \ Copy the pixel mask to A
+
+ AND (SC),Y             \ If the pixel we want to draw is non-zero (using A as a
+ BNE HA6                \ mask), then this means it already contains something,
+                        \ so jump to HA6 to stop drawing this line
+
+ TXA                    \ Copy the pixel mask to A again
+
+ ORA (SC),Y             \ OR the byte with the current contents of screen
+                        \ memory, so the pixel we want is set
+
+ STA (SC),Y             \ Store the updated pixel in screen memory
+
+ INY                    \ Increment Y to point to the next row in the character
+                        \ block, i.e. the next pixel down
+
+ CPY #8                 \ Loop back to HAL7 to draw this next pixel until we
+ BNE HAL7               \ have drawn all 8 in the character block
+
+ LDA SC                 \ Point SC(1 0) to the next 320-pixel line, i.e. the
+ CLC                    \ next character row
+ ADC #&40
+ STA SC
+ LDA SC+1
+ ADC #&1
+ STA SC+1
+
+ LDY #0                 \ Set Y = 0 to point to the first row in this character
+                        \ block
+
+ BEQ HAL7               \ Loop back up to HAL7 to keep drawing the line (this
+                        \ BEQ is effectively a JMP as Y is always zero)
+
+.HA6
+
+ LDA XSAV               \ Fetch the x-coordinate of the line we just drew from
+ CLC                    \ XSAV into A, and add 16 so that A contains the
+ ADC #16                \ x-coordinate of the next line to draw
+
+ BNE HAL6               \ Loop back to HAL6 until we have run through the loop
+                        \ 60 times, by which point we are most definitely done
+
+.HA1
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: HAS1
+\       Type: Subroutine
+\   Category: Ship hangar
+\    Summary: Draw a ship in the ship hangar
+\
+\ ------------------------------------------------------------------------------
+\
+\ The ship's position within the hangar is determined by the arguments and the
+\ size of the ship's targetable area, as follows:
+\
+\   * The x-coordinate is (x_sign x_hi 0) from the arguments, so the ship can be
+\     left of centre or right of centre
+\
+\   * The y-coordinate is negative and is lower down the screen for smaller
+\     ships, so smaller ships are drawn closer to the ground (because they are)
+\
+\   * The z-coordinate is positive, with both z_hi (which is 1 or 2) and z_lo
+\     coming from the arguments
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   XX15                Bits 0-7 = Ship's z_lo
+\                       Bit 0    = Ship's x_sign
+\
+\   XX15+1              Bits 0-7 = Ship's x_hi
+\                       Bit 0    = Ship's z_hi (1 if clear, or 2 if set)
+\
+\   XX15+2              Non-zero = Ship type to draw
+\                       0        = Don't draw anything
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for ship hangar: ---------------->
+
+.HAS1
+
+ JSR ZINF               \ Call ZINF to reset the INWK ship workspace and reset
+                        \ the orientation vectors, with nosev pointing out of
+                        \ the screen, so this puts the ship flat on the
+                        \ horizontal deck (the y = 0 plane) with its nose
+                        \ pointing towards us
+
+ LDA XX15               \ Set z_lo = XX15
+ STA INWK+6
+
+ LSR A                  \ Set the sign bit of x_sign to bit 0 of A
+ ROR INWK+2
+
+ LDA XX15+1             \ Set x_hi = XX15+1
+ STA INWK
+
+ LSR A                  \ Set z_hi = 1 + bit 0 of XX15+1
+ LDA #1
+ ADC #0
+ STA INWK+7
+
+ LDA #%10000000         \ Set bit 7 of y_sign, so y is negative
+ STA INWK+5
+
+ STA RAT2               \ Set RAT2 = %10000000, so the yaw calls in HAL5 below
+                        \ are negative
+
+ LDA #&0B               \ Set the ship line heap pointer in INWK(34 33) to point
+ STA INWK+34            \ to &0B00
+
+ JSR DORND              \ We now perform a random number of small angle (3.6
+ STA XSAV               \ degree) rotations to spin the ship on the deck while
+                        \ keeping it flat on the deck (a bit like spinning a
+                        \ bottle), so we set XSAV to a random number between 0
+                        \ and 255 for the number of small yaw rotations to
+                        \ perform, so the ship could be pointing in any
+                        \ direction by the time we're done
+
+.HAL5
+
+ LDX #21                \ Rotate (sidev_x, nosev_x) by a small angle (yaw)
+ LDY #9
+ JSR MVS5
+
+ LDX #23                \ Rotate (sidev_y, nosev_y) by a small angle (yaw)
+ LDY #11
+ JSR MVS5
+
+ LDX #25                \ Rotate (sidev_z, nosev_z) by a small angle (yaw)
+ LDY #13
+ JSR MVS5
+
+ DEC XSAV               \ Decrement the yaw counter in XSAV
+
+ BNE HAL5               \ Loop back to yaw a little more until we have yawed
+                        \ by the number of times in XSAV
+
+ LDY XX15+2             \ Set Y = XX15+2, the ship type of the ship we need to
+                        \ draw
+
+ BEQ HA1                \ If Y = 0, return from the subroutine (as HA1 contains
+                        \ an RTS)
+
+                        \ We now work our way through the ship blueprints table
+                        \ for the hangar, counting valid blueprints until we
+                        \ have found the Y-th valid blueprint (we do this as the
+                        \ hangar blueprint table at XX21 is not fully populated,
+                        \ so the Y-th ship is not necessarily at position Y)
+
+ LDX #4                 \ We can start looking from ship blueprint 3, because we
+                        \ don't show ship 1 (missile) or ship 2 (space station)
+                        \ in the hangar. Setting X to 4, which then gets
+                        \ incremented to 6, will start us at XX21(5 4), which is
+                        \ the address of ship blueprint 3 (escape pod)
+
+.hloop
+
+ INX                    \ Increment X by 2 to point to the next blueprint in the
+ INX                    \ table
+
+ LDA XX21-2,X           \ Set XX0(1 0) to the X-th address in the ship blueprint
+ STA XX0                \ address lookup table at XX21, so XX0(1 0) now points
+ LDA XX21-1,X           \ to the blueprint for the ship we need to draw
+ STA XX0+1
+
+ BEQ hloop              \ If the high byte of the blueprint address is 0, then
+                        \ the blueprint for this ship is not available, so jump
+                        \ back to hloop to try the next ship along in the table
+
+ DEY                    \ We have found a valid blueprint, so decrement the ship
+                        \ number that we are looking for in Y
+
+ BNE hloop              \ If Y is not yet zero, we still haven't found the Y-th
+                        \ valid blueprint, so loop back to hloop to try the next
+                        \ ship along in the table
+
+ LDY #1                 \ Set Q = ship byte #1
+ LDA (XX0),Y
+ STA Q
+
+ INY                    \ Set R = ship byte #2
+ LDA (XX0),Y            \
+ STA R                  \ so (R Q) contains the ship's targetable area, which is
+                        \ a square number
+
+ JSR LL5                \ Set Q = SQRT(R Q)
+
+ LDA #100               \ Set y_lo = (100 - Q) / 2
+ SBC Q                  \
+ LSR A                  \ so the bigger the ship's targetable area, the smaller
+ STA INWK+3             \ the magnitude of the y-coordinate, so because we set
+                        \ y_sign to be negative above, this means smaller ships
+                        \ are drawn lower down, i.e. closer to the ground, while
+                        \ larger ships are drawn higher up, as you would expect
+
+ JSR TIDY               \ Call TIDY to tidy up the orientation vectors, to
+                        \ prevent the ship from getting elongated and out of
+                        \ shape due to the imprecise nature of trigonometry
+                        \ in assembly language
+
+ JMP LL9                \ Jump to LL9 to display the ship and return from the
+                        \ subroutine using a tail call
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: HAS2
+\       Type: Subroutine
+\   Category: Ship hangar
+\    Summary: Draw a hangar background line from left to right
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine draws a line to the right, starting with the third pixel of the
+\ pixel row at screen address SC(1 0), and aborting if we bump into something
+\ that's already on-screen.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   HA3                 Contains an RTS
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for ship hangar: ---------------->
+
+.HAS2
+
+ LDA #%00100000         \ Set A to the pixel pattern for a mode 4 character row
+                        \ byte with the third pixel set, so we start drawing the
+                        \ horizontal line just to the right of the two-pixel
+                        \ border along the edge of the screen
+
+.HAL2
+
+ TAX                    \ Store A in X so we can retrieve it after the following
+                        \ check and again after updating screen memory
+
+ AND (SC),Y             \ If the pixel we want to draw is non-zero (using A as a
+ BNE HA3                \ mask), then this means it already contains something,
+                        \ so we stop drawing because we have run into something
+                        \ that's already on-screen, and return from the
+                        \ subroutine (as HA3 contains an RTS)
+
+ TXA                    \ Retrieve the value of A we stored above, so A now
+                        \ contains the pixel mask again
+
+ ORA (SC),Y             \ OR the byte with the current contents of screen
+                        \ memory, so the pixel we want is set to red (because
+                        \ we know the bits are already 0 from the above test)
+
+ STA (SC),Y             \ Store the updated pixel in screen memory
+
+ TXA                    \ Retrieve the value of A we stored above, so A now
+                        \ contains the pixel mask again
+
+ LSR A                  \ Shift A to the right to move on to the next pixel
+
+ BCC HAL2               \ If bit 0 before the shift was clear (i.e. we didn't
+                        \ just do the fourth pixel in this block), loop back to
+                        \ HAL2 to check and draw the next pixel
+
+ TYA                    \ Set Y = Y + 8 (as we know the C flag is set) to point
+ ADC #7                 \ to the next character block along
+ TAY
+
+ LDA #%10000000         \ Reset the pixel mask in A to the first pixel in the
+                        \ new eight-pixel character block
+
+ BCC HAL2               \ If the above addition didn't overflow, jump back to
+                        \ HAL2 to keep drawing the line in the next character
+                        \ block
+
+.HA3
+
+ RTS                    \ The addition overflowed, so we have reached the last
+                        \ character block in this page of memory, which is the
+                        \ end of the line, so we return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: HAS3
+\       Type: Subroutine
+\   Category: Ship hangar
+\    Summary: Draw a hangar background line from right to left
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine draws a line to the left, starting with the pixel mask in A at
+\ screen address SC(1 0) and character block offset Y, and aborting if we bump
+\ into something that's already on-screen.
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for ship hangar: ---------------->
+
+.HAS3
+
+ TAX                    \ Store A in X so we can retrieve it after the following
+                        \ check and again after updating screen memory
+
+ AND (SC),Y             \ If the pixel we want to draw is non-zero (using A as a
+ BNE HA3                \ mask), then this means it already contains something,
+                        \ so we stop drawing because we have run into something
+                        \ that's already on-screen, and return from the
+                        \ subroutine (as HA3 contains an RTS)
+
+ TXA                    \ Retrieve the value of A we stored above, so A now
+                        \ contains the pixel mask again
+
+ ORA (SC),Y             \ OR the byte with the current contents of screen
+                        \ memory, so the pixel we want is set to red (because
+                        \ we know the bits are already 0 from the above test)
+
+ STA (SC),Y             \ Store the updated pixel in screen memory
+
+ TXA                    \ Retrieve the value of A we stored above, so A now
+                        \ contains the pixel mask again
+
+ ASL A                  \ Shift A to the left to move to the next pixel to the
+                        \ left
+
+ BCC HAS3               \ If bit 7 before the shift was clear (i.e. we didn't
+                        \ just do the first pixel in this block), loop back to
+                        \ HAS3 to check and draw the next pixel to the left
+
+ TYA                    \ Set Y = Y - 8 (as we know the C flag is set) to point
+ SBC #8                 \ to the next character block to the left
+ TAY
+
+ LDA #%00000001         \ Set a mask in A to the last pixel in the eight-pixel
+                        \ byte
+
+ BCS HAS3               \ If the above subtraction didn't underflow, jump back
+                        \ to HAS3 to keep drawing the line in the next character
+                        \ block to the left
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: GetRowAddress
+\       Type: Subroutine
+\   Category: Ship hangar
+\    Summary: Get the address in screen memory of the start of a line
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for ship hangar: ---------------->
+
+.GetRowAddress
+
+ CLC                    \ The ylookup table lets us look up the 16-bit address
+ ADC ylookupl,Y         \ of the start of a character row containing a specific
+ STA SC                 \ pixel, so this fetches the address for the start of
+ LDA ylookuph,Y         \ the character row containing the y-coordinate in Y,
+ ADC #0                 \ and adds it to the row offset we just calculated in A
+ STA SC+1
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\ Save D.MOQ.bin
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for ship hangar: ---------------->
+
+ PRINT "D.MOQ"
+ PRINT "Assembled at ", ~XX21
+ PRINT "Ends at ", ~P%
+ PRINT "Code size is ", ~(P% - XX21)
+ PRINT "Execute at ", XX21
+ PRINT "Reload at ", XX21
+
+ PRINT "D.MOQ ", XX21, " ", ~P%, " ", ~XX21, " ", ~XX21
+ SAVE "3-assembled-output/D.MOQ.bin", XX21, P%, XX21
+
+                        \ --- End of added code ------------------------------->
 
 \ ******************************************************************************
 \

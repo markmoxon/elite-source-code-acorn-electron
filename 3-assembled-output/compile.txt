@@ -6526,7 +6526,7 @@ Saving file '3-assembled-output/ELTE.bin'
      369C   A2 03      LDX #&03
      369E   86 2C      STX &2C
      36A0   20 66 39   JSR &3966
-     36A3   A9 06      LDA #&06
+     36A3   A9 10      LDA #&10
      36A5   20 1E 4C   JSR &4C1E
      36A8   A2 0B      LDX #&0B
      36AA   A9 06      LDA #&06
@@ -17557,67 +17557,86 @@ End macro ECHR
      4C3A   85 2A      STA &2A
      4C3C   8D 19 86   STA &8619
      4C3F   85 2F      STA &2F
-     4C41   AD 19 03   LDA &0319
-     4C44   29 03      AND #&03
-     4C46   D0 0E      BNE &4C56
-     4C48   AD 61 03   LDA &0361
-     4C4B   F0 62      BEQ &4CAF
-     4C4D   AD 28 03   LDA &0328
-     4C50   4A         LSR A
-     4C51   D0 5C      BNE &4CAF
-     4C53   4C AF 22   JMP &22AF
+     4C41   A9 10      LDA #&10
+     4C43   20 1E 4C   JSR &4C1E
+     4C46   20 87 56   JSR &5687
+     4C49   A0 2C      LDY #&2C
+     4C4B   20 7E 24   JSR &247E
+     4C4E   AD 19 03   LDA &0319
+     4C51   29 03      AND #&03
+     4C53   D0 0E      BNE &4C63
+     4C55   AD 61 03   LDA &0361
+     4C58   F0 62      BEQ &4CBC
+     4C5A   AD 28 03   LDA &0328
+     4C5D   4A         LSR A
+     4C5E   D0 5C      BNE &4CBC
+     4C60   4C AF 22   JMP &22AF
 .EN1
-     4C56   C9 03      CMP #&03
-     4C58   D0 03      BNE &4C5D
-     4C5A   4C 9B 22   JMP &229B
+     4C63   C9 03      CMP #&03
+     4C65   D0 03      BNE &4C6A
+     4C67   4C 9B 22   JMP &229B
 .EN2
-     4C5D   AD 19 03   LDA &0319
-     4C60   29 0F      AND #&0F
-     4C62   C9 02      CMP #&02
-     4C64   D0 11      BNE &4C77
-     4C66   AD 61 03   LDA &0361
-     4C69   C9 05      CMP #&05
-     4C6B   90 42      BCC &4CAF
-     4C6D   AD 28 03   LDA &0328
-     4C70   C9 02      CMP #&02
-     4C72   D0 3B      BNE &4CAF
-     4C74   4C 69 22   JMP &2269
+     4C6A   AD 19 03   LDA &0319
+     4C6D   29 0F      AND #&0F
+     4C6F   C9 02      CMP #&02
+     4C71   D0 11      BNE &4C84
+     4C73   AD 61 03   LDA &0361
+     4C76   C9 05      CMP #&05
+     4C78   90 42      BCC &4CBC
+     4C7A   AD 28 03   LDA &0328
+     4C7D   C9 02      CMP #&02
+     4C7F   D0 3B      BNE &4CBC
+     4C81   4C 69 22   JMP &2269
 .EN3
-     4C77   C9 06      CMP #&06
-     4C79   D0 18      BNE &4C93
-     4C7B   AD 28 03   LDA &0328
-     4C7E   C9 02      CMP #&02
-     4C80   D0 2D      BNE &4CAF
-     4C82   AD 1A 03   LDA &031A
-     4C85   C9 D7      CMP #&D7
-     4C87   D0 26      BNE &4CAF
-     4C89   AD 1B 03   LDA &031B
-     4C8C   C9 54      CMP #&54
-     4C8E   D0 1F      BNE &4CAF
-     4C90   4C 79 22   JMP &2279
+     4C84   C9 06      CMP #&06
+     4C86   D0 18      BNE &4CA0
+     4C88   AD 28 03   LDA &0328
+     4C8B   C9 02      CMP #&02
+     4C8D   D0 2D      BNE &4CBC
+     4C8F   AD 1A 03   LDA &031A
+     4C92   C9 D7      CMP #&D7
+     4C94   D0 26      BNE &4CBC
+     4C96   AD 1B 03   LDA &031B
+     4C99   C9 54      CMP #&54
+     4C9B   D0 1F      BNE &4CBC
+     4C9D   4C 79 22   JMP &2279
 .EN5
-     4C93   C9 0A      CMP #&0A
-     4C95   D0 18      BNE &4CAF
-     4C97   AD 28 03   LDA &0328
-     4C9A   C9 02      CMP #&02
-     4C9C   D0 11      BNE &4CAF
-     4C9E   AD 1A 03   LDA &031A
-     4CA1   C9 3F      CMP #&3F
-     4CA3   D0 0A      BNE &4CAF
-     4CA5   AD 1B 03   LDA &031B
-     4CA8   C9 48      CMP #&48
-     4CAA   D0 03      BNE &4CAF
-     4CAC   4C 87 22   JMP &2287
+     4CA0   C9 0A      CMP #&0A
+     4CA2   D0 18      BNE &4CBC
+     4CA4   AD 28 03   LDA &0328
+     4CA7   C9 02      CMP #&02
+     4CA9   D0 11      BNE &4CBC
+     4CAB   AD 1A 03   LDA &031A
+     4CAE   C9 3F      CMP #&3F
+     4CB0   D0 0A      BNE &4CBC
+     4CB2   AD 1B 03   LDA &031B
+     4CB5   C9 48      CMP #&48
+     4CB7   D0 03      BNE &4CBC
+     4CB9   4C 87 22   JMP &2287
 .EN4
-     4CAF   4C CC 36   JMP &36CC
-Free space in MAIN = 78  bytes
+     4CBC   4C CC 36   JMP &36CC
+.UNWISE
+     4CBF   AD B5 91   LDA &91B5
+     4CC2   49 40      EOR #&40
+     4CC4   8D B5 91   STA &91B5
+     4CC7   AD EF 91   LDA &91EF
+     4CCA   49 40      EOR #&40
+     4CCC   8D EF 91   STA &91EF
+     4CCF   AD 92 92   LDA &9292
+     4CD2   49 40      EOR #&40
+     4CD4   8D 92 92   STA &9292
+     4CD7   AD CD 92   LDA &92CD
+     4CDA   49 40      EOR #&40
+     4CDC   8D CD 92   STA &92CD
+     4CDF   60         RTS
+Free space in MAIN = 32  bytes
 ELITE G
 Assembled at &3E2A 
-Ends at &4CB2 
-Code size is &E88 
+Ends at &4CE0 
+Code size is &EB6 
 Execute at &1D00 
 Reload at &3E2A 
-S.ELTG &3E2A  &4CB2  &1D00  &3E2A 
+S.ELTG &3E2A  &4CE0  &1D00  &3E2A 
 Saving file '3-assembled-output/ELTG.bin'
 .SHIP_MISSILE
      4D00   00
@@ -17983,6 +18002,3210 @@ Execute at &1D00
 Reload at &4D00 
 S.SHIPS &4D00  &4DFE  &1D00  &4D00 
 Saving file '3-assembled-output/SHIPS.bin'
+     4E00   00 4D
+     4E02   00 00
+     4E04   00 00
+     4E06   00 00
+     4E08   5D 4E
+     4E0A   00 00
+     4E0C   00 00
+     4E0E   00 00
+     4E10   05 4F
+     4E12   37 50
+     4E14   19 52
+     4E16   00 00
+     4E18   00 00
+     4E1A   00 00
+     4E1C   00 00
+     4E1E   A1 53
+     4E20   00 00
+     4E22   00 00
+     4E24   7B 54
+     4E26   00 00
+     4E28   00 00
+     4E2A   00 00
+     4E2C   00 00
+     4E2E   00 00
+     4E30   00 00
+     4E32   00 00
+     4E34   00 00
+     4E36   00 00
+     4E38   00 00
+     4E3A   00 00
+     4E3C   61 55
+     4E3E   00
+     4E3F   00
+     4E40   00
+     4E41   00
+     4E42   00
+     4E43   00
+     4E44   00
+     4E45   00
+     4E46   21
+     4E47   61
+     4E48   A0
+     4E49   00
+     4E4A   00
+     4E4B   00
+     4E4C   00
+     4E4D   C2
+     4E4E   00
+     4E4F   00
+     4E50   8C
+     4E51   00
+     4E52   00
+     4E53   00
+     4E54   00
+     4E55   00
+     4E56   00
+     4E57   00
+     4E58   00
+     4E59   00
+     4E5A   00
+     4E5B   00
+     4E5C   04
+.SHIP_CANISTER
+     4E5D   00
+     4E5E   90 01
+     4E60   50
+     4E61   8C
+     4E62   31
+     4E63   00
+     4E64   12
+     4E65   3C
+     4E66   0F
+     4E67   00 00
+     4E69   1C
+     4E6A   0C
+     4E6B   11
+     4E6C   0F
+     4E6D   00
+     4E6E   00
+     4E6F   02
+     4E70   00
+.SHIP_CANISTER_VERTICES
+Macro VERTEX:
+     4E71   18
+     4E72   10
+     4E73   00
+     4E74   1F
+     4E75   10
+     4E76   55
+End macro VERTEX
+Macro VERTEX:
+     4E77   18
+     4E78   05
+     4E79   0F
+     4E7A   1F
+     4E7B   10
+     4E7C   22
+End macro VERTEX
+Macro VERTEX:
+     4E7D   18
+     4E7E   0D
+     4E7F   09
+     4E80   5F
+     4E81   20
+     4E82   33
+End macro VERTEX
+Macro VERTEX:
+     4E83   18
+     4E84   0D
+     4E85   09
+     4E86   7F
+     4E87   30
+     4E88   44
+End macro VERTEX
+Macro VERTEX:
+     4E89   18
+     4E8A   05
+     4E8B   0F
+     4E8C   3F
+     4E8D   40
+     4E8E   55
+End macro VERTEX
+Macro VERTEX:
+     4E8F   18
+     4E90   10
+     4E91   00
+     4E92   9F
+     4E93   51
+     4E94   66
+End macro VERTEX
+Macro VERTEX:
+     4E95   18
+     4E96   05
+     4E97   0F
+     4E98   9F
+     4E99   21
+     4E9A   66
+End macro VERTEX
+Macro VERTEX:
+     4E9B   18
+     4E9C   0D
+     4E9D   09
+     4E9E   DF
+     4E9F   32
+     4EA0   66
+End macro VERTEX
+Macro VERTEX:
+     4EA1   18
+     4EA2   0D
+     4EA3   09
+     4EA4   FF
+     4EA5   43
+     4EA6   66
+End macro VERTEX
+Macro VERTEX:
+     4EA7   18
+     4EA8   05
+     4EA9   0F
+     4EAA   BF
+     4EAB   54
+     4EAC   66
+End macro VERTEX
+.SHIP_CANISTER_EDGES
+Macro EDGE:
+     4EAD   1F
+     4EAE   10
+     4EAF   00
+     4EB0   04
+End macro EDGE
+Macro EDGE:
+     4EB1   1F
+     4EB2   20
+     4EB3   04
+     4EB4   08
+End macro EDGE
+Macro EDGE:
+     4EB5   1F
+     4EB6   30
+     4EB7   08
+     4EB8   0C
+End macro EDGE
+Macro EDGE:
+     4EB9   1F
+     4EBA   40
+     4EBB   0C
+     4EBC   10
+End macro EDGE
+Macro EDGE:
+     4EBD   1F
+     4EBE   50
+     4EBF   00
+     4EC0   10
+End macro EDGE
+Macro EDGE:
+     4EC1   1F
+     4EC2   51
+     4EC3   00
+     4EC4   14
+End macro EDGE
+Macro EDGE:
+     4EC5   1F
+     4EC6   21
+     4EC7   04
+     4EC8   18
+End macro EDGE
+Macro EDGE:
+     4EC9   1F
+     4ECA   32
+     4ECB   08
+     4ECC   1C
+End macro EDGE
+Macro EDGE:
+     4ECD   1F
+     4ECE   43
+     4ECF   0C
+     4ED0   20
+End macro EDGE
+Macro EDGE:
+     4ED1   1F
+     4ED2   54
+     4ED3   10
+     4ED4   24
+End macro EDGE
+Macro EDGE:
+     4ED5   1F
+     4ED6   61
+     4ED7   14
+     4ED8   18
+End macro EDGE
+Macro EDGE:
+     4ED9   1F
+     4EDA   62
+     4EDB   18
+     4EDC   1C
+End macro EDGE
+Macro EDGE:
+     4EDD   1F
+     4EDE   63
+     4EDF   1C
+     4EE0   20
+End macro EDGE
+Macro EDGE:
+     4EE1   1F
+     4EE2   64
+     4EE3   20
+     4EE4   24
+End macro EDGE
+Macro EDGE:
+     4EE5   1F
+     4EE6   65
+     4EE7   24
+     4EE8   14
+End macro EDGE
+.SHIP_CANISTER_FACES
+Macro FACE:
+     4EE9   1F
+     4EEA   60
+     4EEB   00
+     4EEC   00
+End macro FACE
+Macro FACE:
+     4EED   1F
+     4EEE   00
+     4EEF   29
+     4EF0   1E
+End macro FACE
+Macro FACE:
+     4EF1   5F
+     4EF2   00
+     4EF3   12
+     4EF4   30
+End macro FACE
+Macro FACE:
+     4EF5   5F
+     4EF6   00
+     4EF7   33
+     4EF8   00
+End macro FACE
+Macro FACE:
+     4EF9   7F
+     4EFA   00
+     4EFB   12
+     4EFC   30
+End macro FACE
+Macro FACE:
+     4EFD   3F
+     4EFE   00
+     4EFF   29
+     4F00   1E
+End macro FACE
+Macro FACE:
+     4F01   9F
+     4F02   60
+     4F03   00
+     4F04   00
+End macro FACE
+.SHIP_SHUTTLE
+     4F05   0F
+     4F06   C4 09
+     4F08   86
+     4F09   FE
+     4F0A   6D
+     4F0B   00
+     4F0C   26
+     4F0D   72
+     4F0E   1E
+     4F0F   00 00
+     4F11   34
+     4F12   16
+     4F13   20
+     4F14   08
+     4F15   00
+     4F16   00
+     4F17   02
+     4F18   00
+.SHIP_SHUTTLE_VERTICES
+Macro VERTEX:
+     4F19   00
+     4F1A   23
+     4F1B   2F
+     4F1C   5F
+     4F1D   FF
+     4F1E   FF
+End macro VERTEX
+Macro VERTEX:
+     4F1F   23
+     4F20   00
+     4F21   2F
+     4F22   9F
+     4F23   FF
+     4F24   FF
+End macro VERTEX
+Macro VERTEX:
+     4F25   00
+     4F26   23
+     4F27   2F
+     4F28   1F
+     4F29   FF
+     4F2A   FF
+End macro VERTEX
+Macro VERTEX:
+     4F2B   23
+     4F2C   00
+     4F2D   2F
+     4F2E   1F
+     4F2F   FF
+     4F30   FF
+End macro VERTEX
+Macro VERTEX:
+     4F31   28
+     4F32   28
+     4F33   35
+     4F34   FF
+     4F35   12
+     4F36   39
+End macro VERTEX
+Macro VERTEX:
+     4F37   28
+     4F38   28
+     4F39   35
+     4F3A   BF
+     4F3B   34
+     4F3C   59
+End macro VERTEX
+Macro VERTEX:
+     4F3D   28
+     4F3E   28
+     4F3F   35
+     4F40   3F
+     4F41   56
+     4F42   79
+End macro VERTEX
+Macro VERTEX:
+     4F43   28
+     4F44   28
+     4F45   35
+     4F46   7F
+     4F47   17
+     4F48   89
+End macro VERTEX
+Macro VERTEX:
+     4F49   0A
+     4F4A   00
+     4F4B   35
+     4F4C   30
+     4F4D   99
+     4F4E   99
+End macro VERTEX
+Macro VERTEX:
+     4F4F   00
+     4F50   05
+     4F51   35
+     4F52   70
+     4F53   99
+     4F54   99
+End macro VERTEX
+Macro VERTEX:
+     4F55   0A
+     4F56   00
+     4F57   35
+     4F58   A8
+     4F59   99
+     4F5A   99
+End macro VERTEX
+Macro VERTEX:
+     4F5B   00
+     4F5C   05
+     4F5D   35
+     4F5E   28
+     4F5F   99
+     4F60   99
+End macro VERTEX
+Macro VERTEX:
+     4F61   00
+     4F62   11
+     4F63   47
+     4F64   50
+     4F65   0A
+     4F66   BC
+End macro VERTEX
+Macro VERTEX:
+     4F67   05
+     4F68   02
+     4F69   3D
+     4F6A   46
+     4F6B   FF
+     4F6C   02
+End macro VERTEX
+Macro VERTEX:
+     4F6D   07
+     4F6E   17
+     4F6F   31
+     4F70   07
+     4F71   01
+     4F72   F4
+End macro VERTEX
+Macro VERTEX:
+     4F73   15
+     4F74   09
+     4F75   31
+     4F76   07
+     4F77   A1
+     4F78   3F
+End macro VERTEX
+Macro VERTEX:
+     4F79   05
+     4F7A   02
+     4F7B   3D
+     4F7C   C6
+     4F7D   6B
+     4F7E   23
+End macro VERTEX
+Macro VERTEX:
+     4F7F   07
+     4F80   17
+     4F81   31
+     4F82   87
+     4F83   F8
+     4F84   C0
+End macro VERTEX
+Macro VERTEX:
+     4F85   15
+     4F86   09
+     4F87   31
+     4F88   87
+     4F89   4F
+     4F8A   18
+End macro VERTEX
+.SHIP_SHUTTLE_EDGES
+Macro EDGE:
+     4F8B   1F
+     4F8C   02
+     4F8D   00
+     4F8E   04
+End macro EDGE
+Macro EDGE:
+     4F8F   1F
+     4F90   4A
+     4F91   04
+     4F92   08
+End macro EDGE
+Macro EDGE:
+     4F93   1F
+     4F94   6B
+     4F95   08
+     4F96   0C
+End macro EDGE
+Macro EDGE:
+     4F97   1F
+     4F98   8C
+     4F99   00
+     4F9A   0C
+End macro EDGE
+Macro EDGE:
+     4F9B   1F
+     4F9C   18
+     4F9D   00
+     4F9E   1C
+End macro EDGE
+Macro EDGE:
+     4F9F   18
+     4FA0   12
+     4FA1   00
+     4FA2   10
+End macro EDGE
+Macro EDGE:
+     4FA3   1F
+     4FA4   23
+     4FA5   04
+     4FA6   10
+End macro EDGE
+Macro EDGE:
+     4FA7   18
+     4FA8   34
+     4FA9   04
+     4FAA   14
+End macro EDGE
+Macro EDGE:
+     4FAB   1F
+     4FAC   45
+     4FAD   08
+     4FAE   14
+End macro EDGE
+Macro EDGE:
+     4FAF   0C
+     4FB0   56
+     4FB1   08
+     4FB2   18
+End macro EDGE
+Macro EDGE:
+     4FB3   1F
+     4FB4   67
+     4FB5   0C
+     4FB6   18
+End macro EDGE
+Macro EDGE:
+     4FB7   18
+     4FB8   78
+     4FB9   0C
+     4FBA   1C
+End macro EDGE
+Macro EDGE:
+     4FBB   1F
+     4FBC   39
+     4FBD   10
+     4FBE   14
+End macro EDGE
+Macro EDGE:
+     4FBF   1F
+     4FC0   59
+     4FC1   14
+     4FC2   18
+End macro EDGE
+Macro EDGE:
+     4FC3   1F
+     4FC4   79
+     4FC5   18
+     4FC6   1C
+End macro EDGE
+Macro EDGE:
+     4FC7   1F
+     4FC8   19
+     4FC9   10
+     4FCA   1C
+End macro EDGE
+Macro EDGE:
+     4FCB   10
+     4FCC   0C
+     4FCD   00
+     4FCE   30
+End macro EDGE
+Macro EDGE:
+     4FCF   10
+     4FD0   0A
+     4FD1   04
+     4FD2   30
+End macro EDGE
+Macro EDGE:
+     4FD3   10
+     4FD4   AB
+     4FD5   08
+     4FD6   30
+End macro EDGE
+Macro EDGE:
+     4FD7   10
+     4FD8   BC
+     4FD9   0C
+     4FDA   30
+End macro EDGE
+Macro EDGE:
+     4FDB   10
+     4FDC   99
+     4FDD   20
+     4FDE   24
+End macro EDGE
+Macro EDGE:
+     4FDF   06
+     4FE0   99
+     4FE1   24
+     4FE2   28
+End macro EDGE
+Macro EDGE:
+     4FE3   08
+     4FE4   99
+     4FE5   28
+     4FE6   2C
+End macro EDGE
+Macro EDGE:
+     4FE7   06
+     4FE8   99
+     4FE9   20
+     4FEA   2C
+End macro EDGE
+Macro EDGE:
+     4FEB   04
+     4FEC   BB
+     4FED   34
+     4FEE   38
+End macro EDGE
+Macro EDGE:
+     4FEF   07
+     4FF0   BB
+     4FF1   38
+     4FF2   3C
+End macro EDGE
+Macro EDGE:
+     4FF3   06
+     4FF4   BB
+     4FF5   34
+     4FF6   3C
+End macro EDGE
+Macro EDGE:
+     4FF7   04
+     4FF8   AA
+     4FF9   40
+     4FFA   44
+End macro EDGE
+Macro EDGE:
+     4FFB   07
+     4FFC   AA
+     4FFD   44
+     4FFE   48
+End macro EDGE
+Macro EDGE:
+     4FFF   06
+     5000   AA
+     5001   40
+     5002   48
+End macro EDGE
+.SHIP_SHUTTLE_FACES
+Macro FACE:
+     5003   DF
+     5004   6E
+     5005   6E
+     5006   50
+End macro FACE
+Macro FACE:
+     5007   5F
+     5008   00
+     5009   95
+     500A   07
+End macro FACE
+Macro FACE:
+     500B   DF
+     500C   66
+     500D   66
+     500E   2E
+End macro FACE
+Macro FACE:
+     500F   9F
+     5010   95
+     5011   00
+     5012   07
+End macro FACE
+Macro FACE:
+     5013   9F
+     5014   66
+     5015   66
+     5016   2E
+End macro FACE
+Macro FACE:
+     5017   1F
+     5018   00
+     5019   95
+     501A   07
+End macro FACE
+Macro FACE:
+     501B   1F
+     501C   66
+     501D   66
+     501E   2E
+End macro FACE
+Macro FACE:
+     501F   1F
+     5020   95
+     5021   00
+     5022   07
+End macro FACE
+Macro FACE:
+     5023   5F
+     5024   66
+     5025   66
+     5026   2E
+End macro FACE
+Macro FACE:
+     5027   3F
+     5028   00
+     5029   00
+     502A   D5
+End macro FACE
+Macro FACE:
+     502B   9F
+     502C   51
+     502D   51
+     502E   B1
+End macro FACE
+Macro FACE:
+     502F   1F
+     5030   51
+     5031   51
+     5032   B1
+End macro FACE
+Macro FACE:
+     5033   5F
+     5034   6E
+     5035   6E
+     5036   50
+End macro FACE
+.SHIP_TRANSPORTER
+     5037   00
+     5038   C4 09
+     503A   F2
+     503B   AA
+     503C   91
+     503D   30
+     503E   1A
+     503F   DE
+     5040   2E
+     5041   00 00
+     5043   38
+     5044   10
+     5045   20
+     5046   0A
+     5047   00
+     5048   01
+     5049   01
+     504A   00
+.SHIP_TRANSPORTER_VERTICES
+Macro VERTEX:
+     504B   00
+     504C   13
+     504D   33
+     504E   3F
+     504F   06
+     5050   77
+End macro VERTEX
+Macro VERTEX:
+     5051   33
+     5052   07
+     5053   33
+     5054   BF
+     5055   01
+     5056   77
+End macro VERTEX
+Macro VERTEX:
+     5057   39
+     5058   07
+     5059   33
+     505A   FF
+     505B   01
+     505C   22
+End macro VERTEX
+Macro VERTEX:
+     505D   33
+     505E   11
+     505F   33
+     5060   FF
+     5061   02
+     5062   33
+End macro VERTEX
+Macro VERTEX:
+     5063   33
+     5064   11
+     5065   33
+     5066   7F
+     5067   03
+     5068   44
+End macro VERTEX
+Macro VERTEX:
+     5069   39
+     506A   07
+     506B   33
+     506C   7F
+     506D   04
+     506E   55
+End macro VERTEX
+Macro VERTEX:
+     506F   33
+     5070   07
+     5071   33
+     5072   3F
+     5073   05
+     5074   66
+End macro VERTEX
+Macro VERTEX:
+     5075   00
+     5076   0C
+     5077   18
+     5078   12
+     5079   FF
+     507A   FF
+End macro VERTEX
+Macro VERTEX:
+     507B   3C
+     507C   02
+     507D   18
+     507E   DF
+     507F   17
+     5080   89
+End macro VERTEX
+Macro VERTEX:
+     5081   42
+     5082   11
+     5083   18
+     5084   DF
+     5085   12
+     5086   39
+End macro VERTEX
+Macro VERTEX:
+     5087   42
+     5088   11
+     5089   18
+     508A   5F
+     508B   34
+     508C   5A
+End macro VERTEX
+Macro VERTEX:
+     508D   3C
+     508E   02
+     508F   18
+     5090   5F
+     5091   56
+     5092   AB
+End macro VERTEX
+Macro VERTEX:
+     5093   16
+     5094   05
+     5095   3D
+     5096   DF
+     5097   89
+     5098   CD
+End macro VERTEX
+Macro VERTEX:
+     5099   1B
+     509A   11
+     509B   3D
+     509C   DF
+     509D   39
+     509E   DD
+End macro VERTEX
+Macro VERTEX:
+     509F   1B
+     50A0   11
+     50A1   3D
+     50A2   5F
+     50A3   3A
+     50A4   DD
+End macro VERTEX
+Macro VERTEX:
+     50A5   16
+     50A6   05
+     50A7   3D
+     50A8   5F
+     50A9   AB
+     50AA   CD
+End macro VERTEX
+Macro VERTEX:
+     50AB   0A
+     50AC   0B
+     50AD   05
+     50AE   86
+     50AF   77
+     50B0   77
+End macro VERTEX
+Macro VERTEX:
+     50B1   24
+     50B2   05
+     50B3   05
+     50B4   86
+     50B5   77
+     50B6   77
+End macro VERTEX
+Macro VERTEX:
+     50B7   0A
+     50B8   0D
+     50B9   0E
+     50BA   A6
+     50BB   77
+     50BC   77
+End macro VERTEX
+Macro VERTEX:
+     50BD   24
+     50BE   07
+     50BF   0E
+     50C0   A6
+     50C1   77
+     50C2   77
+End macro VERTEX
+Macro VERTEX:
+     50C3   17
+     50C4   0C
+     50C5   1D
+     50C6   A6
+     50C7   77
+     50C8   77
+End macro VERTEX
+Macro VERTEX:
+     50C9   17
+     50CA   0A
+     50CB   0E
+     50CC   A6
+     50CD   77
+     50CE   77
+End macro VERTEX
+Macro VERTEX:
+     50CF   0A
+     50D0   0F
+     50D1   1D
+     50D2   26
+     50D3   66
+     50D4   66
+End macro VERTEX
+Macro VERTEX:
+     50D5   24
+     50D6   09
+     50D7   1D
+     50D8   26
+     50D9   66
+     50DA   66
+End macro VERTEX
+Macro VERTEX:
+     50DB   17
+     50DC   0A
+     50DD   0E
+     50DE   26
+     50DF   66
+     50E0   66
+End macro VERTEX
+Macro VERTEX:
+     50E1   0A
+     50E2   0C
+     50E3   06
+     50E4   26
+     50E5   66
+     50E6   66
+End macro VERTEX
+Macro VERTEX:
+     50E7   24
+     50E8   06
+     50E9   06
+     50EA   26
+     50EB   66
+     50EC   66
+End macro VERTEX
+Macro VERTEX:
+     50ED   17
+     50EE   07
+     50EF   10
+     50F0   06
+     50F1   66
+     50F2   66
+End macro VERTEX
+Macro VERTEX:
+     50F3   17
+     50F4   09
+     50F5   06
+     50F6   26
+     50F7   66
+     50F8   66
+End macro VERTEX
+Macro VERTEX:
+     50F9   21
+     50FA   11
+     50FB   1A
+     50FC   E5
+     50FD   33
+     50FE   33
+End macro VERTEX
+Macro VERTEX:
+     50FF   21
+     5100   11
+     5101   21
+     5102   C5
+     5103   33
+     5104   33
+End macro VERTEX
+Macro VERTEX:
+     5105   21
+     5106   11
+     5107   1A
+     5108   65
+     5109   33
+     510A   33
+End macro VERTEX
+Macro VERTEX:
+     510B   21
+     510C   11
+     510D   21
+     510E   45
+     510F   33
+     5110   33
+End macro VERTEX
+Macro VERTEX:
+     5111   19
+     5112   06
+     5113   33
+     5114   E7
+     5115   00
+     5116   00
+End macro VERTEX
+Macro VERTEX:
+     5117   1A
+     5118   06
+     5119   33
+     511A   67
+     511B   00
+     511C   00
+End macro VERTEX
+Macro VERTEX:
+     511D   11
+     511E   06
+     511F   33
+     5120   24
+     5121   00
+     5122   00
+End macro VERTEX
+Macro VERTEX:
+     5123   11
+     5124   06
+     5125   33
+     5126   A4
+     5127   00
+     5128   00
+End macro VERTEX
+.SHIP_TRANSPORTER_EDGES
+Macro EDGE:
+     5129   1F
+     512A   07
+     512B   00
+     512C   04
+End macro EDGE
+Macro EDGE:
+     512D   1F
+     512E   01
+     512F   04
+     5130   08
+End macro EDGE
+Macro EDGE:
+     5131   1F
+     5132   02
+     5133   08
+     5134   0C
+End macro EDGE
+Macro EDGE:
+     5135   1F
+     5136   03
+     5137   0C
+     5138   10
+End macro EDGE
+Macro EDGE:
+     5139   1F
+     513A   04
+     513B   10
+     513C   14
+End macro EDGE
+Macro EDGE:
+     513D   1F
+     513E   05
+     513F   14
+     5140   18
+End macro EDGE
+Macro EDGE:
+     5141   1F
+     5142   06
+     5143   00
+     5144   18
+End macro EDGE
+Macro EDGE:
+     5145   0F
+     5146   67
+     5147   00
+     5148   1C
+End macro EDGE
+Macro EDGE:
+     5149   1F
+     514A   17
+     514B   04
+     514C   20
+End macro EDGE
+Macro EDGE:
+     514D   0A
+     514E   12
+     514F   08
+     5150   24
+End macro EDGE
+Macro EDGE:
+     5151   1F
+     5152   23
+     5153   0C
+     5154   24
+End macro EDGE
+Macro EDGE:
+     5155   1F
+     5156   34
+     5157   10
+     5158   28
+End macro EDGE
+Macro EDGE:
+     5159   0A
+     515A   45
+     515B   14
+     515C   28
+End macro EDGE
+Macro EDGE:
+     515D   1F
+     515E   56
+     515F   18
+     5160   2C
+End macro EDGE
+Macro EDGE:
+     5161   10
+     5162   78
+     5163   1C
+     5164   20
+End macro EDGE
+Macro EDGE:
+     5165   10
+     5166   19
+     5167   20
+     5168   24
+End macro EDGE
+Macro EDGE:
+     5169   10
+     516A   5A
+     516B   28
+     516C   2C
+End macro EDGE
+Macro EDGE:
+     516D   10
+     516E   6B
+     516F   1C
+     5170   2C
+End macro EDGE
+Macro EDGE:
+     5171   12
+     5172   BC
+     5173   1C
+     5174   3C
+End macro EDGE
+Macro EDGE:
+     5175   12
+     5176   8C
+     5177   1C
+     5178   30
+End macro EDGE
+Macro EDGE:
+     5179   10
+     517A   89
+     517B   20
+     517C   30
+End macro EDGE
+Macro EDGE:
+     517D   1F
+     517E   39
+     517F   24
+     5180   34
+End macro EDGE
+Macro EDGE:
+     5181   1F
+     5182   3A
+     5183   28
+     5184   38
+End macro EDGE
+Macro EDGE:
+     5185   10
+     5186   AB
+     5187   2C
+     5188   3C
+End macro EDGE
+Macro EDGE:
+     5189   1F
+     518A   9D
+     518B   30
+     518C   34
+End macro EDGE
+Macro EDGE:
+     518D   1F
+     518E   3D
+     518F   34
+     5190   38
+End macro EDGE
+Macro EDGE:
+     5191   1F
+     5192   AD
+     5193   38
+     5194   3C
+End macro EDGE
+Macro EDGE:
+     5195   1F
+     5196   CD
+     5197   30
+     5198   3C
+End macro EDGE
+Macro EDGE:
+     5199   06
+     519A   77
+     519B   40
+     519C   44
+End macro EDGE
+Macro EDGE:
+     519D   06
+     519E   77
+     519F   48
+     51A0   4C
+End macro EDGE
+Macro EDGE:
+     51A1   06
+     51A2   77
+     51A3   4C
+     51A4   50
+End macro EDGE
+Macro EDGE:
+     51A5   06
+     51A6   77
+     51A7   48
+     51A8   50
+End macro EDGE
+Macro EDGE:
+     51A9   06
+     51AA   77
+     51AB   50
+     51AC   54
+End macro EDGE
+Macro EDGE:
+     51AD   06
+     51AE   66
+     51AF   58
+     51B0   5C
+End macro EDGE
+Macro EDGE:
+     51B1   06
+     51B2   66
+     51B3   5C
+     51B4   60
+End macro EDGE
+Macro EDGE:
+     51B5   06
+     51B6   66
+     51B7   60
+     51B8   58
+End macro EDGE
+Macro EDGE:
+     51B9   06
+     51BA   66
+     51BB   64
+     51BC   68
+End macro EDGE
+Macro EDGE:
+     51BD   06
+     51BE   66
+     51BF   68
+     51C0   6C
+End macro EDGE
+Macro EDGE:
+     51C1   06
+     51C2   66
+     51C3   64
+     51C4   6C
+End macro EDGE
+Macro EDGE:
+     51C5   06
+     51C6   66
+     51C7   6C
+     51C8   70
+End macro EDGE
+Macro EDGE:
+     51C9   05
+     51CA   33
+     51CB   74
+     51CC   78
+End macro EDGE
+Macro EDGE:
+     51CD   05
+     51CE   33
+     51CF   7C
+     51D0   80
+End macro EDGE
+Macro EDGE:
+     51D1   07
+     51D2   00
+     51D3   84
+     51D4   88
+End macro EDGE
+Macro EDGE:
+     51D5   04
+     51D6   00
+     51D7   88
+     51D8   8C
+End macro EDGE
+Macro EDGE:
+     51D9   04
+     51DA   00
+     51DB   8C
+     51DC   90
+End macro EDGE
+Macro EDGE:
+     51DD   04
+     51DE   00
+     51DF   90
+     51E0   84
+End macro EDGE
+.SHIP_TRANSPORTER_FACES
+Macro FACE:
+     51E1   3F
+     51E2   00
+     51E3   00
+     51E4   67
+End macro FACE
+Macro FACE:
+     51E5   BF
+     51E6   6F
+     51E7   30
+     51E8   07
+End macro FACE
+Macro FACE:
+     51E9   FF
+     51EA   69
+     51EB   3F
+     51EC   15
+End macro FACE
+Macro FACE:
+     51ED   5F
+     51EE   00
+     51EF   22
+     51F0   00
+End macro FACE
+Macro FACE:
+     51F1   7F
+     51F2   69
+     51F3   3F
+     51F4   15
+End macro FACE
+Macro FACE:
+     51F5   3F
+     51F6   6F
+     51F7   30
+     51F8   07
+End macro FACE
+Macro FACE:
+     51F9   1F
+     51FA   08
+     51FB   20
+     51FC   03
+End macro FACE
+Macro FACE:
+     51FD   9F
+     51FE   08
+     51FF   20
+     5200   03
+End macro FACE
+Macro FACE:
+     5201   92
+     5202   08
+     5203   22
+     5204   0B
+End macro FACE
+Macro FACE:
+     5205   9F
+     5206   4B
+     5207   20
+     5208   4F
+End macro FACE
+Macro FACE:
+     5209   1F
+     520A   4B
+     520B   20
+     520C   4F
+End macro FACE
+Macro FACE:
+     520D   12
+     520E   08
+     520F   22
+     5210   0B
+End macro FACE
+Macro FACE:
+     5211   1F
+     5212   00
+     5213   26
+     5214   11
+End macro FACE
+Macro FACE:
+     5215   1F
+     5216   00
+     5217   00
+     5218   79
+End macro FACE
+.SHIP_COBRA_MK_3
+     5219   03
+     521A   41 23
+     521C   BC
+     521D   54
+     521E   99
+     521F   54
+     5220   2A
+     5221   A8
+     5222   26
+     5223   00 00
+     5225   34
+     5226   32
+     5227   96
+     5228   1C
+     5229   00
+     522A   01
+     522B   01
+     522C   13
+.SHIP_COBRA_MK_3_VERTICES
+Macro VERTEX:
+     522D   20
+     522E   00
+     522F   4C
+     5230   1F
+     5231   FF
+     5232   FF
+End macro VERTEX
+Macro VERTEX:
+     5233   20
+     5234   00
+     5235   4C
+     5236   9F
+     5237   FF
+     5238   FF
+End macro VERTEX
+Macro VERTEX:
+     5239   00
+     523A   1A
+     523B   18
+     523C   1F
+     523D   FF
+     523E   FF
+End macro VERTEX
+Macro VERTEX:
+     523F   78
+     5240   03
+     5241   08
+     5242   FF
+     5243   73
+     5244   AA
+End macro VERTEX
+Macro VERTEX:
+     5245   78
+     5246   03
+     5247   08
+     5248   7F
+     5249   84
+     524A   CC
+End macro VERTEX
+Macro VERTEX:
+     524B   58
+     524C   10
+     524D   28
+     524E   BF
+     524F   FF
+     5250   FF
+End macro VERTEX
+Macro VERTEX:
+     5251   58
+     5252   10
+     5253   28
+     5254   3F
+     5255   FF
+     5256   FF
+End macro VERTEX
+Macro VERTEX:
+     5257   80
+     5258   08
+     5259   28
+     525A   7F
+     525B   98
+     525C   CC
+End macro VERTEX
+Macro VERTEX:
+     525D   80
+     525E   08
+     525F   28
+     5260   FF
+     5261   97
+     5262   AA
+End macro VERTEX
+Macro VERTEX:
+     5263   00
+     5264   1A
+     5265   28
+     5266   3F
+     5267   65
+     5268   99
+End macro VERTEX
+Macro VERTEX:
+     5269   20
+     526A   18
+     526B   28
+     526C   FF
+     526D   A9
+     526E   BB
+End macro VERTEX
+Macro VERTEX:
+     526F   20
+     5270   18
+     5271   28
+     5272   7F
+     5273   B9
+     5274   CC
+End macro VERTEX
+Macro VERTEX:
+     5275   24
+     5276   08
+     5277   28
+     5278   B4
+     5279   99
+     527A   99
+End macro VERTEX
+Macro VERTEX:
+     527B   08
+     527C   0C
+     527D   28
+     527E   B4
+     527F   99
+     5280   99
+End macro VERTEX
+Macro VERTEX:
+     5281   08
+     5282   0C
+     5283   28
+     5284   34
+     5285   99
+     5286   99
+End macro VERTEX
+Macro VERTEX:
+     5287   24
+     5288   08
+     5289   28
+     528A   34
+     528B   99
+     528C   99
+End macro VERTEX
+Macro VERTEX:
+     528D   24
+     528E   0C
+     528F   28
+     5290   74
+     5291   99
+     5292   99
+End macro VERTEX
+Macro VERTEX:
+     5293   08
+     5294   10
+     5295   28
+     5296   74
+     5297   99
+     5298   99
+End macro VERTEX
+Macro VERTEX:
+     5299   08
+     529A   10
+     529B   28
+     529C   F4
+     529D   99
+     529E   99
+End macro VERTEX
+Macro VERTEX:
+     529F   24
+     52A0   0C
+     52A1   28
+     52A2   F4
+     52A3   99
+     52A4   99
+End macro VERTEX
+Macro VERTEX:
+     52A5   00
+     52A6   00
+     52A7   4C
+     52A8   06
+     52A9   B0
+     52AA   BB
+End macro VERTEX
+Macro VERTEX:
+     52AB   00
+     52AC   00
+     52AD   5A
+     52AE   1F
+     52AF   B0
+     52B0   BB
+End macro VERTEX
+Macro VERTEX:
+     52B1   50
+     52B2   06
+     52B3   28
+     52B4   E8
+     52B5   99
+     52B6   99
+End macro VERTEX
+Macro VERTEX:
+     52B7   50
+     52B8   06
+     52B9   28
+     52BA   A8
+     52BB   99
+     52BC   99
+End macro VERTEX
+Macro VERTEX:
+     52BD   58
+     52BE   00
+     52BF   28
+     52C0   A6
+     52C1   99
+     52C2   99
+End macro VERTEX
+Macro VERTEX:
+     52C3   50
+     52C4   06
+     52C5   28
+     52C6   28
+     52C7   99
+     52C8   99
+End macro VERTEX
+Macro VERTEX:
+     52C9   58
+     52CA   00
+     52CB   28
+     52CC   26
+     52CD   99
+     52CE   99
+End macro VERTEX
+Macro VERTEX:
+     52CF   50
+     52D0   06
+     52D1   28
+     52D2   68
+     52D3   99
+     52D4   99
+End macro VERTEX
+.SHIP_COBRA_MK_3_EDGES
+Macro EDGE:
+     52D5   1F
+     52D6   B0
+     52D7   00
+     52D8   04
+End macro EDGE
+Macro EDGE:
+     52D9   1F
+     52DA   C4
+     52DB   00
+     52DC   10
+End macro EDGE
+Macro EDGE:
+     52DD   1F
+     52DE   A3
+     52DF   04
+     52E0   0C
+End macro EDGE
+Macro EDGE:
+     52E1   1F
+     52E2   A7
+     52E3   0C
+     52E4   20
+End macro EDGE
+Macro EDGE:
+     52E5   1F
+     52E6   C8
+     52E7   10
+     52E8   1C
+End macro EDGE
+Macro EDGE:
+     52E9   1F
+     52EA   98
+     52EB   18
+     52EC   1C
+End macro EDGE
+Macro EDGE:
+     52ED   1F
+     52EE   96
+     52EF   18
+     52F0   24
+End macro EDGE
+Macro EDGE:
+     52F1   1F
+     52F2   95
+     52F3   14
+     52F4   24
+End macro EDGE
+Macro EDGE:
+     52F5   1F
+     52F6   97
+     52F7   14
+     52F8   20
+End macro EDGE
+Macro EDGE:
+     52F9   1F
+     52FA   51
+     52FB   08
+     52FC   14
+End macro EDGE
+Macro EDGE:
+     52FD   1F
+     52FE   62
+     52FF   08
+     5300   18
+End macro EDGE
+Macro EDGE:
+     5301   1F
+     5302   73
+     5303   0C
+     5304   14
+End macro EDGE
+Macro EDGE:
+     5305   1F
+     5306   84
+     5307   10
+     5308   18
+End macro EDGE
+Macro EDGE:
+     5309   1F
+     530A   10
+     530B   04
+     530C   08
+End macro EDGE
+Macro EDGE:
+     530D   1F
+     530E   20
+     530F   00
+     5310   08
+End macro EDGE
+Macro EDGE:
+     5311   1F
+     5312   A9
+     5313   20
+     5314   28
+End macro EDGE
+Macro EDGE:
+     5315   1F
+     5316   B9
+     5317   28
+     5318   2C
+End macro EDGE
+Macro EDGE:
+     5319   1F
+     531A   C9
+     531B   1C
+     531C   2C
+End macro EDGE
+Macro EDGE:
+     531D   1F
+     531E   BA
+     531F   04
+     5320   28
+End macro EDGE
+Macro EDGE:
+     5321   1F
+     5322   CB
+     5323   00
+     5324   2C
+End macro EDGE
+Macro EDGE:
+     5325   1D
+     5326   31
+     5327   04
+     5328   14
+End macro EDGE
+Macro EDGE:
+     5329   1D
+     532A   42
+     532B   00
+     532C   18
+End macro EDGE
+Macro EDGE:
+     532D   06
+     532E   B0
+     532F   50
+     5330   54
+End macro EDGE
+Macro EDGE:
+     5331   14
+     5332   99
+     5333   30
+     5334   34
+End macro EDGE
+Macro EDGE:
+     5335   14
+     5336   99
+     5337   48
+     5338   4C
+End macro EDGE
+Macro EDGE:
+     5339   14
+     533A   99
+     533B   38
+     533C   3C
+End macro EDGE
+Macro EDGE:
+     533D   14
+     533E   99
+     533F   40
+     5340   44
+End macro EDGE
+Macro EDGE:
+     5341   13
+     5342   99
+     5343   3C
+     5344   40
+End macro EDGE
+Macro EDGE:
+     5345   11
+     5346   99
+     5347   38
+     5348   44
+End macro EDGE
+Macro EDGE:
+     5349   13
+     534A   99
+     534B   34
+     534C   48
+End macro EDGE
+Macro EDGE:
+     534D   13
+     534E   99
+     534F   30
+     5350   4C
+End macro EDGE
+Macro EDGE:
+     5351   1E
+     5352   65
+     5353   08
+     5354   24
+End macro EDGE
+Macro EDGE:
+     5355   06
+     5356   99
+     5357   58
+     5358   60
+End macro EDGE
+Macro EDGE:
+     5359   06
+     535A   99
+     535B   5C
+     535C   60
+End macro EDGE
+Macro EDGE:
+     535D   08
+     535E   99
+     535F   58
+     5360   5C
+End macro EDGE
+Macro EDGE:
+     5361   06
+     5362   99
+     5363   64
+     5364   68
+End macro EDGE
+Macro EDGE:
+     5365   06
+     5366   99
+     5367   68
+     5368   6C
+End macro EDGE
+Macro EDGE:
+     5369   08
+     536A   99
+     536B   64
+     536C   6C
+End macro EDGE
+.SHIP_COBRA_MK_3_FACES
+Macro FACE:
+     536D   1F
+     536E   00
+     536F   3E
+     5370   1F
+End macro FACE
+Macro FACE:
+     5371   9F
+     5372   12
+     5373   37
+     5374   10
+End macro FACE
+Macro FACE:
+     5375   1F
+     5376   12
+     5377   37
+     5378   10
+End macro FACE
+Macro FACE:
+     5379   9F
+     537A   10
+     537B   34
+     537C   0E
+End macro FACE
+Macro FACE:
+     537D   1F
+     537E   10
+     537F   34
+     5380   0E
+End macro FACE
+Macro FACE:
+     5381   9F
+     5382   0E
+     5383   2F
+     5384   00
+End macro FACE
+Macro FACE:
+     5385   1F
+     5386   0E
+     5387   2F
+     5388   00
+End macro FACE
+Macro FACE:
+     5389   9F
+     538A   3D
+     538B   66
+     538C   00
+End macro FACE
+Macro FACE:
+     538D   1F
+     538E   3D
+     538F   66
+     5390   00
+End macro FACE
+Macro FACE:
+     5391   3F
+     5392   00
+     5393   00
+     5394   50
+End macro FACE
+Macro FACE:
+     5395   DF
+     5396   07
+     5397   2A
+     5398   09
+End macro FACE
+Macro FACE:
+     5399   5F
+     539A   00
+     539B   1E
+     539C   06
+End macro FACE
+Macro FACE:
+     539D   5F
+     539E   07
+     539F   2A
+     53A0   09
+End macro FACE
+.SHIP_VIPER
+     53A1   00
+     53A2   F9 15
+     53A4   6E
+     53A5   BE
+     53A6   4D
+     53A7   00
+     53A8   2A
+     53A9   5A
+     53AA   14
+     53AB   00 00
+     53AD   1C
+     53AE   17
+     53AF   64
+     53B0   20
+     53B1   00
+     53B2   00
+     53B3   01
+     53B4   11
+.SHIP_VIPER_VERTICES
+Macro VERTEX:
+     53B5   00
+     53B6   00
+     53B7   48
+     53B8   1F
+     53B9   21
+     53BA   43
+End macro VERTEX
+Macro VERTEX:
+     53BB   00
+     53BC   10
+     53BD   18
+     53BE   1E
+     53BF   10
+     53C0   22
+End macro VERTEX
+Macro VERTEX:
+     53C1   00
+     53C2   10
+     53C3   18
+     53C4   5E
+     53C5   43
+     53C6   55
+End macro VERTEX
+Macro VERTEX:
+     53C7   30
+     53C8   00
+     53C9   18
+     53CA   3F
+     53CB   42
+     53CC   66
+End macro VERTEX
+Macro VERTEX:
+     53CD   30
+     53CE   00
+     53CF   18
+     53D0   BF
+     53D1   31
+     53D2   66
+End macro VERTEX
+Macro VERTEX:
+     53D3   18
+     53D4   10
+     53D5   18
+     53D6   7E
+     53D7   54
+     53D8   66
+End macro VERTEX
+Macro VERTEX:
+     53D9   18
+     53DA   10
+     53DB   18
+     53DC   FE
+     53DD   35
+     53DE   66
+End macro VERTEX
+Macro VERTEX:
+     53DF   18
+     53E0   10
+     53E1   18
+     53E2   3F
+     53E3   20
+     53E4   66
+End macro VERTEX
+Macro VERTEX:
+     53E5   18
+     53E6   10
+     53E7   18
+     53E8   BF
+     53E9   10
+     53EA   66
+End macro VERTEX
+Macro VERTEX:
+     53EB   20
+     53EC   00
+     53ED   18
+     53EE   B3
+     53EF   66
+     53F0   66
+End macro VERTEX
+Macro VERTEX:
+     53F1   20
+     53F2   00
+     53F3   18
+     53F4   33
+     53F5   66
+     53F6   66
+End macro VERTEX
+Macro VERTEX:
+     53F7   08
+     53F8   08
+     53F9   18
+     53FA   33
+     53FB   66
+     53FC   66
+End macro VERTEX
+Macro VERTEX:
+     53FD   08
+     53FE   08
+     53FF   18
+     5400   B3
+     5401   66
+     5402   66
+End macro VERTEX
+Macro VERTEX:
+     5403   08
+     5404   08
+     5405   18
+     5406   F2
+     5407   66
+     5408   66
+End macro VERTEX
+Macro VERTEX:
+     5409   08
+     540A   08
+     540B   18
+     540C   72
+     540D   66
+     540E   66
+End macro VERTEX
+.SHIP_VIPER_EDGES
+Macro EDGE:
+     540F   1F
+     5410   42
+     5411   00
+     5412   0C
+End macro EDGE
+Macro EDGE:
+     5413   1E
+     5414   21
+     5415   00
+     5416   04
+End macro EDGE
+Macro EDGE:
+     5417   1E
+     5418   43
+     5419   00
+     541A   08
+End macro EDGE
+Macro EDGE:
+     541B   1F
+     541C   31
+     541D   00
+     541E   10
+End macro EDGE
+Macro EDGE:
+     541F   1E
+     5420   20
+     5421   04
+     5422   1C
+End macro EDGE
+Macro EDGE:
+     5423   1E
+     5424   10
+     5425   04
+     5426   20
+End macro EDGE
+Macro EDGE:
+     5427   1E
+     5428   54
+     5429   08
+     542A   14
+End macro EDGE
+Macro EDGE:
+     542B   1E
+     542C   53
+     542D   08
+     542E   18
+End macro EDGE
+Macro EDGE:
+     542F   1F
+     5430   60
+     5431   1C
+     5432   20
+End macro EDGE
+Macro EDGE:
+     5433   1E
+     5434   65
+     5435   14
+     5436   18
+End macro EDGE
+Macro EDGE:
+     5437   1F
+     5438   61
+     5439   10
+     543A   20
+End macro EDGE
+Macro EDGE:
+     543B   1E
+     543C   63
+     543D   10
+     543E   18
+End macro EDGE
+Macro EDGE:
+     543F   1F
+     5440   62
+     5441   0C
+     5442   1C
+End macro EDGE
+Macro EDGE:
+     5443   1E
+     5444   46
+     5445   0C
+     5446   14
+End macro EDGE
+Macro EDGE:
+     5447   13
+     5448   66
+     5449   24
+     544A   30
+End macro EDGE
+Macro EDGE:
+     544B   12
+     544C   66
+     544D   24
+     544E   34
+End macro EDGE
+Macro EDGE:
+     544F   13
+     5450   66
+     5451   28
+     5452   2C
+End macro EDGE
+Macro EDGE:
+     5453   12
+     5454   66
+     5455   28
+     5456   38
+End macro EDGE
+Macro EDGE:
+     5457   10
+     5458   66
+     5459   2C
+     545A   38
+End macro EDGE
+Macro EDGE:
+     545B   10
+     545C   66
+     545D   30
+     545E   34
+End macro EDGE
+.SHIP_VIPER_FACES
+Macro FACE:
+     545F   1F
+     5460   00
+     5461   20
+     5462   00
+End macro FACE
+Macro FACE:
+     5463   9F
+     5464   16
+     5465   21
+     5466   0B
+End macro FACE
+Macro FACE:
+     5467   1F
+     5468   16
+     5469   21
+     546A   0B
+End macro FACE
+Macro FACE:
+     546B   DF
+     546C   16
+     546D   21
+     546E   0B
+End macro FACE
+Macro FACE:
+     546F   5F
+     5470   16
+     5471   21
+     5472   0B
+End macro FACE
+Macro FACE:
+     5473   5F
+     5474   00
+     5475   20
+     5476   00
+End macro FACE
+Macro FACE:
+     5477   3F
+     5478   00
+     5479   00
+     547A   30
+End macro FACE
+.SHIP_KRAIT
+     547B   01
+     547C   10 0E
+     547E   7A
+     547F   CE
+     5480   55
+     5481   00
+     5482   12
+     5483   66
+     5484   15
+     5485   64 00
+     5487   18
+     5488   19
+     5489   50
+     548A   1E
+     548B   00
+     548C   00
+     548D   01
+     548E   10
+.SHIP_KRAIT_VERTICES
+Macro VERTEX:
+     548F   00
+     5490   00
+     5491   60
+     5492   1F
+     5493   01
+     5494   23
+End macro VERTEX
+Macro VERTEX:
+     5495   00
+     5496   12
+     5497   30
+     5498   3F
+     5499   03
+     549A   45
+End macro VERTEX
+Macro VERTEX:
+     549B   00
+     549C   12
+     549D   30
+     549E   7F
+     549F   12
+     54A0   45
+End macro VERTEX
+Macro VERTEX:
+     54A1   5A
+     54A2   00
+     54A3   03
+     54A4   3F
+     54A5   01
+     54A6   44
+End macro VERTEX
+Macro VERTEX:
+     54A7   5A
+     54A8   00
+     54A9   03
+     54AA   BF
+     54AB   23
+     54AC   55
+End macro VERTEX
+Macro VERTEX:
+     54AD   5A
+     54AE   00
+     54AF   57
+     54B0   1E
+     54B1   01
+     54B2   11
+End macro VERTEX
+Macro VERTEX:
+     54B3   5A
+     54B4   00
+     54B5   57
+     54B6   9E
+     54B7   23
+     54B8   33
+End macro VERTEX
+Macro VERTEX:
+     54B9   00
+     54BA   05
+     54BB   35
+     54BC   09
+     54BD   00
+     54BE   33
+End macro VERTEX
+Macro VERTEX:
+     54BF   00
+     54C0   07
+     54C1   26
+     54C2   06
+     54C3   00
+     54C4   33
+End macro VERTEX
+Macro VERTEX:
+     54C5   12
+     54C6   07
+     54C7   13
+     54C8   89
+     54C9   33
+     54CA   33
+End macro VERTEX
+Macro VERTEX:
+     54CB   12
+     54CC   07
+     54CD   13
+     54CE   09
+     54CF   00
+     54D0   00
+End macro VERTEX
+Macro VERTEX:
+     54D1   12
+     54D2   0B
+     54D3   27
+     54D4   28
+     54D5   44
+     54D6   44
+End macro VERTEX
+Macro VERTEX:
+     54D7   12
+     54D8   0B
+     54D9   27
+     54DA   68
+     54DB   44
+     54DC   44
+End macro VERTEX
+Macro VERTEX:
+     54DD   24
+     54DE   00
+     54DF   1E
+     54E0   28
+     54E1   44
+     54E2   44
+End macro VERTEX
+Macro VERTEX:
+     54E3   12
+     54E4   0B
+     54E5   27
+     54E6   A8
+     54E7   55
+     54E8   55
+End macro VERTEX
+Macro VERTEX:
+     54E9   12
+     54EA   0B
+     54EB   27
+     54EC   E8
+     54ED   55
+     54EE   55
+End macro VERTEX
+Macro VERTEX:
+     54EF   24
+     54F0   00
+     54F1   1E
+     54F2   A8
+     54F3   55
+     54F4   55
+End macro VERTEX
+.SHIP_KRAIT_EDGES
+Macro EDGE:
+     54F5   1F
+     54F6   03
+     54F7   00
+     54F8   04
+End macro EDGE
+Macro EDGE:
+     54F9   1F
+     54FA   12
+     54FB   00
+     54FC   08
+End macro EDGE
+Macro EDGE:
+     54FD   1F
+     54FE   01
+     54FF   00
+     5500   0C
+End macro EDGE
+Macro EDGE:
+     5501   1F
+     5502   23
+     5503   00
+     5504   10
+End macro EDGE
+Macro EDGE:
+     5505   1F
+     5506   35
+     5507   04
+     5508   10
+End macro EDGE
+Macro EDGE:
+     5509   1F
+     550A   25
+     550B   10
+     550C   08
+End macro EDGE
+Macro EDGE:
+     550D   1F
+     550E   14
+     550F   08
+     5510   0C
+End macro EDGE
+Macro EDGE:
+     5511   1F
+     5512   04
+     5513   0C
+     5514   04
+End macro EDGE
+Macro EDGE:
+     5515   1E
+     5516   01
+     5517   0C
+     5518   14
+End macro EDGE
+Macro EDGE:
+     5519   1E
+     551A   23
+     551B   10
+     551C   18
+End macro EDGE
+Macro EDGE:
+     551D   08
+     551E   45
+     551F   04
+     5520   08
+End macro EDGE
+Macro EDGE:
+     5521   09
+     5522   00
+     5523   1C
+     5524   28
+End macro EDGE
+Macro EDGE:
+     5525   06
+     5526   00
+     5527   20
+     5528   28
+End macro EDGE
+Macro EDGE:
+     5529   09
+     552A   33
+     552B   1C
+     552C   24
+End macro EDGE
+Macro EDGE:
+     552D   06
+     552E   33
+     552F   20
+     5530   24
+End macro EDGE
+Macro EDGE:
+     5531   08
+     5532   44
+     5533   2C
+     5534   34
+End macro EDGE
+Macro EDGE:
+     5535   08
+     5536   44
+     5537   34
+     5538   30
+End macro EDGE
+Macro EDGE:
+     5539   07
+     553A   44
+     553B   30
+     553C   2C
+End macro EDGE
+Macro EDGE:
+     553D   07
+     553E   55
+     553F   38
+     5540   3C
+End macro EDGE
+Macro EDGE:
+     5541   08
+     5542   55
+     5543   3C
+     5544   40
+End macro EDGE
+Macro EDGE:
+     5545   08
+     5546   55
+     5547   40
+     5548   38
+End macro EDGE
+.SHIP_KRAIT_FACES
+Macro FACE:
+     5549   1F
+     554A   03
+     554B   18
+     554C   03
+End macro FACE
+Macro FACE:
+     554D   5F
+     554E   03
+     554F   18
+     5550   03
+End macro FACE
+Macro FACE:
+     5551   DF
+     5552   03
+     5553   18
+     5554   03
+End macro FACE
+Macro FACE:
+     5555   9F
+     5556   03
+     5557   18
+     5558   03
+End macro FACE
+Macro FACE:
+     5559   3F
+     555A   26
+     555B   00
+     555C   4D
+End macro FACE
+Macro FACE:
+     555D   BF
+     555E   26
+     555F   00
+     5560   4D
+End macro FACE
+.SHIP_CONSTRICTOR
+     5561   03
+     5562   81 10
+     5564   7A
+     5565   DA
+     5566   4D
+     5567   00
+     5568   2E
+     5569   66
+     556A   18
+     556B   00 00
+     556D   28
+     556E   2D
+     556F   FC
+     5570   24
+     5571   00
+     5572   00
+     5573   02
+     5574   34
+.SHIP_CONSTRICTOR_VERTICES
+Macro VERTEX:
+     5575   14
+     5576   07
+     5577   50
+     5578   5F
+     5579   02
+     557A   99
+End macro VERTEX
+Macro VERTEX:
+     557B   14
+     557C   07
+     557D   50
+     557E   DF
+     557F   01
+     5580   99
+End macro VERTEX
+Macro VERTEX:
+     5581   36
+     5582   07
+     5583   28
+     5584   DF
+     5585   14
+     5586   99
+End macro VERTEX
+Macro VERTEX:
+     5587   36
+     5588   07
+     5589   28
+     558A   FF
+     558B   45
+     558C   89
+End macro VERTEX
+Macro VERTEX:
+     558D   14
+     558E   0D
+     558F   28
+     5590   BF
+     5591   56
+     5592   88
+End macro VERTEX
+Macro VERTEX:
+     5593   14
+     5594   0D
+     5595   28
+     5596   3F
+     5597   67
+     5598   88
+End macro VERTEX
+Macro VERTEX:
+     5599   36
+     559A   07
+     559B   28
+     559C   7F
+     559D   37
+     559E   89
+End macro VERTEX
+Macro VERTEX:
+     559F   36
+     55A0   07
+     55A1   28
+     55A2   5F
+     55A3   23
+     55A4   99
+End macro VERTEX
+Macro VERTEX:
+     55A5   14
+     55A6   0D
+     55A7   05
+     55A8   1F
+     55A9   FF
+     55AA   FF
+End macro VERTEX
+Macro VERTEX:
+     55AB   14
+     55AC   0D
+     55AD   05
+     55AE   9F
+     55AF   FF
+     55B0   FF
+End macro VERTEX
+Macro VERTEX:
+     55B1   14
+     55B2   07
+     55B3   3E
+     55B4   52
+     55B5   99
+     55B6   99
+End macro VERTEX
+Macro VERTEX:
+     55B7   14
+     55B8   07
+     55B9   3E
+     55BA   D2
+     55BB   99
+     55BC   99
+End macro VERTEX
+Macro VERTEX:
+     55BD   19
+     55BE   07
+     55BF   19
+     55C0   72
+     55C1   99
+     55C2   99
+End macro VERTEX
+Macro VERTEX:
+     55C3   19
+     55C4   07
+     55C5   19
+     55C6   F2
+     55C7   99
+     55C8   99
+End macro VERTEX
+Macro VERTEX:
+     55C9   0F
+     55CA   07
+     55CB   0F
+     55CC   6A
+     55CD   99
+     55CE   99
+End macro VERTEX
+Macro VERTEX:
+     55CF   0F
+     55D0   07
+     55D1   0F
+     55D2   EA
+     55D3   99
+     55D4   99
+End macro VERTEX
+Macro VERTEX:
+     55D5   00
+     55D6   07
+     55D7   00
+     55D8   40
+     55D9   9F
+     55DA   01
+End macro VERTEX
+.SHIP_CONSTRICTOR_EDGES
+Macro EDGE:
+     55DB   1F
+     55DC   09
+     55DD   00
+     55DE   04
+End macro EDGE
+Macro EDGE:
+     55DF   1F
+     55E0   19
+     55E1   04
+     55E2   08
+End macro EDGE
+Macro EDGE:
+     55E3   1F
+     55E4   01
+     55E5   04
+     55E6   24
+End macro EDGE
+Macro EDGE:
+     55E7   1F
+     55E8   02
+     55E9   00
+     55EA   20
+End macro EDGE
+Macro EDGE:
+     55EB   1F
+     55EC   29
+     55ED   00
+     55EE   1C
+End macro EDGE
+Macro EDGE:
+     55EF   1F
+     55F0   23
+     55F1   1C
+     55F2   20
+End macro EDGE
+Macro EDGE:
+     55F3   1F
+     55F4   14
+     55F5   08
+     55F6   24
+End macro EDGE
+Macro EDGE:
+     55F7   1F
+     55F8   49
+     55F9   08
+     55FA   0C
+End macro EDGE
+Macro EDGE:
+     55FB   1F
+     55FC   39
+     55FD   18
+     55FE   1C
+End macro EDGE
+Macro EDGE:
+     55FF   1F
+     5600   37
+     5601   18
+     5602   20
+End macro EDGE
+Macro EDGE:
+     5603   1F
+     5604   67
+     5605   14
+     5606   20
+End macro EDGE
+Macro EDGE:
+     5607   1F
+     5608   56
+     5609   10
+     560A   24
+End macro EDGE
+Macro EDGE:
+     560B   1F
+     560C   45
+     560D   0C
+     560E   24
+End macro EDGE
+Macro EDGE:
+     560F   1F
+     5610   58
+     5611   0C
+     5612   10
+End macro EDGE
+Macro EDGE:
+     5613   1F
+     5614   68
+     5615   10
+     5616   14
+End macro EDGE
+Macro EDGE:
+     5617   1F
+     5618   78
+     5619   14
+     561A   18
+End macro EDGE
+Macro EDGE:
+     561B   1F
+     561C   89
+     561D   0C
+     561E   18
+End macro EDGE
+Macro EDGE:
+     561F   1F
+     5620   06
+     5621   20
+     5622   24
+End macro EDGE
+Macro EDGE:
+     5623   12
+     5624   99
+     5625   28
+     5626   30
+End macro EDGE
+Macro EDGE:
+     5627   05
+     5628   99
+     5629   30
+     562A   38
+End macro EDGE
+Macro EDGE:
+     562B   0A
+     562C   99
+     562D   38
+     562E   28
+End macro EDGE
+Macro EDGE:
+     562F   0A
+     5630   99
+     5631   2C
+     5632   3C
+End macro EDGE
+Macro EDGE:
+     5633   05
+     5634   99
+     5635   34
+     5636   3C
+End macro EDGE
+Macro EDGE:
+     5637   12
+     5638   99
+     5639   2C
+     563A   34
+End macro EDGE
+.SHIP_CONSTRICTOR_FACES
+Macro FACE:
+     563B   1F
+     563C   00
+     563D   37
+     563E   0F
+End macro FACE
+Macro FACE:
+     563F   9F
+     5640   18
+     5641   4B
+     5642   14
+End macro FACE
+Macro FACE:
+     5643   1F
+     5644   18
+     5645   4B
+     5646   14
+End macro FACE
+Macro FACE:
+     5647   1F
+     5648   2C
+     5649   4B
+     564A   00
+End macro FACE
+Macro FACE:
+     564B   9F
+     564C   2C
+     564D   4B
+     564E   00
+End macro FACE
+Macro FACE:
+     564F   9F
+     5650   2C
+     5651   4B
+     5652   00
+End macro FACE
+Macro FACE:
+     5653   1F
+     5654   00
+     5655   35
+     5656   00
+End macro FACE
+Macro FACE:
+     5657   1F
+     5658   2C
+     5659   4B
+     565A   00
+End macro FACE
+Macro FACE:
+     565B   3F
+     565C   00
+     565D   00
+     565E   A0
+End macro FACE
+Macro FACE:
+     565F   5F
+     5660   00
+     5661   1B
+     5662   00
+End macro FACE
+.HATB
+     5663   02
+     5664   54
+     5665   3B
+     5666   03
+     5667   82
+     5668   B0
+     5669   00
+     566A   00
+     566B   00
+     566C   01
+     566D   50
+     566E   11
+     566F   01
+     5670   D1
+     5671   28
+     5672   01
+     5673   40
+     5674   06
+     5675   03
+     5676   60
+     5677   90
+     5678   04
+     5679   10
+     567A   D1
+     567B   00
+     567C   00
+     567D   00
+     567E   06
+     567F   51
+     5680   F8
+     5681   07
+     5682   60
+     5683   75
+     5684   00
+     5685   00
+     5686   00
+.HALL
+     5687   20 BF 4C   JSR &4CBF
+     568A   A9 00      LDA #&00
+     568C   20 0E 24   JSR &240E
+     568F   20 DE AB   JSR &ABDE
+     5692   10 29      BPL &56BD
+     5694   29 03      AND #&03
+     5696   85 D1      STA &D1
+     5698   0A         ASL A
+     5699   0A         ASL A
+     569A   0A         ASL A
+     569B   65 D1      ADC &D1
+     569D   AA         TAX
+     569E   A0 03      LDY #&03
+     56A0   84 95      STY &95
+.HAL8
+     56A2   A0 02      LDY #&02
+.HAL9
+     56A4   BD 63 56   LDA &5663,X
+     56A7   99 31 00   STA &0031,Y
+     56AA   E8         INX
+     56AB   88         DEY
+     56AC   10 F6      BPL &56A4
+     56AE   8A         TXA
+     56AF   48         PHA
+     56B0   20 53 57   JSR &5753
+     56B3   68         PLA
+     56B4   AA         TAX
+     56B5   C6 95      DEC &95
+     56B7   D0 E9      BNE &56A2
+     56B9   A0 80      LDY #&80
+     56BB   D0 1A      BNE &56D7
+.HA7
+     56BD   4A         LSR A
+     56BE   85 32      STA &32
+     56C0   20 DE AB   JSR &ABDE
+     56C3   85 31      STA &31
+     56C5   20 DE AB   JSR &ABDE
+     56C8   29 07      AND #&07
+     56CA   C9 07      CMP #&07
+     56CC   D0 02      BNE &56D0
+     56CE   29 03      AND #&03
+     56D0   85 33      STA &33
+     56D2   20 53 57   JSR &5753
+     56D5   A0 00      LDY #&00
+.HA9
+     56D7   84 85      STY &85
+     56D9   20 BF 4C   JSR &4CBF
+.HANGER
+     56DC   A2 02      LDX #&02
+.HAL1
+     56DE   86 84      STX &84
+     56E0   A9 82      LDA #&82
+     56E2   A6 84      LDX &84
+     56E4   86 81      STX &81
+     56E6   20 1B A2   JSR &A21B
+     56E9   A5 1B      LDA &1B
+     56EB   18         CLC
+     56EC   69 60      ADC #&60
+     56EE   A8         TAY
+     56EF   A5 1B      LDA &1B
+     56F1   29 07      AND #&07
+     56F3   20 F2 57   JSR &57F2
+     56F6   A0 00      LDY #&00
+     56F8   20 C2 57   JSR &57C2
+     56FB   A9 04      LDA #&04
+     56FD   A0 F8      LDY #&F8
+     56FF   20 DB 57   JSR &57DB
+     5702   A4 85      LDY &85
+     5704   F0 0A      BEQ &5710
+     5706   20 C2 57   JSR &57C2
+     5709   A0 80      LDY #&80
+     570B   A9 40      LDA #&40
+     570D   20 DB 57   JSR &57DB
+.HA2
+     5710   A6 84      LDX &84
+     5712   E8         INX
+     5713   E0 0D      CPX #&0D
+     5715   90 C7      BCC &56DE
+     5717   A9 10      LDA #&10
+.HAL6
+     5719   AE AE 94   LDX &94AE
+     571C   86 08      STX &08
+     571E   85 84      STA &84
+     5720   29 F8      AND #&F8
+     5722   A0 00      LDY #&00
+     5724   20 F2 57   JSR &57F2
+     5727   A2 80      LDX #&80
+     5729   A0 01      LDY #&01
+.HAL7
+     572B   8A         TXA
+     572C   31 07      AND (&07),Y
+     572E   D0 1B      BNE &574B
+     5730   8A         TXA
+     5731   11 07      ORA (&07),Y
+     5733   91 07      STA (&07),Y
+     5735   C8         INY
+     5736   C0 08      CPY #&08
+     5738   D0 F1      BNE &572B
+     573A   A5 07      LDA &07
+     573C   18         CLC
+     573D   69 40      ADC #&40
+     573F   85 07      STA &07
+     5741   A5 08      LDA &08
+     5743   69 01      ADC #&01
+     5745   85 08      STA &08
+     5747   A0 00      LDY #&00
+     5749   F0 E0      BEQ &572B
+.HA6
+     574B   A5 84      LDA &84
+     574D   18         CLC
+     574E   69 10      ADC #&10
+     5750   D0 C7      BNE &5719
+.HA1
+     5752   60         RTS
+.HAS1
+     5753   20 B0 35   JSR &35B0
+     5756   A5 31      LDA &31
+     5758   85 49      STA &49
+     575A   4A         LSR A
+     575B   66 45      ROR &45
+     575D   A5 32      LDA &32
+     575F   85 43      STA &43
+     5761   4A         LSR A
+     5762   A9 01      LDA #&01
+     5764   69 00      ADC #&00
+     5766   85 4A      STA &4A
+     5768   A9 80      LDA #&80
+     576A   85 48      STA &48
+     576C   85 9B      STA &9B
+     576E   A9 0B      LDA #&0B
+     5770   85 65      STA &65
+     5772   20 DE AB   JSR &ABDE
+     5775   85 84      STA &84
+.HAL5
+     5777   A2 15      LDX #&15
+     5779   A0 09      LDY #&09
+     577B   20 61 8F   JSR &8F61
+     577E   A2 17      LDX #&17
+     5780   A0 0B      LDY #&0B
+     5782   20 61 8F   JSR &8F61
+     5785   A2 19      LDX #&19
+     5787   A0 0D      LDY #&0D
+     5789   20 61 8F   JSR &8F61
+     578C   C6 84      DEC &84
+     578E   D0 E7      BNE &5777
+     5790   A4 33      LDY &33
+     5792   F0 BE      BEQ &5752
+     5794   A2 04      LDX #&04
+.hloop
+     5796   E8         INX
+     5797   E8         INX
+     5798   BD FE 4D   LDA &4DFE,X
+     579B   85 1E      STA &1E
+     579D   BD FF 4D   LDA &4DFF,X
+     57A0   85 1F      STA &1F
+     57A2   F0 F2      BEQ &5796
+     57A4   88         DEY
+     57A5   D0 EF      BNE &5796
+     57A7   A0 01      LDY #&01
+     57A9   B1 1E      LDA (&1E),Y
+     57AB   85 81      STA &81
+     57AD   C8         INY
+     57AE   B1 1E      LDA (&1E),Y
+     57B0   85 82      STA &82
+     57B2   20 A1 B0   JSR &B0A1
+     57B5   A9 64      LDA #&64
+     57B7   E5 81      SBC &81
+     57B9   4A         LSR A
+     57BA   85 46      STA &46
+     57BC   20 6A AF   JSR &AF6A
+     57BF   4C 9A B1   JMP &B19A
+.HAS2
+     57C2   A9 20      LDA #&20
+.HAL2
+     57C4   AA         TAX
+     57C5   31 07      AND (&07),Y
+     57C7   D0 11      BNE &57DA
+     57C9   8A         TXA
+     57CA   11 07      ORA (&07),Y
+     57CC   91 07      STA (&07),Y
+     57CE   8A         TXA
+     57CF   4A         LSR A
+     57D0   90 F2      BCC &57C4
+     57D2   98         TYA
+     57D3   69 07      ADC #&07
+     57D5   A8         TAY
+     57D6   A9 80      LDA #&80
+     57D8   90 EA      BCC &57C4
+.HA3
+     57DA   60         RTS
+.HAS3
+     57DB   AA         TAX
+     57DC   31 07      AND (&07),Y
+     57DE   D0 FA      BNE &57DA
+     57E0   8A         TXA
+     57E1   11 07      ORA (&07),Y
+     57E3   91 07      STA (&07),Y
+     57E5   8A         TXA
+     57E6   0A         ASL A
+     57E7   90 F2      BCC &57DB
+     57E9   98         TYA
+     57EA   E9 08      SBC #&08
+     57EC   A8         TAY
+     57ED   A9 01      LDA #&01
+     57EF   B0 EA      BCS &57DB
+     57F1   60         RTS
+.GetRowAddress
+     57F2   18         CLC
+     57F3   79 AE 93   ADC &93AE,Y
+     57F6   85 07      STA &07
+     57F8   B9 AE 94   LDA &94AE,Y
+     57FB   69 00      ADC #&00
+     57FD   85 08      STA &08
+     57FF   60         RTS
+D.MOQ
+Assembled at &4E00 
+Ends at &5800 
+Code size is &A00 
+Execute at 19968 
+Reload at 19968 
+D.MOQ 19968  &5800  &4E00  &4E00 
+Saving file '3-assembled-output/D.MOQ.bin'
 .log
      8000
      8001   00
@@ -26454,10 +29677,10 @@ elitef = &33F1
 .eliteg
 eliteg = &3E2A 
 .ships
-ships = &4CB2 
+ships = &4CE0 
 .end
-P% = &4DB0 
-S.ELITECO &1D00  &4DB0  &1D00  &1D00 
+P% = &4DDE 
+S.ELITECO &1D00  &4DDE  &1D00  &1D00 
 Saving file '3-assembled-output/ELITECO.unprot.bin'
 .TRTB%
      0004

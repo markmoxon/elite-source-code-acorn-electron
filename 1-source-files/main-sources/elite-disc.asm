@@ -64,5 +64,6 @@
  PUTFILE "3-assembled-output/D.MON.bin", "D.MON", &004E00, &004E00
  PUTFILE "3-assembled-output/D.MOO.bin", "D.MOO", &004E00, &004E00
  PUTFILE "3-assembled-output/D.MOP.bin", "D.MOP", &004E00, &004E00
+ PUTFILE "3-assembled-output/D.MOQ.bin", "D.MOQ", &004E00, &004E00
 
  PUTFILE "3-assembled-output/README.txt", "README", &FFFFFF, &FFFFFF
