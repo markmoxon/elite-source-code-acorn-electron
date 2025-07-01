@@ -17122,7 +17122,7 @@ ENDIF
 
                         \ --- Mod: Code added for additional ships: ----------->
 
- LDA #16                \ Call SHIPinA to load ship blueprints file Q, which is
+ LDA #25                \ Call SHIPinA to load ship blueprints file Z, which is
  JSR SHIPinA            \ the file that contains the Constrictor and the ship
                         \ hangar code
 
@@ -18025,15 +18025,26 @@ ENDIF
 
 .CTLI
 
- EQUS ". 0"             \ The "0" part of the string is overwritten with the
+ EQUS ".0"              \ The "0" part of the string is overwritten with the
  EQUB 13                \ actual drive number by the CATS routine
 
                         \ --- End of added code ------------------------------->
 
+\ ******************************************************************************
+\
+\       Name: CTLIadfs
+\       Type: Variable
+\   Category: Save and load
+\    Summary: The OS command string for cataloguing an ADFS disc
+\
+\ ******************************************************************************
+
                         \ --- Mod: Code added for ADFS: ----------------------->
 
- EQUS "E"               \ This extension supports ADFS by letting us modify the
- EQUB 13                \ command string from ". 0" to ".:0.E"
+.CTLIadfs
+
+ EQUS ". :0.E"          \ The "0" part of the string is overwritten with the
+ EQUB 13                \ actual drive number by the CATS routine
 
                         \ --- End of added code ------------------------------->
 
@@ -18090,9 +18101,17 @@ ENDIF
                         \ entered, so return from the subroutine (as DELT-1
                         \ contains an RTS)
 
- STA CTLI+2             \ Store the drive number in the third byte of the
+ STA CTLI+1             \ Store the drive number in the second byte of the
                         \ command string at CTLI, so it overwrites the "0" in
-                        \ ". 0" with the drive number to catalogue
+                        \ ".0" with the drive number to catalogue
+
+                        \ --- Mod: Code added for ADFS: ----------------------->
+
+ STA CTLIadfs+3         \ Store the drive number in the third byte of the
+                        \ command string at CTLIadfs, so it overwrites the "0"
+                        \ in ". :0.E" with the drive number to catalogue
+
+                        \ --- End of added code ------------------------------->
 
  STA DTW7               \ Store the drive number in DTW7, so printing extended
                         \ token 4 will show the correct drive number (as token 4
@@ -18108,10 +18127,32 @@ ENDIF
 
  STA XC                 \ Move the text cursor to column 1
 
+                        \ --- Mod: Code added for ADFS: ----------------------->
+
+ LDX ADFS               \ If this is not ADFS, skip the following
+ BEQ cats1
+
+ LDX #LO(CTLIadfs)      \ Set (Y X) to point to the OS command at CTLIadfs,
+ LDY #HI(CTLIadfs)      \ which is the ADFS command for cataloguing that drive
+
+ BNE cats2              \ Jump to cats2 to perform the command (this BNE is
+                        \ effectively a JMP as the high byte of CTLIadfs is
+                        \ never zero
+
+.cats1
+
+                        \ --- End of added code ------------------------------->
+
  LDX #LO(CTLI)          \ Set (Y X) to point to the OS command at CTLI, which
  LDY #HI(CTLI)          \ contains a dot and the drive number, which is the
                         \ DFS command for cataloguing that drive (*. being short
                         \ for *CAT)
+
+                        \ --- Mod: Code added for ADFS: ----------------------->
+
+.cats2
+
+                        \ --- End of added code ------------------------------->
 
  JSR OSCLI              \ Call OSCLI to execute the OS command at (Y X), which
                         \ catalogues the disc
@@ -18160,8 +18201,8 @@ ENDIF
                         \ entered as part of the catalogue process, so jump to
                         \ SVE to display the disc access menu
 
- LDA CTLI+2             \ The call to CATS above put the drive number into
- STA DELI+4             \ CTLI+2, so copy the drive number into DELI+4 so that
+ LDA CTLI+1             \ The call to CATS above put the drive number into
+ STA DELI+4             \ CTLI+1, so copy the drive number into DELI+4 so that
                         \ the drive number in the "DE.:0.E.1234567" string
                         \ gets updated (i.e. the number after the colon)
 
@@ -26209,7 +26250,7 @@ ENDMACRO
 
  STA QQ22+1             \ Reset the on-screen hyperspace counter
 
- LDA #16                \ Call SHIPinA to load ship blueprints file Q, which is
+ LDA #25                \ Call SHIPinA to load ship blueprints file Z, which is
  JSR SHIPinA            \ the file that contains the Constrictor and the ship
                         \ hangar code
 
@@ -26765,7 +26806,7 @@ ENDMACRO
 \
 \ ELITE SHIP HANGAR BLUEPRINTS FILE
 \
-\ Produces the binary file D.MOQ.bin that gets loaded to show the ship hangar.
+\ Produces the binary file D.MOZ.bin that gets loaded to show the ship hangar.
 \
 \ ******************************************************************************
 
@@ -26780,7 +26821,7 @@ ENDMACRO
 \       Name: XX21 for the ship hangar
 \       Type: Variable
 \   Category: Drawing ships
-\    Summary: Ship blueprints lookup table for the D.MOQ file
+\    Summary: Ship blueprints lookup table for the D.MOZ file
 \
 \ ******************************************************************************
 
@@ -26825,7 +26866,7 @@ ENDMACRO
 \       Name: E% for the ship hangar
 \       Type: Variable
 \   Category: Drawing ships
-\    Summary: Ship blueprints default NEWB flags for the D.MOQ file
+\    Summary: Ship blueprints default NEWB flags for the D.MOZ file
 \
 \ ******************************************************************************
 
@@ -28468,21 +28509,21 @@ ENDMACRO
 
 \ ******************************************************************************
 \
-\ Save D.MOQ.bin
+\ Save D.MOZ.bin
 \
 \ ******************************************************************************
 
                         \ --- Mod: Code added for ship hangar: ---------------->
 
- PRINT "D.MOQ"
+ PRINT "D.MOZ"
  PRINT "Assembled at ", ~XX21
  PRINT "Ends at ", ~P%
  PRINT "Code size is ", ~(P% - XX21)
  PRINT "Execute at ", XX21
  PRINT "Reload at ", XX21
 
- PRINT "D.MOQ ", XX21, " ", ~P%, " ", ~XX21, " ", ~XX21
- SAVE "3-assembled-output/D.MOQ.bin", XX21, P%, XX21
+ PRINT "D.MOZ ", XX21, " ", ~P%, " ", ~XX21, " ", ~XX21
+ SAVE "3-assembled-output/D.MOZ.bin", XX21, P%, XX21
 
                         \ --- End of added code ------------------------------->
 
@@ -28490,7 +28531,8 @@ ENDMACRO
 \
 \ ELITE SIDEWAYS RAM FILE
 \
-\ Produces the binary file ELTROM.bin that gets loaded into sideways RAM.
+\ Produces the binary files ELTROM1.bin and ELTROM2.bin that get loaded into
+\ sideways RAM.
 \
 \ ******************************************************************************
 
@@ -53391,7 +53433,7 @@ ENDMACRO
 
 \ ******************************************************************************
 \
-\ Save ELTROM.bin
+\ Save ELTROM1.bin and ELTROM2.bin
 \
 \ ******************************************************************************
 
@@ -53403,4 +53445,5 @@ ENDMACRO
  PRINT "Reload at ", ~LOAD_R%
 
  PRINT "S.ELTROM ", ~CODE_R%, " ", ~P%, " ", ~LOAD_R%, " ", ~LOAD_R%
- SAVE "3-assembled-output/ELTROM.bin", CODE_R%, P%, LOAD_R%
+ SAVE "3-assembled-output/ELTROM1.bin", CODE_R%, CODE_R%+&2000, LOAD_R%
+ SAVE "3-assembled-output/ELTROM2.bin", CODE_R%+&2000, P%, LOAD_R%

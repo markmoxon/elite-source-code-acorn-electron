@@ -95,8 +95,6 @@
 
                         \ --- Mod: Code added for ADFS: ----------------------->
 
- CTLI = &37DE           \ The address of the CTLI command in the main game code
-
  ADFS = S%+&27          \ The address of the ADFS variable in the main game code
 
  OSARGS = &FFDA         \ The address for the OSARGS routine
@@ -1956,11 +1954,6 @@ ENDMACRO
 
  CMP #8                 \ If this is not ADFS (type 8), jump to entr1 to skip the
  BNE entr1              \ code modifications and do the *DIR E command
-
- LDA #':'               \ Convert the CTLI command from ". 0{cr}E{cr}" to
- STA CTLI+1             \ ".:0.E{cr}" so it will work on ADFS
- LDA #'.'
- STA CTLI+3
 
  LDA #&FF               \ Set the ADFS variable in the main game binary to &FF
  STA ADFS               \ to indicate that ADFS is being used

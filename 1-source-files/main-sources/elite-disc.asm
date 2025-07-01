@@ -40,7 +40,8 @@
  PUTBASIC "1-source-files/basic-programs/load-rom.bas", "ELITESR"
  PUTFILE "1-source-files/basic-programs/$.ELITE-disc.bin", "ELITE", &FF0E00, &FF8023
  PUTFILE "3-assembled-output/ELITEDA.bin", "ELITEDA", &FF4400, &FF5200
- PUTFILE "3-assembled-output/ELTROM.bin", "ELITERM", &FF8000, &FF8000
+ PUTFILE "3-assembled-output/ELTROM1.bin", "ELITER1", &FF8000, &FF8000
+ PUTFILE "3-assembled-output/ELTROM2.bin", "ELITER2", &FFA000, &FFA000
  PUTFILE "3-assembled-output/ELITECO.bin", "ELITECO", &000000, &FFFFFF
 
  PUTFILE "1-source-files/other-files/E.MAX.bin", "E.MAX", &000000, &000000
@@ -64,6 +65,6 @@
  PUTFILE "3-assembled-output/D.MON.bin", "D.MON", &004E00, &004E00
  PUTFILE "3-assembled-output/D.MOO.bin", "D.MOO", &004E00, &004E00
  PUTFILE "3-assembled-output/D.MOP.bin", "D.MOP", &004E00, &004E00
- PUTFILE "3-assembled-output/D.MOQ.bin", "D.MOQ", &004E00, &004E00
+ PUTFILE "3-assembled-output/D.MOZ.bin", "D.MOZ", &004E00, &004E00
 
  PUTFILE "3-assembled-output/README.txt", "README", &FFFFFF, &FFFFFF
