@@ -6691,6 +6691,46 @@ ENDIF
 
 \ ******************************************************************************
 \
+\       Name: RemoveLaunch
+\       Type: Subroutine
+\   Category: Drawing circles
+\    Summary: Remove the launch tunnel
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for additional ships: ----------->
+
+.RemoveLaunch
+
+ LDA #8                 \ Remove the space station launch tunnel by redrawing it
+
+ EQUB &2C               \ Skip the next instruction by turning it into
+                        \ &2C &A9 &04, or BIT &04A9, which does nothing apart
+                        \ from affect the flags
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: RemoveHyperspace
+\       Type: Subroutine
+\   Category: Drawing circles
+\    Summary: Remove the hyperspace tunnel
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for additional ships: ----------->
+
+.RemoveHyperspace
+
+ LDA #4                 \ Remove the hyperspace tunnel by redrawing it
+ STA STP
+ JMP HFS1
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
 \       Name: LAUN
 \       Type: Subroutine
 \   Category: Drawing circles
@@ -6748,10 +6788,14 @@ ENDIF
 
  JSR TTX66              \ Clear the screen and draw a border box
 
- JSR HFS1               \ Call HFS1 below and then fall through into the same
-                        \ routine, so this effectively runs HFS1 twice, and as
-                        \ HFS1 draws 8 concentric rings, this means we draw 16
-                        \ of them in all
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\JSR HFS1               \ Call HFS1 below and then fall through into the same
+\                       \ routine, so this effectively runs HFS1 twice, and as
+\                       \ HFS1 draws 8 concentric rings, this means we draw 16
+\                       \ of them in all
+
+                        \ --- End of removed code ----------------------------->
 
 .HFS1
 
@@ -12302,12 +12346,16 @@ ENDIF
  LDA #3                 \ Call SHIPinA to load ship blueprints file D, which is
  JSR SHIPinA            \ one of the two files that contain Thargoids
 
+ JSR RemoveHyperspace   \ Remove the hyperspace tunnel
+
  LDA #3                 \ Clear the top part of the screen, draw a white border,
  JSR TT66               \ and set the current view type in QQ11 to 3
 
  JSR LL164              \ Call LL164 to show the hyperspace tunnel and make the
                         \ hyperspace sound for a second time (as we already
                         \ called LL164 in TT18)
+
+ JSR RemoveHyperspace   \ Remove the hyperspace tunnel
 
  JSR RES2               \ Reset a number of flight variables and workspaces, as
                         \ well as setting Y to &FF
@@ -12419,6 +12467,8 @@ ENDIF
 
  JSR LOMOD              \ Call LOMOD to load a new ship blueprints file
 
+ JSR RemoveHyperspace   \ Remove the hyperspace tunnel
+
                         \ --- End of added code ------------------------------->
 
                         \ --- Mod: Code removed for witchspace: --------------->
@@ -12473,6 +12523,8 @@ ENDIF
                         \ --- Mod: Code added for additional ships: ----------->
 
  JSR LOMOD              \ Call LOMOD to load a new ship blueprints file
+
+ JSR RemoveLaunch       \ Remove the space station launch tunnel
 
                         \ --- End of added code ------------------------------->
 
@@ -14806,115 +14858,7 @@ ENDIF
                         \   * DOT
                         \   * CPIX4
                         \   * CPIX2
-
-                        \ --- End of moved code ------------------------------->
-
-\ ******************************************************************************
-\
-\       Name: OOPS
-\       Type: Subroutine
-\   Category: Flight
-\    Summary: Take some damage
-\
-\ ------------------------------------------------------------------------------
-\
-\ We just took some damage, so reduce the shields if we have any, or reduce the
-\ energy levels and potentially take some damage to the cargo if we don't.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   A                   The amount of damage to take
-\
-\   INF                 The address of the ship block for the ship that attacked
-\                       us, or the ship that we just ran into
-\
-\ ******************************************************************************
-
-.OOPS
-
- STA T                  \ Store the amount of damage in T
-
- LDY #8                 \ Fetch byte #8 (z_sign) for the ship attacking us, and
- LDX #0                 \ set X = 0
- LDA (INF),Y
-
- BMI OO1                \ If A is negative, then we got hit in the rear, so jump
-                        \ to OO1 to process damage to the aft shield
-
- LDA FSH                \ Otherwise the forward shield was damaged, so fetch the
- SBC T                  \ shield strength from FSH and subtract the damage in T
-
- BCC OO2                \ If the C flag is clear then this amount of damage was
-                        \ too much for the shields, so jump to OO2 to set the
-                        \ shield level to 0 and start taking damage directly
-                        \ from the energy banks
-
- STA FSH                \ Store the new value of the forward shield in FSH
-
- RTS                    \ Return from the subroutine
-
-.OO2
-
- STX FSH                \ Set the forward shield to 0
-
- BCC OO3                \ Jump to OO3 to start taking damage directly from the
-                        \ energy banks (this BCC is effectively a JMP as the C
-                        \ flag is clear, as we jumped to OO2 with a BCC)
-
-.OO1
-
- LDA ASH                \ The aft shield was damaged, so fetch the shield
- SBC T                  \ strength from ASH and subtract the damage in T
-
- BCC OO5                \ If the C flag is clear then this amount of damage was
-                        \ too much for the shields, so jump to OO5 to set the
-                        \ shield level to 0 and start taking damage directly
-                        \ from the energy banks
-
- STA ASH                \ Store the new value of the aft shield in ASH
-
- RTS                    \ Return from the subroutine
-
-.OO5
-
- STX ASH                \ Set the aft shield to 0
-
-.OO3
-
- ADC ENERGY             \ A is negative and contains the amount by which the
- STA ENERGY             \ damage overwhelmed the shields, so this drains the
-                        \ energy banks by that amount (and because the energy
-                        \ banks are shown over four indicators rather than one,
-                        \ but with the same value range of 0-255, energy will
-                        \ appear to drain away four times faster than the
-                        \ shields did)
-
- BEQ P%+4               \ If we have just run out of energy, skip the next
-                        \ instruction to jump straight to our death
-
- BCS P%+5               \ If the C flag is set, then subtracting the damage from
-                        \ the energy banks didn't underflow, so we had enough
-                        \ energy to survive, and we can skip the next
-                        \ instruction to make a sound and take some damage
-
- JMP DEATH              \ Otherwise our energy levels are either 0 or negative,
-                        \ and in either case that means we jump to our DEATH,
-                        \ returning from the subroutine using a tail call
-
- JSR EXNO3              \ We didn't die, so call EXNO3 to make the sound of a
-                        \ collision
-
- JMP OUCH               \ And jump to OUCH to take damage and return from the
-                        \ subroutine using a tail call
-
-                        \ --- Mod: Code moved for sideways RAM: --------------->
-
-                        \ The following routines have been moved into sideways
-                        \ RAM (see the ELITE SIDEWAYS RAM FILE section at the
-                        \ end of this source file):
-                        \
+                        \   * OOPS
                         \   * SPS3
                         \   * GINF
 
@@ -26229,6 +26173,9 @@ ENDMACRO
                         \ it overwrites the "0" in "D.MO0" with the file letter
                         \ to load, from D.MOA to D.MOP
 
+ LDY #255               \ Wait for 255 delay loops so we finish the hyperspace
+ JSR DELAY              \ or launch sound
+
  LDX #LO(SHIPI)         \ Set (Y X) to point to the OS command at SHIPI, which
  LDY #HI(SHIPI)         \ loads the relevant ship blueprints file
 
@@ -26286,9 +26233,11 @@ ENDMACRO
  JSR SHIPinA            \ the file that contains the Constrictor and the ship
                         \ hangar code
 
+ JSR RemoveLaunch       \ Remove the space station launch tunnel
+
  JSR HALL               \ Show the ship hangar
 
- LDY #244               \ Wait for 244 delay loops
+ LDY #255               \ Wait for 255 delay loops
  JSR DELAY
 
  LDA TP                 \ Fetch bits 0 and 1 of TP, and if they are non-zero
@@ -43316,6 +43265,106 @@ ENDMACRO
  STA (SC),Y             \ A, using EOR logic, just as above
 
  RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: OOPS
+\       Type: Subroutine
+\   Category: Flight
+\    Summary: Take some damage
+\
+\ ------------------------------------------------------------------------------
+\
+\ We just took some damage, so reduce the shields if we have any, or reduce the
+\ energy levels and potentially take some damage to the cargo if we don't.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   The amount of damage to take
+\
+\   INF                 The address of the ship block for the ship that attacked
+\                       us, or the ship that we just ran into
+\
+\ ******************************************************************************
+
+.OOPS
+
+ STA T                  \ Store the amount of damage in T
+
+ LDY #8                 \ Fetch byte #8 (z_sign) for the ship attacking us, and
+ LDX #0                 \ set X = 0
+ LDA (INF),Y
+
+ BMI OO1                \ If A is negative, then we got hit in the rear, so jump
+                        \ to OO1 to process damage to the aft shield
+
+ LDA FSH                \ Otherwise the forward shield was damaged, so fetch the
+ SBC T                  \ shield strength from FSH and subtract the damage in T
+
+ BCC OO2                \ If the C flag is clear then this amount of damage was
+                        \ too much for the shields, so jump to OO2 to set the
+                        \ shield level to 0 and start taking damage directly
+                        \ from the energy banks
+
+ STA FSH                \ Store the new value of the forward shield in FSH
+
+ RTS                    \ Return from the subroutine
+
+.OO2
+
+ STX FSH                \ Set the forward shield to 0
+
+ BCC OO3                \ Jump to OO3 to start taking damage directly from the
+                        \ energy banks (this BCC is effectively a JMP as the C
+                        \ flag is clear, as we jumped to OO2 with a BCC)
+
+.OO1
+
+ LDA ASH                \ The aft shield was damaged, so fetch the shield
+ SBC T                  \ strength from ASH and subtract the damage in T
+
+ BCC OO5                \ If the C flag is clear then this amount of damage was
+                        \ too much for the shields, so jump to OO5 to set the
+                        \ shield level to 0 and start taking damage directly
+                        \ from the energy banks
+
+ STA ASH                \ Store the new value of the aft shield in ASH
+
+ RTS                    \ Return from the subroutine
+
+.OO5
+
+ STX ASH                \ Set the aft shield to 0
+
+.OO3
+
+ ADC ENERGY             \ A is negative and contains the amount by which the
+ STA ENERGY             \ damage overwhelmed the shields, so this drains the
+                        \ energy banks by that amount (and because the energy
+                        \ banks are shown over four indicators rather than one,
+                        \ but with the same value range of 0-255, energy will
+                        \ appear to drain away four times faster than the
+                        \ shields did)
+
+ BEQ P%+4               \ If we have just run out of energy, skip the next
+                        \ instruction to jump straight to our death
+
+ BCS P%+5               \ If the C flag is set, then subtracting the damage from
+                        \ the energy banks didn't underflow, so we had enough
+                        \ energy to survive, and we can skip the next
+                        \ instruction to make a sound and take some damage
+
+ JMP DEATH              \ Otherwise our energy levels are either 0 or negative,
+                        \ and in either case that means we jump to our DEATH,
+                        \ returning from the subroutine using a tail call
+
+ JSR EXNO3              \ We didn't die, so call EXNO3 to make the sound of a
+                        \ collision
+
+ JMP OUCH               \ And jump to OUCH to take damage and return from the
+                        \ subroutine using a tail call
 
 \ ******************************************************************************
 \
