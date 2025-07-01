@@ -6060,17 +6060,11 @@ ENDIF
  STA P+1                \ Store the address of this character's definition in
  STX P+2                \ P(2 1)
 
-                        \ --- Mod: Code added for ADFS: ----------------------->
-
-.printADFS
-
-                        \ --- End of added code ------------------------------->
-
- LDA #128               \ Set SC = 128 for use in the calculation below
- STA SC
-
                         \ --- Mod: Code removed for ADFS: --------------------->
 
+\LDA #128               \ Set SC = 128 for use in the calculation below
+\STA SC
+\
 \LDA YC                 \ If YC < 24 then we are in the top part of the screen,
 \CMP #24                \ so skip the following two instructions
 \BCC P%+8
@@ -6084,9 +6078,87 @@ ENDIF
 
                         \ --- And replaced by: -------------------------------->
 
- LDA YC                 \ If YC >= 24 then we are off the screen part of the
- CMP #24                \ screen, so jump to RR4 to restore the registers and
- BCS RR4                \ return from the subroutine using a tail call
+.chpr1
+
+ LDA YC                 \ If YC < 24 then we are in the top part of the screen,
+ CMP #24                \ so jump to chpr4 to skip the pagination code
+ BCC chpr4
+
+ JSR t                  \ Scan the keyboard until a key is pressed, returning
+                        \ the ASCII code in A and X
+
+                        \ We now want to clear the catalogue from the screen,
+                        \ but we can't call the normal TTX66, LYN or BORDER
+                        \ routines as they are partially in sideways RAM, and
+                        \ ADFS is currently paged in (and paging it out seems
+                        \ to stop the catalogue from being printed), so instead
+                        \ the screen-clearing logic is repeated here
+
+ LDY #3                 \ We want to clear the catalogue from character row 3,
+                        \ so set a row counter in Y
+
+.chpr2
+
+ LDA #128               \ Set SC = 128 for use in the calculation below
+ STA SC
+
+ STY YSAV               \ Store the character row in YSAV, so we can retrieve it
+                        \ later
+
+ TYA                    \ Copy Y to A so it contains the number of the character
+                        \ row that we want to clear
+
+ STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
+                        \                           = char row * 256
+
+ LSR A                  \ Set (A SC) = (A SC) / 4
+ ROR SC                 \            = (4 * ((char row * 64) + 32)) / 4
+ LSR A                  \            = char row * 64 + 32
+ ROR SC
+
+ ADC SC+1               \ Set SC(1 0) = (A SC) + (SC+1 0) + &5800
+ ADC #&58               \             = (char row * 64 + 32)
+ STA SC+1               \               + char row * 256
+                        \               + &5800
+                        \
+                        \ which is what we want, so SC(1 0) contains the address
+                        \ of the first visible pixel on the character row we
+                        \ want to clear
+
+                        \ We now clear the character row, making sure we don't
+                        \ clear the borders
+
+ LDA #0                 \ Set A = 0 to poke into screen memory to clear the
+                        \ screen
+
+ LDY #247               \ Set Y as a byte counter for this character row, from
+                        \ the right end, just before the border
+
+.chpr3
+
+ STA (SC),Y             \ Blank the Y-th byte of the character row at SC(1 0)
+
+ DEY                    \ Decrement the byte counter
+
+ CPY #7                 \ Loop back until we have reached the left end, just
+ BNE chpr3              \ after the border
+
+ LDY YSAV               \ Retrieve the character row number from YSAV
+
+ INY                    \ Loop back to clear the next row until we have reached
+ CPY #24                \ row 24, at which point we are done
+ BNE chpr2
+
+ LDA #1                 \ Move the text cursor to column 1
+ STA XC
+
+ LDA #3                 \ Move the text cursor to row 3
+ STA YC
+
+.chpr4
+
+ LDX #128               \ Set SC = 128 for use in the calculation below
+ STX SC
 
                         \ --- End of replacement ------------------------------>
 
@@ -6122,7 +6194,7 @@ ENDIF
                         \ --- Mod: Code added for ADFS: ----------------------->
 
  LDX ADFS               \ If this is not ADFS, skip the following
- BEQ notADFS
+ BEQ chpr5
 
  CMP #21                \ If A < 21, i.e. the text cursor is in column 0-20,
  BCC RR5                \ jump to RR5 to skip the following
@@ -6138,11 +6210,11 @@ ENDIF
  LDA #1                 \ Move the text cursor to column 1
  STA XC
 
- BNE printADFS          \ Jump to printADFS to recalculate the value of SC(1 0)
+ BNE chpr1              \ Jump to chpr1 to recalculate the value of SC(1 0)
                         \ and keep printing (this BNE is effectively a JMP as A
                         \ is never zero)
 
-.notADFS
+.chpr5
 
                         \ --- End of added code ------------------------------->
 
@@ -14718,82 +14790,14 @@ ENDIF
 
                         \ --- End of added code ------------------------------->
 
-\ ******************************************************************************
-\
-\       Name: SHD
-\       Type: Subroutine
-\   Category: Flight
-\    Summary: Charge a shield and drain some energy from the energy banks
-\
-\ ------------------------------------------------------------------------------
-\
-\ Charge up a shield, and if it needs charging, drain some energy from the
-\ energy banks.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   X                   The value of the shield to recharge
-\
-\ ******************************************************************************
-
- DEX                    \ If we get here then we just incremented the shield
-                        \ value back around to zero, so decrement it back down
-                        \ to 255 so it stays at the maximum value of 255
-
- RTS                    \ Return from the subroutine
-
-.SHD
-
- INX                    \ Increment the shield value
-
- BEQ SHD-2              \ If the shield value is 0 then this means it was 255
-                        \ before, which is the maximum value, so jump to SHD-2
-                        \ to bring it back down to 255 and return without
-                        \ draining our energy banks
-
-                        \ Otherwise fall through into DENGY to drain our energy
-                        \ to pay for all this shield charging
-
-\ ******************************************************************************
-\
-\       Name: DENGY
-\       Type: Subroutine
-\   Category: Flight
-\    Summary: Drain some energy from the energy banks
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   Z flag              Set if we have no energy left, clear otherwise
-\
-\ ******************************************************************************
-
-.DENGY
-
- DEC ENERGY             \ Decrement the energy banks in ENERGY
-
- PHP                    \ Save the flags on the stack
-
- BNE P%+5               \ If the energy levels are not yet zero, skip the
-                        \ following instruction
-
- INC ENERGY             \ The minimum allowed energy level is 1, and we just
-                        \ reached 0, so increment ENERGY back to 1
-
- PLP                    \ Restore the flags from the stack, so we return with
-                        \ the Z flag from the DEC instruction above
-
- RTS                    \ Return from the subroutine
-
                         \ --- Mod: Code moved for sideways RAM: --------------->
 
                         \ The following routines have been moved into sideways
                         \ RAM (see the ELITE SIDEWAYS RAM FILE section at the
                         \ end of this source file):
                         \
+                        \   * SHD
+                        \   * DENGY
                         \   * COMPAS
                         \   * SPS2
                         \   * SPS4
@@ -16851,6 +16855,38 @@ ENDIF
 
 \ ******************************************************************************
 \
+\       Name: SwitchBank
+\       Type: Subroutine
+\   Category: Start and end
+\    Summary: Switch to the sideways RAM bank in A
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   SwitchBank+1        Switch to the bank number on the stack
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for sideways RAM: --------------->
+
+.SwitchBank
+
+ PHA                    \ Store the new bank number on the stack
+
+ LDA #&0C               \ Switch to the sideways RAM bank in A by first
+ STA &00F4              \ switching to one of ROM 12 to 15, and then switching
+ STA VIA+&05            \ to the required bank
+ PLA
+ STA &00F4
+ STA VIA+&05
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
 \       Name: brkd
 \       Type: Variable
 \   Category: Utility routines
@@ -17104,12 +17140,10 @@ ENDIF
 
                         \ --- Mod: Code added for sideways RAM: --------------->
 
- LDA #&0C               \ Switch to the sideways RAM bank containing the game
- STA &00F4              \ code by first switching to one of ROM 12 to 15, and
- STA VIA+&05            \ then switching to the required bank (we stored the
- LDA S%                 \ bank number in S% in the loader)
- STA &00F4              \
- STA VIA+&05            \ We do this so the game code is paged in should a break
+ LDA S%                 \ Switch to the sideways RAM bank containing the game
+ JSR SwitchBank         \ code, which we stored in S% in the loader
+                        \
+                        \ We do this so the game code is paged in should a break
                         \ be triggered, as BRKV points to BR1
 
                         \ --- End of added code ------------------------------->
@@ -18298,12 +18332,10 @@ ENDIF
 
                         \ --- Mod: Code added for sideways RAM: --------------->
 
- LDA #&0C               \ Switch to the sideways RAM bank containing the game
- STA &00F4              \ code by first switching to one of ROM 12 to 15, and
- STA VIA+&05            \ then switching to the required bank (we stored the
- LDA S%                 \ bank number in S% in the loader)
- STA &00F4              \
- STA VIA+&05            \ We do this so the game code is paged in should a break
+ LDA S%                 \ Switch to the sideways RAM bank containing the game
+ JSR SwitchBank         \ code, which we stored in S% in the loader
+                        \
+                        \ We do this so the game code is paged in should a break
                         \ be triggered, as BRKV points to MEBRK
 
                         \ --- End of added code ------------------------------->
@@ -42775,6 +42807,76 @@ ENDMACRO
 
  LDA S                  \ And then the high bytes
  SBC #0
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: SHD
+\       Type: Subroutine
+\   Category: Flight
+\    Summary: Charge a shield and drain some energy from the energy banks
+\
+\ ------------------------------------------------------------------------------
+\
+\ Charge up a shield, and if it needs charging, drain some energy from the
+\ energy banks.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   The value of the shield to recharge
+\
+\ ******************************************************************************
+
+ DEX                    \ If we get here then we just incremented the shield
+                        \ value back around to zero, so decrement it back down
+                        \ to 255 so it stays at the maximum value of 255
+
+ RTS                    \ Return from the subroutine
+
+.SHD
+
+ INX                    \ Increment the shield value
+
+ BEQ SHD-2              \ If the shield value is 0 then this means it was 255
+                        \ before, which is the maximum value, so jump to SHD-2
+                        \ to bring it back down to 255 and return without
+                        \ draining our energy banks
+
+                        \ Otherwise fall through into DENGY to drain our energy
+                        \ to pay for all this shield charging
+
+\ ******************************************************************************
+\
+\       Name: DENGY
+\       Type: Subroutine
+\   Category: Flight
+\    Summary: Drain some energy from the energy banks
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   Z flag              Set if we have no energy left, clear otherwise
+\
+\ ******************************************************************************
+
+.DENGY
+
+ DEC ENERGY             \ Decrement the energy banks in ENERGY
+
+ PHP                    \ Save the flags on the stack
+
+ BNE P%+5               \ If the energy levels are not yet zero, skip the
+                        \ following instruction
+
+ INC ENERGY             \ The minimum allowed energy level is 1, and we just
+                        \ reached 0, so increment ENERGY back to 1
+
+ PLP                    \ Restore the flags from the stack, so we return with
+                        \ the Z flag from the DEC instruction above
 
  RTS                    \ Return from the subroutine
 
