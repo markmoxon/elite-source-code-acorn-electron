@@ -17449,6 +17449,28 @@ ENDIF
 
  STX TYPE               \ Store the ship type in location TYPE
 
+                        \ --- Mod: Code added for joysticks: ------------------>
+
+.titl1
+
+                        \ By default the title screen is really sensitive to
+                        \ key presses - you have to tap the keys for just the
+                        \ right amount of time, otherwise you can shoot through
+                        \ both screens without meaning to, which is a pain if
+                        \ you want to configure joysticks from the second screen
+                        \
+                        \ This bit of code implements debounce, so we wait for
+                        \ any existing key to be released before processing the
+                        \ title screen
+
+ JSR RDKEY              \ Scan the keyboard for a key press and return the
+                        \ internal key number in A and X (or 0 for no key press)
+
+ BNE titl1              \ If a key is already being pressed, loop back to titl1
+                        \ until the key is released
+
+                        \ --- End of added code ------------------------------->
+
  JSR RESET              \ Reset our ship so we can use it for the rotating
                         \ title ship
 
@@ -17572,6 +17594,18 @@ ENDIF
 
  DEC MCNT               \ Decrement the main loop counter
 
+                        \ --- Mod: Code added for joysticks: ------------------>
+
+ LDA &FC72              \ Read the Plus 1 ADC status byte
+
+ AND #%00010000         \ Bit 4 of the byte is clear if joystick 1's fire
+                        \ button is pressed, otherwise it is set, so AND'ing
+                        \ the value with %10000 extracts this bit
+
+ BEQ TL2                \ If the joystick fire button is pressed, jump to TL2
+
+                        \ --- End of added code ------------------------------->
+
  JSR RDKEY              \ Scan the keyboard for a key press and return the
                         \ internal key number in A and X (or 0 for no key press)
 
@@ -17579,6 +17613,21 @@ ENDIF
                         \ the ship and check again for a key press
 
  RTS                    \ Return from the subroutine
+
+                        \ --- Mod: Code added for joysticks: ------------------>
+
+.TL2
+
+ DEC JSTK               \ Joystick fire button was pressed, so set JSTK to &FF
+                        \ (it was set to 0 above), to disable keyboard and
+                        \ enable joysticks
+
+ LDA #163               \ Call OSBYTE with A = 163, X = 128 and Y = 0 to enable
+ LDX #128               \ the Plus 1 ADC (the ADC is disabled by the mode 7
+ LDY #0                 \ ELITE loader program), returning from the subroutine
+ JMP OSBYTE             \ using a tail call
+
+                        \ --- End of added code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -19368,6 +19417,50 @@ ENDIF
 
 \ ******************************************************************************
 \
+\       Name: DKS1
+\       Type: Subroutine
+\   Category: Keyboard
+\    Summary: Scan the keyboard for a flight key
+\  Deep dive: The key logger
+\
+\ ------------------------------------------------------------------------------
+\
+\ Scan the keyboard for the flight key given in register Y, where Y is the
+\ offset into the KYTB table above (so we can scan for Space by setting Y to
+\ 2, for example). If the key is pressed, set the corresponding byte in the
+\ key logger at KL to &FF.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   Y                   The offset into the KYTB table above of the key that we
+\                       want to scan on the keyboard
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for joysticks: ------------------>
+
+.DKS1
+
+ LDX KYTB,Y             \ Get the internal key number from the Y-th byte of the
+                        \ KYTB table above
+
+ JSR DKS4               \ Call DKS4, which will set A and X to a negative value
+                        \ if the key is being pressed
+
+ BPL DKS2-1             \ The key is not being pressed, so return from the
+                        \ subroutine (as DKS2-1 contains an RTS)
+
+ LDA #&FF               \ Store &FF in the Y-th byte of the key logger at KL
+ STA KL,Y
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
 \       Name: DKS4
 \       Type: Subroutine
 \   Category: Keyboard
@@ -19513,29 +19606,25 @@ ENDIF
 \
 \ ******************************************************************************
 
-                        \ --- Mod: Code removed for flicker-free ships: ------->
+.DKS2
 
-\.DKS2
-\
-\LDA #128               \ Call OSBYTE with A = 128 to fetch the 16-bit value
-\JSR OSBYTE             \ from ADC channel X, returning (Y X), i.e. the high
-\                       \ byte in Y and the low byte in X
-\                       \
-\                       \   * Channel 1 is the x-axis: 0 = right, 65520 = left
-\                       \
-\                       \   * Channel 2 is the y-axis: 0 = down,  65520 = up
-\
-\TYA                    \ Copy Y to A, so the result is now in (A X)
-\
-\EOR JSTE               \ The high byte A is now EOR'd with the value in
-\                       \ location JSTE, which contains &FF if both joystick
-\                       \ channels are reversed and 0 otherwise (so A now
-\                       \ contains the high byte but inverted, if that's what
-\                       \ the current settings say)
-\
-\RTS                    \ Return from the subroutine
+ LDA #128               \ Call OSBYTE with A = 128 to fetch the 16-bit value
+ JSR OSBYTE             \ from ADC channel X, returning (Y X), i.e. the high
+                        \ byte in Y and the low byte in X
+                        \
+                        \   * Channel 1 is the x-axis: 0 = right, 65520 = left
+                        \
+                        \   * Channel 2 is the y-axis: 0 = down,  65520 = up
 
-                        \ --- End of removed code ----------------------------->
+ TYA                    \ Copy Y to A, so the result is now in (A X)
+
+ EOR JSTE               \ The high byte A is now EOR'd with the value in
+                        \ location JSTE, which contains &FF if both joystick
+                        \ channels are reversed and 0 otherwise (so A now
+                        \ contains the high byte but inverted, if that's what
+                        \ the current settings say)
+
+ RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
 \
@@ -19607,6 +19696,29 @@ ENDIF
  EOR #&FF               \ put it back (0 means no and &FF means yes in the
  STA DAMP-&40,X         \ configuration bytes, so this toggles the setting)
 
+                        \ --- Mod: Code added for joysticks: ------------------>
+
+ BEQ njoy1              \ If we just disabled the toggle, jump to njoy1
+
+ CPX #&46               \ If this is not the joystick toggle (&46, "K"), jump
+ BNE njoy1              \ to njoy1
+
+                        \ If we get here then we just enabled joysticks, so we
+                        \ need to enable the analogue to digital converter on
+                        \ the Plus 1 so we can read the joystick channels (it is
+                        \ disabled by the loader to prevent the ADC conversion
+                        \ from slowing the system down when joysticks are not
+                        \ being used)
+
+ LDA #163               \ Call OSBYTE with A = 163, X = 128 and Y = 0 to enable
+ LDX #128               \ the Plus 1 ADC (the ADC is disabled by the mode 7
+ LDY #0                 \ ELITE loader program)
+ JSR OSBYTE
+
+.njoy1
+
+                        \ --- End of added code ------------------------------->
+
  JSR BELL               \ Make a beep sound so we know something has happened
 
  JSR DELAY              \ Wait for Y delay loops (Y is between 64 and 70)
@@ -19616,6 +19728,65 @@ ENDIF
 .Dk3
 
  RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: DKJ1
+\       Type: Subroutine
+\   Category: Keyboard
+\    Summary: Read joystick and flight controls
+\
+\ ------------------------------------------------------------------------------
+\
+\ Specifically, scan the keyboard for the speed up and slow down keys, and read
+\ the joystick's fire button and X and Y axes, storing the results in the key
+\ logger and the joystick position variables.
+\
+\ This routine is only called if joysticks are enabled (JSTK = non-zero).
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for joysticks: ------------------>
+
+.DKJ1
+
+ LDA auto               \ If auto is non-zero, then the docking computer is
+ BNE auton              \ currently activated, so jump to auton in DOKEY so the
+                        \ docking computer can "press" the flight keys for us
+
+ LDY #1                 \ Update the key logger for key 1 in the KYTB table, so
+ JSR DKS1               \ KY1 will be &FF if "?" (slow down) is being pressed
+
+ INY                    \ Update the key logger for key 2 in the KYTB table, so
+ JSR DKS1               \ KY2 will be &FF if Space (speed up) is being pressed
+
+ LDA &FC72              \ Read the Plus 1 ADC status byte
+
+ AND #%00010000         \ Bit 4 of the byte is clear if joystick 1's fire
+                        \ button is pressed, otherwise it is set, so AND'ing
+                        \ the value with %10000 extracts this bit
+
+ EOR #%00010000         \ Flip bit 4 so that it's set if the fire button has
+ STA KY7                \ been pressed, and store the result in the keyboard
+                        \ logger at location KY7, which is also where the A key
+                        \ (fire lasers) key is logged
+
+ LDX #1                 \ Call DKS2 to fetch the value of ADC channel 1 (the
+ JSR DKS2               \ joystick X value) into (A X), and OR A with 1. This
+ ORA #1                 \ ensures that the high byte is at least 1, and then we
+ STA JSTX               \ store the result in JSTX
+
+ LDX #2                 \ Call DKS2 to fetch the value of ADC channel 2 (the
+ JSR DKS2               \ joystick Y value) into (A X), and EOR A with JSTGY.
+ EOR JSTGY              \ JSTGY will be &FF if the game is configured to
+ STA JSTY               \ reverse the joystick Y channel, so this EOR does
+                        \ exactly that, and then we store the result in JSTY
+
+ JMP DK4                \ We are done scanning the joystick flight controls,
+                        \ so jump to DK4 to scan for other keys, using a tail
+                        \ call so we can return from the subroutine there
+
+                        \ --- End of added code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -19694,17 +19865,27 @@ ENDIF
 
  JSR U%                 \ Call U% to clear the key logger
 
+                        \ --- Mod: Code added for joysticks: ------------------>
+
+ LDA JSTK               \ If JSTK is non-zero, then we are configured to use
+ BNE DKJ1               \ the joystick rather than keyboard, so jump to DKJ1
+                        \ to read the joystick flight controls, before jumping
+                        \ to DK4 to scan for pause, configuration and secondary
+                        \ flight keys
+
+                        \ --- End of added code ------------------------------->
+
  LDY #7                 \ We're going to work our way through the primary flight
                         \ control keys (pitch, roll, speed and laser), so set a
                         \ counter in Y so we can loop through all 7
 
 .DKL2
 
- LDX KYTB,Y             \ Call DKS4 to see if the KYTB key at offset Y is being
- JSR DKS4               \ pressed
+                        \ --- Mod: Code removed for joysticks: ---------------->
 
-                        \ --- Mod: Code removed for additional ships: --------->
-
+\LDX KYTB,Y             \ Call DKS4 to see if the KYTB key at offset Y is being
+\JSR DKS4               \ pressed
+\
 \BPL P%+6               \ If the key isn't being pressed, skip the following two
 \                       \ instructions
 \
@@ -19713,11 +19894,8 @@ ENDIF
 
                         \ --- And replaced by: -------------------------------->
 
- BPL P%+7               \ If the key isn't being pressed, skip the following two
-                        \ instructions
-
- LDA #&FF               \ Set the key logger for this key to indicate it's being
- STA KL,Y               \ pressed
+ JSR DKS1               \ Call DKS1 to see if the KYTB key at offset Y is being
+                        \ pressed, and set the key logger accordingly
 
                         \ --- End of replacement ------------------------------>
 
@@ -21468,122 +21646,13 @@ ENDIF
  EQUS "RI"              \ Token 158
  EQUS "ON"              \ Token 159
 
-\ ******************************************************************************
-\
-\       Name: ITEM
-\       Type: Macro
-\   Category: Market
-\    Summary: Macro definition for the market prices table
-\  Deep dive: Market item prices and availability
-\
-\ ------------------------------------------------------------------------------
-\
-\ The following macro is used to build the market prices table:
-\
-\   ITEM price, factor, units, quantity, mask
-\
-\ It inserts an item into the market prices table at QQ23.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   price               Base price
-\
-\   factor              Economic factor
-\
-\   units               Units: "t", "g" or "k"
-\
-\   quantity            Base quantity
-\
-\   mask                Fluctuations mask
-\
-\ ******************************************************************************
-
-MACRO ITEM price, factor, units, quantity, mask
-
- IF factor < 0
-  s = 1 << 7
- ELSE
-  s = 0
- ENDIF
-
- IF units = 't'
-  u = 0
- ELIF units = 'k'
-  u = 1 << 5
- ELSE
-  u = 1 << 6
- ENDIF
-
- e = ABS(factor)
-
- EQUB price
- EQUB s + u + e
- EQUB quantity
- EQUB mask
-
-ENDMACRO
-
-\ ******************************************************************************
-\
-\       Name: QQ23
-\       Type: Variable
-\   Category: Market
-\    Summary: Market prices table
-\  Deep dive: Market item prices and availability
-\
-\ ------------------------------------------------------------------------------
-\
-\ Each item has four bytes of data, like this:
-\
-\   Byte #0 = Base price
-\   Byte #1 = Economic factor in bits 0-4, with the sign in bit 7
-\             Unit in bits 5-6
-\   Byte #2 = Base quantity
-\   Byte #3 = Mask to control price fluctuations
-\
-\ To make it easier for humans to follow, I've defined a macro called ITEM
-\ that takes the following arguments and builds the four bytes for us:
-\
-\   ITEM base price, economic factor, units, base quantity, mask
-\
-\ So for food, we have the following, for example:
-\
-\   * Base price = 19
-\   * Economic factor = -2
-\   * Unit = tonnes
-\   * Base quantity = 6
-\   * Mask = %00000001
-\
-\ ******************************************************************************
-
-.QQ23
-
- ITEM 19,  -2, 't',   6, %00000001  \  0 = Food
- ITEM 20,  -1, 't',  10, %00000011  \  1 = Textiles
- ITEM 65,  -3, 't',   2, %00000111  \  2 = Radioactives
- ITEM 40,  -5, 't', 226, %00011111  \  3 = Slaves
- ITEM 83,  -5, 't', 251, %00001111  \  4 = Liquor/Wines
- ITEM 196,  8, 't',  54, %00000011  \  5 = Luxuries
- ITEM 235, 29, 't',   8, %01111000  \  6 = Narcotics
- ITEM 154, 14, 't',  56, %00000011  \  7 = Computers
- ITEM 117,  6, 't',  40, %00000111  \  8 = Machinery
- ITEM 78,   1, 't',  17, %00011111  \  9 = Alloys
- ITEM 124, 13, 't',  29, %00000111  \ 10 = Firearms
- ITEM 176, -9, 't', 220, %00111111  \ 11 = Furs
- ITEM 32,  -1, 't',  53, %00000011  \ 12 = Minerals
- ITEM 97,  -1, 'k',  66, %00000111  \ 13 = Gold
- ITEM 171, -2, 'k',  55, %00011111  \ 14 = Platinum
- ITEM 45,  -1, 'g', 250, %00001111  \ 15 = Gem-Stones
- ITEM 53,  15, 't', 192, %00000111  \ 16 = Alien items
-
                         \ --- Mod: Code moved for sideways RAM: --------------->
 
-                        \ The following routines have been moved into sideways
-                        \ RAM (see the ELITE SIDEWAYS RAM FILE section at the
-                        \ end of this source file):
+                        \ The following variables and routines have been moved
+                        \ into sideways RAM (see the ELITE SIDEWAYS RAM FILE
+                        \ section at the end of this source file):
                         \
+                        \   * QQ23
                         \   * TIDY
                         \   * TIS2
                         \   * TIS3
@@ -48038,6 +48107,116 @@ ENDMACRO
  TAX                    \ Copy the key value into X
 
  RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: ITEM
+\       Type: Macro
+\   Category: Market
+\    Summary: Macro definition for the market prices table
+\  Deep dive: Market item prices and availability
+\
+\ ------------------------------------------------------------------------------
+\
+\ The following macro is used to build the market prices table:
+\
+\   ITEM price, factor, units, quantity, mask
+\
+\ It inserts an item into the market prices table at QQ23.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   price               Base price
+\
+\   factor              Economic factor
+\
+\   units               Units: "t", "g" or "k"
+\
+\   quantity            Base quantity
+\
+\   mask                Fluctuations mask
+\
+\ ******************************************************************************
+
+MACRO ITEM price, factor, units, quantity, mask
+
+ IF factor < 0
+  s = 1 << 7
+ ELSE
+  s = 0
+ ENDIF
+
+ IF units = 't'
+  u = 0
+ ELIF units = 'k'
+  u = 1 << 5
+ ELSE
+  u = 1 << 6
+ ENDIF
+
+ e = ABS(factor)
+
+ EQUB price
+ EQUB s + u + e
+ EQUB quantity
+ EQUB mask
+
+ENDMACRO
+
+\ ******************************************************************************
+\
+\       Name: QQ23
+\       Type: Variable
+\   Category: Market
+\    Summary: Market prices table
+\  Deep dive: Market item prices and availability
+\
+\ ------------------------------------------------------------------------------
+\
+\ Each item has four bytes of data, like this:
+\
+\   Byte #0 = Base price
+\   Byte #1 = Economic factor in bits 0-4, with the sign in bit 7
+\             Unit in bits 5-6
+\   Byte #2 = Base quantity
+\   Byte #3 = Mask to control price fluctuations
+\
+\ To make it easier for humans to follow, I've defined a macro called ITEM
+\ that takes the following arguments and builds the four bytes for us:
+\
+\   ITEM base price, economic factor, units, base quantity, mask
+\
+\ So for food, we have the following, for example:
+\
+\   * Base price = 19
+\   * Economic factor = -2
+\   * Unit = tonnes
+\   * Base quantity = 6
+\   * Mask = %00000001
+\
+\ ******************************************************************************
+
+.QQ23
+
+ ITEM 19,  -2, 't',   6, %00000001  \  0 = Food
+ ITEM 20,  -1, 't',  10, %00000011  \  1 = Textiles
+ ITEM 65,  -3, 't',   2, %00000111  \  2 = Radioactives
+ ITEM 40,  -5, 't', 226, %00011111  \  3 = Slaves
+ ITEM 83,  -5, 't', 251, %00001111  \  4 = Liquor/Wines
+ ITEM 196,  8, 't',  54, %00000011  \  5 = Luxuries
+ ITEM 235, 29, 't',   8, %01111000  \  6 = Narcotics
+ ITEM 154, 14, 't',  56, %00000011  \  7 = Computers
+ ITEM 117,  6, 't',  40, %00000111  \  8 = Machinery
+ ITEM 78,   1, 't',  17, %00011111  \  9 = Alloys
+ ITEM 124, 13, 't',  29, %00000111  \ 10 = Firearms
+ ITEM 176, -9, 't', 220, %00111111  \ 11 = Furs
+ ITEM 32,  -1, 't',  53, %00000011  \ 12 = Minerals
+ ITEM 97,  -1, 'k',  66, %00000111  \ 13 = Gold
+ ITEM 171, -2, 'k',  55, %00011111  \ 14 = Platinum
+ ITEM 45,  -1, 'g', 250, %00001111  \ 15 = Gem-Stones
+ ITEM 53,  15, 't', 192, %00000111  \ 16 = Alien items
 
 \ ******************************************************************************
 \

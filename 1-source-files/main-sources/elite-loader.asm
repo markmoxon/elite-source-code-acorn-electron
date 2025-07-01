@@ -713,9 +713,37 @@ ENDMACRO
  STX BLN+1              \ the PLL1 routine, and will then use these values in
  STX EXCN+1             \ the IRQ1 handler
 
- LDX #0                 \ Call OSBYTE with A = 16 and X = 0 to set the joystick
- LDY #0                 \ port to sample 0 channels (i.e. disable it)
+                        \ --- Mod: Code removed for joysticks: ---------------->
+
+\LDX #0                 \ Call OSBYTE with A = 16 and X = 0 to set the joystick
+\LDY #0                 \ port to sample 0 channels (i.e. disable it)
+\JSR OSBYTE
+
+                        \ --- And replaced by: -------------------------------->
+
+                        \ The Plus 1's analogue to digital converter (ADC) and
+                        \ printer ports are disabled by the ELITE loader program
+                        \
+                        \ The original loader also unplugs the Plus 1 support
+                        \ ROM, but I have disabled that part of the loader as we
+                        \ need the ROM to support joysticks
+                        \
+                        \ This means we can configure the ADC so it's ready for
+                        \ joysticks, but this will not affect the game speed
+                        \ until the Plus 1's ADC port is enabled, which we only
+                        \ do if joysticks are chosen (se DKS3 in the main game)
+
+ LDA #16                \ Call OSBYTE with A = 16, X = 2 and Y = 0 to set the
+ LDX #2                 \ ADC to sample 2 channels from the joystick
+ LDY #0
  JSR OSBYTE
+
+ LDA #190               \ Call OSBYTE with A = 190, X = 8 and Y = 0 to set the
+ LDX #8                 \ ADC conversion type to 8 bits
+ LDY #0
+ JSR OSBYTE
+
+                        \ --- End of replacement ------------------------------>
 
  LDX #255               \ Call doPROT1 to change an instruction in the PROT1
  LDA #&95               \ routine and set up another couple of variables
