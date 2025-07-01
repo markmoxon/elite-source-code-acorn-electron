@@ -7200,10 +7200,10 @@ ENDIF
  JSR BRIS               \ Call BRIS to clear the screen, display "INCOMING
                         \ MESSAGE" and wait for 2 seconds
 
- LDA #6                 \ Load the ship blueprints file containing the
- JSR SHIPinA            \ Constrictor (ship blueprints file G)
+ JSR RESET              \ Reset a number of flight variables and workspaces
 
- JSR ZINF               \ Call ZINF to reset the INWK ship workspace
+ LDA #0                 \ Reset DELTA (speed) to 3
+ STA DELTA
 
  LDA #CON               \ Set the ship type in TYPE to the Constrictor
  STA TYPE
@@ -26222,8 +26222,6 @@ ENDMACRO
 
  LDA #0                 \ Reset DELTA (speed) to 0
  STA DELTA
-
- STA BETA               \ Reset BETA (pitch angle beta) to 0
 
  STA GNTMP              \ Cool down the lasers completely
 
