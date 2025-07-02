@@ -125,7 +125,7 @@ ENDFN
 :
 DEF PROCelite(A%)
 ?romNumber=A% AND &FF
-PRINT'"Sideways RAM detected in bank ";?romNumber;
+PRINT'"Sideways RAM detected in bank ";?romNumber
 PRINT'"Loading code into RAM bank ";?romNumber;"...";
 IF PAGE>&0E00 THEN PROChighPage ELSE PROClowPage
 PRINT " OK"
