@@ -42148,7 +42148,8 @@ ENDMACRO
 
  BMI SCAN-1             \ If this is the planet, then the type will have bit 7
                         \ set and we don't want to display it on the scanner,
-                        \ so return from the subroutine (as SCAN-1 contains an RTS)
+                        \ so return from the subroutine (as SCAN-1 contains an
+                        \ RTS)
 
  LDA INWK+1             \ If any of x_hi, y_hi and z_hi have a 1 in bit 6 or 7,
  ORA INWK+4             \ then the ship is too far away to be shown on the

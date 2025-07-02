@@ -39,7 +39,7 @@
  EQUB 10, 13
  EQUS "---------------------------------------"
  EQUB 10, 13
- EQUS "Acornsoft Elite (Compendium version)"
+ EQUS "Acornsoft Elite (Enhanced version)"
  EQUB 10, 13
  EQUB 10, 13
  EQUS "For the Electron with 16K sideways RAM"
@@ -49,7 +49,9 @@
  EQUB 10, 13
  EQUS "routines from the BBC Master version,"
  EQUB 10, 13
- EQUS "backported by Mark Moxon"
+ EQUS "bug fixes and many other enhancements,"
+ EQUB 10, 13
+ EQUS "all backported by Mark Moxon"
  EQUB 10, 13
  EQUB 10, 13
  EQUS "Contains flicker-free planet drawing"

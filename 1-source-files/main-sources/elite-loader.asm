@@ -1983,8 +1983,8 @@ ENDMACRO
  LDY #0
  JSR OSARGS
 
- CMP #8                 \ If this is not ADFS (type 8), jump to entr1 to skip the
- BNE entr1              \ code modifications and do the *DIR E command
+ CMP #8                 \ If this is not ADFS (type 8), jump to entr1 to leave
+ BNE entr1              \ the ADFS variable alone and do a *DIR E command
 
  LDA #%10000000         \ Set bit 7 of the ADFS variable in the main game binary
  STA ADFS               \ to indicate that ADFS is being used

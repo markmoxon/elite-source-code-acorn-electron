@@ -1,12 +1,13 @@
 
 ---------------------------------------
-Acornsoft Elite (Compendium version)
+Acornsoft Elite (Enhanced version)
 
 For the Electron with 16K sideways RAM
 
 Contains the flicker-free ship drawing
 routines from the BBC Master version,
-backported by Mark Moxon
+bug fixes and many other enhancements,
+all backported by Mark Moxon
 
 Contains flicker-free planet drawing
 routines by Mark Moxon
@@ -20,6 +21,6 @@
 
 See www.bbcelite.com for details
 
-Build: 2025-07-02 13:24:47
+Build: 2025-07-02 13:42:22
 ---------------------------------------
 
