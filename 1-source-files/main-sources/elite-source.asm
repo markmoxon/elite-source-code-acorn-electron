@@ -6099,31 +6099,14 @@ ENDIF
 
 .chpr2
 
- LDA #128               \ Set SC = 128 for use in the calculation below
- STA SC
-
  STY YSAV               \ Store the character row in YSAV, so we can retrieve it
                         \ later
 
  TYA                    \ Copy Y to A so it contains the number of the character
                         \ row that we want to clear
 
- STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
-                        \                           = char row * 256
-
- LSR A                  \ Set (A SC) = (A SC) / 4
- ROR SC                 \            = (4 * ((char row * 64) + 32)) / 4
- LSR A                  \            = char row * 64 + 32
- ROR SC
-
- ADC SC+1               \ Set SC(1 0) = (A SC) + (SC+1 0) + &5800
- ADC #&58               \             = (char row * 64 + 32)
- STA SC+1               \               + char row * 256
-                        \               + &5800
-                        \
-                        \ which is what we want, so SC(1 0) contains the address
-                        \ of the first visible pixel on the character row we
-                        \ want to clear
+ JSR SetCharRowAddress  \ Set SC(1 0) to the address of the start of the
+                        \ character row
 
                         \ We now clear the character row, making sure we don't
                         \ clear the borders
@@ -6157,9 +6140,6 @@ ENDIF
 
 .chpr4
 
- LDX #128               \ Set SC = 128 for use in the calculation below
- STX SC
-
                         \ --- End of replacement ------------------------------>
 
                         \ The text row is on-screen, so now to calculate the
@@ -6167,19 +6147,28 @@ ENDIF
                         \
                         \   SC = &5800 + (char row * 256) + (char row * 64) + 32
 
- LSR A                  \ Set (A SC) = (A SC) / 4
- ROR SC                 \            = (4 * ((char row * 64) + 32)) / 4
- LSR A                  \            = char row * 64 + 32
- ROR SC
+                        \ --- Mod: Code removed for ADFS: --------------------->
 
- ADC YC                 \ Set SC(1 0) = (A SC) + (YC 0) + &5800
- ADC #&58               \             = (char row * 64 + 32)
- STA SC+1               \               + char row * 256
-                        \               + &5800
-                        \
-                        \ which is what we want, so SC(1 0) contains the address
-                        \ of the first visible pixel on the character row we
-                        \ want
+\LSR A                  \ Set (A SC) = (A SC) / 4
+\ROR SC                 \            = (4 * ((char row * 64) + 32)) / 4
+\LSR A                  \            = char row * 64 + 32
+\ROR SC
+\
+\ADC YC                 \ Set SC(1 0) = (A SC) + (YC 0) + &5800
+\ADC #&58               \             = (char row * 64 + 32)
+\STA SC+1               \               + char row * 256
+\                       \               + &5800
+\                       \
+\                       \ which is what we want, so SC(1 0) contains the address
+\                       \ of the first visible pixel on the character row we
+\                       \ want
+
+                        \ --- And replaced by: -------------------------------->
+
+ JSR SetCharRowAddress  \ Set SC(1 0) to the address of the start of the
+                        \ character row
+
+                        \ --- End of replacement ------------------------------>
 
  LDA XC                 \ Fetch XC, the x-coordinate (column) of the text cursor
                         \ into A
@@ -6358,6 +6347,43 @@ ENDIF
 
  JMP RR4                \ Jump to RR4 to restore the registers and return from
                         \ the subroutine using a tail call
+
+                        \ --- Mod: Code added for ADFS: ----------------------->
+
+\ ******************************************************************************
+\
+\       Name: SetCharRowAddress
+\       Type: Subroutine
+\   Category: Text
+\    Summary: Set SC(1 0) to the address of the start of a character row
+\
+\ ******************************************************************************
+
+.SetCharRowAddress
+
+ STA SC+1               \ Set SC+1 = A, so (SC+1 0) = A * 256
+                        \                           = char row * 256
+
+ LDX #128               \ Set SC = 128 for use in the calculation below
+ STX SC
+
+ LSR A                  \ Set (A SC) = (A SC) / 4
+ ROR SC                 \            = (4 * ((char row * 64) + 32)) / 4
+ LSR A                  \            = char row * 64 + 32
+ ROR SC
+
+ ADC SC+1               \ Set SC(1 0) = (A SC) + (SC+1 0) + &5800
+ ADC #&58               \             = (char row * 64 + 32)
+ STA SC+1               \               + char row * 256
+                        \               + &5800
+                        \
+                        \ which is what we want, so SC(1 0) contains the address
+                        \ of the first visible pixel on the character row we
+                        \ want to clear
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
 
                         \ --- Mod: Code moved for sideways RAM: --------------->
 
@@ -17622,6 +17648,23 @@ ENDIF
                         \ (it was set to 0 above), to disable keyboard and
                         \ enable joysticks
 
+                        \ Fall through into EnablePlus1 to enable the Plus 1
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: EnablePlus1
+\       Type: Subroutine
+\   Category: Keyboard
+\    Summary: Enable the Plus 1 so we can support joysticks
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for joysticks: ------------------>
+
+.EnablePlus1
+
  LDA #163               \ Call OSBYTE with A = 163, X = 128 and Y = 0 to enable
  LDX #128               \ the Plus 1 ADC (the ADC is disabled by the mode 7
  LDY #0                 \ ELITE loader program), returning from the subroutine
@@ -19710,10 +19753,7 @@ ENDIF
                         \ from slowing the system down when joysticks are not
                         \ being used)
 
- LDA #163               \ Call OSBYTE with A = 163, X = 128 and Y = 0 to enable
- LDX #128               \ the Plus 1 ADC (the ADC is disabled by the mode 7
- LDY #0                 \ ELITE loader program)
- JSR OSBYTE
+ JSR EnablePlus1        \ Enable the Plus 1 so we can support joysticks
 
 .njoy1
 
