@@ -8,7 +8,7 @@ PRINT'"Based on the Acornsoft SLG38 release"
 PRINT"of Elite by Ian Bell and David Braben"
 PRINT"Copyright (c) Acornsoft 1984"
 PRINT'"Flicker-free routines, bug fixes and"
-PRINT"enhancements by Mark Moxon"
+PRINT"other enhancements by Mark Moxon"
 PRINT'"Sideways RAM loader, routines and"
 PRINT"inspiration by Wouter Hobers"
 

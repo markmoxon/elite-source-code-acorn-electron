@@ -3551,11 +3551,14 @@ ENDMACRO
 
 .ADFS
 
- SKIP 1                 \ The ADFS flag:
+ SKIP 1                 \ Flags that detect the presence of an analogue joystick
+                        \ port (ADC) and ADFS:
                         \
-                        \   * 0 = Not ADFS (i.e. DFS or MMFS)
+                        \   * Bit 6 clear = ADC not fitted
+                        \           set   = ADC fitted
                         \
-                        \   * Non-zero = ADFS
+                        \   * Bit 7 clear = This is not ADFS
+                        \           set   = This is ADFS
 
                         \ --- End of added code ------------------------------->
 
@@ -6182,8 +6185,8 @@ ENDIF
 
                         \ --- Mod: Code added for ADFS: ----------------------->
 
- LDX ADFS               \ If this is not ADFS, skip the following
- BEQ chpr5
+ BIT ADFS               \ If bit 7 of ADFS is clear then this is not ADFS, so
+ BPL chpr5              \ skip the following
 
  CMP #21                \ If A < 21, i.e. the text cursor is in column 0-20,
  BCC RR5                \ jump to RR5 to skip the following
@@ -17622,6 +17625,11 @@ ENDIF
 
                         \ --- Mod: Code added for joysticks: ------------------>
 
+ BIT ADFS               \ If bit 6 of ADFS is clear then there is no ADC fitted,
+ BVC titl2              \ so skip the following as there is no joystick fire
+                        \ button to check (so we can't rely on the value of
+                        \ &FC72 being correct)
+
  LDA &FC72              \ Read the Plus 1 ADC status byte
 
  AND #%00010000         \ Bit 4 of the byte is clear if joystick 1's fire
@@ -17629,6 +17637,8 @@ ENDIF
                         \ the value with %10000 extracts this bit
 
  BEQ TL2                \ If the joystick fire button is pressed, jump to TL2
+
+.titl2
 
                         \ --- End of added code ------------------------------->
 
@@ -18199,8 +18209,8 @@ ENDIF
 
                         \ --- Mod: Code added for ADFS: ----------------------->
 
- LDX ADFS               \ If this is not ADFS, skip the following
- BEQ cats1
+ BIT ADFS               \ If bit 7 of ADFS is clear then this is not ADFS, so
+ BPL cats1              \ skip the following
 
  LDX #LO(CTLIadfs)      \ Set (Y X) to point to the OS command at CTLIadfs,
  LDY #HI(CTLIadfs)      \ which is the ADFS command for cataloguing that drive

@@ -1974,6 +1974,9 @@ ENDMACRO
  JSR OSCLI              \ Call OSCLI to run the OS command in MESS1, which loads
                         \ the main game code at location &2000
 
+ LDA #0                 \ Zero the ADFS variable in the main game binary to
+ STA ADFS               \ indicate that ADFS is not being used
+
                         \ --- Mod: Code added for ADFS: ----------------------->
 
  LDA #0                 \ Fetch the filing system type into A
@@ -1983,7 +1986,7 @@ ENDMACRO
  CMP #8                 \ If this is not ADFS (type 8), jump to entr1 to skip the
  BNE entr1              \ code modifications and do the *DIR E command
 
- LDA #&FF               \ Set the ADFS variable in the main game binary to &FF
+ LDA #%10000000         \ Set bit 7 of the ADFS variable in the main game binary
  STA ADFS               \ to indicate that ADFS is being used
 
  BNE entr2              \ Jump to entr2 to skip the *DIR E command (this BNE is
@@ -2002,6 +2005,26 @@ ENDMACRO
                         \ changes the disc directory to E
 
 .entr2
+
+                        \ --- End of added code ------------------------------->
+
+                        \ --- Mod: Code added for joysticks: ------------------>
+
+ LDA #189               \ Call OSBYTE with A = 189, X = 0 and Y = &FF to read
+ LDX #0                 \ the number of ADC channels, which we set to 2 earlier
+ LDY #&FF
+ JSR OSBYTE
+
+ CPX #2                 \ If the number of channels is not 2 then the OSBYTE to
+ BNE entr3              \ set the number of channels was ignored, which means
+                        \ there is no ADC fitted, so jump to entr3 to skip the
+                        \ following
+
+ LDA ADFS               \ Set bit 6 of the ADFS variable in the main game binary
+ ORA #%01000000         \ to indicate that an ADC is fitted
+ STA ADFS
+
+.entr3
 
                         \ --- End of added code ------------------------------->
 
