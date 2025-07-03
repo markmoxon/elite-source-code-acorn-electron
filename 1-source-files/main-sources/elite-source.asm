@@ -12285,6 +12285,9 @@ ENDIF
  LDA #3                 \ Call SHIPinA to load ship blueprints file D, which is
  JSR SHIPinA            \ one of the two files that contain Thargoids
 
+ LDA QQ11               \ If the current view is not a space view, skip the
+ BNE P%+5               \ following as there is no hyperspace tunnel to remove
+
  JSR RemoveHyperspace   \ Remove the hyperspace tunnel
 
  LDA #3                 \ Clear the top part of the screen, draw a white border,
@@ -12405,6 +12408,9 @@ ENDIF
                         \ --- Mod: Code added for additional ships: ----------->
 
  JSR LOMOD              \ Call LOMOD to load a new ship blueprints file
+
+ LDA QQ11               \ If the current view is not a space view, skip the
+ BNE P%+5               \ following as there is no hyperspace tunnel to remove
 
  JSR RemoveHyperspace   \ Remove the hyperspace tunnel
 
