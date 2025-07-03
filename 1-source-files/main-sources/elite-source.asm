@@ -35721,10 +35721,31 @@ ENDMACRO
  AND #%00000100         \ the ship's NEWB flags is set, and if it is (i.e. the
  BNE TN5                \ station is hostile), jump to TN5 to spawn some cops
 
- LDA MANY+SHU+1         \ The station is not hostile, so check how many
- BNE TA1                \ Transporters there are in the vicinity, and if we
+                        \ --- Mod: Code removed for better docking computer: -->
+
+\LDA MANY+SHU+1         \ The station is not hostile, so check how many
+\BNE TA1                \ Transporters there are in the vicinity, and if we
+\                       \ already have one, return from the subroutine (as TA1
+\                       \ contains an RTS)
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDA MANY+SHU+1         \ Set A to the number of Transporters in the vicinity
+
+ ORA auto               \ If the docking computer is on then auto is &FF, so
+                        \ this ensures that A is always non-zero when we are
+                        \ auto-docking, so the following jump to TA1 will be
+                        \ taken and no Transporters will be spawned from the
+                        \ space station (unlike in the disc version, where you
+                        \ can get smashed into space dust by a badly timed
+                        \ Transporter launch when using the docking computer)
+
+ BNE TA1                \ The station is not hostile, so check how many
+                        \ Transporters there are in the vicinity, and if we
                         \ already have one, return from the subroutine (as TA1
                         \ contains an RTS)
+
+                        \ --- End of replacement ------------------------------>
 
                         \ If we get here then the station is not hostile, so we
                         \ can consider spawning a Transporter or Shuttle
