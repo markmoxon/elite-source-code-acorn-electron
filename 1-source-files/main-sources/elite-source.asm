@@ -7521,18 +7521,37 @@ ENDIF
 
 .PAUSE2
 
- JSR RDKEY              \ Scan the keyboard for a key press and return the
-                        \ internal key number in A and X (or 0 for no key press)
-
- BNE PAUSE2             \ If a key was already being held down when we entered
-                        \ this routine, keep looping back up to PAUSE2, until
-                        \ the key is released
+ JSR Debounce           \ Wait until no key is being pressed
 
  JSR RDKEY              \ Any pre-existing key press is now gone, so we can
                         \ start scanning the keyboard again, returning the
                         \ internal key number in A and X (or 0 for no key press)
 
  BEQ PAUSE2             \ Keep looping up to PAUSE2 until a key is pressed
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: Debounce
+\       Type: Subroutine
+\   Category: Keyboard
+\    Summary: Wait until no key is being pressed
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for missions: ------------------->
+
+.Debounce
+
+ JSR RDKEY              \ Scan the keyboard for a key press and return the
+                        \ internal key number in A and X (or 0 for no key press)
+
+ BNE Debounce             \ If a key was already being held down when we entered
+                        \ this routine, keep looping back up to PAUSE2, until
+                        \ the key is released
 
  RTS                    \ Return from the subroutine
 
@@ -15928,8 +15947,6 @@ ENDIF
 
                         \ --- Mod: Code added for joysticks: ------------------>
 
-.titl1
-
                         \ By default the title screen is really sensitive to
                         \ key presses - you have to tap the keys for just the
                         \ right amount of time, otherwise you can shoot through
@@ -15940,11 +15957,7 @@ ENDIF
                         \ any existing key to be released before processing the
                         \ title screen
 
- JSR RDKEY              \ Scan the keyboard for a key press and return the
-                        \ internal key number in A and X (or 0 for no key press)
-
- BNE titl1              \ If a key is already being pressed, loop back to titl1
-                        \ until the key is released
+ JSR Debounce           \ Wait until no key is being pressed
 
                         \ --- End of added code ------------------------------->
 
@@ -17016,6 +17029,17 @@ ENDIF
 \JMP BAY                \ Go to the docking bay (i.e. show Status Mode)
 
                         \ --- And replaced by: -------------------------------->
+
+                        \ By default the disc access menu is really sensitive to
+                        \ key presses - you have to tap the keys for just the
+                        \ right amount of time, otherwise you can shoot the menu
+                        \ without meaning to
+                        \
+                        \ This bit of code implements debounce, so we wait for
+                        \ any existing key to be released before processing the
+                        \ title screen
+
+ JSR Debounce           \ Wait until no key is being pressed
 
  JSR ZEBC               \ Call ZEBC to zero-fill pages &B and &C
 
