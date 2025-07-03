@@ -18773,7 +18773,11 @@ ENDIF
 
  TAX                    \ Copy A into X
 
-.out
+                        \ --- Mod: Code removed for sideways RAM: ------------->
+
+\.out
+
+                        \ --- End of removed code ----------------------------->
 
  RTS                    \ Return from the subroutine
 
@@ -48060,41 +48064,14 @@ ENDMACRO
 
  PLA                    \ Restore the new message token
 
- EQUB &2C               \ Fall through into ou2 to print the new message, but
-                        \ skip the first instruction by turning it into
-                        \ &2C &A9 &6C, or BIT &6CA9, which does nothing apart
-                        \ from affect the flags
+                        \ --- Mod: Code removed for in-flight messages: ------->
 
-\ ******************************************************************************
-\
-\       Name: ou2
-\       Type: Subroutine
-\   Category: Flight
-\    Summary: Display "E.C.M.SYSTEM DESTROYED" as an in-flight message
-\
-\ ******************************************************************************
+\EQUB &2C               \ Fall through into ou2 to print the new message, but
+\                       \ skip the first instruction by turning it into
+\                       \ &2C &A9 &6C, or BIT &6CA9, which does nothing apart
+\                       \ from affect the flags
 
-.ou2
-
- LDA #108               \ Set A to recursive token 108 ("E.C.M.SYSTEM")
-
- EQUB &2C               \ Fall through into ou3 to print the new message, but
-                        \ skip the first instruction by turning it into
-                        \ &2C &A9 &6F, or BIT &6FA9, which does nothing apart
-                        \ from affect the flags
-
-\ ******************************************************************************
-\
-\       Name: ou3
-\       Type: Subroutine
-\   Category: Flight
-\    Summary: Display "FUEL SCOOPS DESTROYED" as an in-flight message
-\
-\ ******************************************************************************
-
-.ou3
-
- LDA #111               \ Set A to recursive token 111 ("FUEL SCOOPS")
+                        \ --- End of removed code ----------------------------->
 
 \ ******************************************************************************
 \
@@ -48154,17 +48131,8 @@ ENDMACRO
 
  JSR TT27               \ Call TT27 to print the text token in A
 
-                        \ --- Mod: Code removed for sideways RAM: ------------->
-
-\LSR de                 \ If bit 0 of variable de is clear, return from the
-\BCC out                \ subroutine (as out contains an RTS)
-
-                        \ --- And replaced by: -------------------------------->
-
  LSR de                 \ If bit 0 of variable de is clear, return from the
- BCC NO1                \ subroutine (as NO1 contains an RTS)
-
-                        \ --- End of replacement ------------------------------>
+ BCC out                \ subroutine (as out contains an RTS)
 
  LDA #253               \ Print recursive token 93 (" DESTROYED") and return
  JMP TT27               \ from the subroutine using a tail call
@@ -48187,38 +48155,20 @@ ENDMACRO
 
  JSR DORND              \ Set A and X to random numbers
 
-                        \ --- Mod: Code removed for sideways RAM: ------------->
-
-\BMI out                \ If A < 0 (50% chance), return from the subroutine
-\                       \ (as out contains an RTS)
-\
-\CPX #22                \ If X >= 22 (91% chance), return from the subroutine
-\BCS out                \ (as out contains an RTS)
-\
-\LDA QQ20,X             \ If we do not have any of item QQ20+X, return from the
-\BEQ out                \ subroutine (as out contains an RTS). X is in the range
-\                       \ 0-21, so this not only checks for cargo, but also for
-\                       \ E.C.M., fuel scoops, energy bomb, energy unit and
-\                       \ docking computer, all of which can be destroyed
-
-                        \ --- And replaced by: -------------------------------->
-
- BMI NO1                \ If A < 0 (50% chance), return from the subroutine
-                        \ (as NO1 contains an RTS)
+ BMI out                \ If A < 0 (50% chance), return from the subroutine
+                        \ (as out contains an RTS)
 
  CPX #22                \ If X >= 22 (91% chance), return from the subroutine
- BCS NO1                \ (as NO1 contains an RTS)
+ BCS out                \ (as out contains an RTS)
 
  LDA QQ20,X             \ If we do not have any of item QQ20+X, return from the
- BEQ NO1                \ subroutine (as NO1 contains an RTS). X is in the range
+ BEQ out                \ subroutine (as out contains an RTS). X is in the range
                         \ 0-21, so this not only checks for cargo, but also for
                         \ E.C.M., fuel scoops, energy bomb, energy unit and
                         \ docking computer, all of which can be destroyed
 
  LDA DLY                \ If there is already an in-flight message on-screen,
- BNE NO1                \ return from the subroutine (as out contains an RTS)
-
-                        \ --- End of replacement ------------------------------>
+ BNE out                \ return from the subroutine (as out contains an RTS)
 
  LDY #3                 \ Set bit 1 of de, the equipment destruction flag, so
  STY de                 \ that when we call MESS below, " DESTROYED" is appended
@@ -48256,10 +48206,74 @@ ENDMACRO
                         \     = 113 - 19 + X
                         \     = 113 to 115
 
- BNE MESS               \ Print recursive token A ("ENERGY BOMB", "ENERGY UNIT"
+                        \ --- Mod: Code removed for in-flight messages: ------->
+
+\BNE MESS               \ Print recursive token A ("ENERGY BOMB", "ENERGY UNIT"
+\                       \ or "DOCKING COMPUTERS") as an in-flight message,
+\                       \ followed by " DESTROYED", and return from the
+\                       \ subroutine using a tail call
+
+                        \ --- And replaced by: -------------------------------->
+
+ JMP MESS               \ Print recursive token A ("ENERGY BOMB", "ENERGY UNIT"
                         \ or "DOCKING COMPUTERS") as an in-flight message,
                         \ followed by " DESTROYED", and return from the
                         \ subroutine using a tail call
+
+.out
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of replacement ------------------------------>
+
+\ ******************************************************************************
+\
+\       Name: ou2
+\       Type: Subroutine
+\   Category: Flight
+\    Summary: Display "E.C.M.SYSTEM DESTROYED" as an in-flight message
+\
+\ ******************************************************************************
+
+.ou2
+
+ LDA #108               \ Set A to recursive token 108 ("E.C.M.SYSTEM")
+
+                        \ --- Mod: Code removed for in-flight messages: ------->
+
+\EQUB &2C               \ Fall through into ou3 to print the new message, but
+\                       \ skip the first instruction by turning it into
+\                       \ &2C &A9 &6F, or BIT &6FA9, which does nothing apart
+\                       \ from affect the flags
+
+                        \ --- And replaced by: -------------------------------->
+
+ JMP MESS               \ Print recursive token A as an in-flight message,
+                        \ followed by " DESTROYED", and return from the
+                        \ subroutine using a tail call
+
+                        \ --- End of replacement ------------------------------>
+
+\ ******************************************************************************
+\
+\       Name: ou3
+\       Type: Subroutine
+\   Category: Flight
+\    Summary: Display "FUEL SCOOPS DESTROYED" as an in-flight message
+\
+\ ******************************************************************************
+
+.ou3
+
+ LDA #111               \ Set A to recursive token 111 ("FUEL SCOOPS")
+
+                        \ --- Mod: Code added for in-flight messages: --------->
+
+ JMP MESS               \ Print recursive token A as an in-flight message,
+                        \ followed by " DESTROYED", and return from the
+                        \ subroutine using a tail call
+
+                        \ --- End of added code ------------------------------->
 
 \ ******************************************************************************
 \
