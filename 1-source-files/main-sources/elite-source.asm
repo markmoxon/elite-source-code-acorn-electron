@@ -45458,66 +45458,58 @@ ENDMACRO
                         \ and update the key logger, setting KL to the key
                         \ pressed
 
-                        \ --- Mod: Code removed for flicker-free planets: ----->
+ LDX JSTK               \ If the joystick is not configured, jump down to TJ1,
+ BEQ TJ1                \ otherwise keep going... though as the DOKEY routine
+                        \ doesn't read the ADC channels in the Electron version,
+                        \ this doesn't actually work, but instead moves the
+                        \ crosshairs in an uncontrollable way, so this is
+                        \ presumably a bug
 
-\LDX JSTK               \ If the joystick is not configured, jump down to TJ1,
-\BEQ TJ1                \ otherwise keep going... though as the DOKEY routine
-\                       \ doesn't read the ADC channels in the Electron version,
-\                       \ this doesn't actually work, but instead moves the
-\                       \ crosshairs in an uncontrollable way, so this is
-\                       \ presumably a bug
-\
-\LDA JSTX               \ Fetch the joystick roll, ranging from 1 to 255 with
-\                       \ 128 as the centre point
-\
-\EOR #&FF               \ Flip the sign so A = -JSTX, because the joystick roll
-\                       \ works in the opposite way to moving a cursor on-screen
-\                       \ in terms of left and right
-\
-\JSR TJS1               \ Call TJS1 just below to set A to a value between -2
-\                       \ and +2 depending on the joystick roll value (moving
-\                       \ the stick sideways)
-\
-\TYA                    \ Copy Y to A
-\
-\TAX                    \ Copy A to X, so X contains the joystick roll value
-\
-\LDA JSTY               \ Fetch the joystick pitch, ranging from 1 to 255 with
-\                       \ 128 as the centre point, and fall through into TJS1 to
-\                       \ set Y to the joystick pitch value (moving the stick up
-\                       \ and down)
-\
-\.TJS1
-\
-\TAY                    \ Store A in Y
-\
-\LDA #0                 \ Set the result, A = 0
-\
-\CPY #16                \ If Y >= 16 set the C flag, so A = A - 1
-\SBC #0
-\
-\CPY #64                \ If Y >= 64 set the C flag, so A = A - 1
-\SBC #0
-\
-\CPY #192               \ If Y >= 192 set the C flag, so A = A + 1
-\ADC #0
-\
-\CPY #224               \ If Y >= 224 set the C flag, so A = A + 1
-\ADC #0
-\
-\TAY                    \ Copy the value of A into Y
-\
-\LDA KL                 \ Set A to the value of KL (the key pressed)
-\
-\RTS                    \ Return from the subroutine
-\
-\.TJ1
+ LDA JSTX               \ Fetch the joystick roll, ranging from 1 to 255 with
+                        \ 128 as the centre point
 
-                        \ --- And replaced by: -------------------------------->
+ EOR #&FF               \ Flip the sign so A = -JSTX, because the joystick roll
+                        \ works in the opposite way to moving a cursor on-screen
+                        \ in terms of left and right
 
- LDX #0                 \ Set X = 0
+ JSR TJS1               \ Call TJS1 just below to set A to a value between -2
+                        \ and +2 depending on the joystick roll value (moving
+                        \ the stick sideways)
 
-                        \ --- End of replacement ------------------------------>
+ TYA                    \ Copy Y to A
+
+ TAX                    \ Copy A to X, so X contains the joystick roll value
+
+ LDA JSTY               \ Fetch the joystick pitch, ranging from 1 to 255 with
+                        \ 128 as the centre point, and fall through into TJS1 to
+                        \ set Y to the joystick pitch value (moving the stick up
+                        \ and down)
+
+.TJS1
+
+ TAY                    \ Store A in Y
+
+ LDA #0                 \ Set the result, A = 0
+
+ CPY #16                \ If Y >= 16 set the C flag, so A = A - 1
+ SBC #0
+
+ CPY #64                \ If Y >= 64 set the C flag, so A = A - 1
+ SBC #0
+
+ CPY #192               \ If Y >= 192 set the C flag, so A = A + 1
+ ADC #0
+
+ CPY #224               \ If Y >= 224 set the C flag, so A = A + 1
+ ADC #0
+
+ TAY                    \ Copy the value of A into Y
+
+ LDA KL                 \ Set A to the value of KL (the key pressed)
+
+ RTS                    \ Return from the subroutine
+
+.TJ1
 
  LDA KL                 \ Set A to the value of KL (the key pressed)
 
