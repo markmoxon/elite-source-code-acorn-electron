@@ -49550,6 +49550,15 @@ ENDMACRO
 
                         \ --- End of added code ------------------------------->
 
+                        \ --- Mod: Code added for additional ships: ----------->
+
+ LDA NEWB               \ If bit 7 of the ship's NEWB flags is set, then the
+ BMI EE51               \ ship has been scooped or has docked, so jump down to
+                        \ EE51 to redraw its wireframe, to remove it from the
+                        \ screen
+
+                        \ --- End of added code ------------------------------->
+
  LDA #%00100000         \ If bit 5 of the ship's byte #31 is set, then the ship
  BIT XX1+31             \ is currently exploding, so jump down to EE28
  BNE EE28

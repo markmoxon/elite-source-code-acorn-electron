@@ -81,11 +81,11 @@ if release == 2:
 
 # Append SHIPS file
 
-#ships_file = open("3-assembled-output/SHIPS.bin", "rb")
-#data_block.extend(ships_file.read())
-#ships_file.close()
+# ships_file = open("3-assembled-output/SHIPS.bin", "rb")
+# data_block.extend(ships_file.read())
+# ships_file.close()
 
-#print("3-assembled-output/SHIPS.bin file read")
+# print("3-assembled-output/SHIPS.bin file read")
 
 # Calculate checksum0
 
