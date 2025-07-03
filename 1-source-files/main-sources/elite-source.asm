@@ -18344,6 +18344,13 @@ ENDIF
                         \ logger at location KY7, which is also where the A key
                         \ (fire lasers) key is logged
 
+                        \ --- Mod: Code added for joystick fire button: ------->
+
+ LDY #7                 \ Update the key logger for key 7 in the KYTB table, so
+ JSR DKS1               \ KY7 will be &FF if "A" (fire laser) is being pressed
+
+                        \ --- End of added code ------------------------------->
+
  LDX #1                 \ Call DKS2 to fetch the value of ADC channel 1 (the
  JSR DKS2               \ joystick X value) into (A X), and OR A with 1. This
  ORA #1                 \ ensures that the high byte is at least 1, and then we
