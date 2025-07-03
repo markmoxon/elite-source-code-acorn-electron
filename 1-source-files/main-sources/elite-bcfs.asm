@@ -137,13 +137,13 @@
 \SKIP 1                 \ This byte appears to be unused
 \
 \ENDIF
+\
+\.ships
+\
+\PRINT "ships = ", ~P%
+\INCBIN "3-assembled-output/SHIPS.bin"
 
                         \ --- End of removed code ----------------------------->
-
-.ships
-
- PRINT "ships = ", ~P%
- INCBIN "3-assembled-output/SHIPS.bin"
 
 .end
 

@@ -242,6 +242,8 @@
 
                         \ --- Mod: Code added for additional ships: ----------->
 
+ SHIP_MISSILE = &4D00   \ The address of the missile ship blueprint
+
  XX21 = &4E00           \ The address of the ship blueprints lookup table, where
                         \ the chosen ship blueprints file is loaded
 
@@ -24782,24 +24784,6 @@ ENDMACRO
 
 \ ******************************************************************************
 \
-\ Save ELTG.bin
-\
-\ ******************************************************************************
-
- PRINT "Free space in MAIN = ", &4D00 - P%, " bytes"
-
- PRINT "ELITE G"
- PRINT "Assembled at ", ~CODE_G%
- PRINT "Ends at ", ~P%
- PRINT "Code size is ", ~(P% - CODE_G%)
- PRINT "Execute at ", ~LOAD%
- PRINT "Reload at ", ~LOAD_G%
-
- PRINT "S.ELTG ", ~CODE_G%, " ", ~P%, " ", ~LOAD%, " ", ~LOAD_G%
- SAVE "3-assembled-output/ELTG.bin", CODE_G%, P%, LOAD%
-
-\ ******************************************************************************
-\
 \       Name: checksum0
 \       Type: Variable
 \   Category: Copy protection
@@ -24843,15 +24827,7 @@ ENDMACRO
 \
 \LOAD_SHIPS% = LOAD% + P% - CODE%
 
-                        \ --- And replaced by: -------------------------------->
-
- CODE_SHIPS% = &4D00
- 
- LOAD_SHIPS% = &4D00
-
- ORG CODE_SHIPS%
-
-                        \ --- End of replacement ------------------------------>
+                        \ --- End of removed code ----------------------------->
 
 \ ******************************************************************************
 \
@@ -25080,7 +25056,13 @@ ENDMACRO
 \
 \ ******************************************************************************
 
-.SHIP_MISSILE
+                        \ --- Mod: Code added for additional ships: ----------->
+
+ PRINT "Free space in MAIN = ", SHIP_MISSILE - P%, " bytes"
+
+ ORG SHIP_MISSILE
+
+                        \ --- End of added code ------------------------------->
 
  EQUB 0                 \ Max. canisters on demise = 0
  EQUW 40 * 40           \ Targetable area          = 40 * 40
@@ -25180,19 +25162,19 @@ ENDMACRO
 
 \ ******************************************************************************
 \
-\ Save SHIPS.bin
+\ Save ELTG.bin
 \
 \ ******************************************************************************
 
- PRINT "SHIPS"
- PRINT "Assembled at ", ~CODE_SHIPS%
+ PRINT "ELITE G"
+ PRINT "Assembled at ", ~CODE_G%
  PRINT "Ends at ", ~P%
- PRINT "Code size is ", ~(P% - CODE_SHIPS%)
+ PRINT "Code size is ", ~(P% - CODE_G%)
  PRINT "Execute at ", ~LOAD%
- PRINT "Reload at ", ~LOAD_SHIPS%
+ PRINT "Reload at ", ~LOAD_G%
 
- PRINT "S.SHIPS ", ~CODE_SHIPS%, " ", ~P%, " ", ~LOAD%, " ", ~LOAD_SHIPS%
- SAVE "3-assembled-output/SHIPS.bin", CODE_SHIPS%, P%, LOAD%
+ PRINT "S.ELTG ", ~CODE_G%, " ", ~P%, " ", ~LOAD%, " ", ~LOAD_G%
+ SAVE "3-assembled-output/ELTG.bin", CODE_G%, P%, LOAD%
 
 \ ******************************************************************************
 \
