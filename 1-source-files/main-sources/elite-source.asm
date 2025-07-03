@@ -17796,8 +17796,21 @@ ENDIF
  AND #&01               \ that's the channel number (as the channel is either
  TAX                    \ 0 or 1)
 
- LDY XX16+8             \ We stored the sound number (0, 8, 16 etc.) in XX16+8
-                        \ back in NOS1, so fetch it into Y
+                        \ --- Mod: Code removed for bug fixes: ---------------->
+
+\LDY XX16+8             \ We stored the sound number (0, 8, 16 etc.) in XX16+8
+\                       \ back in NOS1, so fetch it into Y
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDA XX16+8             \ We stored the sound number (0, 8, 16 etc.) in XX16+8
+ LSR A                  \ back in NOS1, so fetch it into Y and divide by 8 to
+ LSR A                  \ give an offset we can use in the SFX2 table (0, 1, 2
+ LSR A                  \ etc.)
+ TAY
+
+                        \ --- End of replacement ------------------------------>
+
 
  LDA SFX2,Y             \ Fetch this sound's byte from SFX2 into A
                         \
