@@ -7059,7 +7059,7 @@ ENDIF
 \
 \ ******************************************************************************
 
-                        \ --- Mod: Code removed for missions: ----------------->
+                        \ --- Mod: Code added for missions: ------------------->
 
 .BRIEF2
 
@@ -7085,7 +7085,7 @@ ENDIF
 \
 \ ******************************************************************************
 
-                        \ --- Mod: Code removed for missions: ----------------->
+                        \ --- Mod: Code added for missions: ------------------->
 
 .BRP
 
@@ -7107,7 +7107,7 @@ ENDIF
 \
 \ ******************************************************************************
 
-                        \ --- Mod: Code removed for missions: ----------------->
+                        \ --- Mod: Code added for missions: ------------------->
 
 .BRIEF3
 
@@ -7137,7 +7137,7 @@ ENDIF
 \
 \ ******************************************************************************
 
-                        \ --- Mod: Code removed for missions: ----------------->
+                        \ --- Mod: Code added for missions: ------------------->
 
 .DEBRIEF2
 
@@ -7180,7 +7180,7 @@ ENDIF
 \
 \ ******************************************************************************
 
-                        \ --- Mod: Code removed for missions: ----------------->
+                        \ --- Mod: Code added for missions: ------------------->
 
 .DEBRIEF
 
@@ -7232,7 +7232,7 @@ ENDIF
 \
 \ ******************************************************************************
 
-                        \ --- Mod: Code removed for missions: ----------------->
+                        \ --- Mod: Code added for missions: ------------------->
 
 .BRIEF
 
@@ -7349,7 +7349,7 @@ ENDIF
 \
 \ ******************************************************************************
 
-                        \ --- Mod: Code removed for missions: ----------------->
+                        \ --- Mod: Code added for missions: ------------------->
 
 .BRIS
 
@@ -7372,7 +7372,7 @@ ENDIF
 \
 \ ******************************************************************************
 
-                        \ --- Mod: Code removed for missions: ----------------->
+                        \ --- Mod: Code added for missions: ------------------->
 
 .PAUSE
 
@@ -7477,7 +7477,7 @@ ENDIF
 \
 \ ******************************************************************************
 
-                        \ --- Mod: Code removed for missions: ----------------->
+                        \ --- Mod: Code added for missions: ------------------->
 
 .PAS1
 
@@ -7517,7 +7517,7 @@ ENDIF
 \
 \ ******************************************************************************
 
-                        \ --- Mod: Code removed for missions: ----------------->
+                        \ --- Mod: Code added for missions: ------------------->
 
 .PAUSE2
 
@@ -10941,6 +10941,14 @@ ENDIF
 
  BPL TT136              \ Loop back to TT136 if we still have more bytes to
                         \ copy
+
+                        \ --- Mod: Code added for missions: ------------------->
+
+ LDA U                  \ Store the system number U in ZZ, so when we are done
+ STA ZZ                 \ looping through all the candidates, the winner's
+                        \ number will be in ZZ
+
+                        \ --- End of added code ------------------------------->
 
 .TT135
 
