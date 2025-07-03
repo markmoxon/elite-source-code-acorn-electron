@@ -2407,11 +2407,25 @@ ENDMACRO
  CHAR 'Y'
  EQUB 0
 
- RTOK 117               \ Token 57:     "ALLOYS"
- CHAR 'O'               \
- CHAR 'Y'               \ Encoded as:   "[117]OYS"
+                        \ --- Mod: Code removed for extended text tokens: ----->
+
+\RTOK 117               \ Token 57:     "ALLOYS"
+\CHAR 'O'               \
+\CHAR 'Y'               \ Encoded as:   "[117]OYS"
+\CHAR 'S'
+\EQUB 0
+
+                        \ --- And replaced by: -------------------------------->
+
+ CHAR 'A'               \ Token 57:     "ALLOYS"
+ CHAR 'L'               \
+ CHAR 'L'               \ Encoded as:   "ALLOYS"
+ CHAR 'O'
+ CHAR 'Y'
  CHAR 'S'
  EQUB 0
+
+                        \ --- End of replacement ------------------------------>
 
  CHAR 'F'               \ Token 58:     "FIREARMS"
  CHAR 'I'               \
