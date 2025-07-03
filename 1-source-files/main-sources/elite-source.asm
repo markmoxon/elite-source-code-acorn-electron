@@ -8198,148 +8198,15 @@ ENDIF
 
  RTS                    \ Return from the subroutine
 
-\ ******************************************************************************
-\
-\       Name: hm
-\       Type: Subroutine
-\   Category: Charts
-\    Summary: Select the closest system and redraw the chart crosshairs
-\
-\ ------------------------------------------------------------------------------
-\
-\ Set the system closest to galactic coordinates (QQ9, QQ10) as the selected
-\ system, redraw the crosshairs on the chart accordingly (if they are being
-\ shown), and if this is not the space view, clear the bottom three text rows of
-\ the screen.
-\
-\ ******************************************************************************
-
-.hm
-
- JSR TT103              \ Draw small crosshairs at coordinates (QQ9, QQ10),
-                        \ which will erase the crosshairs currently there
-
- JSR TT111              \ Select the system closest to galactic coordinates
-                        \ (QQ9, QQ10)
-
- JSR TT103              \ Draw small crosshairs at coordinates (QQ9, QQ10),
-                        \ which will draw the crosshairs at our current home
-                        \ system
-
- LDA QQ11               \ If this is a space view, return from the subroutine
- BEQ SC5                \ (as SC5 contains an RTS)
-
-                        \ Otherwise fall through into CLYNS to clear space at
-                        \ the bottom of the screen
-
-\ ******************************************************************************
-\
-\       Name: CLYNS
-\       Type: Subroutine
-\   Category: Drawing the screen
-\    Summary: Clear the bottom three text rows of the space view
-\
-\ ------------------------------------------------------------------------------
-\
-\ This routine clears some space at the bottom of the screen and moves the text
-\ cursor to column 1, row 20.
-\
-\ Specifically, it zeroes the following screen locations:
-\
-\   &7507 to &75F0
-\   &7607 to &76F0
-\   &7707 to &77F0
-\
-\ which clears the three bottom text rows of the mode 4 screen (rows 21 to 23),
-\ clearing each row from text column 1 to 30 (so it doesn't overwrite the box
-\ border in columns 0 and 32, or the last usable column in column 31).
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   A                   A is set to 0
-\
-\   Y                   Y is set to 0
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   SC5                 Contains an RTS
-\
-\ ******************************************************************************
-
-.CLYNS
-
- JSR BORDER             \ Redraw the space view's border, which removes it
-                        \ from the screen
-
- LDX #&71               \ Call LYN with X = &71 to clear the screen from page
- JSR LYN                \ &71 to page &75, which clears the bottom three lines
-                        \ of the screen
-
- JSR BORDER             \ Redraw the space view's border
-
-                        \ --- Mod: Code added for extended text tokens: ------->
-
- LDA #%11111111         \ Set DTW2 = %11111111 to denote that we are not
- STA DTW2               \ currently printing a word
-
-                        \ --- End of added code ------------------------------->
-
- LDA #20                \ Move the text cursor to row 20, near the bottom of
- STA YC                 \ the screen
-
- JSR TT67               \ Print a newline, which will move the text cursor down
-                        \ a line (to row 21) and back to column 1
-
- LDY #1                 \ Move the text cursor to column 1
- STY XC
-
- DEY                    \ Set Y = 0, so the subroutine returns with this value
- TYA
-
-.SC5
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: LYN
-\       Type: Subroutine
-\   Category: Drawing the screen
-\    Summary: Clear most of a row of pixels
-\
-\ ------------------------------------------------------------------------------
-\
-\ Zero memory from page X to page &75 (inclusive).
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   X                   The page of screen memory from which to start clearing
-\
-\ ******************************************************************************
-
-.LYN
-
- JSR ZES1               \ Call ZES1 to zero-fill the page in X
-
- INX                    \ Increment X to point to the next page in memory
-
- CPX #&76               \ Loop back to zero the next page until we have reached
- BNE LYN                \ page &76 (so page &75 is the last page to be zeroed)
-
- RTS                    \ Return from the subroutine
-
                         \ --- Mod: Code moved for sideways RAM: --------------->
 
                         \ The following routines have been moved into sideways
                         \ RAM (see the ELITE SIDEWAYS RAM FILE section at the
                         \ end of this source file):
                         \
+                        \   * hm
+                        \   * CLYNS
+                        \   * LYN
                         \   * SCAN
                         \   * NEXTR
 
@@ -14882,9 +14749,9 @@ ENDIF
 
                         \ --- Mod: Code moved for sideways RAM: --------------->
 
-                        \ The following routines have been moved into sideways
-                        \ RAM (see the ELITE SIDEWAYS RAM FILE section at the
-                        \ end of this source file):
+                        \ The following routines and variables have been moved
+                        \ into sideways RAM (see the ELITE SIDEWAYS RAM FILE
+                        \ section at the end of this source file)
                         \
                         \   * SHD
                         \   * DENGY
@@ -14899,808 +14766,19 @@ ENDIF
                         \   * OOPS
                         \   * SPS3
                         \   * GINF
-
-                        \ --- End of moved code ------------------------------->
-
-\ ******************************************************************************
-\
-\       Name: NWSPS
-\       Type: Subroutine
-\   Category: Universe
-\    Summary: Add a new space station to our local bubble of universe
-\
-\ ******************************************************************************
-
-.NWSPS
-
- JSR SPBLB              \ Light up the space station bulb on the dashboard
-
-                        \ --- Mod: Code removed for additional ships: --------->
-
-\LDX #%00000001         \ Set the AI flag in byte #32 to %00000001 (friendly, no
-\STX INWK+32            \ AI, has an E.C.M.)
-\
-\DEX                    \ Set pitch counter to 0 (no pitch, roll only)
-\STX INWK+30
-
-                        \ --- And replaced by: -------------------------------->
-
- LDX #%10000001         \ Set the AI flag in byte #32 to %10000001 (hostile,
- STX INWK+32            \ no AI, has an E.C.M.)
-
- LDX #0                 \ Set pitch counter to 0 (no pitch, roll only)
- STX INWK+30
-
- STX NEWB               \ Set NEWB to %00000000, though this gets overridden by
-                        \ the default flags from E% in NWSHP below
-
-                        \ --- End of replacement ------------------------------>
-
- STX FRIN+1             \ Set the second slot in the FRIN table to 0, so when we
-                        \ fall through into NWSHP below, the new station that
-                        \ gets created will go into slot FRIN+1, as this will be
-                        \ the first empty slot that the routine finds
-
- DEX                    \ Set the roll counter to 255 (maximum anti-clockwise
- STX INWK+29            \ roll with no damping)
-
- LDX #10                \ Call NwS1 to flip the sign of nosev_x_hi (byte #10)
- JSR NwS1
-
- JSR NwS1               \ And again to flip the sign of nosev_y_hi (byte #12)
-
- JSR NwS1               \ And again to flip the sign of nosev_z_hi (byte #14)
-
- LDA #LO(LSO)           \ Set bytes #33 and #34 to point to LSO for the ship
- STA INWK+33            \ line heap for the space station
- LDA #HI(LSO)
- STA INWK+34
-
- LDA #SST               \ Set A to the space station type, and fall through
-                        \ into NWSHP to finish adding the space station to the
-                        \ universe
-
-\ ******************************************************************************
-\
-\       Name: NWSHP
-\       Type: Subroutine
-\   Category: Universe
-\    Summary: Add a new ship to our local bubble of universe
-\
-\ ------------------------------------------------------------------------------
-\
-\ This creates a new block of ship data in the K% workspace, allocates a new
-\ block in the ship line heap at WP, adds the new ship's type into the first
-\ empty slot in FRIN, and adds a pointer to the ship data into UNIV. If there
-\ isn't enough free memory for the new ship, it isn't added.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   A                   The type of the ship to add (see variable XX21 for a
-\                       list of ship types)
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   C flag              Set if the ship was successfully added, clear if it
-\                       wasn't (as there wasn't enough free memory)
-\
-\   INF                 Points to the new ship's data block in K%
-\
-\ ******************************************************************************
-
-.NWSHP
-
- STA T                  \ Store the ship type in location T
-
- LDX #0                 \ Before we can add a new ship, we need to check
-                        \ whether we have an empty slot we can put it in. To do
-                        \ this, we need to loop through all the slots to look
-                        \ for an empty one, so set a counter in X that starts
-                        \ from the first slot at 0. When ships are killed, then
-                        \ the slots are shuffled down by the KILLSHP routine, so
-                        \ the first empty slot will always come after the last
-                        \ filled slot. This allows us to tack the new ship's
-                        \ data block and ship line heap onto the end of the
-                        \ existing ship data and heap, as shown in the memory
-                        \ map below
-
-.NWL1
-
- LDA FRIN,X             \ Load the ship type for the X-th slot
-
- BEQ NW1                \ If it is zero, then this slot is empty and we can use
-                        \ it for our new ship, so jump down to NW1
-
- INX                    \ Otherwise increment X to point to the next slot
-
- CPX #NOSH              \ If we haven't reached the last slot yet, loop back up
- BCC NWL1               \ to NWL1 to check the next slot (note that this means
-                        \ only slots from 0 to #NOSH - 1 are populated by this
-                        \ routine, but there is one more slot reserved in FRIN,
-                        \ which is used to identify the end of the slot list
-                        \ when shuffling the slots down in the KILLSHP routine)
-
-.NW3
-
- CLC                    \ Otherwise we don't have an empty slot, so we can't
- RTS                    \ add a new ship, so clear the C flag to indicate that
-                        \ we have not managed to create the new ship, and return
-                        \ from the subroutine
-
-.NW1
-
-                        \ If we get here, then we have found an empty slot at
-                        \ index X, so we can go ahead and create our new ship.
-                        \ We do that by creating a ship data block at INWK and,
-                        \ when we are done, copying the block from INWK into
-                        \ the K% workspace (specifically, to INF)
-
- JSR GINF               \ Get the address of the data block for ship slot X
-                        \ (which is in workspace K%) and store it in INF
-
- LDA T                  \ If the type of ship that we want to create is
- BMI NW2                \ negative, then this indicates the planet, so
-                        \ jump down to NW2, as the next section sets up a ship
-                        \ data block, which doesn't apply to planets, as they
-                        \ don't have things like shields, missiles, vertices
-                        \ and edges
-
-                        \ This is a ship, so first we need to set up various
-                        \ pointers to the ship blueprint we will need. The
-                        \ blueprints for each ship type in Elite are stored
-                        \ in a table at location XX21, so refer to the comments
-                        \ on that variable for more details on the data we're
-                        \ about to access
-
- ASL A                  \ Set Y = ship type * 2
- TAY
-
-                        \ --- Mod: Code removed for additional ships: --------->
-
-\LDA XX21-2,Y           \ The ship blueprints at XX21 start with a lookup
-\STA XX0                \ table that points to the individual ship blueprints,
-\                       \ so this fetches the low byte of this particular ship
-\                       \ type's blueprint and stores it in XX0
-\
-\LDA XX21-1,Y           \ Fetch the high byte of this particular ship type's
-\STA XX0+1              \ blueprint and store it in XX0+1, so XX0(1 0) now
-\                       \ contains the address of this ship's blueprint
-
-                        \ --- And replaced by: -------------------------------->
-
- LDA XX21-1,Y           \ The ship blueprints at XX21 start with a lookup
-                        \ table that points to the individual ship blueprints,
-                        \ so this fetches the high byte of this particular ship
-                        \ type's blueprint
-
- BEQ NW3                \ If the high byte is 0 then this is not a valid ship
-                        \ type, so jump to NW3 to clear the C flag and return
-                        \ from the subroutine
-
- STA XX0+1              \ This is a valid ship type, so store the high byte in
-                        \ XX0+1
-
- LDA XX21-2,Y           \ Fetch the low byte of this particular ship type's
- STA XX0                \ blueprint and store it in XX0, so XX0(1 0) now
-                        \ contains the address of this ship's blueprint
-
-                        \ --- End of replacement ------------------------------>
-
- CPY #2*SST             \ If the ship type is a space station (SST), then jump
- BEQ NW6                \ to NW6, skipping the heap space steps below, as the
-                        \ space station has its own line heap at LSO
-
-                        \ We now want to allocate space for a heap that we can
-                        \ use to store the lines we draw for our new ship (so it
-                        \ can easily be erased from the screen again). SLSP
-                        \ points to the start of the current heap space, and we
-                        \ can extend it downwards with the heap for our new ship
-                        \ (as the heap space always ends just before the WP
-                        \ workspace)
-
- LDY #5                 \ Fetch ship blueprint byte #5, which contains the
- LDA (XX0),Y            \ maximum heap size required for plotting the new ship,
- STA T1                 \ and store it in T1
-
- LDA SLSP               \ Take the 16-bit address in SLSP and subtract T1,
- SEC                    \ storing the 16-bit result in INWK(34 33), so this now
- SBC T1                 \ points to the start of the line heap for our new ship
- STA INWK+33
- LDA SLSP+1
- SBC #0
- STA INWK+34
-
-                        \ We now need to check that there is enough free space
-                        \ for both this new line heap and the new data block
-                        \ for our ship. In memory, this is the layout of the
-                        \ ship data blocks and ship line heaps:
-                        \
-                        \   +-----------------------------------+   &0F34
-                        \   |                                   |
-                        \   | WP workspace                      |
-                        \   |                                   |
-                        \   +-----------------------------------+   &0D40 = WP
-                        \   |                                   |
-                        \   | Current ship line heap            |
-                        \   |                                   |
-                        \   +-----------------------------------+   SLSP
-                        \   |                                   |
-                        \   | Proposed heap for new ship        |
-                        \   |                                   |
-                        \   +-----------------------------------+   INWK(34 33)
-                        \   |                                   |
-                        \   .                                   .
-                        \   .                                   .
-                        \   .                                   .
-                        \   .                                   .
-                        \   .                                   .
-                        \   |                                   |
-                        \   +-----------------------------------+   INF + NI%
-                        \   |                                   |
-                        \   | Proposed data block for new ship  |
-                        \   |                                   |
-                        \   +-----------------------------------+   INF
-                        \   |                                   |
-                        \   | Existing ship data blocks         |
-                        \   |                                   |
-                        \   +-----------------------------------+   &0900 = K%
-                        \
-                        \ So, to work out if we have enough space, we have to
-                        \ make sure there is room between the end of our new
-                        \ ship data block at INF + NI%, and the start of the
-                        \ proposed heap for our new ship at the address we
-                        \ stored in INWK(34 33). Or, to put it another way, we
-                        \ and to make sure that:
-                        \
-                        \   INWK(34 33) > INF + NI%
-                        \
-                        \ which is the same as saying:
-                        \
-                        \   INWK+33 - INF > NI%
-                        \
-                        \ because INWK is in zero page, so INWK+34 = 0
-
- LDA INWK+33            \ Calculate INWK+33 - INF, again using 16-bit
- SBC INF                \ arithmetic, and put the result in (A Y), so the high
- TAY                    \ byte is in A and the low byte in Y. The subtraction
- LDA INWK+34            \ works because the previous subtraction will never
- SBC INF+1              \ underflow, so we know the C flag is set
-
- BCC NW3+1              \ If we have an underflow from the subtraction, then
-                        \ INF > INWK+33 and we definitely don't have enough
-                        \ room for this ship, so jump to NW3+1, which returns
-                        \ from the subroutine (with the C flag already cleared)
-
- BNE NW4                \ If the subtraction of the high bytes in A is not
-                        \ zero, and we don't have underflow, then we definitely
-                        \ have enough space, so jump to NW4 to continue setting
-                        \ up the new ship
-
- CPY #NI%               \ Otherwise the high bytes are the same in our
- BCC NW3+1              \ subtraction, so now we compare the low byte of the
-                        \ result (which is in Y) with NI%. This is the same as
-                        \ doing INWK+33 - INF > NI% (see above). If this isn't
-                        \ true, the C flag will be clear and we don't have
-                        \ enough space, so we jump to NW3+1, which returns
-                        \ from the subroutine (with the C flag already cleared)
-
-.NW4
-
- LDA INWK+33            \ If we get here then we do have enough space for our
- STA SLSP               \ new ship, so store the new bottom of the ship line
- LDA INWK+34            \ heap (i.e. INWK+33) in SLSP, doing both the high and
- STA SLSP+1             \ low bytes
-
-.NW6
-
- LDY #14                \ Fetch ship blueprint byte #14, which contains the
- LDA (XX0),Y            \ ship's energy, and store it in byte #35
- STA INWK+35
-
- LDY #19                \ Fetch ship blueprint byte #19, which contains the
- LDA (XX0),Y            \ number of missiles and laser power, and AND with %111
- AND #%00000111         \ to extract the number of missiles before storing in
- STA INWK+31            \ byte #31
-
- LDA T                  \ Restore the ship type we stored above
-
-.NW2
-
- STA FRIN,X             \ Store the ship type in the X-th byte of FRIN, so the
-                        \ slot is now shown as occupied in the index table
-
- TAX                    \ Copy the ship type into X
-
-                        \ --- Mod: Code removed for additional ships: --------->
-
-\BMI P%+5               \ If the ship type is negative (i.e. the planet), then
-\                       \ skip the following instruction
-
-                        \ --- And replaced by: -------------------------------->
-
- BMI NW8                \ If the ship type is negative (planet or sun), then
-                        \ jump to NW8 to skip the following instructions
-
- CPX #JL                \ If JL <= X < JH, i.e. the type of ship we killed in X
- BCC NW7                \ is junk (escape pod, alloy plate, cargo canister,
- CPX #JH                \ asteroid, splinter, Shuttle or Transporter), then keep
- BCS NW7                \ going, otherwise jump to NW7
-
-.gangbang
-
- INC JUNK               \ We're adding junk, so increase the junk counter
-
-.NW7
-
-                        \ --- End of replacement ------------------------------>
-
- INC MANY,X             \ Increment the total number of ships of type X
-
-                        \ --- Mod: Code added for additional ships: ----------->
-
-.NW8
-
- LDY T                  \ Restore the ship type we stored above
-
- LDA E%-1,Y             \ Fetch the E% byte for this ship to get the default
-                        \ settings for the ship's NEWB flags
-
- AND #%01101111         \ Zero bits 4 and 7 (so the new ship is not docking, has
-                        \ not been scooped, and has not just docked)
-
- ORA NEWB               \ Apply the result to the ship's NEWB flags, which sets
- STA NEWB               \ bits 0-3 and 5-6 in NEWB if they are set in the E%
-                        \ byte
-
-                        \ --- End of added code ------------------------------->
-
- LDY #NI%-1             \ The final step is to copy the new ship's data block
-                        \ from INWK to INF, so set up a counter for NI% bytes
-                        \ in Y
-
-.NWL3
-
- LDA INWK,Y             \ Load the Y-th byte of INWK and store in the Y-th byte
- STA (INF),Y            \ of the workspace pointed to by INF
-
- DEY                    \ Decrement the loop counter
-
- BPL NWL3               \ Loop back for the next byte until we have copied them
-                        \ all over
-
- SEC                    \ We have successfully created our new ship, so set the
-                        \ C flag to indicate success
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: NwS1
-\       Type: Subroutine
-\   Category: Universe
-\    Summary: Flip the sign and double an INWK byte
-\
-\ ------------------------------------------------------------------------------
-\
-\ Flip the sign of the INWK byte at offset X, and increment X by 2. This is
-\ used by the space station creation routine at NWSPS.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   X                   The offset of the INWK byte to be flipped
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   X                   X is incremented by 2
-\
-\ ******************************************************************************
-
-.NwS1
-
- LDA INWK,X             \ Load the X-th byte of INWK into A and flip bit 7,
- EOR #%10000000         \ storing the result back in the X-th byte of INWK
- STA INWK,X
-
- INX                    \ Add 2 to X
- INX
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: ABORT
-\       Type: Subroutine
-\   Category: Dashboard
-\    Summary: Disarm missiles and update the dashboard indicators
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   ABORT-2             Set the indicator to disarmed (white square)
-\
-\ ******************************************************************************
-
- LDY #&09               \ Set Y = &09 so we set the missile to a white square
-                        \ (disarmed)
-
-.ABORT
-
- LDX #&FF               \ Set X to &FF, which is the value of MSTG when we have
-                        \ no target lock for our missile
-
-                        \ Fall through into ABORT2 to set the missile lock to
-                        \ the value in X, which effectively disarms the missile
-
-\ ******************************************************************************
-\
-\       Name: ABORT2
-\       Type: Subroutine
-\   Category: Dashboard
-\    Summary: Set/unset the lock target for a missile and update the dashboard
-\
-\ ------------------------------------------------------------------------------
-\
-\ Set the lock target for the leftmost missile and update the dashboard.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   X                   The slot number of the ship to lock our missile onto, or
-\                       &FF to remove missile lock
-\
-\   Y                   The new shape of the missile indicator:
-\
-\                         * &04 = black (no missile)
-\
-\                         * &11 = black "T" in white square (armed and locked)
-\
-\                         * &0D = black box in white square (armed)
-\
-\                         * &09 = white square (disarmed)
-\
-\ ******************************************************************************
-
-.ABORT2
-
- STX MSTG               \ Store the target of our missile lock in MSTG
-
- LDX NOMSL              \ Call MSBAR to update the leftmost indicator in the
- JSR MSBAR              \ dashboard's missile bar, which returns with Y = 0
-
- STY MSAR               \ Set MSAR = 0 to indicate that the leftmost missile
-                        \ is no longer seeking a target lock
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: ECBLB2
-\       Type: Subroutine
-\   Category: Dashboard
-\    Summary: Start up the E.C.M. (light up the indicator, start the countdown
-\             and make the E.C.M. sound)
-\
-\ ******************************************************************************
-
-.ECBLB2
-
- LDA #32                \ Set the E.C.M. countdown timer in ECMA to 32
- STA ECMA
-
- ASL A                  \ Call the NOISE routine with A = 64 to make the sound
- JSR NOISE              \ of the E.C.M. being switched on
-
-                        \ Fall through into ECBLB to light up the E.C.M. bulb
-
-\ ******************************************************************************
-\
-\       Name: ECBLB
-\       Type: Subroutine
-\   Category: Dashboard
-\    Summary: Light up the E.C.M. indicator bulb ("E") on the dashboard
-\
-\ ******************************************************************************
-
-.ECBLB
-
- LDA #&98               \ Set A to the low byte of the screen address of the
-                        \ E.C.M. bulb (which is at &7C98)
-
- LDX #LO(ECBT)          \ Set X to the low byte of the address of the character
-                        \ definition in ECBT
-
- LDY #&7C               \ Set Y to the high byte of the screen address of the
-                        \ E.C.M. bulb (which is at &7C98)
-
- BNE BULB               \ Jump down to BULB (this BNE is effectively a JMP as
-                        \ A will never be zero)
-
-\ ******************************************************************************
-\
-\       Name: SPBLB
-\       Type: Subroutine
-\   Category: Dashboard
-\    Summary: Light up the space station indicator ("S") on the dashboard
-\
-\ ******************************************************************************
-
-.SPBLB
-
- LDA #&20               \ Set A to the low byte of the screen address of the
-                        \ space station bulb (which is at &7D20)
-
- LDX #LO(SPBT)          \ Set X to the low byte of the address of the character
-                        \ definition in SPBT
-
- LDY #&7D               \ Set Y to the high byte of the screen address of the
-                        \ space station bulb (which is at &7D20)
-
-                        \ Fall through into BULB to draw the space station bulb
-
-\ ******************************************************************************
-\
-\       Name: BULB
-\       Type: Subroutine
-\   Category: Dashboard
-\    Summary: Draw an indicator bulb on the dashboard
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   A                   The low byte of the screen address of the bulb to show
-\
-\   X                   The low byte of the address of the character definition
-\                       of the bulb to be drawn, i.e. #LO(ECBT) for the E.C.M.
-\                       bulb, or #LO(SPBT) for the space station bulb
-\
-\   Y                   The high byte of the screen address of the bulb to show
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   BULB-2              Set the Y screen address
-\
-\ ******************************************************************************
-
-.BULB
-
- STA SC                 \ Store the low byte of the screen address in SC
-
- STX P+1                \ Set P(2 1) to the address of the character definition
- LDX #HI(ECBT)          \ of the bulb to be drawn (this assumes that ECBT and
- STX P+2                \ SPBT are in the same page and have the same high byte)
-
- TYA                    \ Set A to Y, the high byte of the screen address we
-                        \ want to write to, so now (A SC) points to the specific
-                        \ bulb's screen address
-
- JMP RREN               \ Call RREN to print the character definition pointed to
-                        \ by P(2 1) at the screen address pointed to by (A SC),
-                        \ returning from the subroutine using a tail call
-
-\ ******************************************************************************
-\
-\       Name: ECBT
-\       Type: Variable
-\   Category: Dashboard
-\    Summary: The character bitmap for the E.C.M. indicator bulb
-\
-\ ------------------------------------------------------------------------------
-\
-\ The character bitmap for the E.C.M. indicator's "E" bulb that gets displayed
-\ on the dashboard.
-\
-\ The E.C.M. indicator uses the first 5 rows of the space station's "S" bulb
-\ below, as the bottom 5 rows of the "E" match the top 5 rows of the "S".
-\
-\ Each pixel is a white mode 4 pixel.
-\
-\ ******************************************************************************
-
-.ECBT
-
- EQUB %11111110         \ x x x x x x x x .
- EQUB %11111110         \ x x x x x x x x .
- EQUB %11100000         \ x x x . . . . . .
-                        \ x x x x x x x x .
-                        \ x x x x x x x x .
-                        \ x x x . . . . . .
-                        \ x x x x x x x x .
-                        \ x x x x x x x x .
-
-\ ******************************************************************************
-\
-\       Name: SPBT
-\       Type: Variable
-\   Category: Dashboard
-\    Summary: The bitmap definition for the space station indicator bulb
-\
-\ ------------------------------------------------------------------------------
-\
-\ The bitmap definition for the space station indicator's "S" bulb that gets
-\ displayed on the dashboard.
-\
-\ Each pixel is a white mode 4 pixel.
-\
-\ ******************************************************************************
-
-.SPBT
-
- EQUB %11111110         \ x x x x x x x x .
- EQUB %11111110         \ x x x x x x x x .
- EQUB %11100000         \ x x x . . . . . .
- EQUB %11111110         \ x x x x x x x x .
- EQUB %11111110         \ x x x x x x x x .
- EQUB %00001110         \ . . . . . x x x .
- EQUB %11111110         \ x x x x x x x x .
- EQUB %11111110         \ x x x x x x x x .
-
-\ ******************************************************************************
-\
-\       Name: MSBAR
-\       Type: Subroutine
-\   Category: Dashboard
-\    Summary: Draw a specific indicator in the dashboard's missile bar
-\
-\ ------------------------------------------------------------------------------
-\
-\ Each indicator is a rectangle that's 6 pixels wide and 5 pixels high. If the
-\ indicator is set to black, this effectively removes a missile.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   X                   The number of the missile indicator to update (counting
-\                       from right to left, so indicator NOMSL is the leftmost
-\                       indicator)
-\
-\   Y                   The status of the missile indicator:
-\
-\                         * &04 = black (no missile)
-\
-\                         * &11 = black "T" in white square (armed and locked)
-\
-\                         * &0D = black box in white square (armed)
-\
-\                         * &09 = white square (disarmed)
-\
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
-\
-\   X                   X is preserved
-\
-\   Y                   Y is set to 0
-\
-\ ******************************************************************************
-
-.MSBAR
-
- TXA                    \ Store X on the stack, so we can preserve it across
- PHA                    \ the call to the subroutine
-
- ASL A                  \ Set T = X * 8
- ASL A
- ASL A
- STA T
-
- LDA #209               \ Set SC = &80 + 32 + 49 - T
- SBC T                  \        = &80 + 32 + 48 + 1 - (X * 8)
- STA SC                 \
-                        \ The &80 part comes from the fact that the character
-                        \ row containing the missile starts at address &7D80,
-                        \ and the low byte of this is &80
-                        \
-                        \ The 32 part comes from the 32-byte blank border to
-                        \ the left of the screen
-                        \
-                        \ And the 48 part is from character block 7, which is
-                        \ the character block containing the missile indicators
-
-                        \ So the low byte of SC(1 0) contains the row address
-                        \ for the rightmost missile indicator, made up as
-                        \ follows:
-                        \
-                        \   * &80 + 32 as described above
-                        \
-                        \   * 48 (character block 7, as byte #7 * 8 = 48), the
-                        \     character block of the rightmost missile
-                        \
-                        \   * 1 (so we start drawing on the second row of the
-                        \     character block)
-                        \
-                        \   * Move left one character (8 bytes) for each count
-                        \     of X, so when X = 0 we are drawing the rightmost
-                        \     missile, for X = 1 we hop to the left by one
-                        \     character, and so on
-
- LDA #&7D               \ Set the high byte of SC(1 0) to &7D, the high byte of
- STA SCH                \ &7D80, which is the start of the character row that
-                        \ contains the missile indicators (i.e. the bottom row
-                        \ of the screen)
-
- TYA                    \ Set X to the indicator status that was passed to the
- TAX                    \ subroutine, so we can use it below as an index into
-                        \ the MDIALS table when fetching the bitmap to set the
-                        \ missile indicator to
-
- LDY #5                 \ We now want to draw this line five times, so set a
-                        \ counter in Y
-
-.MBL1
-
- LDA MDIALS,X           \ Fetch the X-th bitmap from the MDIALS table
-
- STA (SC),Y             \ Draw the three-pixel row, and as we do not use EOR
-                        \ logic, this will overwrite anything that is already
-                        \ there (so drawing a black missile will delete what's
-                        \ there)
-
- DEX                    \ Decrement the bitmap counter for the next row
-
- DEY                    \ Decrement the counter for the next row
-
- BNE MBL1               \ Loop back to MBL1 if have more rows to draw
-
- PLA                    \ Restore X from the stack, so that it's preserved
- TAX
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: MDIALS
-\       Type: Variable
-\   Category: Dashboard
-\    Summary: The missile indicator bitmaps for the monochrome dashboard
-\
-\ ******************************************************************************
-
-.MDIALS
-
- EQUB %00000000         \ No missile (black)
- EQUB %00000000
- EQUB %00000000
- EQUB %00000000
- EQUB %00000000
-
- EQUB %11111100         \ Disarmed (white square)
- EQUB %11111100         \
- EQUB %11111100         \ Shares the first row from the next indicator
- EQUB %11111100
-\EQUB %11111100
-
- EQUB %11111100         \ Armed (black box in white square)
- EQUB %10000100         \
- EQUB %10110100         \ Shares the first row from the next indicator
- EQUB %10000100
-\EQUB %11111100
-
- EQUB %11111100         \ Armed and locked (black "T" in white square)
- EQUB %11000100
- EQUB %11101100
- EQUB %11101100
- EQUB %11111100
-
-                        \ --- Mod: Code moved for sideways RAM: --------------->
-
-                        \ The following routines have been moved into sideways
-                        \ RAM (see the ELITE SIDEWAYS RAM FILE section at the
-                        \ end of this source file):
-                        \
+                        \   * NWSPS
+                        \   * NWSHP
+                        \   * NwS1
+                        \   * ABORT
+                        \   * ABORT2
+                        \   * ECBLB2
+                        \   * ECBLB
+                        \   * SPBLB
+                        \   * BULB
+                        \   * ECBT
+                        \   * SPBT
+                        \   * MSBAR
+                        \   * MDIALS
                         \   * PROJ
                         \   * PL2
                         \   * PLANET
@@ -15771,544 +14849,19 @@ ENDIF
 
  LOAD_F% = LOAD% + P% - CODE%
 
-\ ******************************************************************************
-\
-\       Name: KS3
-\       Type: Subroutine
-\   Category: Universe
-\    Summary: Set the SLSP ship line heap pointer after shuffling ship slots
-\
-\ ------------------------------------------------------------------------------
-\
-\ The final part of the KILLSHP routine, called after we have shuffled the ship
-\ slots and sorted out our missiles. This simply sets SLSP to the new bottom of
-\ the ship line heap.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   P(1 0)              Points to the ship line heap of the ship in the last
-\                       occupied slot (i.e. it points to the bottom of the
-\                       descending heap)
-\
-\ ******************************************************************************
-
-.KS3
-
- LDA P                  \ After shuffling the ship slots, P(1 0) will point to
- STA SLSP               \ the new bottom of the ship line heap, so store this in
- LDA P+1                \ SLSP(1 0), which stores the bottom of the heap
- STA SLSP+1
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: KS1
-\       Type: Subroutine
-\   Category: Universe
-\    Summary: Remove the current ship from our local bubble of universe
-\
-\ ------------------------------------------------------------------------------
-\
-\ Part 12 of the main flight loop calls this routine to remove the ship that is
-\ currently being analysed by the flight loop. Once the ship is removed, it
-\ jumps back to MAL1 to rejoin the main flight loop, with X pointing to the
-\ same slot that we just cleared (and which now contains the next ship in the
-\ local bubble of universe).
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   XX0                 The address of the blueprint for this ship
-\
-\   INF                 The address of the data block for this ship
-\
-\ ******************************************************************************
-
-.KS1
-
- LDX XSAV               \ Store the current ship's slot number in XSAV
-
- JSR KILLSHP            \ Call KILLSHP to remove the ship in slot X from our
-                        \ local bubble of universe
-
- LDX XSAV               \ Restore the current ship's slot number from XSAV,
-                        \ which now points to the next ship in the bubble
-
- JMP MAL1               \ Jump to MAL1 to rejoin the main flight loop at the
-                        \ start of the ship analysis loop
-
-\ ******************************************************************************
-\
-\       Name: KS4
-\       Type: Subroutine
-\   Category: Universe
-\    Summary: Remove the space station and replace with a placeholder
-\
-\ ******************************************************************************
-
-.KS4
-
- JSR ZINF               \ Call ZINF to reset the INWK ship workspace
-
-                        \ --- Mod: Code removed for suns: --------------------->
-
-\LDA #0                 \ Set A = 0 so we can zero the following flags
-
-                        \ --- And replaced by: -------------------------------->
-
- JSR FLFLLS             \ Reset the LSO block, returns with A = 0
-
-                        \ --- End of replacement ------------------------------>
-
- STA FRIN+1             \ Set the second slot in the FRIN table to 0, which
-                        \ sets this slot to empty, so when we call NWSHP below
-                        \ the placeholder that gets created will go into FRIN+1
-
- STA SSPR               \ Set the "space station present" flag to 0, as we are
-                        \ no longer in the space station's safe zone
-
- JSR SPBLB              \ Call SPBLB to redraw the space station bulb, which
-                        \ will erase it from the dashboard
-
- LDA #6                 \ Set the placeholder's y_sign to 6
- STA INWK+5
-
- LDA #129               \ Set A = 129, the ship type for the placeholder, so
-                        \ there isn't a space station, but there is a non-zero
-                        \ ship type to indicate this
-
- JMP NWSHP              \ Call NWSHP to set up the new data block and add it
-                        \ to FRIN, where it will get put in the second slot as
-                        \ we just cleared out the second slot, and the first
-                        \ slot is already taken by the planet
-
-\ ******************************************************************************
-\
-\       Name: KS2
-\       Type: Subroutine
-\   Category: Universe
-\    Summary: Check the local bubble for missiles with target lock
-\
-\ ------------------------------------------------------------------------------
-\
-\ Check the local bubble of universe to see if there are any missiles with
-\ target lock in the vicinity. If there are, then check their targets; if we
-\ just removed their target in the KILLSHP routine, then switch off their AI so
-\ they just drift in space, otherwise update their targets to reflect the newly
-\ shuffled slot numbers.
-\
-\ This is called from KILLSHP once the slots have been shuffled down, following
-\ the removal of a ship.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   XX4                 The slot number of the ship we removed just before
-\                       calling this routine
-\
-\ ******************************************************************************
-
-.KS2
-
- LDX #&FF               \ We want to go through the ships in our local bubble
-                        \ and pick out all the missiles, so set X to &FF to
-                        \ use as a counter
-
-.KSL4
-
- INX                    \ Increment the counter (so it starts at 0 on the first
-                        \ iteration)
-
- LDA FRIN,X             \ If slot X is empty then we have worked our way through
- BEQ KS3                \ all the slots, so jump to KS3 to stop looking
-
- CMP #MSL               \ If the slot does not contain a missile, loop back to
- BNE KSL4               \ KSL4 to check the next slot
-
-                        \ We have found a slot containing a missile, so now we
-                        \ want to check whether it has target lock
-
- TXA                    \ Set Y = X * 2 and fetch the Y-th address from UNIV
- ASL A                  \ and store it in SC and SC+1 - in other words, set
- TAY                    \ SC(1 0) to point to the missile's ship data block
- LDA UNIV,Y
- STA SC
- LDA UNIV+1,Y
- STA SC+1
-
- LDY #32                \ Fetch byte #32 from the missile's ship data (AI)
- LDA (SC),Y
-
- BPL KSL4               \ If bit 7 of byte #32 is clear, then the missile is
-                        \ dumb and has no AI, so loop back to KSL4 to move on
-                        \ to the next slot
-
- AND #%01111111         \ Otherwise this missile has AI, so clear bit 7 and
- LSR A                  \ shift right to set the C flag to the missile's "is
-                        \ locked" flag, and A to the target's slot number
-
- CMP XX4                \ If this missile's target is less than XX4, then the
- BCC KSL4               \ target's slot isn't being shuffled down, so jump to
-                        \ KSL4 to move on to the next slot
-
- BEQ KS6                \ If this missile was locked onto the ship that we just
-                        \ removed in KILLSHP, jump to KS6 to stop the missile
-                        \ from continuing to hunt it down
-
- SBC #1                 \ Otherwise this missile is locked and has AI enabled,
-                        \ and its target will have moved down a slot, so
-                        \ subtract 1 from the target number (we know C is set
-                        \ from the BCC above)
-
- ASL A                  \ Shift the target number left by 1, so it's in bits
-                        \ 1-6 once again, and also set bit 0 to 1, as the C
-                        \ flag is still set, so this makes sure the missile is
-                        \ still set to being locked
-
- ORA #%10000000         \ Set bit 7, so the missile's AI is enabled
-
- STA (SC),Y             \ Update the missile's AI flag to the value in A
-
- BNE KSL4               \ Loop back to KSL4 to move on to the next slot (this
-                        \ BNE is effectively a JMP as A will never be zero)
-
-.KS6
-
- LDA #0                 \ The missile's target lock just got removed, so set the
- STA (SC),Y             \ AI flag to 0 to make it dumb and not locked
-
- BEQ KSL4               \ Loop back to KSL4 to move on to the next slot (this
-                        \ BEQ is effectively a JMP as A is always zero)
-
-\ ******************************************************************************
-\
-\       Name: KILLSHP
-\       Type: Subroutine
-\   Category: Universe
-\    Summary: Remove a ship from our local bubble of universe
-\
-\ ------------------------------------------------------------------------------
-\
-\ Remove the ship in slot X from our local bubble of universe. This happens
-\ when we kill a ship, collide with a ship and destroy it, or when a ship moves
-\ outside our local bubble.
-\
-\ We also use this routine when we move out of range of the space station, in
-\ which case we replace it with the placeholder, type 129.
-\
-\ When removing a ship, this creates a gap in the ship slots at FRIN, so we
-\ shuffle all the later slots down to close the gap. We also shuffle the ship
-\ data blocks at K% and ship line heap at WP, to reclaim all the memory that
-\ the removed ship used to occupy.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   X                   The slot number of the ship to remove
-\
-\   XX0                 The address of the blueprint for the ship to remove
-\
-\   INF                 The address of the data block for the ship to remove
-\
-\ ******************************************************************************
-
-.KILLSHP
-
- STX XX4                \ Store the slot number of the ship to remove in XX4
-
- LDA MSTG               \ Check whether this slot matches the slot number in
- CMP XX4                \ MSTG, which is the target of our missile lock
-
- BNE KS5                \ If our missile is not locked on this ship, jump to KS5
-
- JSR ABORT-2            \ Otherwise we need to remove our missile lock, so call
-                        \ ABORT-2 to disarm the missile and update the missile
-                        \ indicators on the dashboard to disarmed (white
-                        \ squares)
-
- LDA #200               \ Print recursive token 40 ("TARGET LOST") as an
- JSR MESS               \ in-flight message
-
-.KS5
-
- LDY XX4                \ Restore the slot number of the ship to remove into Y
-
- LDX FRIN,Y             \ Fetch the contents of the slot, which contains the
-                        \ ship type
-
- CPX #SST               \ If this is the space station, then jump to KS4 to
- BEQ KS4                \ remove the space station
-
-                        \ --- Mod: Code added for additional ships: ----------->
-
- CPX #CON               \ Did we just kill the Constrictor from mission 1? If
- BNE lll                \ not, jump to lll
-
- LDA TP                 \ We just killed the Constrictor from mission 1, so set
- ORA #%00000010         \ bit 1 of TP to indicate that we have successfully
- STA TP                 \ completed mission 1
-
-.lll
-
- CPX #JL                \ If JL <= X < JH, i.e. the type of ship we killed in X
- BCC KS7                \ is junk (escape pod, alloy plate, cargo canister,
- CPX #JH                \ asteroid, splinter, Shuttle or Transporter), then keep
- BCS KS7                \ going, otherwise jump to KS7
-
- DEC JUNK               \ We just killed junk, so decrease the junk counter
-
-.KS7
-
-                        \ --- End of added code ------------------------------->
-
- DEC MANY,X             \ Decrease the number of this type of ship in our little
-                        \ bubble, which is stored in MANY+X (where X is the ship
-                        \ type)
-
- LDX XX4                \ Restore the slot number of the ship to remove into X
-
-                        \ We now want to remove this ship and reclaim all the
-                        \ memory that it uses. Removing the ship will leave a
-                        \ gap in three places, which we need to close up:
+                        \ --- Mod: Code moved for sideways RAM: --------------->
+
+                        \ The following routines and variables have been moved
+                        \ into sideways RAM (see the ELITE SIDEWAYS RAM FILE
+                        \ section at the end of this source file)
                         \
-                        \   * The ship slots in FRIN
-                        \
-                        \   * The ship data blocks in K%
-                        \
-                        \   * The descending ship line heap at WP down
-                        \
-                        \ The rest of this routine closes up these gaps by
-                        \ looping through all the occupied ship slots after the
-                        \ slot we are removing, one by one, and shuffling each
-                        \ ship's slot, data block and line heap down to close
-                        \ up the gaps left by the removed ship. As part of this,
-                        \ we have to make sure we update any address pointers
-                        \ so they point to the newly shuffled data blocks and
-                        \ line heaps
-                        \
-                        \ In the following, when shuffling a ship's data down
-                        \ into the preceding empty slot, we call the ship that
-                        \ we are shuffling down the "source", and we call the
-                        \ empty slot we are shuffling it into the "destination"
-                        \
-                        \ Before we start looping through the ships we need to
-                        \ shuffle down, we need to set up some variables to
-                        \ point to the source and destination line heaps
+                        \   * KS3
+                        \   * KS1
+                        \   * KS4
+                        \   * KS2
+                        \   * KILLSHP
 
- LDY #5                 \ Fetch byte #5 of the removed ship's blueprint into A,
- LDA (XX0),Y            \ which gives the ship's maximum heap size for the ship
-                        \ we are removing (i.e. the size of the gap in the heap
-                        \ created by the ship removal)
-
-                        \ INF currently contains the ship data for the ship we
-                        \ are removing, and INF(34 33) contains the address of
-                        \ the bottom of the ship's heap, so we can calculate
-                        \ the address of the top of the heap by adding the heap
-                        \ size to this address
-
- LDY #33                \ First we add A and the address in INF+33, to get the
- CLC                    \ low byte of the top of the heap, which we store in P
- ADC (INF),Y
- STA P
-
- INY                    \ And next we add A and the address in INF+34, with any
- LDA (INF),Y            \ carry from the previous addition, to get the high byte
- ADC #0                 \ of the top of the heap, which we store in P+1, so
- STA P+1                \ P(1 0) points to the top of this ship's heap
-
-                        \ Now, we're ready to start looping through the ships
-                        \ we want to move, moving the slots, data blocks and
-                        \ line heap from the source to the destination. In the
-                        \ following, we set up SC to point to the source data,
-                        \ and INF (which currently points to the removed ship's
-                        \ data that we can now overwrite) points to the
-                        \ destination
-                        \
-                        \ So P(1 0) now points to the top of the line heap for
-                        \ the destination
-
-.KSL1
-
- INX                    \ On entry, X points to the empty slot we want to
-                        \ shuffle the next ship into (the destination), so
-                        \ this increment points X to the next slot - i.e. the
-                        \ source slot we want to shuffle down
-
- LDA FRIN,X             \ Copy the contents of the source slot into the
- STA FRIN-1,X           \ destination slot
-
-                        \ --- Mod: Code removed for additional ships: --------->
-
-\BEQ KS2                \ If the slot we just shuffled down contains 0, then
-\                       \ the source slot is empty and we are done shuffling,
-\                       \ so jump to KS2 to move on to processing missiles
-
-                        \ --- And replaced by: -------------------------------->
-
- BNE P%+5               \ If the slot we just shuffled down is not empty, then
-                        \ skip the following instruction
-
- JMP KS2                \ The source slot is empty and we are done shuffling,
-                        \ so jump to KS2 to move on to processing missiles
-
-                        \ --- End of replacement ------------------------------>
-
- ASL A                  \ Otherwise we have a source ship to shuffle down into
- TAY                    \ the destination, so set Y = A * 2 so it can act as an
-                        \ index into the two-byte ship blueprint lookup table
-                        \ at XX21 for the source ship
-
- LDA XX21-2,Y           \ Set SC(0 1) to point to the blueprint data for the
- STA SC                 \ source ship
- LDA XX21-1,Y
- STA SC+1
-
- LDY #5                 \ Fetch blueprint byte #5 for the source ship, which
- LDA (SC),Y             \ gives us its maximum heap size, and store it in T
- STA T
-
-                        \ We now subtract T from P(1 0), so P(1 0) will point to
-                        \ the bottom of the line heap for the destination
-                        \ (which we will use later when closing up the gap in
-                        \ the heap space)
-
- LDA P                  \ First, we subtract the low bytes
- SEC
- SBC T
- STA P
-
- LDA P+1                \ And then we do the high bytes, for which we subtract
- SBC #0                 \ 0 to include any carry, so this is effectively doing
- STA P+1                \ P(1 0) = P(1 0) - (0 T)
-
-                        \ Next, we want to set SC(1 0) to point to the source
-                        \ ship's data block
-
- TXA                    \ Set Y = X * 2 so it can act as an index into the
- ASL A                  \ two-byte lookup table at UNIV, which contains the
- TAY                    \ addresses of the ship data blocks. In this case we are
-                        \ multiplying X by 2, and X contains the source ship's
-                        \ slot number so Y is now an index for the source ship's
-                        \ entry in UNIV
-
- LDA UNIV,Y             \ Set SC(1 0) to the address of the data block for the
- STA SC                 \ source ship
- LDA UNIV+1,Y
- STA SC+1
-
-                        \ We have now set up our variables as follows:
-                        \
-                        \   SC(1 0) points to the source's ship data block
-                        \
-                        \   INF(1 0) points to the destination's ship data block
-                        \
-                        \   P(1 0) points to the destination's line heap
-                        \
-                        \ so let's start copying data from the source to the
-                        \ destination
-
-                        \ --- Mod: Code added for additional ships: ----------->
-
- LDY #36                \ We are going to be using Y as a counter for the 37
-                        \ bytes of ship data we want to copy from the source
-                        \ to the destination, so we set it to 36 to start things
-                        \ off, and will decrement Y for each byte we copy
-
- LDA (SC),Y             \ Fetch byte #36 of the source's ship data block at SC,
- STA (INF),Y            \ and store it in byte #36 of the destination's block
- DEY                    \ at INF, so that's the ship's NEWB flags copied from
-                        \ the source to the destination. One down, quite a few
-                        \ to go...
-
-                        \ --- End of added code ------------------------------->
-
- LDY #35                \ We are going to be using Y as a counter for the 36
-                        \ bytes of ship data we want to copy from the source
-                        \ to the destination, so we set it to 35 to start things
-                        \ off, and will decrement Y for each byte we copy
-
- LDA (SC),Y             \ Fetch byte #35 of the source's ship data block at SC,
- STA (INF),Y            \ and store it in byte #35 of the destination's block
-                        \ at INF, so that's the ship's energy copied from the
-                        \ source to the destination. One down, quite a few to
-                        \ go...
-
- DEY                    \ Fetch byte #34 of the source ship, which is the
- LDA (SC),Y             \ high byte of the source ship's line heap, and store
- STA K+1                \ in K+1
-
- LDA P+1                \ Set the low byte of the destination's heap pointer
- STA (INF),Y            \ to P+1
-
- DEY                    \ Fetch byte #33 of the source ship, which is the
- LDA (SC),Y             \ low byte of the source ship's heap, and store in K
- STA K                  \ so now we have the following:
-                        \
-                        \   K(1 0) points to the source's line heap
-
- LDA P                  \ Set the low byte of the destination's heap pointer
- STA (INF),Y            \ to P, so now the destination's heap pointer is to
-                        \ P(1 0), so that's the heap pointer in bytes #33 and
-                        \ #34 done
-
- DEY                    \ Luckily, we can just copy the rest of the source's
-                        \ ship data block into the destination, as there are no
-                        \ more address pointers, so first we decrement our
-                        \ counter in Y to point to the next byte (the AI flag)
-                        \ in byte #32) and then start looping
-
-.KSL2
-
- LDA (SC),Y             \ Copy the Y-th byte of the source to the Y-th byte of
- STA (INF),Y            \ the destination
-
- DEY                    \ Decrement the counter
-
- BPL KSL2               \ Loop back to KSL2 to copy the next byte until we have
-                        \ copied the whole block
-
-                        \ We have now shuffled the ship's slot and the ship's
-                        \ data block, so we only have the heap data itself to do
-
- LDA SC                 \ First, we copy SC into INF, so when we loop round
- STA INF                \ again, INF will correctly point to the destination for
- LDA SC+1               \ the next iteration
- STA INF+1
-
- LDY T                  \ Now we want to move the contents of the heap, as all
-                        \ we did above was to update the pointers, so first
-                        \ we set a counter in Y that is initially set to T
-                        \ (which we set above to the maximum heap size for the
-                        \ source ship)
-                        \
-                        \ As a reminder, we have already set the following:
-                        \
-                        \   K(1 0) points to the source's line heap
-                        \
-                        \   P(1 0) points to the destination's line heap
-                        \
-                        \ so we can move the heap data by simply copying the
-                        \ correct number of bytes from K(1 0) to P(1 0)
-.KSL3
-
- DEY                    \ Decrement the counter
-
- LDA (K),Y              \ Copy the Y-th byte of the source heap at K(1 0) to
- STA (P),Y              \ the destination heap at P(1 0)
-
- TYA                    \ Loop back to KSL3 to copy the next byte, until we
- BNE KSL3               \ have done them all
-
- BEQ KSL1               \ We have now shuffled everything down one slot, so
-                        \ jump back up to KSL1 to see if there is another slot
-                        \ that needs shuffling down (this BEQ is effectively a
-                        \ JMP as A will always be zero)
+                        \ --- End of moved code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -16683,150 +15236,15 @@ ENDIF
 
  RTS                    \ Return from the subroutine
 
-\ ******************************************************************************
-\
-\       Name: msblob
-\       Type: Subroutine
-\   Category: Dashboard
-\    Summary: Display the dashboard's missile indicators as white squares
-\
-\ ------------------------------------------------------------------------------
-\
-\ Display the dashboard's missile indicators, with all the missiles reset to
-\ white squares (i.e. not armed or locked).
-\
-\ ******************************************************************************
-
-.msblob
-
- LDX #4                 \ Set up a loop counter in X to count through all four
-                        \ missile indicators
-
-.ss
-
- CPX NOMSL              \ If the counter is equal to the number of missiles,
- BEQ SAL8               \ jump down to SAL8 to draw the remaining missiles, as
-                        \ the rest of them are present and should be drawn as
-                        \ white squares
-
- LDY #&04               \ Draw the missile indicator at position X in black
- JSR MSBAR
-
- DEX                    \ Decrement the counter to point to the next missile
-
- BNE ss                 \ Loop back to ss if we still have missiles to draw
-
- RTS                    \ Return from the subroutine
-
-.SAL8
-
- LDY #&09               \ Draw the missile indicator at position X as a white
- JSR MSBAR              \ square
-
- DEX                    \ Decrement the counter to point to the next missile
-
- BNE SAL8               \ Loop back to SAL8 if we still have missiles to draw
-
- RTS                    \ Return from the subroutine
-
-\ ******************************************************************************
-\
-\       Name: me2
-\       Type: Subroutine
-\   Category: Flight
-\    Summary: Remove an in-flight message from the space view
-\
-\ ******************************************************************************
-
-.me2
-
- LDA MCH                \ Fetch the token number of the current message into A
-
- JSR MESS               \ Call MESS to print the token, which will remove it
-                        \ from the screen as printing uses EOR logic
-
- LDA #0                 \ Set the delay in DLY to 0, so any new in-flight
- STA DLY                \ messages will be shown instantly
-
- JMP me3                \ Jump back into the main spawning loop at me3
-
-\ ******************************************************************************
-\
-\       Name: Ze
-\       Type: Subroutine
-\   Category: Universe
-\    Summary: Initialise the INWK workspace to a hostile ship
-\  Deep dive: Fixing ship positions
-\
-\ ------------------------------------------------------------------------------
-\
-\ Specifically, this routine does the following:
-\
-\   * Reset the INWK ship workspace
-\
-\   * Set the ship to a fair distance away in all axes, in front of us but
-\     randomly up or down, left or right
-\
-\   * Give the ship a 4% chance of having E.C.M.
-\
-\   * Set the ship to hostile, with AI enabled
-\
-\ This routine also sets A, X, T1 and the C flag to random values.
-\
-\ Note that because this routine uses the value of X returned by DORND, and X
-\ contains the value of A returned by the previous call to DORND, this routine
-\ does not necessarily set the new ship to a totally random location.
-\
-\ ******************************************************************************
-
-.Ze
-
- JSR ZINF               \ Call ZINF to reset the INWK ship workspace
-
- JSR DORND              \ Set A and X to random numbers
-
- STA T1                 \ Store A in T1
-
- AND #%10000000         \ Extract the sign of A and store in x_sign
- STA INWK+2
-
- TXA                    \ Extract the sign of X and store in y_sign
- AND #%10000000
- STA INWK+5
-
- LDA #32                \ Set x_hi = y_hi = z_hi = 32, a fair distance away
- STA INWK+1
- STA INWK+4
- STA INWK+7
-
- TXA                    \ Set the C flag if X >= 245 (4% chance)
- CMP #245
-
- ROL A                  \ Set bit 0 of A to the C flag (i.e. there's a 4%
-                        \ chance of this ship having E.C.M.)
-
- ORA #%11000000         \ Set bits 6 and 7 of A, so the ship is hostile (bit 6
-                        \ and has AI (bit 7)
-
- STA INWK+32            \ Store A in the AI flag of this ship
-
-                        \ --- Mod: Code removed for sideways RAM: ------------->
-
-\                       \ Fall through into DORND2 to set A, X and the C flag
-\                       \ randomly
-
-                        \ --- And replaced by: -------------------------------->
-
- JMP DORND2             \ Jump to DORND2 to set A, X and the C flag randomly
-
-                        \ --- End of replacement ------------------------------>
-
                         \ --- Mod: Code moved for sideways RAM: --------------->
 
                         \ The following routines have been moved into sideways
                         \ RAM (see the ELITE SIDEWAYS RAM FILE section at the
                         \ end of this source file):
                         \
+                        \   * msblob
+                        \   * me2
+                        \   * Ze
                         \   * DORND
                         \   * Main game loop (Part 1 of 6)
                         \   * Main game loop (Part 2 of 6)
@@ -20359,210 +18777,20 @@ ENDIF
 
  RTS                    \ Return from the subroutine
 
-\ ******************************************************************************
-\
-\       Name: me1
-\       Type: Subroutine
-\   Category: Flight
-\    Summary: Erase an old in-flight message and display a new one
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   A                   The text token to be printed
-\
-\   X                   Must be set to 0
-\
-\ ******************************************************************************
+                        \ --- Mod: Code moved for sideways RAM: --------------->
 
-.me1
-
- STX DLY                \ Set the message delay in DLY to 0, so any new
-                        \ in-flight messages will be shown instantly
-
- PHA                    \ Store the new message token we want to print
-
- LDA MCH                \ Set A to the token number of the message that is
- JSR mes9               \ currently on-screen, and call mes9 to print it (which
-                        \ will remove it from the screen, as printing is done
-                        \ using EOR logic)
-
- PLA                    \ Restore the new message token
-
- EQUB &2C               \ Fall through into ou2 to print the new message, but
-                        \ skip the first instruction by turning it into
-                        \ &2C &A9 &6C, or BIT &6CA9, which does nothing apart
-                        \ from affect the flags
-
-\ ******************************************************************************
-\
-\       Name: ou2
-\       Type: Subroutine
-\   Category: Flight
-\    Summary: Display "E.C.M.SYSTEM DESTROYED" as an in-flight message
-\
-\ ******************************************************************************
-
-.ou2
-
- LDA #108               \ Set A to recursive token 108 ("E.C.M.SYSTEM")
-
- EQUB &2C               \ Fall through into ou3 to print the new message, but
-                        \ skip the first instruction by turning it into
-                        \ &2C &A9 &6F, or BIT &6FA9, which does nothing apart
-                        \ from affect the flags
-
-\ ******************************************************************************
-\
-\       Name: ou3
-\       Type: Subroutine
-\   Category: Flight
-\    Summary: Display "FUEL SCOOPS DESTROYED" as an in-flight message
-\
-\ ******************************************************************************
-
-.ou3
-
- LDA #111               \ Set A to recursive token 111 ("FUEL SCOOPS")
-
-\ ******************************************************************************
-\
-\       Name: MESS
-\       Type: Subroutine
-\   Category: Flight
-\    Summary: Display an in-flight message
-\
-\ ------------------------------------------------------------------------------
-\
-\ Display an in-flight message in capitals at the bottom of the space view,
-\ erasing any existing in-flight message first.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Arguments:
-\
-\   A                   The text token to be printed
-\
-\ ******************************************************************************
-
-.MESS
-
- LDX #0                 \ Set QQ17 = 0 to switch to ALL CAPS
- STX QQ17
-
- LDY #9                 \ Move the text cursor to column 9, row 22, at the
- STY XC                 \ bottom middle of the screen, and set Y = 22
- LDY #22
- STY YC
-
- CPX DLY                \ If the message delay in DLY is not zero, jump up to
- BNE me1                \ me1 to erase the current message first (whose token
-                        \ number will be in MCH)
-
- STY DLY                \ Set the message delay in DLY to 22
-
- STA MCH                \ Set MCH to the token we are about to display
-
-                        \ Fall through into mes9 to print the token in A
-
-\ ******************************************************************************
-\
-\       Name: mes9
-\       Type: Subroutine
-\   Category: Flight
-\    Summary: Print a text token, possibly followed by " DESTROYED"
-\
-\ ------------------------------------------------------------------------------
-\
-\ Print a text token, followed by " DESTROYED" if the destruction flag is set
-\ (for when a piece of equipment is destroyed).
-\
-\ ******************************************************************************
-
-.mes9
-
- JSR TT27               \ Call TT27 to print the text token in A
-
- LSR de                 \ If bit 0 of variable de is clear, return from the
- BCC out                \ subroutine (as out contains an RTS)
-
- LDA #253               \ Print recursive token 93 (" DESTROYED") and return
- JMP TT27               \ from the subroutine using a tail call
-
-\ ******************************************************************************
-\
-\       Name: OUCH
-\       Type: Subroutine
-\   Category: Flight
-\    Summary: Potentially lose cargo or equipment following damage
-\
-\ ------------------------------------------------------------------------------
-\
-\ Our shields are dead and we are taking damage, so there is a small chance of
-\ losing cargo or equipment.
-\
-\ ******************************************************************************
-
-.OUCH
-
- JSR DORND              \ Set A and X to random numbers
-
- BMI out                \ If A < 0 (50% chance), return from the subroutine
-                        \ (as out contains an RTS)
-
- CPX #22                \ If X >= 22 (91% chance), return from the subroutine
- BCS out                \ (as out contains an RTS)
-
- LDA QQ20,X             \ If we do not have any of item QQ20+X, return from the
- BEQ out                \ subroutine (as out contains an RTS). X is in the range
-                        \ 0-21, so this not only checks for cargo, but also for
-                        \ E.C.M., fuel scoops, energy bomb, energy unit and
-                        \ docking computer, all of which can be destroyed
-
- LDA DLY                \ If there is already an in-flight message on-screen,
- BNE out                \ return from the subroutine (as out contains an RTS)
-
- LDY #3                 \ Set bit 1 of de, the equipment destruction flag, so
- STY de                 \ that when we call MESS below, " DESTROYED" is appended
-                        \ to the in-flight message
-
- STA QQ20,X             \ A is 0 (as we didn't branch with the BNE above), so
-                        \ this sets QQ20+X to 0, which destroys any cargo or
-                        \ equipment we have of that type
-
- CPX #17                \ If X >= 17 then we just lost a piece of equipment, so
- BCS ou1                \ jump to ou1 to print the relevant message
-
- TXA                    \ Print recursive token 48 + A as an in-flight token,
- ADC #208               \ which will be in the range 48 ("FOOD") to 64 ("ALIEN
- BNE MESS               \ ITEMS") as the C flag is clear, so this prints the
-                        \ destroyed item's name, followed by " DESTROYED" (as we
-                        \ set bit 1 of the de flag above), and returns from the
-                        \ subroutine using a tail call
-
-.ou1
-
- BEQ ou2                \ If X = 17, jump to ou2 to print "E.C.M.SYSTEM
-                        \ DESTROYED" and return from the subroutine using a tail
-                        \ call
-
- CPX #18                \ If X = 18, jump to ou3 to print "FUEL SCOOPS
- BEQ ou3                \ DESTROYED" and return from the subroutine using a tail
-                        \ call
-
- TXA                    \ Otherwise X is in the range 19 to 21 and the C flag is
- ADC #113-20            \ set (as we got here via a BCS to ou1), so we set A as
-                        \ follows:
+                        \ The following routines have been moved into sideways
+                        \ RAM (see the ELITE SIDEWAYS RAM FILE section at the
+                        \ end of this source file):
                         \
-                        \   A = 113 - 20 + X + C
-                        \     = 113 - 19 + X
-                        \     = 113 to 115
+                        \   * me1
+                        \   * ou2
+                        \   * ou3
+                        \   * MESS
+                        \   * mes9
+                        \   * OUCH
 
- BNE MESS               \ Print recursive token A ("ENERGY BOMB", "ENERGY UNIT"
-                        \ or "DOCKING COMPUTERS") as an in-flight message,
-                        \ followed by " DESTROYED", and return from the
-                        \ subroutine using a tail call
+                        \ --- End of moved code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -42146,6 +40374,142 @@ ENDMACRO
 
 \ ******************************************************************************
 \
+\       Name: hm
+\       Type: Subroutine
+\   Category: Charts
+\    Summary: Select the closest system and redraw the chart crosshairs
+\
+\ ------------------------------------------------------------------------------
+\
+\ Set the system closest to galactic coordinates (QQ9, QQ10) as the selected
+\ system, redraw the crosshairs on the chart accordingly (if they are being
+\ shown), and if this is not the space view, clear the bottom three text rows of
+\ the screen.
+\
+\ ******************************************************************************
+
+.hm
+
+ JSR TT103              \ Draw small crosshairs at coordinates (QQ9, QQ10),
+                        \ which will erase the crosshairs currently there
+
+ JSR TT111              \ Select the system closest to galactic coordinates
+                        \ (QQ9, QQ10)
+
+ JSR TT103              \ Draw small crosshairs at coordinates (QQ9, QQ10),
+                        \ which will draw the crosshairs at our current home
+                        \ system
+
+ LDA QQ11               \ If this is a space view, return from the subroutine
+ BEQ SC5                \ (as SC5 contains an RTS)
+
+                        \ Otherwise fall through into CLYNS to clear space at
+                        \ the bottom of the screen
+
+\ ******************************************************************************
+\
+\       Name: CLYNS
+\       Type: Subroutine
+\   Category: Drawing the screen
+\    Summary: Clear the bottom three text rows of the space view
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine clears some space at the bottom of the screen and moves the text
+\ cursor to column 1, row 20.
+\
+\ Specifically, it zeroes the following screen locations:
+\
+\   &7507 to &75F0
+\   &7607 to &76F0
+\   &7707 to &77F0
+\
+\ which clears the three bottom text rows of the mode 4 screen (rows 21 to 23),
+\ clearing each row from text column 1 to 30 (so it doesn't overwrite the box
+\ border in columns 0 and 32, or the last usable column in column 31).
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   A                   A is set to 0
+\
+\   Y                   Y is set to 0
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   SC5                 Contains an RTS
+\
+\ ******************************************************************************
+
+.CLYNS
+
+ JSR BORDER             \ Redraw the space view's border, which removes it
+                        \ from the screen
+
+ LDX #&71               \ Call LYN with X = &71 to clear the screen from page
+ JSR LYN                \ &71 to page &75, which clears the bottom three lines
+                        \ of the screen
+
+ JSR BORDER             \ Redraw the space view's border
+
+                        \ --- Mod: Code added for extended text tokens: ------->
+
+ LDA #%11111111         \ Set DTW2 = %11111111 to denote that we are not
+ STA DTW2               \ currently printing a word
+
+                        \ --- End of added code ------------------------------->
+
+ LDA #20                \ Move the text cursor to row 20, near the bottom of
+ STA YC                 \ the screen
+
+ JSR TT67               \ Print a newline, which will move the text cursor down
+                        \ a line (to row 21) and back to column 1
+
+ LDY #1                 \ Move the text cursor to column 1
+ STY XC
+
+ DEY                    \ Set Y = 0, so the subroutine returns with this value
+ TYA
+
+.SC5
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: LYN
+\       Type: Subroutine
+\   Category: Drawing the screen
+\    Summary: Clear most of a row of pixels
+\
+\ ------------------------------------------------------------------------------
+\
+\ Zero memory from page X to page &75 (inclusive).
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   The page of screen memory from which to start clearing
+\
+\ ******************************************************************************
+
+.LYN
+
+ JSR ZES1               \ Call ZES1 to zero-fill the page in X
+
+ INX                    \ Increment X to point to the next page in memory
+
+ CPX #&76               \ Loop back to zero the next page until we have reached
+ BNE LYN                \ page &76 (so page &75 is the last page to be zeroed)
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
 \       Name: SCAN
 \       Type: Subroutine
 \   Category: Dashboard
@@ -43619,6 +41983,799 @@ ENDMACRO
  STA INF+1              \ from UNIV and store it in INF
 
  RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: NWSPS
+\       Type: Subroutine
+\   Category: Universe
+\    Summary: Add a new space station to our local bubble of universe
+\
+\ ******************************************************************************
+
+.NWSPS
+
+ JSR SPBLB              \ Light up the space station bulb on the dashboard
+
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\LDX #%00000001         \ Set the AI flag in byte #32 to %00000001 (friendly, no
+\STX INWK+32            \ AI, has an E.C.M.)
+\
+\DEX                    \ Set pitch counter to 0 (no pitch, roll only)
+\STX INWK+30
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDX #%10000001         \ Set the AI flag in byte #32 to %10000001 (hostile,
+ STX INWK+32            \ no AI, has an E.C.M.)
+
+ LDX #0                 \ Set pitch counter to 0 (no pitch, roll only)
+ STX INWK+30
+
+ STX NEWB               \ Set NEWB to %00000000, though this gets overridden by
+                        \ the default flags from E% in NWSHP below
+
+                        \ --- End of replacement ------------------------------>
+
+ STX FRIN+1             \ Set the second slot in the FRIN table to 0, so when we
+                        \ fall through into NWSHP below, the new station that
+                        \ gets created will go into slot FRIN+1, as this will be
+                        \ the first empty slot that the routine finds
+
+ DEX                    \ Set the roll counter to 255 (maximum anti-clockwise
+ STX INWK+29            \ roll with no damping)
+
+ LDX #10                \ Call NwS1 to flip the sign of nosev_x_hi (byte #10)
+ JSR NwS1
+
+ JSR NwS1               \ And again to flip the sign of nosev_y_hi (byte #12)
+
+ JSR NwS1               \ And again to flip the sign of nosev_z_hi (byte #14)
+
+ LDA #LO(LSO)           \ Set bytes #33 and #34 to point to LSO for the ship
+ STA INWK+33            \ line heap for the space station
+ LDA #HI(LSO)
+ STA INWK+34
+
+ LDA #SST               \ Set A to the space station type, and fall through
+                        \ into NWSHP to finish adding the space station to the
+                        \ universe
+
+\ ******************************************************************************
+\
+\       Name: NWSHP
+\       Type: Subroutine
+\   Category: Universe
+\    Summary: Add a new ship to our local bubble of universe
+\
+\ ------------------------------------------------------------------------------
+\
+\ This creates a new block of ship data in the K% workspace, allocates a new
+\ block in the ship line heap at WP, adds the new ship's type into the first
+\ empty slot in FRIN, and adds a pointer to the ship data into UNIV. If there
+\ isn't enough free memory for the new ship, it isn't added.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   The type of the ship to add (see variable XX21 for a
+\                       list of ship types)
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   C flag              Set if the ship was successfully added, clear if it
+\                       wasn't (as there wasn't enough free memory)
+\
+\   INF                 Points to the new ship's data block in K%
+\
+\ ******************************************************************************
+
+.NWSHP
+
+ STA T                  \ Store the ship type in location T
+
+ LDX #0                 \ Before we can add a new ship, we need to check
+                        \ whether we have an empty slot we can put it in. To do
+                        \ this, we need to loop through all the slots to look
+                        \ for an empty one, so set a counter in X that starts
+                        \ from the first slot at 0. When ships are killed, then
+                        \ the slots are shuffled down by the KILLSHP routine, so
+                        \ the first empty slot will always come after the last
+                        \ filled slot. This allows us to tack the new ship's
+                        \ data block and ship line heap onto the end of the
+                        \ existing ship data and heap, as shown in the memory
+                        \ map below
+
+.NWL1
+
+ LDA FRIN,X             \ Load the ship type for the X-th slot
+
+ BEQ NW1                \ If it is zero, then this slot is empty and we can use
+                        \ it for our new ship, so jump down to NW1
+
+ INX                    \ Otherwise increment X to point to the next slot
+
+ CPX #NOSH              \ If we haven't reached the last slot yet, loop back up
+ BCC NWL1               \ to NWL1 to check the next slot (note that this means
+                        \ only slots from 0 to #NOSH - 1 are populated by this
+                        \ routine, but there is one more slot reserved in FRIN,
+                        \ which is used to identify the end of the slot list
+                        \ when shuffling the slots down in the KILLSHP routine)
+
+.NW3
+
+ CLC                    \ Otherwise we don't have an empty slot, so we can't
+ RTS                    \ add a new ship, so clear the C flag to indicate that
+                        \ we have not managed to create the new ship, and return
+                        \ from the subroutine
+
+.NW1
+
+                        \ If we get here, then we have found an empty slot at
+                        \ index X, so we can go ahead and create our new ship.
+                        \ We do that by creating a ship data block at INWK and,
+                        \ when we are done, copying the block from INWK into
+                        \ the K% workspace (specifically, to INF)
+
+ JSR GINF               \ Get the address of the data block for ship slot X
+                        \ (which is in workspace K%) and store it in INF
+
+ LDA T                  \ If the type of ship that we want to create is
+ BMI NW2                \ negative, then this indicates the planet, so
+                        \ jump down to NW2, as the next section sets up a ship
+                        \ data block, which doesn't apply to planets, as they
+                        \ don't have things like shields, missiles, vertices
+                        \ and edges
+
+                        \ This is a ship, so first we need to set up various
+                        \ pointers to the ship blueprint we will need. The
+                        \ blueprints for each ship type in Elite are stored
+                        \ in a table at location XX21, so refer to the comments
+                        \ on that variable for more details on the data we're
+                        \ about to access
+
+ ASL A                  \ Set Y = ship type * 2
+ TAY
+
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\LDA XX21-2,Y           \ The ship blueprints at XX21 start with a lookup
+\STA XX0                \ table that points to the individual ship blueprints,
+\                       \ so this fetches the low byte of this particular ship
+\                       \ type's blueprint and stores it in XX0
+\
+\LDA XX21-1,Y           \ Fetch the high byte of this particular ship type's
+\STA XX0+1              \ blueprint and store it in XX0+1, so XX0(1 0) now
+\                       \ contains the address of this ship's blueprint
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDA XX21-1,Y           \ The ship blueprints at XX21 start with a lookup
+                        \ table that points to the individual ship blueprints,
+                        \ so this fetches the high byte of this particular ship
+                        \ type's blueprint
+
+ BEQ NW3                \ If the high byte is 0 then this is not a valid ship
+                        \ type, so jump to NW3 to clear the C flag and return
+                        \ from the subroutine
+
+ STA XX0+1              \ This is a valid ship type, so store the high byte in
+                        \ XX0+1
+
+ LDA XX21-2,Y           \ Fetch the low byte of this particular ship type's
+ STA XX0                \ blueprint and store it in XX0, so XX0(1 0) now
+                        \ contains the address of this ship's blueprint
+
+                        \ --- End of replacement ------------------------------>
+
+ CPY #2*SST             \ If the ship type is a space station (SST), then jump
+ BEQ NW6                \ to NW6, skipping the heap space steps below, as the
+                        \ space station has its own line heap at LSO
+
+                        \ We now want to allocate space for a heap that we can
+                        \ use to store the lines we draw for our new ship (so it
+                        \ can easily be erased from the screen again). SLSP
+                        \ points to the start of the current heap space, and we
+                        \ can extend it downwards with the heap for our new ship
+                        \ (as the heap space always ends just before the WP
+                        \ workspace)
+
+ LDY #5                 \ Fetch ship blueprint byte #5, which contains the
+ LDA (XX0),Y            \ maximum heap size required for plotting the new ship,
+ STA T1                 \ and store it in T1
+
+ LDA SLSP               \ Take the 16-bit address in SLSP and subtract T1,
+ SEC                    \ storing the 16-bit result in INWK(34 33), so this now
+ SBC T1                 \ points to the start of the line heap for our new ship
+ STA INWK+33
+ LDA SLSP+1
+ SBC #0
+ STA INWK+34
+
+                        \ We now need to check that there is enough free space
+                        \ for both this new line heap and the new data block
+                        \ for our ship. In memory, this is the layout of the
+                        \ ship data blocks and ship line heaps:
+                        \
+                        \   +-----------------------------------+   &0F34
+                        \   |                                   |
+                        \   | WP workspace                      |
+                        \   |                                   |
+                        \   +-----------------------------------+   &0D40 = WP
+                        \   |                                   |
+                        \   | Current ship line heap            |
+                        \   |                                   |
+                        \   +-----------------------------------+   SLSP
+                        \   |                                   |
+                        \   | Proposed heap for new ship        |
+                        \   |                                   |
+                        \   +-----------------------------------+   INWK(34 33)
+                        \   |                                   |
+                        \   .                                   .
+                        \   .                                   .
+                        \   .                                   .
+                        \   .                                   .
+                        \   .                                   .
+                        \   |                                   |
+                        \   +-----------------------------------+   INF + NI%
+                        \   |                                   |
+                        \   | Proposed data block for new ship  |
+                        \   |                                   |
+                        \   +-----------------------------------+   INF
+                        \   |                                   |
+                        \   | Existing ship data blocks         |
+                        \   |                                   |
+                        \   +-----------------------------------+   &0900 = K%
+                        \
+                        \ So, to work out if we have enough space, we have to
+                        \ make sure there is room between the end of our new
+                        \ ship data block at INF + NI%, and the start of the
+                        \ proposed heap for our new ship at the address we
+                        \ stored in INWK(34 33). Or, to put it another way, we
+                        \ and to make sure that:
+                        \
+                        \   INWK(34 33) > INF + NI%
+                        \
+                        \ which is the same as saying:
+                        \
+                        \   INWK+33 - INF > NI%
+                        \
+                        \ because INWK is in zero page, so INWK+34 = 0
+
+ LDA INWK+33            \ Calculate INWK+33 - INF, again using 16-bit
+ SBC INF                \ arithmetic, and put the result in (A Y), so the high
+ TAY                    \ byte is in A and the low byte in Y. The subtraction
+ LDA INWK+34            \ works because the previous subtraction will never
+ SBC INF+1              \ underflow, so we know the C flag is set
+
+ BCC NW3+1              \ If we have an underflow from the subtraction, then
+                        \ INF > INWK+33 and we definitely don't have enough
+                        \ room for this ship, so jump to NW3+1, which returns
+                        \ from the subroutine (with the C flag already cleared)
+
+ BNE NW4                \ If the subtraction of the high bytes in A is not
+                        \ zero, and we don't have underflow, then we definitely
+                        \ have enough space, so jump to NW4 to continue setting
+                        \ up the new ship
+
+ CPY #NI%               \ Otherwise the high bytes are the same in our
+ BCC NW3+1              \ subtraction, so now we compare the low byte of the
+                        \ result (which is in Y) with NI%. This is the same as
+                        \ doing INWK+33 - INF > NI% (see above). If this isn't
+                        \ true, the C flag will be clear and we don't have
+                        \ enough space, so we jump to NW3+1, which returns
+                        \ from the subroutine (with the C flag already cleared)
+
+.NW4
+
+ LDA INWK+33            \ If we get here then we do have enough space for our
+ STA SLSP               \ new ship, so store the new bottom of the ship line
+ LDA INWK+34            \ heap (i.e. INWK+33) in SLSP, doing both the high and
+ STA SLSP+1             \ low bytes
+
+.NW6
+
+ LDY #14                \ Fetch ship blueprint byte #14, which contains the
+ LDA (XX0),Y            \ ship's energy, and store it in byte #35
+ STA INWK+35
+
+ LDY #19                \ Fetch ship blueprint byte #19, which contains the
+ LDA (XX0),Y            \ number of missiles and laser power, and AND with %111
+ AND #%00000111         \ to extract the number of missiles before storing in
+ STA INWK+31            \ byte #31
+
+ LDA T                  \ Restore the ship type we stored above
+
+.NW2
+
+ STA FRIN,X             \ Store the ship type in the X-th byte of FRIN, so the
+                        \ slot is now shown as occupied in the index table
+
+ TAX                    \ Copy the ship type into X
+
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\BMI P%+5               \ If the ship type is negative (i.e. the planet), then
+\                       \ skip the following instruction
+
+                        \ --- And replaced by: -------------------------------->
+
+ BMI NW8                \ If the ship type is negative (planet or sun), then
+                        \ jump to NW8 to skip the following instructions
+
+ CPX #JL                \ If JL <= X < JH, i.e. the type of ship we killed in X
+ BCC NW7                \ is junk (escape pod, alloy plate, cargo canister,
+ CPX #JH                \ asteroid, splinter, Shuttle or Transporter), then keep
+ BCS NW7                \ going, otherwise jump to NW7
+
+.gangbang
+
+ INC JUNK               \ We're adding junk, so increase the junk counter
+
+.NW7
+
+                        \ --- End of replacement ------------------------------>
+
+ INC MANY,X             \ Increment the total number of ships of type X
+
+                        \ --- Mod: Code added for additional ships: ----------->
+
+.NW8
+
+ LDY T                  \ Restore the ship type we stored above
+
+ LDA E%-1,Y             \ Fetch the E% byte for this ship to get the default
+                        \ settings for the ship's NEWB flags
+
+ AND #%01101111         \ Zero bits 4 and 7 (so the new ship is not docking, has
+                        \ not been scooped, and has not just docked)
+
+ ORA NEWB               \ Apply the result to the ship's NEWB flags, which sets
+ STA NEWB               \ bits 0-3 and 5-6 in NEWB if they are set in the E%
+                        \ byte
+
+                        \ --- End of added code ------------------------------->
+
+ LDY #NI%-1             \ The final step is to copy the new ship's data block
+                        \ from INWK to INF, so set up a counter for NI% bytes
+                        \ in Y
+
+.NWL3
+
+ LDA INWK,Y             \ Load the Y-th byte of INWK and store in the Y-th byte
+ STA (INF),Y            \ of the workspace pointed to by INF
+
+ DEY                    \ Decrement the loop counter
+
+ BPL NWL3               \ Loop back for the next byte until we have copied them
+                        \ all over
+
+ SEC                    \ We have successfully created our new ship, so set the
+                        \ C flag to indicate success
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: NwS1
+\       Type: Subroutine
+\   Category: Universe
+\    Summary: Flip the sign and double an INWK byte
+\
+\ ------------------------------------------------------------------------------
+\
+\ Flip the sign of the INWK byte at offset X, and increment X by 2. This is
+\ used by the space station creation routine at NWSPS.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   The offset of the INWK byte to be flipped
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   X                   X is incremented by 2
+\
+\ ******************************************************************************
+
+.NwS1
+
+ LDA INWK,X             \ Load the X-th byte of INWK into A and flip bit 7,
+ EOR #%10000000         \ storing the result back in the X-th byte of INWK
+ STA INWK,X
+
+ INX                    \ Add 2 to X
+ INX
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: ABORT
+\       Type: Subroutine
+\   Category: Dashboard
+\    Summary: Disarm missiles and update the dashboard indicators
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   ABORT-2             Set the indicator to disarmed (white square)
+\
+\ ******************************************************************************
+
+ LDY #&09               \ Set Y = &09 so we set the missile to a white square
+                        \ (disarmed)
+
+.ABORT
+
+ LDX #&FF               \ Set X to &FF, which is the value of MSTG when we have
+                        \ no target lock for our missile
+
+                        \ Fall through into ABORT2 to set the missile lock to
+                        \ the value in X, which effectively disarms the missile
+
+\ ******************************************************************************
+\
+\       Name: ABORT2
+\       Type: Subroutine
+\   Category: Dashboard
+\    Summary: Set/unset the lock target for a missile and update the dashboard
+\
+\ ------------------------------------------------------------------------------
+\
+\ Set the lock target for the leftmost missile and update the dashboard.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   The slot number of the ship to lock our missile onto, or
+\                       &FF to remove missile lock
+\
+\   Y                   The new shape of the missile indicator:
+\
+\                         * &04 = black (no missile)
+\
+\                         * &11 = black "T" in white square (armed and locked)
+\
+\                         * &0D = black box in white square (armed)
+\
+\                         * &09 = white square (disarmed)
+\
+\ ******************************************************************************
+
+.ABORT2
+
+ STX MSTG               \ Store the target of our missile lock in MSTG
+
+ LDX NOMSL              \ Call MSBAR to update the leftmost indicator in the
+ JSR MSBAR              \ dashboard's missile bar, which returns with Y = 0
+
+ STY MSAR               \ Set MSAR = 0 to indicate that the leftmost missile
+                        \ is no longer seeking a target lock
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: ECBLB2
+\       Type: Subroutine
+\   Category: Dashboard
+\    Summary: Start up the E.C.M. (light up the indicator, start the countdown
+\             and make the E.C.M. sound)
+\
+\ ******************************************************************************
+
+.ECBLB2
+
+ LDA #32                \ Set the E.C.M. countdown timer in ECMA to 32
+ STA ECMA
+
+ ASL A                  \ Call the NOISE routine with A = 64 to make the sound
+ JSR NOISE              \ of the E.C.M. being switched on
+
+                        \ Fall through into ECBLB to light up the E.C.M. bulb
+
+\ ******************************************************************************
+\
+\       Name: ECBLB
+\       Type: Subroutine
+\   Category: Dashboard
+\    Summary: Light up the E.C.M. indicator bulb ("E") on the dashboard
+\
+\ ******************************************************************************
+
+.ECBLB
+
+ LDA #&98               \ Set A to the low byte of the screen address of the
+                        \ E.C.M. bulb (which is at &7C98)
+
+ LDX #LO(ECBT)          \ Set X to the low byte of the address of the character
+                        \ definition in ECBT
+
+ LDY #&7C               \ Set Y to the high byte of the screen address of the
+                        \ E.C.M. bulb (which is at &7C98)
+
+ BNE BULB               \ Jump down to BULB (this BNE is effectively a JMP as
+                        \ A will never be zero)
+
+\ ******************************************************************************
+\
+\       Name: SPBLB
+\       Type: Subroutine
+\   Category: Dashboard
+\    Summary: Light up the space station indicator ("S") on the dashboard
+\
+\ ******************************************************************************
+
+.SPBLB
+
+ LDA #&20               \ Set A to the low byte of the screen address of the
+                        \ space station bulb (which is at &7D20)
+
+ LDX #LO(SPBT)          \ Set X to the low byte of the address of the character
+                        \ definition in SPBT
+
+ LDY #&7D               \ Set Y to the high byte of the screen address of the
+                        \ space station bulb (which is at &7D20)
+
+                        \ Fall through into BULB to draw the space station bulb
+
+\ ******************************************************************************
+\
+\       Name: BULB
+\       Type: Subroutine
+\   Category: Dashboard
+\    Summary: Draw an indicator bulb on the dashboard
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   The low byte of the screen address of the bulb to show
+\
+\   X                   The low byte of the address of the character definition
+\                       of the bulb to be drawn, i.e. #LO(ECBT) for the E.C.M.
+\                       bulb, or #LO(SPBT) for the space station bulb
+\
+\   Y                   The high byte of the screen address of the bulb to show
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   BULB-2              Set the Y screen address
+\
+\ ******************************************************************************
+
+.BULB
+
+ STA SC                 \ Store the low byte of the screen address in SC
+
+ STX P+1                \ Set P(2 1) to the address of the character definition
+ LDX #HI(ECBT)          \ of the bulb to be drawn (this assumes that ECBT and
+ STX P+2                \ SPBT are in the same page and have the same high byte)
+
+ TYA                    \ Set A to Y, the high byte of the screen address we
+                        \ want to write to, so now (A SC) points to the specific
+                        \ bulb's screen address
+
+ JMP RREN               \ Call RREN to print the character definition pointed to
+                        \ by P(2 1) at the screen address pointed to by (A SC),
+                        \ returning from the subroutine using a tail call
+
+\ ******************************************************************************
+\
+\       Name: ECBT
+\       Type: Variable
+\   Category: Dashboard
+\    Summary: The character bitmap for the E.C.M. indicator bulb
+\
+\ ------------------------------------------------------------------------------
+\
+\ The character bitmap for the E.C.M. indicator's "E" bulb that gets displayed
+\ on the dashboard.
+\
+\ The E.C.M. indicator uses the first 5 rows of the space station's "S" bulb
+\ below, as the bottom 5 rows of the "E" match the top 5 rows of the "S".
+\
+\ Each pixel is a white mode 4 pixel.
+\
+\ ******************************************************************************
+
+.ECBT
+
+ EQUB %11111110         \ x x x x x x x x .
+ EQUB %11111110         \ x x x x x x x x .
+ EQUB %11100000         \ x x x . . . . . .
+                        \ x x x x x x x x .
+                        \ x x x x x x x x .
+                        \ x x x . . . . . .
+                        \ x x x x x x x x .
+                        \ x x x x x x x x .
+
+\ ******************************************************************************
+\
+\       Name: SPBT
+\       Type: Variable
+\   Category: Dashboard
+\    Summary: The bitmap definition for the space station indicator bulb
+\
+\ ------------------------------------------------------------------------------
+\
+\ The bitmap definition for the space station indicator's "S" bulb that gets
+\ displayed on the dashboard.
+\
+\ Each pixel is a white mode 4 pixel.
+\
+\ ******************************************************************************
+
+.SPBT
+
+ EQUB %11111110         \ x x x x x x x x .
+ EQUB %11111110         \ x x x x x x x x .
+ EQUB %11100000         \ x x x . . . . . .
+ EQUB %11111110         \ x x x x x x x x .
+ EQUB %11111110         \ x x x x x x x x .
+ EQUB %00001110         \ . . . . . x x x .
+ EQUB %11111110         \ x x x x x x x x .
+ EQUB %11111110         \ x x x x x x x x .
+
+\ ******************************************************************************
+\
+\       Name: MSBAR
+\       Type: Subroutine
+\   Category: Dashboard
+\    Summary: Draw a specific indicator in the dashboard's missile bar
+\
+\ ------------------------------------------------------------------------------
+\
+\ Each indicator is a rectangle that's 6 pixels wide and 5 pixels high. If the
+\ indicator is set to black, this effectively removes a missile.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   The number of the missile indicator to update (counting
+\                       from right to left, so indicator NOMSL is the leftmost
+\                       indicator)
+\
+\   Y                   The status of the missile indicator:
+\
+\                         * &04 = black (no missile)
+\
+\                         * &11 = black "T" in white square (armed and locked)
+\
+\                         * &0D = black box in white square (armed)
+\
+\                         * &09 = white square (disarmed)
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns:
+\
+\   X                   X is preserved
+\
+\   Y                   Y is set to 0
+\
+\ ******************************************************************************
+
+.MSBAR
+
+ TXA                    \ Store X on the stack, so we can preserve it across
+ PHA                    \ the call to the subroutine
+
+ ASL A                  \ Set T = X * 8
+ ASL A
+ ASL A
+ STA T
+
+ LDA #209               \ Set SC = &80 + 32 + 49 - T
+ SBC T                  \        = &80 + 32 + 48 + 1 - (X * 8)
+ STA SC                 \
+                        \ The &80 part comes from the fact that the character
+                        \ row containing the missile starts at address &7D80,
+                        \ and the low byte of this is &80
+                        \
+                        \ The 32 part comes from the 32-byte blank border to
+                        \ the left of the screen
+                        \
+                        \ And the 48 part is from character block 7, which is
+                        \ the character block containing the missile indicators
+
+                        \ So the low byte of SC(1 0) contains the row address
+                        \ for the rightmost missile indicator, made up as
+                        \ follows:
+                        \
+                        \   * &80 + 32 as described above
+                        \
+                        \   * 48 (character block 7, as byte #7 * 8 = 48), the
+                        \     character block of the rightmost missile
+                        \
+                        \   * 1 (so we start drawing on the second row of the
+                        \     character block)
+                        \
+                        \   * Move left one character (8 bytes) for each count
+                        \     of X, so when X = 0 we are drawing the rightmost
+                        \     missile, for X = 1 we hop to the left by one
+                        \     character, and so on
+
+ LDA #&7D               \ Set the high byte of SC(1 0) to &7D, the high byte of
+ STA SCH                \ &7D80, which is the start of the character row that
+                        \ contains the missile indicators (i.e. the bottom row
+                        \ of the screen)
+
+ TYA                    \ Set X to the indicator status that was passed to the
+ TAX                    \ subroutine, so we can use it below as an index into
+                        \ the MDIALS table when fetching the bitmap to set the
+                        \ missile indicator to
+
+ LDY #5                 \ We now want to draw this line five times, so set a
+                        \ counter in Y
+
+.MBL1
+
+ LDA MDIALS,X           \ Fetch the X-th bitmap from the MDIALS table
+
+ STA (SC),Y             \ Draw the three-pixel row, and as we do not use EOR
+                        \ logic, this will overwrite anything that is already
+                        \ there (so drawing a black missile will delete what's
+                        \ there)
+
+ DEX                    \ Decrement the bitmap counter for the next row
+
+ DEY                    \ Decrement the counter for the next row
+
+ BNE MBL1               \ Loop back to MBL1 if have more rows to draw
+
+ PLA                    \ Restore X from the stack, so that it's preserved
+ TAX
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: MDIALS
+\       Type: Variable
+\   Category: Dashboard
+\    Summary: The missile indicator bitmaps for the monochrome dashboard
+\
+\ ******************************************************************************
+
+.MDIALS
+
+ EQUB %00000000         \ No missile (black)
+ EQUB %00000000
+ EQUB %00000000
+ EQUB %00000000
+ EQUB %00000000
+
+ EQUB %11111100         \ Disarmed (white square)
+ EQUB %11111100         \
+ EQUB %11111100         \ Shares the first row from the next indicator
+ EQUB %11111100
+\EQUB %11111100
+
+ EQUB %11111100         \ Armed (black box in white square)
+ EQUB %10000100         \
+ EQUB %10110100         \ Shares the first row from the next indicator
+ EQUB %10000100
+\EQUB %11111100
+
+ EQUB %11111100         \ Armed and locked (black "T" in white square)
+ EQUB %11000100
+ EQUB %11101100
+ EQUB %11101100
+ EQUB %11111100
 
 \ ******************************************************************************
 \
@@ -46388,6 +45545,675 @@ ENDMACRO
 
 \ ******************************************************************************
 \
+\       Name: KS3
+\       Type: Subroutine
+\   Category: Universe
+\    Summary: Set the SLSP ship line heap pointer after shuffling ship slots
+\
+\ ------------------------------------------------------------------------------
+\
+\ The final part of the KILLSHP routine, called after we have shuffled the ship
+\ slots and sorted out our missiles. This simply sets SLSP to the new bottom of
+\ the ship line heap.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   P(1 0)              Points to the ship line heap of the ship in the last
+\                       occupied slot (i.e. it points to the bottom of the
+\                       descending heap)
+\
+\ ******************************************************************************
+
+.KS3
+
+ LDA P                  \ After shuffling the ship slots, P(1 0) will point to
+ STA SLSP               \ the new bottom of the ship line heap, so store this in
+ LDA P+1                \ SLSP(1 0), which stores the bottom of the heap
+ STA SLSP+1
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: KS1
+\       Type: Subroutine
+\   Category: Universe
+\    Summary: Remove the current ship from our local bubble of universe
+\
+\ ------------------------------------------------------------------------------
+\
+\ Part 12 of the main flight loop calls this routine to remove the ship that is
+\ currently being analysed by the flight loop. Once the ship is removed, it
+\ jumps back to MAL1 to rejoin the main flight loop, with X pointing to the
+\ same slot that we just cleared (and which now contains the next ship in the
+\ local bubble of universe).
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   XX0                 The address of the blueprint for this ship
+\
+\   INF                 The address of the data block for this ship
+\
+\ ******************************************************************************
+
+.KS1
+
+ LDX XSAV               \ Store the current ship's slot number in XSAV
+
+ JSR KILLSHP            \ Call KILLSHP to remove the ship in slot X from our
+                        \ local bubble of universe
+
+ LDX XSAV               \ Restore the current ship's slot number from XSAV,
+                        \ which now points to the next ship in the bubble
+
+ JMP MAL1               \ Jump to MAL1 to rejoin the main flight loop at the
+                        \ start of the ship analysis loop
+
+\ ******************************************************************************
+\
+\       Name: KS4
+\       Type: Subroutine
+\   Category: Universe
+\    Summary: Remove the space station and replace with a placeholder
+\
+\ ******************************************************************************
+
+.KS4
+
+ JSR ZINF               \ Call ZINF to reset the INWK ship workspace
+
+                        \ --- Mod: Code removed for suns: --------------------->
+
+\LDA #0                 \ Set A = 0 so we can zero the following flags
+
+                        \ --- And replaced by: -------------------------------->
+
+ JSR FLFLLS             \ Reset the LSO block, returns with A = 0
+
+                        \ --- End of replacement ------------------------------>
+
+ STA FRIN+1             \ Set the second slot in the FRIN table to 0, which
+                        \ sets this slot to empty, so when we call NWSHP below
+                        \ the placeholder that gets created will go into FRIN+1
+
+ STA SSPR               \ Set the "space station present" flag to 0, as we are
+                        \ no longer in the space station's safe zone
+
+ JSR SPBLB              \ Call SPBLB to redraw the space station bulb, which
+                        \ will erase it from the dashboard
+
+ LDA #6                 \ Set the placeholder's y_sign to 6
+ STA INWK+5
+
+ LDA #129               \ Set A = 129, the ship type for the placeholder, so
+                        \ there isn't a space station, but there is a non-zero
+                        \ ship type to indicate this
+
+ JMP NWSHP              \ Call NWSHP to set up the new data block and add it
+                        \ to FRIN, where it will get put in the second slot as
+                        \ we just cleared out the second slot, and the first
+                        \ slot is already taken by the planet
+
+\ ******************************************************************************
+\
+\       Name: KS2
+\       Type: Subroutine
+\   Category: Universe
+\    Summary: Check the local bubble for missiles with target lock
+\
+\ ------------------------------------------------------------------------------
+\
+\ Check the local bubble of universe to see if there are any missiles with
+\ target lock in the vicinity. If there are, then check their targets; if we
+\ just removed their target in the KILLSHP routine, then switch off their AI so
+\ they just drift in space, otherwise update their targets to reflect the newly
+\ shuffled slot numbers.
+\
+\ This is called from KILLSHP once the slots have been shuffled down, following
+\ the removal of a ship.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   XX4                 The slot number of the ship we removed just before
+\                       calling this routine
+\
+\ ******************************************************************************
+
+.KS2
+
+ LDX #&FF               \ We want to go through the ships in our local bubble
+                        \ and pick out all the missiles, so set X to &FF to
+                        \ use as a counter
+
+.KSL4
+
+ INX                    \ Increment the counter (so it starts at 0 on the first
+                        \ iteration)
+
+ LDA FRIN,X             \ If slot X is empty then we have worked our way through
+ BEQ KS3                \ all the slots, so jump to KS3 to stop looking
+
+ CMP #MSL               \ If the slot does not contain a missile, loop back to
+ BNE KSL4               \ KSL4 to check the next slot
+
+                        \ We have found a slot containing a missile, so now we
+                        \ want to check whether it has target lock
+
+ TXA                    \ Set Y = X * 2 and fetch the Y-th address from UNIV
+ ASL A                  \ and store it in SC and SC+1 - in other words, set
+ TAY                    \ SC(1 0) to point to the missile's ship data block
+ LDA UNIV,Y
+ STA SC
+ LDA UNIV+1,Y
+ STA SC+1
+
+ LDY #32                \ Fetch byte #32 from the missile's ship data (AI)
+ LDA (SC),Y
+
+ BPL KSL4               \ If bit 7 of byte #32 is clear, then the missile is
+                        \ dumb and has no AI, so loop back to KSL4 to move on
+                        \ to the next slot
+
+ AND #%01111111         \ Otherwise this missile has AI, so clear bit 7 and
+ LSR A                  \ shift right to set the C flag to the missile's "is
+                        \ locked" flag, and A to the target's slot number
+
+ CMP XX4                \ If this missile's target is less than XX4, then the
+ BCC KSL4               \ target's slot isn't being shuffled down, so jump to
+                        \ KSL4 to move on to the next slot
+
+ BEQ KS6                \ If this missile was locked onto the ship that we just
+                        \ removed in KILLSHP, jump to KS6 to stop the missile
+                        \ from continuing to hunt it down
+
+ SBC #1                 \ Otherwise this missile is locked and has AI enabled,
+                        \ and its target will have moved down a slot, so
+                        \ subtract 1 from the target number (we know C is set
+                        \ from the BCC above)
+
+ ASL A                  \ Shift the target number left by 1, so it's in bits
+                        \ 1-6 once again, and also set bit 0 to 1, as the C
+                        \ flag is still set, so this makes sure the missile is
+                        \ still set to being locked
+
+ ORA #%10000000         \ Set bit 7, so the missile's AI is enabled
+
+ STA (SC),Y             \ Update the missile's AI flag to the value in A
+
+ BNE KSL4               \ Loop back to KSL4 to move on to the next slot (this
+                        \ BNE is effectively a JMP as A will never be zero)
+
+.KS6
+
+ LDA #0                 \ The missile's target lock just got removed, so set the
+ STA (SC),Y             \ AI flag to 0 to make it dumb and not locked
+
+ BEQ KSL4               \ Loop back to KSL4 to move on to the next slot (this
+                        \ BEQ is effectively a JMP as A is always zero)
+
+\ ******************************************************************************
+\
+\       Name: KILLSHP
+\       Type: Subroutine
+\   Category: Universe
+\    Summary: Remove a ship from our local bubble of universe
+\
+\ ------------------------------------------------------------------------------
+\
+\ Remove the ship in slot X from our local bubble of universe. This happens
+\ when we kill a ship, collide with a ship and destroy it, or when a ship moves
+\ outside our local bubble.
+\
+\ We also use this routine when we move out of range of the space station, in
+\ which case we replace it with the placeholder, type 129.
+\
+\ When removing a ship, this creates a gap in the ship slots at FRIN, so we
+\ shuffle all the later slots down to close the gap. We also shuffle the ship
+\ data blocks at K% and ship line heap at WP, to reclaim all the memory that
+\ the removed ship used to occupy.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   X                   The slot number of the ship to remove
+\
+\   XX0                 The address of the blueprint for the ship to remove
+\
+\   INF                 The address of the data block for the ship to remove
+\
+\ ******************************************************************************
+
+.KILLSHP
+
+ STX XX4                \ Store the slot number of the ship to remove in XX4
+
+ LDA MSTG               \ Check whether this slot matches the slot number in
+ CMP XX4                \ MSTG, which is the target of our missile lock
+
+ BNE KS5                \ If our missile is not locked on this ship, jump to KS5
+
+ JSR ABORT-2            \ Otherwise we need to remove our missile lock, so call
+                        \ ABORT-2 to disarm the missile and update the missile
+                        \ indicators on the dashboard to disarmed (white
+                        \ squares)
+
+ LDA #200               \ Print recursive token 40 ("TARGET LOST") as an
+ JSR MESS               \ in-flight message
+
+.KS5
+
+ LDY XX4                \ Restore the slot number of the ship to remove into Y
+
+ LDX FRIN,Y             \ Fetch the contents of the slot, which contains the
+                        \ ship type
+
+ CPX #SST               \ If this is the space station, then jump to KS4 to
+ BEQ KS4                \ remove the space station
+
+                        \ --- Mod: Code added for additional ships: ----------->
+
+ CPX #CON               \ Did we just kill the Constrictor from mission 1? If
+ BNE lll                \ not, jump to lll
+
+ LDA TP                 \ We just killed the Constrictor from mission 1, so set
+ ORA #%00000010         \ bit 1 of TP to indicate that we have successfully
+ STA TP                 \ completed mission 1
+
+.lll
+
+ CPX #JL                \ If JL <= X < JH, i.e. the type of ship we killed in X
+ BCC KS7                \ is junk (escape pod, alloy plate, cargo canister,
+ CPX #JH                \ asteroid, splinter, Shuttle or Transporter), then keep
+ BCS KS7                \ going, otherwise jump to KS7
+
+ DEC JUNK               \ We just killed junk, so decrease the junk counter
+
+.KS7
+
+                        \ --- End of added code ------------------------------->
+
+ DEC MANY,X             \ Decrease the number of this type of ship in our little
+                        \ bubble, which is stored in MANY+X (where X is the ship
+                        \ type)
+
+ LDX XX4                \ Restore the slot number of the ship to remove into X
+
+                        \ We now want to remove this ship and reclaim all the
+                        \ memory that it uses. Removing the ship will leave a
+                        \ gap in three places, which we need to close up:
+                        \
+                        \   * The ship slots in FRIN
+                        \
+                        \   * The ship data blocks in K%
+                        \
+                        \   * The descending ship line heap at WP down
+                        \
+                        \ The rest of this routine closes up these gaps by
+                        \ looping through all the occupied ship slots after the
+                        \ slot we are removing, one by one, and shuffling each
+                        \ ship's slot, data block and line heap down to close
+                        \ up the gaps left by the removed ship. As part of this,
+                        \ we have to make sure we update any address pointers
+                        \ so they point to the newly shuffled data blocks and
+                        \ line heaps
+                        \
+                        \ In the following, when shuffling a ship's data down
+                        \ into the preceding empty slot, we call the ship that
+                        \ we are shuffling down the "source", and we call the
+                        \ empty slot we are shuffling it into the "destination"
+                        \
+                        \ Before we start looping through the ships we need to
+                        \ shuffle down, we need to set up some variables to
+                        \ point to the source and destination line heaps
+
+ LDY #5                 \ Fetch byte #5 of the removed ship's blueprint into A,
+ LDA (XX0),Y            \ which gives the ship's maximum heap size for the ship
+                        \ we are removing (i.e. the size of the gap in the heap
+                        \ created by the ship removal)
+
+                        \ INF currently contains the ship data for the ship we
+                        \ are removing, and INF(34 33) contains the address of
+                        \ the bottom of the ship's heap, so we can calculate
+                        \ the address of the top of the heap by adding the heap
+                        \ size to this address
+
+ LDY #33                \ First we add A and the address in INF+33, to get the
+ CLC                    \ low byte of the top of the heap, which we store in P
+ ADC (INF),Y
+ STA P
+
+ INY                    \ And next we add A and the address in INF+34, with any
+ LDA (INF),Y            \ carry from the previous addition, to get the high byte
+ ADC #0                 \ of the top of the heap, which we store in P+1, so
+ STA P+1                \ P(1 0) points to the top of this ship's heap
+
+                        \ Now, we're ready to start looping through the ships
+                        \ we want to move, moving the slots, data blocks and
+                        \ line heap from the source to the destination. In the
+                        \ following, we set up SC to point to the source data,
+                        \ and INF (which currently points to the removed ship's
+                        \ data that we can now overwrite) points to the
+                        \ destination
+                        \
+                        \ So P(1 0) now points to the top of the line heap for
+                        \ the destination
+
+.KSL1
+
+ INX                    \ On entry, X points to the empty slot we want to
+                        \ shuffle the next ship into (the destination), so
+                        \ this increment points X to the next slot - i.e. the
+                        \ source slot we want to shuffle down
+
+ LDA FRIN,X             \ Copy the contents of the source slot into the
+ STA FRIN-1,X           \ destination slot
+
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\BEQ KS2                \ If the slot we just shuffled down contains 0, then
+\                       \ the source slot is empty and we are done shuffling,
+\                       \ so jump to KS2 to move on to processing missiles
+
+                        \ --- And replaced by: -------------------------------->
+
+ BNE P%+5               \ If the slot we just shuffled down is not empty, then
+                        \ skip the following instruction
+
+ JMP KS2                \ The source slot is empty and we are done shuffling,
+                        \ so jump to KS2 to move on to processing missiles
+
+                        \ --- End of replacement ------------------------------>
+
+ ASL A                  \ Otherwise we have a source ship to shuffle down into
+ TAY                    \ the destination, so set Y = A * 2 so it can act as an
+                        \ index into the two-byte ship blueprint lookup table
+                        \ at XX21 for the source ship
+
+ LDA XX21-2,Y           \ Set SC(0 1) to point to the blueprint data for the
+ STA SC                 \ source ship
+ LDA XX21-1,Y
+ STA SC+1
+
+ LDY #5                 \ Fetch blueprint byte #5 for the source ship, which
+ LDA (SC),Y             \ gives us its maximum heap size, and store it in T
+ STA T
+
+                        \ We now subtract T from P(1 0), so P(1 0) will point to
+                        \ the bottom of the line heap for the destination
+                        \ (which we will use later when closing up the gap in
+                        \ the heap space)
+
+ LDA P                  \ First, we subtract the low bytes
+ SEC
+ SBC T
+ STA P
+
+ LDA P+1                \ And then we do the high bytes, for which we subtract
+ SBC #0                 \ 0 to include any carry, so this is effectively doing
+ STA P+1                \ P(1 0) = P(1 0) - (0 T)
+
+                        \ Next, we want to set SC(1 0) to point to the source
+                        \ ship's data block
+
+ TXA                    \ Set Y = X * 2 so it can act as an index into the
+ ASL A                  \ two-byte lookup table at UNIV, which contains the
+ TAY                    \ addresses of the ship data blocks. In this case we are
+                        \ multiplying X by 2, and X contains the source ship's
+                        \ slot number so Y is now an index for the source ship's
+                        \ entry in UNIV
+
+ LDA UNIV,Y             \ Set SC(1 0) to the address of the data block for the
+ STA SC                 \ source ship
+ LDA UNIV+1,Y
+ STA SC+1
+
+                        \ We have now set up our variables as follows:
+                        \
+                        \   SC(1 0) points to the source's ship data block
+                        \
+                        \   INF(1 0) points to the destination's ship data block
+                        \
+                        \   P(1 0) points to the destination's line heap
+                        \
+                        \ so let's start copying data from the source to the
+                        \ destination
+
+                        \ --- Mod: Code added for additional ships: ----------->
+
+ LDY #36                \ We are going to be using Y as a counter for the 37
+                        \ bytes of ship data we want to copy from the source
+                        \ to the destination, so we set it to 36 to start things
+                        \ off, and will decrement Y for each byte we copy
+
+ LDA (SC),Y             \ Fetch byte #36 of the source's ship data block at SC,
+ STA (INF),Y            \ and store it in byte #36 of the destination's block
+ DEY                    \ at INF, so that's the ship's NEWB flags copied from
+                        \ the source to the destination. One down, quite a few
+                        \ to go...
+
+                        \ --- End of added code ------------------------------->
+
+ LDY #35                \ We are going to be using Y as a counter for the 36
+                        \ bytes of ship data we want to copy from the source
+                        \ to the destination, so we set it to 35 to start things
+                        \ off, and will decrement Y for each byte we copy
+
+ LDA (SC),Y             \ Fetch byte #35 of the source's ship data block at SC,
+ STA (INF),Y            \ and store it in byte #35 of the destination's block
+                        \ at INF, so that's the ship's energy copied from the
+                        \ source to the destination. One down, quite a few to
+                        \ go...
+
+ DEY                    \ Fetch byte #34 of the source ship, which is the
+ LDA (SC),Y             \ high byte of the source ship's line heap, and store
+ STA K+1                \ in K+1
+
+ LDA P+1                \ Set the low byte of the destination's heap pointer
+ STA (INF),Y            \ to P+1
+
+ DEY                    \ Fetch byte #33 of the source ship, which is the
+ LDA (SC),Y             \ low byte of the source ship's heap, and store in K
+ STA K                  \ so now we have the following:
+                        \
+                        \   K(1 0) points to the source's line heap
+
+ LDA P                  \ Set the low byte of the destination's heap pointer
+ STA (INF),Y            \ to P, so now the destination's heap pointer is to
+                        \ P(1 0), so that's the heap pointer in bytes #33 and
+                        \ #34 done
+
+ DEY                    \ Luckily, we can just copy the rest of the source's
+                        \ ship data block into the destination, as there are no
+                        \ more address pointers, so first we decrement our
+                        \ counter in Y to point to the next byte (the AI flag)
+                        \ in byte #32) and then start looping
+
+.KSL2
+
+ LDA (SC),Y             \ Copy the Y-th byte of the source to the Y-th byte of
+ STA (INF),Y            \ the destination
+
+ DEY                    \ Decrement the counter
+
+ BPL KSL2               \ Loop back to KSL2 to copy the next byte until we have
+                        \ copied the whole block
+
+                        \ We have now shuffled the ship's slot and the ship's
+                        \ data block, so we only have the heap data itself to do
+
+ LDA SC                 \ First, we copy SC into INF, so when we loop round
+ STA INF                \ again, INF will correctly point to the destination for
+ LDA SC+1               \ the next iteration
+ STA INF+1
+
+ LDY T                  \ Now we want to move the contents of the heap, as all
+                        \ we did above was to update the pointers, so first
+                        \ we set a counter in Y that is initially set to T
+                        \ (which we set above to the maximum heap size for the
+                        \ source ship)
+                        \
+                        \ As a reminder, we have already set the following:
+                        \
+                        \   K(1 0) points to the source's line heap
+                        \
+                        \   P(1 0) points to the destination's line heap
+                        \
+                        \ so we can move the heap data by simply copying the
+                        \ correct number of bytes from K(1 0) to P(1 0)
+.KSL3
+
+ DEY                    \ Decrement the counter
+
+ LDA (K),Y              \ Copy the Y-th byte of the source heap at K(1 0) to
+ STA (P),Y              \ the destination heap at P(1 0)
+
+ TYA                    \ Loop back to KSL3 to copy the next byte, until we
+ BNE KSL3               \ have done them all
+
+ BEQ KSL1               \ We have now shuffled everything down one slot, so
+                        \ jump back up to KSL1 to see if there is another slot
+                        \ that needs shuffling down (this BEQ is effectively a
+                        \ JMP as A will always be zero)
+
+\ ******************************************************************************
+\
+\       Name: msblob
+\       Type: Subroutine
+\   Category: Dashboard
+\    Summary: Display the dashboard's missile indicators as white squares
+\
+\ ------------------------------------------------------------------------------
+\
+\ Display the dashboard's missile indicators, with all the missiles reset to
+\ white squares (i.e. not armed or locked).
+\
+\ ******************************************************************************
+
+.msblob
+
+ LDX #4                 \ Set up a loop counter in X to count through all four
+                        \ missile indicators
+
+.ss
+
+ CPX NOMSL              \ If the counter is equal to the number of missiles,
+ BEQ SAL8               \ jump down to SAL8 to draw the remaining missiles, as
+                        \ the rest of them are present and should be drawn as
+                        \ white squares
+
+ LDY #&04               \ Draw the missile indicator at position X in black
+ JSR MSBAR
+
+ DEX                    \ Decrement the counter to point to the next missile
+
+ BNE ss                 \ Loop back to ss if we still have missiles to draw
+
+ RTS                    \ Return from the subroutine
+
+.SAL8
+
+ LDY #&09               \ Draw the missile indicator at position X as a white
+ JSR MSBAR              \ square
+
+ DEX                    \ Decrement the counter to point to the next missile
+
+ BNE SAL8               \ Loop back to SAL8 if we still have missiles to draw
+
+ RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: me2
+\       Type: Subroutine
+\   Category: Flight
+\    Summary: Remove an in-flight message from the space view
+\
+\ ******************************************************************************
+
+.me2
+
+ LDA MCH                \ Fetch the token number of the current message into A
+
+ JSR MESS               \ Call MESS to print the token, which will remove it
+                        \ from the screen as printing uses EOR logic
+
+ LDA #0                 \ Set the delay in DLY to 0, so any new in-flight
+ STA DLY                \ messages will be shown instantly
+
+ JMP me3                \ Jump back into the main spawning loop at me3
+
+\ ******************************************************************************
+\
+\       Name: Ze
+\       Type: Subroutine
+\   Category: Universe
+\    Summary: Initialise the INWK workspace to a hostile ship
+\  Deep dive: Fixing ship positions
+\
+\ ------------------------------------------------------------------------------
+\
+\ Specifically, this routine does the following:
+\
+\   * Reset the INWK ship workspace
+\
+\   * Set the ship to a fair distance away in all axes, in front of us but
+\     randomly up or down, left or right
+\
+\   * Give the ship a 4% chance of having E.C.M.
+\
+\   * Set the ship to hostile, with AI enabled
+\
+\ This routine also sets A, X, T1 and the C flag to random values.
+\
+\ Note that because this routine uses the value of X returned by DORND, and X
+\ contains the value of A returned by the previous call to DORND, this routine
+\ does not necessarily set the new ship to a totally random location.
+\
+\ ******************************************************************************
+
+.Ze
+
+ JSR ZINF               \ Call ZINF to reset the INWK ship workspace
+
+ JSR DORND              \ Set A and X to random numbers
+
+ STA T1                 \ Store A in T1
+
+ AND #%10000000         \ Extract the sign of A and store in x_sign
+ STA INWK+2
+
+ TXA                    \ Extract the sign of X and store in y_sign
+ AND #%10000000
+ STA INWK+5
+
+ LDA #32                \ Set x_hi = y_hi = z_hi = 32, a fair distance away
+ STA INWK+1
+ STA INWK+4
+ STA INWK+7
+
+ TXA                    \ Set the C flag if X >= 245 (4% chance)
+ CMP #245
+
+ ROL A                  \ Set bit 0 of A to the C flag (i.e. there's a 4%
+                        \ chance of this ship having E.C.M.)
+
+ ORA #%11000000         \ Set bits 6 and 7 of A, so the ship is hostile (bit 6
+                        \ and has AI (bit 7)
+
+ STA INWK+32            \ Store A in the AI flag of this ship
+
+                        \ Fall through into DORND2 to set A, X and the C flag
+                        \ randomly
+
+\ ******************************************************************************
+\
 \       Name: DORND
 \       Type: Subroutine
 \   Category: Maths (Arithmetic)
@@ -48210,6 +48036,238 @@ ENDMACRO
  TAX                    \ Copy the key value into X
 
  RTS                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: me1
+\       Type: Subroutine
+\   Category: Flight
+\    Summary: Erase an old in-flight message and display a new one
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   The text token to be printed
+\
+\   X                   Must be set to 0
+\
+\ ******************************************************************************
+
+.me1
+
+ STX DLY                \ Set the message delay in DLY to 0, so any new
+                        \ in-flight messages will be shown instantly
+
+ PHA                    \ Store the new message token we want to print
+
+ LDA MCH                \ Set A to the token number of the message that is
+ JSR mes9               \ currently on-screen, and call mes9 to print it (which
+                        \ will remove it from the screen, as printing is done
+                        \ using EOR logic)
+
+ PLA                    \ Restore the new message token
+
+ EQUB &2C               \ Fall through into ou2 to print the new message, but
+                        \ skip the first instruction by turning it into
+                        \ &2C &A9 &6C, or BIT &6CA9, which does nothing apart
+                        \ from affect the flags
+
+\ ******************************************************************************
+\
+\       Name: ou2
+\       Type: Subroutine
+\   Category: Flight
+\    Summary: Display "E.C.M.SYSTEM DESTROYED" as an in-flight message
+\
+\ ******************************************************************************
+
+.ou2
+
+ LDA #108               \ Set A to recursive token 108 ("E.C.M.SYSTEM")
+
+ EQUB &2C               \ Fall through into ou3 to print the new message, but
+                        \ skip the first instruction by turning it into
+                        \ &2C &A9 &6F, or BIT &6FA9, which does nothing apart
+                        \ from affect the flags
+
+\ ******************************************************************************
+\
+\       Name: ou3
+\       Type: Subroutine
+\   Category: Flight
+\    Summary: Display "FUEL SCOOPS DESTROYED" as an in-flight message
+\
+\ ******************************************************************************
+
+.ou3
+
+ LDA #111               \ Set A to recursive token 111 ("FUEL SCOOPS")
+
+\ ******************************************************************************
+\
+\       Name: MESS
+\       Type: Subroutine
+\   Category: Flight
+\    Summary: Display an in-flight message
+\
+\ ------------------------------------------------------------------------------
+\
+\ Display an in-flight message in capitals at the bottom of the space view,
+\ erasing any existing in-flight message first.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   A                   The text token to be printed
+\
+\ ******************************************************************************
+
+.MESS
+
+ LDX #0                 \ Set QQ17 = 0 to switch to ALL CAPS
+ STX QQ17
+
+ LDY #9                 \ Move the text cursor to column 9, row 22, at the
+ STY XC                 \ bottom middle of the screen, and set Y = 22
+ LDY #22
+ STY YC
+
+ CPX DLY                \ If the message delay in DLY is not zero, jump up to
+ BNE me1                \ me1 to erase the current message first (whose token
+                        \ number will be in MCH)
+
+ STY DLY                \ Set the message delay in DLY to 22
+
+ STA MCH                \ Set MCH to the token we are about to display
+
+                        \ Fall through into mes9 to print the token in A
+
+\ ******************************************************************************
+\
+\       Name: mes9
+\       Type: Subroutine
+\   Category: Flight
+\    Summary: Print a text token, possibly followed by " DESTROYED"
+\
+\ ------------------------------------------------------------------------------
+\
+\ Print a text token, followed by " DESTROYED" if the destruction flag is set
+\ (for when a piece of equipment is destroyed).
+\
+\ ******************************************************************************
+
+.mes9
+
+ JSR TT27               \ Call TT27 to print the text token in A
+
+                        \ --- Mod: Code removed for sideways RAM: ------------->
+
+\LSR de                 \ If bit 0 of variable de is clear, return from the
+\BCC out                \ subroutine (as out contains an RTS)
+
+                        \ --- And replaced by: -------------------------------->
+
+ LSR de                 \ If bit 0 of variable de is clear, return from the
+ BCC NO1                \ subroutine (as NO1 contains an RTS)
+
+                        \ --- End of replacement ------------------------------>
+
+ LDA #253               \ Print recursive token 93 (" DESTROYED") and return
+ JMP TT27               \ from the subroutine using a tail call
+
+\ ******************************************************************************
+\
+\       Name: OUCH
+\       Type: Subroutine
+\   Category: Flight
+\    Summary: Potentially lose cargo or equipment following damage
+\
+\ ------------------------------------------------------------------------------
+\
+\ Our shields are dead and we are taking damage, so there is a small chance of
+\ losing cargo or equipment.
+\
+\ ******************************************************************************
+
+.OUCH
+
+ JSR DORND              \ Set A and X to random numbers
+
+                        \ --- Mod: Code removed for sideways RAM: ------------->
+
+\BMI out                \ If A < 0 (50% chance), return from the subroutine
+\                       \ (as out contains an RTS)
+\
+\CPX #22                \ If X >= 22 (91% chance), return from the subroutine
+\BCS out                \ (as out contains an RTS)
+\
+\LDA QQ20,X             \ If we do not have any of item QQ20+X, return from the
+\BEQ out                \ subroutine (as out contains an RTS). X is in the range
+\                       \ 0-21, so this not only checks for cargo, but also for
+\                       \ E.C.M., fuel scoops, energy bomb, energy unit and
+\                       \ docking computer, all of which can be destroyed
+
+                        \ --- And replaced by: -------------------------------->
+
+ BMI NO1                \ If A < 0 (50% chance), return from the subroutine
+                        \ (as NO1 contains an RTS)
+
+ CPX #22                \ If X >= 22 (91% chance), return from the subroutine
+ BCS NO1                \ (as NO1 contains an RTS)
+
+ LDA QQ20,X             \ If we do not have any of item QQ20+X, return from the
+ BEQ NO1                \ subroutine (as NO1 contains an RTS). X is in the range
+                        \ 0-21, so this not only checks for cargo, but also for
+                        \ E.C.M., fuel scoops, energy bomb, energy unit and
+                        \ docking computer, all of which can be destroyed
+
+ LDA DLY                \ If there is already an in-flight message on-screen,
+ BNE NO1                \ return from the subroutine (as out contains an RTS)
+
+                        \ --- End of replacement ------------------------------>
+
+ LDY #3                 \ Set bit 1 of de, the equipment destruction flag, so
+ STY de                 \ that when we call MESS below, " DESTROYED" is appended
+                        \ to the in-flight message
+
+ STA QQ20,X             \ A is 0 (as we didn't branch with the BNE above), so
+                        \ this sets QQ20+X to 0, which destroys any cargo or
+                        \ equipment we have of that type
+
+ CPX #17                \ If X >= 17 then we just lost a piece of equipment, so
+ BCS ou1                \ jump to ou1 to print the relevant message
+
+ TXA                    \ Print recursive token 48 + A as an in-flight token,
+ ADC #208               \ which will be in the range 48 ("FOOD") to 64 ("ALIEN
+ BNE MESS               \ ITEMS") as the C flag is clear, so this prints the
+                        \ destroyed item's name, followed by " DESTROYED" (as we
+                        \ set bit 1 of the de flag above), and returns from the
+                        \ subroutine using a tail call
+
+.ou1
+
+ BEQ ou2                \ If X = 17, jump to ou2 to print "E.C.M.SYSTEM
+                        \ DESTROYED" and return from the subroutine using a tail
+                        \ call
+
+ CPX #18                \ If X = 18, jump to ou3 to print "FUEL SCOOPS
+ BEQ ou3                \ DESTROYED" and return from the subroutine using a tail
+                        \ call
+
+ TXA                    \ Otherwise X is in the range 19 to 21 and the C flag is
+ ADC #113-20            \ set (as we got here via a BCS to ou1), so we set A as
+                        \ follows:
+                        \
+                        \   A = 113 - 20 + X + C
+                        \     = 113 - 19 + X
+                        \     = 113 to 115
+
+ BNE MESS               \ Print recursive token A ("ENERGY BOMB", "ENERGY UNIT"
+                        \ or "DOCKING COMPUTERS") as an in-flight message,
+                        \ followed by " DESTROYED", and return from the
+                        \ subroutine using a tail call
 
 \ ******************************************************************************
 \
