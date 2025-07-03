@@ -12401,8 +12401,8 @@ ENDIF
  CMP MANY+THG           \ if it is less than or equal to 1, loop back to MJP1 to
  BCS MJP1               \ spawn another one, until we have two Thargoids
 
- STA NOSTM              \ Set NOSTM (the maximum number of stardust particles)
-                        \ to 3, so there are fewer bits of stardust in
+ LDA #3                 \ Set NOSTM (the maximum number of stardust particles)
+ STA NOSTM              \ to 3, so there are fewer bits of stardust in
                         \ witchspace (normal space has a maximum of 18)
 
  LDX #0                 \ Initialise the front space view
@@ -14706,8 +14706,17 @@ ENDIF
 
 .nWq
 
- LDY #NOST              \ Set Y to the number of stardust particles, so we can
-                        \ use it as a counter through all the stardust
+                        \ --- Mod: Code removed for witchspace: --------------->
+
+\LDY #NOST              \ Set Y to the number of stardust particles, so we can
+\                       \ use it as a counter through all the stardust
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDY NOSTM              \ Set Y to the current number of stardust particles, so
+                        \ we can use it as a counter through all the stardust
+
+                        \ --- End of replacement ------------------------------>
 
 .SAL4
 
@@ -16548,6 +16557,13 @@ ENDIF
 \ ******************************************************************************
 
 .RES2
+
+                        \ --- Mod: Code added for witchspace: ----------------->
+
+ LDA #NOST              \ Reset NOSTM, the number of stardust particles, to the
+ STA NOSTM              \ maximum allowed (18)
+
+                        \ --- End of added code ------------------------------->
 
  LDX #&FF               \ Reset LSX2 and LSY2, the ball line heaps used by the
  STX LSX2               \ BLINE routine for drawing circles, to &FF, to set the
@@ -35663,8 +35679,17 @@ ENDMACRO
 
 .FLIP
 
- LDY #NOST              \ Set Y to the number of stardust particles, so we can
-                        \ use it as a counter through all the stardust
+                        \ --- Mod: Code removed for witchspace: --------------->
+
+\LDY #NOST              \ Set Y to the number of stardust particles, so we can
+\                       \ use it as a counter through all the stardust
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDY NOSTM              \ Set Y to the current number of stardust particles, so
+                        \ we can use it as a counter through all the stardust
+
+                        \ --- End of replacement ------------------------------>
 
 .FLL1
 
@@ -35764,8 +35789,17 @@ ENDMACRO
 
 .STARS1
 
- LDY #NOST              \ Set Y to the number of stardust particles, so we can
-                        \ use it as a counter through all the stardust
+                        \ --- Mod: Code removed for witchspace: --------------->
+
+\LDY #NOST              \ Set Y to the number of stardust particles, so we can
+\                       \ use it as a counter through all the stardust
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDY NOSTM              \ Set Y to the current number of stardust particles, so
+                        \ we can use it as a counter through all the stardust
+
+                        \ --- End of replacement ------------------------------>
 
                         \ In the following, we're going to refer to the 16-bit
                         \ space coordinates of the current particle of stardust
@@ -36118,8 +36152,17 @@ ENDMACRO
 
 .STARS6
 
- LDY #NOST              \ Set Y to the number of stardust particles, so we can
-                        \ use it as a counter through all the stardust
+                        \ --- Mod: Code removed for witchspace: --------------->
+
+\LDY #NOST              \ Set Y to the number of stardust particles, so we can
+\                       \ use it as a counter through all the stardust
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDY NOSTM              \ Set Y to the current number of stardust particles, so
+                        \ we can use it as a counter through all the stardust
+
+                        \ --- End of replacement ------------------------------>
 
 .STL6
 
@@ -39049,8 +39092,17 @@ ENDMACRO
  JSR ST2                \ Call ST2 to flip the signs of the following if this is
                         \ the right view: ALPHA, ALP2, ALP2+1, BET2 and BET2+1
 
- LDY #NOST              \ Set Y to the number of stardust particles, so we can
-                        \ use it as a counter through all the stardust
+                        \ --- Mod: Code removed for witchspace: --------------->
+
+\LDY #NOST              \ Set Y to the number of stardust particles, so we can
+\                       \ use it as a counter through all the stardust
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDY NOSTM              \ Set Y to the current number of stardust particles, so
+                        \ we can use it as a counter through all the stardust
+
+                        \ --- End of replacement ------------------------------>
 
 .STL2
 
@@ -53808,7 +53860,7 @@ ENDMACRO
 
 .endSRAM
 
- PRINT "Free space in SRAM = ", &BC00 - endSRAM, " bytes"
+ PRINT "Free space in SRAM = ", &BFFF - endSRAM, " bytes"
 
 \ ******************************************************************************
 \
