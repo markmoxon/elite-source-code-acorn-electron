@@ -1,6 +1,6 @@
 
 ---------------------------------------
-Acornsoft Elite (Enhanced version)
+Acornsoft Elite (Compendium version)
 
 For the Electron with 16K sideways RAM
 
@@ -21,6 +21,6 @@
 
 See www.bbcelite.com for details
 
-Build: 2025-07-04 14:52:57
+Build: 2025-07-04 14:55:41
 ---------------------------------------
 
