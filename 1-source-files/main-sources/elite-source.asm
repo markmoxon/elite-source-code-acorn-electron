@@ -1485,7 +1485,21 @@
                         \
                         \   * &FF = fitted
 
- SKIP 4                 \ These bytes appear to be unused
+                        \ --- Mod: Code removed for Trumbles: ----------------->
+
+\SKIP 4                 \ These bytes appear to be unused
+
+                        \ --- And replaced by: -------------------------------->
+
+ SKIP 1                 \ This byte appears to be unused
+
+.TRIBBLE
+
+ SKIP 2                 \ The number of Trumbles in the cargo hold
+
+ SKIP 1                 \ This byte appears to be unused
+
+                        \ --- End of replacement ------------------------------>
 
 .NOMSL
 
@@ -6520,6 +6534,23 @@ ENDIF
  STA ESCP               \ The escape pod is a one-use item, so set ESCP to 0 so
                         \ we no longer have one fitted
 
+                        \ --- Mod: Code added for Trumbles: ------------------->
+
+ LDA TRIBBLE            \ If there are no Trumbles in our hold, then both bytes
+ ORA TRIBBLE+1          \ of TRIBBLE(1 0) will be zero, so jump to nosurviv to
+ BEQ nosurviv           \ skip the following
+
+ JSR DORND              \ Otherwise set TRIBBLE(1 0) to a random number between
+ AND #7                 \ 1 and 7, to determine how many Trumbles manage to
+ ORA #1                 \ hitch a ride in the escape pod (so using an escape pod
+ STA TRIBBLE            \ is not a solution to the trouble with Trumbles)
+ LDA #0
+ STA TRIBBLE+1
+
+.nosurviv
+
+                        \ --- End of added code ------------------------------->
+
  LDA #70                \ Our replacement ship is delivered with a full tank of
  STA QQ14               \ fuel, so set the current fuel level in QQ14 to 70, or
                         \ 7.0 light years
@@ -7063,6 +7094,47 @@ ENDIF
 
  JMP DETOK              \ Print the extended token given in A, and return from
                         \ the subroutine using a tail call
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: TBRIEF
+\       Type: Subroutine
+\   Category: Missions
+\    Summary: Start mission 3
+\  Deep dive: The Trumbles mission
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for Trumbles: ------------------->
+
+.TBRIEF
+
+ LDA TP                 \ Set bit 4 of TP to indicate that mission 3 has been
+ ORA #%00010000         \ triggered
+ STA TP
+
+ LDA #199               \ Print extended token 199, which is the briefing for
+ JSR DETOK              \ the Trumbles mission
+
+ JSR TT214+8            \ Wait until either "Y" or "N" is pressed
+
+ BCC BAYSTEP            \ If "N" was pressed, then the mission was not accepted,
+                        \ jump to BAYSTEP to go to the docking bay (i.e. show
+                        \ the Status Mode screen)
+
+ LDY #HI(50000)         \ Otherwise the mission was accepted, so subtract
+ LDX #LO(50000)         \ 50,000 CR from the cash pot to pay for the Trumble
+ JSR LCASH
+
+ INC TRIBBLE            \ Increment the number of Trumbles from 0 to 1, so they
+                        \ start breeding
+
+.BAYSTEP
+
+ JMP BAY                \ Go to the docking bay (i.e. show the Status Mode
+                        \ screen)
 
                         \ --- End of added code ------------------------------->
 
@@ -8414,6 +8486,13 @@ ENDIF
  BPL Tml                \ Loop back to add in the next market item in the hold,
                         \ until we have added up all market items from 12
                         \ (minerals) down to 0 (food)
+
+                        \ --- Mod: Code added for Trumbles: ------------------->
+
+ ADC TRIBBLE+1          \ Add the high byte of the number of Trumbles in the
+                        \ hold, as 256 Trumbles take up one tonne of cargo space
+
+                        \ --- End of added code ------------------------------->
 
  CMP CRGO               \ If A < CRGO then the C flag will be clear (we have
                         \ room in the hold)
@@ -10178,7 +10257,61 @@ ENDIF
  JMP BAY2               \ And then jump to BAY2 to display the Inventory
                         \ screen, as we have finished selling cargo
 
- RTS                    \ Return from the subroutine
+                        \ --- Mod: Code removed for Trumbles: ----------------->
+
+\RTS                    \ Return from the subroutine
+
+                        \ --- And replaced by: -------------------------------->
+
+ JSR TT69               \ Call TT69 to set Sentence Case and print a newline
+
+ LDA TRIBBLE            \ If there are any Trumbles in the hold, skip the
+ ORA TRIBBLE+1          \ following RTS and continue on
+ BNE P%+3
+
+.zebra
+
+ RTS                    \ There are no Trumbles in the hold, so return from the
+                        \ subroutine
+
+                        \ If we get here then we have Trumbles in the hold, so
+                        \ we print out the number
+
+ CLC                    \ Clear the C flag, so the call to TT11 below doesn't
+                        \ include a decimal point
+
+ LDA #0                 \ Set A = 0, for the call to TT11 below, so we don't pad
+                        \ out the number of Trumbles
+
+ LDX TRIBBLE            \ Fetch the number of Trumbles into (Y X)
+ LDY TRIBBLE+1
+
+ JSR TT11               \ Call TT11 to print the number of Trumbles in (Y X),
+                        \ with no decimal point
+
+ JSR DORND              \ Print out a random extended token from 111 to 114, all
+ AND #3                 \ of which are blank in this version of Elite
+ CLC
+ ADC #111
+ JSR DETOK
+
+ LDA #198               \ Print extended token 198, which is blank, but would
+ JSR DETOK              \ contain the text "LITTLE TRUMBLE" if the Trumbles
+                        \ mission was enabled
+
+ LDA TRIBBLE+1          \ If we have more than 256 Trumbles, skip to DOANS
+ BNE DOANS
+
+ LDX TRIBBLE            \ If we have exactly one Trumble, return from the
+ DEX                    \ subroutine (as zebra contains an RTS)
+ BEQ zebra
+
+.DOANS
+
+ LDA #'s'               \ We have more than one Trumble, so print an 's' and
+ JMP DASC               \ return from the subroutine using a tail call
+
+                        \ --- End of replacement ------------------------------>
 
 \ ******************************************************************************
 \
@@ -14534,6 +14667,37 @@ ENDIF
 \ ******************************************************************************
 
 .SOLAR
+
+                        \ --- Mod: Code added for Trumbles: ------------------->
+
+ LDA TRIBBLE            \ If we have no Trumbles in the hold, skip to nobirths
+ BEQ nobirths
+
+                        \ If we get here then we have Trumbles in the hold, so
+                        \ this is where they breed (though we never get here in
+                        \ the Master version as the number of Trumbles is always
+                        \ zero)
+
+ LDA #0                 \ Trumbles eat food and narcotics during the hyperspace
+ STA QQ20               \ journey, so zero the amount of food and narcotics in
+ STA QQ20+6             \ the hold
+
+ JSR DORND              \ Take the number of Trumbles from TRIBBLE(1 0), add a
+ AND #15                \ random number between 4 and 15, and double the result,
+ ADC TRIBBLE            \ storing the resulting number in TRIBBLE(1 0)
+ ORA #4                 \
+ ROL A                  \ We start with the low byte
+ STA TRIBBLE
+
+ ROL TRIBBLE+1          \ And then do the high byte
+
+ BPL P%+5               \ If bit 7 of the high byte is set, then rotate the high
+ ROR TRIBBLE+1          \ byte back to the right, so the number of Trumbles is
+                        \ always positive
+
+.nobirths
+
+                        \ --- End of added code ------------------------------->
 
  LSR FIST               \ Halve our legal status in FIST, making us less bad,
                         \ and moving bit 0 into the C flag (so every time we
@@ -22059,21 +22223,61 @@ ENDMACRO
  ETOK 209
  EQUB VE
 
- EQUB VE                \ Token 111:    ""
-                        \
-                        \ Encoded as:   ""
+                        \ --- Mod: Code removed for Trumbles: ----------------->
 
- EQUB VE                \ Token 112:    ""
-                        \
-                        \ Encoded as:   ""
+\EQUB VE                \ Token 111:    ""
+\                       \
+\                       \ Encoded as:   ""
+\
+\EQUB VE                \ Token 112:    ""
+\                       \
+\                       \ Encoded as:   ""
+\
+\EQUB VE                \ Token 113:    ""
+\                       \
+\                       \ Encoded as:   ""
+\
+\EQUB VE                \ Token 114:    ""
+\                       \
+\                       \ Encoded as:   ""
 
- EQUB VE                \ Token 113:    ""
-                        \
-                        \ Encoded as:   ""
+                        \ --- And replaced by: -------------------------------->
 
- EQUB VE                \ Token 114:    ""
-                        \
-                        \ Encoded as:   ""
+ ECHR ' '               \ Token 111:    " CUDDLY"
+ ECHR 'C'               \
+ ECHR 'U'               \ Encoded as:   " CUDDLY"
+ ECHR 'D'
+ ECHR 'D'
+ ECHR 'L'
+ ECHR 'Y'
+ EQUB VE
+
+ ECHR ' '               \ Token 112:    " CUTE"
+ ECHR 'C'               \
+ ECHR 'U'               \ Encoded as:   " CUTE"
+ ECHR 'T'
+ ECHR 'E'
+ EQUB VE
+
+ ECHR ' '               \ Token 113:    " FURRY"
+ ECHR 'F'               \
+ ECHR 'U'               \ Encoded as:   " FURRY"
+ ECHR 'R'
+ ECHR 'R'
+ ECHR 'Y'
+ EQUB VE
+
+ ECHR ' '               \ Token 114:    " FRIENDLY"
+ ECHR 'F'               \
+ ECHR 'R'               \ Encoded as:   " FRI<246>DLY"
+ ECHR 'I'
+ ETWO 'E', 'N'
+ ECHR 'D'
+ ECHR 'L'
+ ECHR 'Y'
+ EQUB VE
+
+                        \ --- End of replacement ------------------------------>
 
  ECHR 'W'               \ Token 115:    "WASP"
  ECHR 'A'               \
@@ -22624,13 +22828,249 @@ ENDMACRO
                         \
                         \ Encoded as:   ""
 
- EQUB VE                \ Token 198:    ""
-                        \
-                        \ Encoded as:   ""
+                        \ --- Mod: Code removed for Trumbles: ----------------->
 
- EQUB VE                \ Token 199:    ""
-                        \
-                        \ Encoded as:   ""
+\EQUB VE                \ Token 198:    ""
+\                       \
+\                       \ Encoded as:   ""
+\
+\EQUB VE                \ Token 199:    ""
+\                       \
+\                       \ Encoded as:   ""
+
+                        \ --- And replaced by: -------------------------------->
+
+ ECHR ' '               \ Token 198:    " LITTLE TRUMBLE"
+ ECHR 'L'               \
+ ETWO 'I', 'T'          \ Encoded as:   " L<219>T<229> TRUMB<229>"
+ ECHR 'T'
+ ETWO 'L', 'E'
+ ECHR ' '
+ ECHR 'T'
+ ECHR 'R'
+ ECHR 'U'
+ ECHR 'M'
+ ECHR 'B'
+ ETWO 'L', 'E'
+ EQUB VE  
+
+ EJMP 25                \ Token 199:    "{incoming message screen, wait 2s}
+ EJMP 9                 \                {clear screen}
+ EJMP 23                \                {move to row 10, white, lower case}
+ EJMP 14                \                {justify}
+ ECHR ' '               \                  {single cap}GOOD DAY COMMANDER
+ ECHR ' '               \                {commander name}, ALLOW ME TO INTRODUCE
+ EJMP 19                \                MYSELF. {single cap}I AM {single cap}
+ ECHR 'G'               \                THE {single cap}MERCHANT {single cap}
+ ECHR 'O'               \                PRINCE OF THRUN AND I {single cap}FIND
+ ECHR 'O'               \                MYSELF FORCED TO SELL MY MOST            
+ ECHR 'D'               \                TREASURED POSSESSION.{cr}
+ ECHR ' '               \                 {single cap}I AM OFFERING YOU, FOR THE
+ ECHR 'D'               \                PALTRY SUM OF JUST 5000{single cap}C
+ ECHR 'A'               \                {single cap}R THE RAREST THING IN THE
+ ECHR 'Y'               \                {single cap}KNOWN {single cap}UNIVERSE.
+ ECHR ' '               \                {cr}
+ ETOK 154               \                 {single cap}{single cap}WILL YOU TAKE
+ ECHR ' '               \                IT(Y/N)?{cr}
+ EJMP 4                 \                {left align}{all caps}{tab 6}
+ ECHR ','               \
+ EJMP 13                \ Encoded as:   "{25}{9}{23}{14}  {19}GOOD DAY [154] {4}
+ ECHR ' '               \                ,{13} <228><224>W ME[201]<240>TRODU
+ ETWO 'A', 'L'          \                <233> MY<218>LF. {19}I AM {19}<226>E
+ ETWO 'L', 'O'          \                 {19}M<244>CH<255>T {19}PR<240><233> OF
+ ECHR 'W'               \                 {19}<226>RUN <255>D {19}I{26}F<240>D M
+ ECHR ' '               \                Y<218>LF F<253><233>D[201]<218>LL MY MO
+ ECHR 'M'               \                <222> T<242>ASUR<242> POSS<237>SI<223>
+ ECHR 'E'               \                [204]I AM OFF<244>[195][179], F<253>
+ ETOK 201               \                 [147]P<228>TRY SUM OF JU<222> 5000{19}
+ ETWO 'I', 'N'          \                C{19}R [147]R<238>E<222> <226>[195]
+ ECHR 'T'               \                 <240> <226>E {19}K<227>WN {19}UNIV
+ ECHR 'R'               \                <244><218>[204]W<220>L [179] TAKE <219>
+ ECHR 'O'               \                [206]{12}{15}{1}{8}"
+ ECHR 'D'
+ ECHR 'U'             
+ ETWO 'C', 'E'
+ ECHR ' '             
+ ECHR 'M'
+ ECHR 'Y'
+ ETWO 'S', 'E'
+ ECHR 'L'
+ ECHR 'F'
+ ECHR '.'
+ ECHR ' '
+ EJMP 19
+ ECHR 'I'
+ ECHR ' '
+ ECHR 'A'
+ ECHR 'M'
+ ECHR ' '
+ EJMP 19
+ ETWO 'T', 'H'
+ ECHR 'E'
+ ECHR ' '
+ EJMP 19
+ ECHR 'M'
+ ETWO 'E', 'R'
+ ECHR 'C'
+ ECHR 'H'
+ ETWO 'A', 'N'
+ ECHR 'T'
+ ECHR ' '
+ EJMP 19
+ ECHR 'P'
+ ECHR 'R'
+ ETWO 'I', 'N'
+ ETWO 'C', 'E'
+ ECHR ' '
+ ECHR 'O'
+ ECHR 'F'
+ ECHR ' '
+ EJMP 19
+ ETWO 'T', 'H'
+ ECHR 'R'
+ ECHR 'U'
+ ECHR 'N'
+ ECHR ' '
+ ETWO 'A', 'N'
+ ECHR 'D'
+ ECHR ' '
+ EJMP 19
+ ECHR 'I'
+ ECHR ' '
+ ECHR 'F'
+ ETWO 'I', 'N'
+ ECHR 'D'
+ ECHR ' '
+ ECHR 'M'
+ ECHR 'Y'
+ ETWO 'S', 'E'
+ ECHR 'L'
+ ECHR 'F'
+ ECHR ' '
+ ECHR 'F'
+ ETWO 'O', 'R'
+ ETWO 'C', 'E'
+ ECHR 'D'
+ ETOK 201
+ ETWO 'S', 'E'
+ ECHR 'L'
+ ECHR 'L'
+ ECHR ' '
+ ECHR 'M'
+ ECHR 'Y'
+ ECHR ' '
+ ECHR 'M'
+ ECHR 'O'
+ ETWO 'S', 'T'
+ ECHR ' '
+ ECHR 'T'
+ ETWO 'R', 'E'
+ ECHR 'A'
+ ECHR 'S'
+ ECHR 'U'
+ ECHR 'R'
+ ETWO 'E', 'D'
+ ECHR ' '
+ ECHR 'P'
+ ECHR 'O'
+ ECHR 'S'
+ ECHR 'S'
+ ETWO 'E', 'S'
+ ECHR 'S'
+ ECHR 'I'
+ ETWO 'O', 'N'
+ ETOK 204
+ ECHR 'I'
+ ECHR ' '
+ ECHR 'A'
+ ECHR 'M'
+ ECHR ' '
+ ECHR 'O'
+ ECHR 'F'
+ ECHR 'F'
+ ETWO 'E', 'R'
+ ETOK 195
+ ETOK 179
+ ECHR ','
+ ECHR ' '
+ ECHR 'F'
+ ETWO 'O', 'R'
+ ECHR ' '
+ ETOK 147
+ ECHR 'P'
+ ETWO 'A', 'L'
+ ECHR 'T'
+ ECHR 'R'
+ ECHR 'Y'
+ ECHR ' '
+ ECHR 'S'
+ ECHR 'U'
+ ECHR 'M'
+ ECHR ' '
+ ECHR 'O'
+ ECHR 'F'
+ ECHR ' '
+ ECHR 'J'
+ ECHR 'U'
+ ETWO 'S', 'T'
+ ECHR ' '
+ ECHR '5'
+ ECHR '0'
+ ECHR '0'
+ ECHR '0'
+ EJMP 19
+ ECHR 'C'
+ EJMP 19
+ ECHR 'R'
+ ECHR ' '
+ ETOK 147
+ ECHR 'R'
+ ETWO 'A', 'R'
+ ECHR 'E'
+ ETWO 'S', 'T'
+ ECHR ' '
+ ETWO 'T', 'H'
+ ETOK 195
+ ECHR ' '
+ ETWO 'I', 'N'
+ ECHR ' '
+ ETWO 'T', 'H'
+ ECHR 'E'
+ ECHR ' '
+ EJMP 19
+ ECHR 'K'
+ ETWO 'N', 'O'
+ ECHR 'W'
+ ECHR 'N'
+ ECHR ' '
+ EJMP 19
+ ECHR 'U'
+ ECHR 'N'
+ ECHR 'I'
+ ECHR 'V'
+ ETWO 'E', 'R'
+ ETWO 'S', 'E'
+ ETOK 204
+ ECHR 'W'
+ ETWO 'I', 'L'
+ ECHR 'L'
+ ECHR ' '
+ ETOK 179
+ ECHR ' '
+ ECHR 'T'
+ ECHR 'A'
+ ECHR 'K'
+ ECHR 'E'
+ ECHR ' '
+ ETWO 'I', 'T'
+ ETOK 206
+ EJMP 12
+ EJMP 15
+ EJMP 1
+ EJMP 8
+ EQUB VE
+
+                        \ --- End of replacement ------------------------------>
 
  ECHR ' '               \ Token 200:    " NAME? "
  ECHR 'N'               \
@@ -24823,6 +25263,34 @@ ENDMACRO
                         \ to end the mission and get our reward
 
 .EN4
+
+                        \ --- Mod: Code added for Trumbles: ------------------->
+
+\LDA CASH+2             \ This is the Trumbles code from the Commodore 64
+\CMP #&C4               \ version, which triggers the mission when you reach a
+\BCC EN6                \ cash level of &C400 (or 5017.6 credits)
+                        \
+                        \ Instead, we're going to use the NES code, which offers
+                        \ the mission at 6553.6 credits
+
+ LDA CASH+1             \ If the second most significant byte of CASH(0 1 2 3)
+ BEQ EN6                \ is zero then the cash amount is less than &010000
+                        \ (6553.6 credits), so jump to EN6
+
+ LDA TP                 \ If bit 4 of TP is set, then the Tribbles mission has
+ AND #%00010000         \ already been completed, so jump to EN6
+ BNE EN6
+
+                        \ If we get here then cheat mode has not been applied,
+                        \ we have at least 6553.6 credits and the Trumble
+                        \ mission has not yet been offered, so we do that now
+
+ JMP TBRIEF             \ Jump to TBRIEF to offer the Trumble mission, returning
+                        \ from the subroutine using a tail call
+
+.EN6
+
+                        \ --- End of added code ------------------------------->
 
  JMP BAY                \ If we get here them we didn't start or any missions,
                         \ so jump to BAY to go to the docking bay (i.e. show the
@@ -29539,6 +30007,27 @@ ENDMACRO
 
  BCS MA28               \ If the C flag is set then jump to MA28 to die, as
                         \ our temperature is off the scale
+
+                        \ --- Mod: Code added for Trumbles: ------------------->
+
+ CMP #240               \ If the cabin temperature < 240 then jump to nokilltr
+ BCC nokilltr           \ as the heat isn't high enough to kill Trumbles
+
+ LDA TRIBBLE+1          \ If TRIBBLE(1 0) = 0 then there are no Trumbles in the
+ ORA TRIBBLE            \ hold, so jump to nokilltr to skip the following
+ BEQ nokilltr
+
+ LSR TRIBBLE+1          \ Halve the number of Trumbles in TRIBBLE(1 0) as the
+ ROR TRIBBLE            \ cabin temperature is high enough to kill them off
+                        \ (this will eventually bring the number down to zero)
+
+ LDA #24                \ Call the NOISE routine with A = 24 to make the sound
+ JSR NOISE              \ of Trumbles being killed off by the heat of the sun
+                        \ (using the second part of the two-part kill sound)
+
+.nokilltr
+
+                        \ --- End of added code ------------------------------->
 
  CMP #224               \ If the cabin temperature < 224 then jump to MA23 to
  BCC MA23               \ skip fuel scooping, as we aren't close enough
@@ -47222,6 +47711,79 @@ ENDMACRO
 
  JSR DELAY-5            \ Wait for 1 delay loop, to slow the main loop down a
                         \ bit
+
+                        \ --- Mod: Code added for Trumbles: ------------------->
+
+ LDA TRIBBLE+1          \ If the high byte of TRIBBLE(1 0), the number of
+ BEQ game5              \ Trumbles in the hold, is zero, jump to game5 to skip
+                        \ the following
+
+                        \ We have a lot of Trumbles in the hold, so let's see if
+                        \ any of them are breeding (note that Trumbles always
+                        \ breed when we jump into a new system in the SOLAR
+                        \ routine, but when we have lots of them, they also
+                        \ breed here in the main flight loop)
+
+ JSR DORND              \ Set A and X to random numbers
+
+ CMP #220               \ If A >= 220 then set the C flag (14% chance)
+
+ LDA TRIBBLE            \ Add the C flag to TRIBBLE(1 0), starting with the low
+ ADC #0                 \ bytes
+ STA TRIBBLE
+
+ BCC game5              \ And then the high bytes
+ INC TRIBBLE+1          \
+                        \ So there is a 14% chance of a Trumble being born
+
+ BPL game5              \ If the high byte of TRIBBLE(1 0) is now &80, then
+ DEC TRIBBLE+1          \ decrement it back to &7F, so the number of Trumbles
+                        \ never goes above &7FFF (32767)
+
+.game5
+
+ LDA TRIBBLE+1          \ If the high byte of TRIBBLE(1 0), the number of
+ BEQ game7              \ Trumbles in the hold, is zero, jump to game7 to skip
+                        \ the following
+
+                        \ We have a lot of Trumbles in the hold, so they are
+                        \ probably making a bit of a noise
+
+ LDY CABTMP             \ If the cabin temperature is >= 224 then jump to game6
+ CPY #224               \ to skip the following and leave the value of A as a
+ BCS game6              \ high value, so the chances of the Trumbles making a
+                        \ noise in hot temperature is greater (specifically,
+                        \ this is the temperature at which the fuel scoop start
+                        \ working)
+
+ LSR A                  \ Set A = A / 2
+ LSR A
+
+.game6
+
+ STA T                  \ Set T = A, which will be higher with more Trumbles and
+                        \ higher temperatures
+ 
+ JSR DORND              \ Set A and X to random numbers
+ 
+ CMP T                  \ If A >= T then jump to game7 to skip making any noise,
+ BCS game7              \ so there is a higher chance of Trumbles making noise
+                        \ when there are lots of them or the cabin temperature
+                        \ is hot enough for the fuel scoops to work
+ 
+ AND #%100              \ Set A to our random number, set to either 0 or 4
+
+ ADC #3                 \ Set Y to our random number, set to either 3 or 7 (we
+ TAY                    \ know the C flag is clear as we just passed through a
+                        \ BCS)
+
+ JSR NOISE              \ Call the NOISE routine to make the sound of the
+                        \ Trumbles in Y, which will be one of 3 or 7, with an
+                        \ equal chance of either
+
+.game7
+
+                        \ --- End of added code ------------------------------->
 
  JSR TT17               \ Scan the keyboard for the cursor keys, returning the
                         \ cursor's delta values in X and Y and the key pressed
