@@ -3356,16 +3356,19 @@ ENDMACRO
 
 .KEYB
 
- EQUB 0                 \ This flag indicates whether we are currently reading
-                        \ from the keyboard using OSRDCH or OSWORD, so the
-                        \ keyboard interrupt handler at KEY1 knows whether to
-                        \ pass key presses on to the OS
+ EQUB 0                 \ This flag indicates whether we are currently
+                        \ processing an OS command (OSWORD, OSRDCH or OSFILE),
+                        \ in which case interrupts will be enabled in the IRQ1
+                        \ interrupt handler, and keyboard interrupts will be
+                        \ passed to the operating system's keyboard handler in
+                        \ the KEY1 interrupt handler
                         \
-                        \   * 0 = we are not reading from the keyboard with an
-                        \         OS command
+                        \   * 0 = we are not currently processing an OS command
                         \
-                        \   * &FF = we are currently reading from the keyboard
-                        \           with an OS command
+                        \   * &FF = we are currently processing an OS command
+                        \
+                        \ This lets us disable keyboard interrupts until they
+                        \ are needed, to prevent them slowing things down
 
  EQUW 0                 \ Gets set to the original value of IRQ1V by
                         \ elite-loader.asm
@@ -3416,8 +3419,9 @@ ENDMACRO
  PHP                    \ Store the flags on the stack
 
  BIT KEYB               \ If bit 7 of KEYB is set then we are currently reading
- BMI P%+4               \ from the keyboard with an OS command, so skip the
-                        \ following two instructions
+ BMI P%+4               \ from the keyboard or processing a file with an OS
+                        \ command, so skip the following two instructions so we
+                        \ call the operating system's keyboard handler below
 
  PLP                    \ We aren't currently reading from the keyboard with an
  RTS                    \ OS command, so retrieve the flags from the stack and
@@ -3622,9 +3626,9 @@ ENDMACRO
  EOR #%11111111         \ &FF with each call to this routine (and set A to the
  STA S%+6               \ new value)
 
- ORA KEYB               \ If we are currently reading from the keyboard with an
-                        \ OS command (OSWORD or OSRDCH) then KEYB will be &FF
-                        \ rather than 0, so A now contains the following:
+ ORA KEYB               \ If we are currently processing an OS command (OSWORD,
+                        \ OSRDCH or OSFILE) then KEYB will be &FF rather than 0,
+                        \ so A now contains the following:
                         \
                         \   * 0 if both S%+6 and KEYB are 0
                         \
@@ -3632,11 +3636,16 @@ ENDMACRO
 
  BMI jvec               \ If bit 7 of A is set, jump to jvec to skip the
                         \ following and process the interrupt as normal
+                        \
+                        \ This means that setting KEYB to a non-zero value will
+                        \ enable interrupts, so that OS commands for reading the
+                        \ keyboard and working with files commands will work,
+                        \ while setting KEYB to zero will disable every other
+                        \ interrupt to reduce slow-down
 
                         \ We only get here if S%+6 = 0 and KEYB = 0, so we only
                         \ do the following every other call to the interrupt
-                        \ handler, and only if we are not already reading from
-                        \ the keyboard with an OS command
+                        \ handler, and if we are not processing an OS command
                         \
                         \ The following clears all interrupts, so the net effect
                         \ of all this logic is that interrupts are only serviced
@@ -3663,8 +3672,8 @@ ENDMACRO
                         \ service half of the interrupts, one every 50Hz, and we
                         \ simply ignore the other half
                         \
-                        \ This might be an attempt to speed things up, as
-                        \ neither interrupt is actually used by the game code
+                        \ This is an attempt to speed things up, as neither
+                        \ interrupt is actually used by the game code
 
                         \ --- Mod: Code removed for sideways RAM: ------------->
 
@@ -13185,7 +13194,7 @@ ENDIF
 
 .et5
 
- LDY #111               \ Set Y to recursive token 107 ("FUEL SCOOPS")
+ LDY #111               \ Set Y to recursive token 111 ("FUEL SCOOPS")
 
  CMP #6                 \ If A is not 6 (i.e. the item we've just bought is not
  BNE et6                \ a fuel scoop), skip to et6
@@ -46341,7 +46350,7 @@ ENDMACRO
 
 .KS1
 
- LDX XSAV               \ Store the current ship's slot number in XSAV
+ LDX XSAV               \ Fetch the current ship's slot number from XSAV
 
  JSR KILLSHP            \ Call KILLSHP to remove the ship in slot X from our
                         \ local bubble of universe
@@ -47778,7 +47787,7 @@ ENDMACRO
                         \ effectively resets the stack
 
  INX                    \ Set KEYB = 0 to indicate we are not currently reading
- STX KEYB               \ the keyboard using an OS command
+ STX KEYB               \ the keyboard, so we can ignore interrupts
 
  LDX GNTMP              \ If the laser temperature in GNTMP is non-zero,
  BEQ EE20               \ decrement it (i.e. cool it down a bit)
@@ -53339,7 +53348,7 @@ ENDMACRO
 \   (S R) = |S R|
 \
 \ This sets up the variables required above to calculate (S R) / XX12+2 and give
-\ the result the opposite sign to XX13+3.
+\ the result the opposite sign to XX12+3.
 \
 \ ******************************************************************************
 
