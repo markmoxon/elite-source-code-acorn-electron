@@ -7455,8 +7455,11 @@ ENDIF
  JSR DETOK              \ to row 10, white, lower case}{white}{all caps}INCOMING
                         \ MESSAGE"
 
- LDY #100               \ Wait for 100/50 of a second (2 seconds) and return
- JMP DELAY              \ from the subroutine using a tail call
+ LDY #255               \ Wait for 255 delay loops
+ JSR DELAY
+
+ LDY #255               \ Wait for 255 delay loops and return from the
+ JMP DELAY              \ subroutine using a tail call
 
                         \ --- End of added code ------------------------------->
 
@@ -16589,7 +16592,7 @@ ENDIF
 
 .GTNMEW
 
- LDY #8                 \ Wait for 8/50 of a second (0.16 seconds)
+ LDY #8                 \ Wait for 8 delay loops
  JSR DELAY
 
 .GTNME
