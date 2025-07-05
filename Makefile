@@ -57,7 +57,7 @@ remove-checksums=FALSE
 build-for-disc=TRUE
 variant-number=1
 folder=ib-superior
-suffix=-enhanced
+suffix=-elite-compendium
 
 .PHONY:all
 all:
