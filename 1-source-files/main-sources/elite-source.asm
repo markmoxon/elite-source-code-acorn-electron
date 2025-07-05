@@ -25300,6 +25300,62 @@ ENDMACRO
 
 \ ******************************************************************************
 \
+\       Name: UNWISE
+\       Type: Subroutine
+\   Category: Ship hangar
+\    Summary: Switch the main line-drawing routine between EOR and OR logic
+\
+\ ------------------------------------------------------------------------------
+\
+\ This routine toggles the main line-drawing routine between EOR and OR logic,
+\ for use when drawing the ship hangar.
+\
+\ It does this by modifying the instructions in the main line-drawing routine at
+\ LOIN/LL30, flipping the drawing logic between the default EOR logic (which
+\ merges with whatever is already on screen, allowing us to erase anything we
+\ draw for animation purposes) and OR logic (which overwrites the screen,
+\ ignoring anything that's already there). We want to use OR logic for drawing
+\ the ship hangar, as it looks better and we don't need to animate it).
+\
+\ The routine name, UNWISE, sums up this approach - if anything goes wrong, the
+\ results would be messy.
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   HA1                 Contains an RTS
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for ship hangar: ---------------->
+
+.UNWISE
+
+ LDA LIL2+2             \ Flip bit 6 of LIL2+2 to change the EOR (SC),Y in LIL2
+ EOR #%01000000         \ to an ORA (SC),Y (or back again)
+ STA LIL2+2
+
+ LDA LIL3+2             \ Flip bit 6 of LIL3+2 to change the EOR (SC),Y in LIL3
+ EOR #%01000000         \ to an ORA (SC),Y (or back again)
+ STA LIL3+2
+
+ LDA LIL5+2             \ Flip bit 6 of LIL2+2 to change the EOR (SC),Y in LIL5
+ EOR #%01000000         \ to an ORA (SC),Y (or back again)
+ STA LIL5+2
+
+ LDA LIL6+2             \ Flip bit 6 of LIL2+2 to change the EOR (SC),Y in LIL6
+ EOR #%01000000         \ to an ORA (SC),Y (or back again)
+ STA LIL6+2
+
+\.HA1
+
+ RTS                    \ Return from the subroutine
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
 \       Name: checksum0
 \       Type: Variable
 \   Category: Copy protection
@@ -46194,6 +46250,36 @@ ENDMACRO
  BNE P%+3
  DEY
 
+                        \ --- Mod: Code added for faster pointer movement: ---->
+
+ STX T                  \ Set T to the value of X, which contains the joystick
+                        \ roll value
+
+ LDX #0                 \ Scan the keyboard to see if the SHIFT key is currently
+ JSR DKS4               \ being pressed, returning the result in A and X
+
+ BPL TJe                \ If SHIFT is not being pressed, skip to TJe
+
+ ASL T                  \ SHIFT is being held down, so quadruple the value of T
+ ASL T                  \ (i.e. SHIFT moves the cursor at four times the speed
+                        \ when using the joystick)
+
+ TYA                    \ Fetch the joystick pitch value from Y into A
+
+ ASL A                  \ SHIFT is being held down, so quadruple the value of A
+ ASL A                  \ (i.e. SHIFT moves the cursor at four times the speed
+                        \ when using the joystick)
+
+ TAY                    \ Transfer the amended value of A back into Y
+
+.TJe
+
+ LDX T                  \ Fetch the amended value of T back into X
+
+ LDA KL                 \ Set A to the value of KL (the key pressed)
+
+                        \ --- End of removed code ----------------------------->
+
  RTS                    \ Return from the subroutine
 
 \ ******************************************************************************
@@ -54609,62 +54695,6 @@ ENDMACRO
 .BOMBTBY
 
  SKIP 10
-
-                        \ --- End of added code ------------------------------->
-
-\ ******************************************************************************
-\
-\       Name: UNWISE
-\       Type: Subroutine
-\   Category: Ship hangar
-\    Summary: Switch the main line-drawing routine between EOR and OR logic
-\
-\ ------------------------------------------------------------------------------
-\
-\ This routine toggles the main line-drawing routine between EOR and OR logic,
-\ for use when drawing the ship hangar.
-\
-\ It does this by modifying the instructions in the main line-drawing routine at
-\ LOIN/LL30, flipping the drawing logic between the default EOR logic (which
-\ merges with whatever is already on screen, allowing us to erase anything we
-\ draw for animation purposes) and OR logic (which overwrites the screen,
-\ ignoring anything that's already there). We want to use OR logic for drawing
-\ the ship hangar, as it looks better and we don't need to animate it).
-\
-\ The routine name, UNWISE, sums up this approach - if anything goes wrong, the
-\ results would be messy.
-\
-\ ------------------------------------------------------------------------------
-\
-\ Other entry points:
-\
-\   HA1                 Contains an RTS
-\
-\ ******************************************************************************
-
-                        \ --- Mod: Code added for ship hangar: ---------------->
-
-.UNWISE
-
- LDA LIL2+2             \ Flip bit 6 of LIL2+2 to change the EOR (SC),Y in LIL2
- EOR #%01000000         \ to an ORA (SC),Y (or back again)
- STA LIL2+2
-
- LDA LIL3+2             \ Flip bit 6 of LIL3+2 to change the EOR (SC),Y in LIL3
- EOR #%01000000         \ to an ORA (SC),Y (or back again)
- STA LIL3+2
-
- LDA LIL5+2             \ Flip bit 6 of LIL2+2 to change the EOR (SC),Y in LIL5
- EOR #%01000000         \ to an ORA (SC),Y (or back again)
- STA LIL5+2
-
- LDA LIL6+2             \ Flip bit 6 of LIL2+2 to change the EOR (SC),Y in LIL6
- EOR #%01000000         \ to an ORA (SC),Y (or back again)
- STA LIL6+2
-
-\.HA1
-
- RTS                    \ Return from the subroutine
 
                         \ --- End of added code ------------------------------->
 
