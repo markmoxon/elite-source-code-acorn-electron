@@ -3949,7 +3949,7 @@ Saving file '3-assembled-output/ELTB.bin'
      2438   20 65 24   JSR &2465
      243B   AD 43 03   LDA &0343
      243E   10 03      BPL &2443
-     2440   20 55 BF   JSR &BF55
+     2440   20 A6 4B   JSR &4BA6
      2443   4C B8 32   JMP &32B8
 .LOOK1
      2446   A9 00      LDA #&00
@@ -3962,7 +3962,7 @@ Saving file '3-assembled-output/ELTB.bin'
      2457   20 C0 97   JSR &97C0
      245A   AD 43 03   LDA &0343
      245D   10 03      BPL &2462
-     245F   20 55 BF   JSR &BF55
+     245F   20 A6 4B   JSR &4BA6
      2462   20 DF 32   JSR &32DF
 .SIGHT
      2465   AC 17 86   LDY &8617
@@ -17981,7 +17981,74 @@ End macro ECHR
      4BA0   49 40      EOR #&40
      4BA2   8D 08 93   STA &9308
      4BA5   60         RTS
-Free space in MAIN = 346  bytes
+.BOMBOFF
+     4BA6   A5 87      LDA &87
+     4BA8   D0 2A      BNE &4BD4
+     4BAA   A0 01      LDY #&01
+     4BAC   AD 13 4C   LDA &4C13
+     4BAF   85 37      STA &37
+     4BB1   AD 1D 4C   LDA &4C1D
+     4BB4   85 38      STA &38
+.BOMBL1
+     4BB6   A5 37      LDA &37
+     4BB8   85 31      STA &31
+     4BBA   A5 38      LDA &38
+     4BBC   85 32      STA &32
+     4BBE   B9 13 4C   LDA &4C13,Y
+     4BC1   85 33      STA &33
+     4BC3   85 37      STA &37
+     4BC5   B9 1D 4C   LDA &4C1D,Y
+     4BC8   85 34      STA &34
+     4BCA   85 38      STA &38
+     4BCC   20 53 91   JSR &9153
+     4BCF   C8         INY
+     4BD0   C0 0A      CPY #&0A
+     4BD2   90 E2      BCC &4BB6
+.BOMBR1
+     4BD4   60         RTS
+.BOMBEFF2
+     4BD5   20 D8 4B   JSR &4BD8
+     4BD8   20 DB 4B   JSR &4BDB
+.BOMBEFF
+     4BDB   A9 30      LDA #&30
+     4BDD   20 C2 37   JSR &37C2
+     4BE0   20 A6 4B   JSR &4BA6
+.BOMBON
+     4BE3   A0 00      LDY #&00
+.BOMBL2
+     4BE5   20 76 AF   JSR &AF76
+     4BE8   29 7F      AND #&7F
+     4BEA   69 03      ADC #&03
+     4BEC   99 1D 4C   STA &4C1D,Y
+     4BEF   8A         TXA
+     4BF0   29 1F      AND #&1F
+     4BF2   18         CLC
+     4BF3   79 09 4C   ADC &4C09,Y
+     4BF6   99 13 4C   STA &4C13,Y
+     4BF9   C8         INY
+     4BFA   C0 0A      CPY #&0A
+     4BFC   90 E7      BCC &4BE5
+     4BFE   A2 00      LDX #&00
+     4C00   8E 1C 4C   STX &4C1C
+     4C03   CA         DEX
+     4C04   8E 13 4C   STX &4C13
+     4C07   B0 9D      BCS &4BA6
+.BOMBPOS
+     4C09   E0
+     4C0A   E0
+     4C0B   C0
+     4C0C   A0
+     4C0D   80
+     4C0E   60
+     4C0F   40
+     4C10   20
+     4C11   00
+     4C12   00
+.BOMBTBX
+     4C13
+.BOMBTBY
+     4C1D
+Free space in MAIN = D9  bytes
      4D00   00
      4D01   40 06
      4D03   7A
@@ -22543,7 +22610,7 @@ WP workspace from &85E0 to &87DD inclusive
      889C   F0 08      BEQ &88A6
      889E   0E 43 03   ASL &0343
      88A1   F0 03      BEQ &88A6
-     88A3   20 92 BF   JSR &BF92
+     88A3   20 E3 4B   JSR &4BE3
 .MA76
      88A6   AD 10 03   LDA &0310
      88A9   F0 05      BEQ &88B0
@@ -22867,10 +22934,10 @@ WP workspace from &85E0 to &87DD inclusive
 .MA18
      8B17   AD 43 03   LDA &0343
      8B1A   10 0B      BPL &8B27
-     8B1C   20 84 BF   JSR &BF84
+     8B1C   20 D5 4B   JSR &4BD5
      8B1F   0E 43 03   ASL &0343
      8B22   30 03      BMI &8B27
-     8B24   20 55 BF   JSR &BF55
+     8B24   20 A6 4B   JSR &4BA6
 .MA77
      8B27   A5 8A      LDA &8A
      8B29   29 07      AND #&07
@@ -30641,82 +30708,16 @@ End macro ITEM
      BF4F   A9 00      LDA #&00
      BF51   6A         ROR A
      BF52   4C 84 8E   JMP &8E84
-.BOMBOFF
-     BF55   A5 87      LDA &87
-     BF57   D0 2A      BNE &BF83
-     BF59   A0 01      LDY #&01
-     BF5B   AD C2 BF   LDA &BFC2
-     BF5E   85 37      STA &37
-     BF60   AD CC BF   LDA &BFCC
-     BF63   85 38      STA &38
-.BOMBL1
-     BF65   A5 37      LDA &37
-     BF67   85 31      STA &31
-     BF69   A5 38      LDA &38
-     BF6B   85 32      STA &32
-     BF6D   B9 C2 BF   LDA &BFC2,Y
-     BF70   85 33      STA &33
-     BF72   85 37      STA &37
-     BF74   B9 CC BF   LDA &BFCC,Y
-     BF77   85 34      STA &34
-     BF79   85 38      STA &38
-     BF7B   20 53 91   JSR &9153
-     BF7E   C8         INY
-     BF7F   C0 0A      CPY #&0A
-     BF81   90 E2      BCC &BF65
-.BOMBR1
-     BF83   60         RTS
-.BOMBEFF2
-     BF84   20 87 BF   JSR &BF87
-     BF87   20 8A BF   JSR &BF8A
-.BOMBEFF
-     BF8A   A9 30      LDA #&30
-     BF8C   20 C2 37   JSR &37C2
-     BF8F   20 55 BF   JSR &BF55
-.BOMBON
-     BF92   A0 00      LDY #&00
-.BOMBL2
-     BF94   20 76 AF   JSR &AF76
-     BF97   29 7F      AND #&7F
-     BF99   69 03      ADC #&03
-     BF9B   99 CC BF   STA &BFCC,Y
-     BF9E   8A         TXA
-     BF9F   29 1F      AND #&1F
-     BFA1   18         CLC
-     BFA2   79 B8 BF   ADC &BFB8,Y
-     BFA5   99 C2 BF   STA &BFC2,Y
-     BFA8   C8         INY
-     BFA9   C0 0A      CPY #&0A
-     BFAB   90 E7      BCC &BF94
-     BFAD   A2 00      LDX #&00
-     BFAF   8E CB BF   STX &BFCB
-     BFB2   CA         DEX
-     BFB3   8E C2 BF   STX &BFC2
-     BFB6   B0 9D      BCS &BF55
-.BOMBPOS
-     BFB8   E0
-     BFB9   E0
-     BFBA   C0
-     BFBB   A0
-     BFBC   80
-     BFBD   60
-     BFBE   40
-     BFBF   20
-     BFC0   00
-     BFC1   00
-.BOMBTBX
-     BFC2
-.BOMBTBY
-     BFCC
+     BF55   44 6F 65 ...
 .endSRAM
-Free space in SRAM = 29  bytes
+Free space in SRAM = 136  bytes
 ELTROM
 Assembled at &8000 
-Ends at &BFD6 
-Code size is &3FD6 
+Ends at &BF77 
+Code size is &3F77 
 Execute at &8000 
 Reload at &8000 
-S.ELTROM &8000  &BFD6  &8000  &8000 
+S.ELTROM &8000  &BF77  &8000  &8000 
 Saving file '3-assembled-output/ELTROM1.bin'
 Saving file '3-assembled-output/ELTROM2.bin'
 .elitea
