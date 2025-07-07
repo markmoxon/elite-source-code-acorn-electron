@@ -1122,320 +1122,14 @@
  SKIP 256               \ Temporary storage, typically used for storing tables
                         \ of values such as screen coordinates or ship data
 
-\ ******************************************************************************
-\
-\       Name: T%
-\       Type: Workspace
-\    Address: &0300 to &036C
-\   Category: Workspaces
-\    Summary: Current commander data and stardust data blocks
-\
-\ ------------------------------------------------------------------------------
-\
-\ Contains the current commander data (NT% bytes at location TP), and the
-\ stardust data blocks (NOST bytes at location SX)
-\
-\ ******************************************************************************
+                        \ --- Mod: Code moved for joysticks: ------------------>
 
- ORG &0300
-
-.T%
-
- SKIP 0                 \ The start of the T% workspace
-
-.TP
-
- SKIP 1                 \ The current mission status, which is always 0 for the
-                        \ cassette version of Elite as there are no missions
-
-.QQ0
-
- SKIP 1                 \ The current system's galactic x-coordinate (0-256)
-
-.QQ1
-
- SKIP 1                 \ The current system's galactic y-coordinate (0-256)
-
-.QQ21
-
- SKIP 6                 \ The three 16-bit seeds for the current galaxy
+                        \ The following workspace has been moved into main 
+                        \ memory, to avoid clashes with the Plus 1 and Plus 3:
                         \
-                        \ These seeds define system 0 in the current galaxy, so
-                        \ they can be used as a starting point to generate all
-                        \ 256 systems in the galaxy
-                        \
-                        \ Using a galactic hyperdrive rotates each byte to the
-                        \ left (rolling each byte within itself) to get the
-                        \ seeds for the next galaxy, so after eight galactic
-                        \ jumps, the seeds roll around to the first galaxy again
+                        \   * T%
 
-.CASH
-
- SKIP 4                 \ Our current cash pot
-                        \
-                        \ The cash stash is stored as a 32-bit unsigned integer,
-                        \ with the most significant byte in CASH and the least
-                        \ significant in CASH+3. This is big-endian, which is
-                        \ the opposite way round to most of the numbers used in
-                        \ Elite - to use our notation for multi-byte numbers,
-                        \ the amount of cash is CASH(0 1 2 3)
-
-.QQ14
-
- SKIP 1                 \ Our current fuel level (0-70)
-                        \
-                        \ The fuel level is stored as the number of light years
-                        \ multiplied by 10, so QQ14 = 1 represents 0.1 light
-                        \ years, and the maximum possible value is 70, for 7.0
-                        \ light years
-
-.COK
-
- SKIP 1                 \ Flags used to generate the competition code
-
-.GCNT
-
- SKIP 1                 \ The number of the current galaxy (0-7)
-                        \
-                        \ When this is displayed in-game, 1 is added to the
-                        \ number, so we start in galaxy 1 in-game, but it's
-                        \ stored as galaxy 0 internally
-                        \
-                        \ The galaxy number increases by one every time a
-                        \ galactic hyperdrive is used, and wraps back around to
-                        \ the start after eight galaxies
-
-.LASER
-
- SKIP 4                 \ The specifications of the lasers fitted to each of the
-                        \ four space views:
-                        \
-                        \   * Byte #0 = front view
-                        \   * Byte #1 = rear view
-                        \   * Byte #2 = left view
-                        \   * Byte #3 = right view
-                        \
-                        \ For each of the views:
-                        \
-                        \   * 0 = no laser is fitted to this view
-                        \
-                        \   * Non-zero = a laser is fitted to this view, with
-                        \     the following specification:
-                        \
-                        \     * Bits 0-6 contain the laser's power
-                        \
-                        \     * Bit 7 determines whether or not the laser pulses
-                        \       (0 = pulse laser) or is always on (1 = beam
-                        \       laser)
-
- SKIP 2                 \ These bytes appear to be unused (they were originally
-                        \ used for up/down lasers, but they were dropped)
-
-.CRGO
-
- SKIP 1                 \ Our ship's cargo capacity
-                        \
-                        \   * 22 = standard cargo bay of 20 tonnes
-                        \
-                        \   * 37 = large cargo bay of 35 tonnes
-                        \
-                        \ The value is two greater than the actual capacity to
-                        \ make the maths in tnpr slightly more efficient
-
-.QQ20
-
- SKIP 17                \ The contents of our cargo hold
-                        \
-                        \ The amount of market item X that we have in our hold
-                        \ can be found in the X-th byte of QQ20. For example:
-                        \
-                        \   * QQ20 contains the amount of food (item 0)
-                        \
-                        \   * QQ20+7 contains the amount of computers (item 7)
-                        \
-                        \ See QQ23 for a list of market item numbers and their
-                        \ storage units
-
-.ECM
-
- SKIP 1                 \ E.C.M. system
-                        \
-                        \   * 0 = not fitted
-                        \
-                        \   * &FF = fitted
-
-.BST
-
- SKIP 1                 \ Fuel scoops (BST stands for "barrel status")
-                        \
-                        \   * 0 = not fitted
-                        \
-                        \   * &FF = fitted
-
-.BOMB
-
- SKIP 1                 \ Energy bomb
-                        \
-                        \   * 0 = not fitted
-                        \
-                        \   * &7F = fitted
-
-.ENGY
-
- SKIP 1                 \ Energy unit
-                        \
-                        \   * 0 = not fitted
-                        \
-                        \   * Non-zero = fitted
-                        \
-                        \ The actual value determines the refresh rate of our
-                        \ energy banks, as they refresh by ENGY+1 each time (so
-                        \ our ship's energy level goes up by 2 each time if we
-                        \ have an energy unit fitted, otherwise it goes up by 1)
-                        \
-                        \ The enhanced versions of Elite set ENGY to 2 as the
-                        \ reward for completing mission 2, where we receive a
-                        \ special naval energy unit that recharges at a fast
-                        \ rate than a standard energy unit, i.e. by 3 each time
-
-.DKCMP
-
- SKIP 1                 \ Docking computer
-                        \
-                        \   * 0 = not fitted
-                        \
-                        \   * &FF = fitted
-
-.GHYP
-
- SKIP 1                 \ Galactic hyperdrive
-                        \
-                        \   * 0 = not fitted
-                        \
-                        \   * &FF = fitted
-
-.ESCP
-
- SKIP 1                 \ Escape pod
-                        \
-                        \   * 0 = not fitted
-                        \
-                        \   * &FF = fitted
-
-                        \ --- Mod: Code removed for Trumbles: ----------------->
-
-\SKIP 4                 \ These bytes appear to be unused
-
-                        \ --- And replaced by: -------------------------------->
-
- SKIP 1                 \ This byte appears to be unused
-
-.TRIBBLE
-
- SKIP 2                 \ The number of Trumbles in the cargo hold
-
- SKIP 1                 \ This byte appears to be unused
-
-                        \ --- End of replacement ------------------------------>
-
-.NOMSL
-
- SKIP 1                 \ The number of missiles we have fitted (0-4)
-
-.FIST
-
- SKIP 1                 \ Our legal status (FIST stands for "fugitive/innocent
-                        \ status"):
-                        \
-                        \   * 0 = Clean
-                        \
-                        \   * 1-49 = Offender
-                        \
-                        \   * 50+ = Fugitive
-                        \
-                        \ You get 64 points if you kill a cop, so that's a fast
-                        \ ticket to fugitive status
-
-.AVL
-
- SKIP 17                \ Market availability in the current system
-                        \
-                        \ The available amount of market item X is stored in
-                        \ the X-th byte of AVL, so for example:
-                        \
-                        \   * AVL contains the amount of food (item 0)
-                        \
-                        \   * AVL+7 contains the amount of computers (item 7)
-                        \
-                        \ See QQ23 for a list of market item numbers and their
-                        \ storage units
-
-.QQ26
-
- SKIP 1                 \ A random value used to randomise market data
-                        \
-                        \ This value is set to a new random number for each
-                        \ change of system, so we can add a random factor into
-                        \ the calculations for market prices
-
-.TALLY
-
- SKIP 2                 \ Our combat rank
-                        \
-                        \ The combat rank is stored as the number of kills, in a
-                        \ 16-bit number TALLY(1 0) - so the high byte is in
-                        \ TALLY+1 and the low byte in TALLY
-                        \
-                        \ If the high byte in TALLY+1 is 0 then we have between
-                        \ 0 and 255 kills, so our rank is Harmless, Mostly
-                        \ Harmless, Poor, Average Above Average or Competent,
-                        \ according to the value of the low byte in TALLY:
-                        \
-                        \   Harmless         %00000000 to %00000111 = 0 to 7
-                        \   Mostly Harmless  %00001000 to %00001111 = 8 to 15
-                        \   Poor             %00010000 to %00011111 = 16 to 31
-                        \   Average          %00100000 to %00111111 = 32 to 63
-                        \   Above Average    %01000000 to %01111111 = 64 to 127
-                        \   Competent        %10000000 to %11111111 = 128 to 255
-                        \
-                        \ Note that the Competent range also covers kill counts
-                        \ from 256 to 511, as follows
-                        \
-                        \ If the high byte in TALLY+1 is non-zero then we are
-                        \ Competent, Dangerous, Deadly or Elite, according to
-                        \ the value of TALLY(1 0):
-                        \
-                        \   Competent   (1 0) to (1 255)   = 256 to 511 kills
-                        \   Dangerous   (2 0) to (9 255)   = 512 to 2559 kills
-                        \   Deadly      (10 0) to (24 255) = 2560 to 6399 kills
-                        \   Elite       (25 0) and up      = 6400 kills and up
-                        \
-                        \ You can see the rating calculation in the STATUS
-                        \ subroutine
-
-.SVC
-
- SKIP 1                 \ The save count
-                        \
-                        \ When a new commander is created, the save count gets
-                        \ set to 128. This value gets halved each time the
-                        \ commander file is saved, but it is otherwise unused.
-                        \ It is presumably part of the security system for the
-                        \ competition, possibly another flag to catch out
-                        \ entries with manually altered commander files
-
- SKIP 2                 \ The commander file checksum
-                        \
-                        \ These two bytes are reserved for the commander file
-                        \ checksum, so when the current commander block is
-                        \ copied from here to the last saved commander block at
-                        \ NA%, CHK and CHK2 get overwritten
-
- NT% = SVC + 2 - TP     \ This sets the variable NT% to the size of the current
-                        \ commander data block, which starts at TP and ends at
-                        \ SVC+2 (inclusive)
-
- PRINT "T% workspace from ", ~T%, "to ", ~P%-1, "inclusive"
+                        \ --- End of moved code ------------------------------->
 
                         \ --- Mod: Code moved for sideways RAM: --------------->
 
@@ -25597,6 +25291,323 @@ ENDMACRO
 
  SKIP 1                 \ Temporary storage, used for storing the value of the Y
                         \ register in the TT26 routine
+
+                        \ --- End of moved code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: T%
+\       Type: Workspace
+\    Address: &0300 to &036C
+\   Category: Workspaces
+\    Summary: Current commander data and stardust data blocks
+\
+\ ------------------------------------------------------------------------------
+\
+\ Contains the current commander data (NT% bytes at location TP), and the
+\ stardust data blocks (NOST bytes at location SX)
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code moved for joysticks: ------------------>
+
+.T%
+
+ SKIP 0                 \ The start of the T% workspace
+
+.TP
+
+ SKIP 1                 \ The current mission status, which is always 0 for the
+                        \ cassette version of Elite as there are no missions
+
+.QQ0
+
+ SKIP 1                 \ The current system's galactic x-coordinate (0-256)
+
+.QQ1
+
+ SKIP 1                 \ The current system's galactic y-coordinate (0-256)
+
+.QQ21
+
+ SKIP 6                 \ The three 16-bit seeds for the current galaxy
+                        \
+                        \ These seeds define system 0 in the current galaxy, so
+                        \ they can be used as a starting point to generate all
+                        \ 256 systems in the galaxy
+                        \
+                        \ Using a galactic hyperdrive rotates each byte to the
+                        \ left (rolling each byte within itself) to get the
+                        \ seeds for the next galaxy, so after eight galactic
+                        \ jumps, the seeds roll around to the first galaxy again
+
+.CASH
+
+ SKIP 4                 \ Our current cash pot
+                        \
+                        \ The cash stash is stored as a 32-bit unsigned integer,
+                        \ with the most significant byte in CASH and the least
+                        \ significant in CASH+3. This is big-endian, which is
+                        \ the opposite way round to most of the numbers used in
+                        \ Elite - to use our notation for multi-byte numbers,
+                        \ the amount of cash is CASH(0 1 2 3)
+
+.QQ14
+
+ SKIP 1                 \ Our current fuel level (0-70)
+                        \
+                        \ The fuel level is stored as the number of light years
+                        \ multiplied by 10, so QQ14 = 1 represents 0.1 light
+                        \ years, and the maximum possible value is 70, for 7.0
+                        \ light years
+
+.COK
+
+ SKIP 1                 \ Flags used to generate the competition code
+
+.GCNT
+
+ SKIP 1                 \ The number of the current galaxy (0-7)
+                        \
+                        \ When this is displayed in-game, 1 is added to the
+                        \ number, so we start in galaxy 1 in-game, but it's
+                        \ stored as galaxy 0 internally
+                        \
+                        \ The galaxy number increases by one every time a
+                        \ galactic hyperdrive is used, and wraps back around to
+                        \ the start after eight galaxies
+
+.LASER
+
+ SKIP 4                 \ The specifications of the lasers fitted to each of the
+                        \ four space views:
+                        \
+                        \   * Byte #0 = front view
+                        \   * Byte #1 = rear view
+                        \   * Byte #2 = left view
+                        \   * Byte #3 = right view
+                        \
+                        \ For each of the views:
+                        \
+                        \   * 0 = no laser is fitted to this view
+                        \
+                        \   * Non-zero = a laser is fitted to this view, with
+                        \     the following specification:
+                        \
+                        \     * Bits 0-6 contain the laser's power
+                        \
+                        \     * Bit 7 determines whether or not the laser pulses
+                        \       (0 = pulse laser) or is always on (1 = beam
+                        \       laser)
+
+ SKIP 2                 \ These bytes appear to be unused (they were originally
+                        \ used for up/down lasers, but they were dropped)
+
+.CRGO
+
+ SKIP 1                 \ Our ship's cargo capacity
+                        \
+                        \   * 22 = standard cargo bay of 20 tonnes
+                        \
+                        \   * 37 = large cargo bay of 35 tonnes
+                        \
+                        \ The value is two greater than the actual capacity to
+                        \ make the maths in tnpr slightly more efficient
+
+.QQ20
+
+ SKIP 17                \ The contents of our cargo hold
+                        \
+                        \ The amount of market item X that we have in our hold
+                        \ can be found in the X-th byte of QQ20. For example:
+                        \
+                        \   * QQ20 contains the amount of food (item 0)
+                        \
+                        \   * QQ20+7 contains the amount of computers (item 7)
+                        \
+                        \ See QQ23 for a list of market item numbers and their
+                        \ storage units
+
+.ECM
+
+ SKIP 1                 \ E.C.M. system
+                        \
+                        \   * 0 = not fitted
+                        \
+                        \   * &FF = fitted
+
+.BST
+
+ SKIP 1                 \ Fuel scoops (BST stands for "barrel status")
+                        \
+                        \   * 0 = not fitted
+                        \
+                        \   * &FF = fitted
+
+.BOMB
+
+ SKIP 1                 \ Energy bomb
+                        \
+                        \   * 0 = not fitted
+                        \
+                        \   * &7F = fitted
+
+.ENGY
+
+ SKIP 1                 \ Energy unit
+                        \
+                        \   * 0 = not fitted
+                        \
+                        \   * Non-zero = fitted
+                        \
+                        \ The actual value determines the refresh rate of our
+                        \ energy banks, as they refresh by ENGY+1 each time (so
+                        \ our ship's energy level goes up by 2 each time if we
+                        \ have an energy unit fitted, otherwise it goes up by 1)
+                        \
+                        \ The enhanced versions of Elite set ENGY to 2 as the
+                        \ reward for completing mission 2, where we receive a
+                        \ special naval energy unit that recharges at a fast
+                        \ rate than a standard energy unit, i.e. by 3 each time
+
+.DKCMP
+
+ SKIP 1                 \ Docking computer
+                        \
+                        \   * 0 = not fitted
+                        \
+                        \   * &FF = fitted
+
+.GHYP
+
+ SKIP 1                 \ Galactic hyperdrive
+                        \
+                        \   * 0 = not fitted
+                        \
+                        \   * &FF = fitted
+
+.ESCP
+
+ SKIP 1                 \ Escape pod
+                        \
+                        \   * 0 = not fitted
+                        \
+                        \   * &FF = fitted
+
+                        \ --- Mod: Code removed for Trumbles: ----------------->
+
+\SKIP 4                 \ These bytes appear to be unused
+
+                        \ --- And replaced by: -------------------------------->
+
+ SKIP 1                 \ This byte appears to be unused
+
+.TRIBBLE
+
+ SKIP 2                 \ The number of Trumbles in the cargo hold
+
+ SKIP 1                 \ This byte appears to be unused
+
+                        \ --- End of replacement ------------------------------>
+
+.NOMSL
+
+ SKIP 1                 \ The number of missiles we have fitted (0-4)
+
+.FIST
+
+ SKIP 1                 \ Our legal status (FIST stands for "fugitive/innocent
+                        \ status"):
+                        \
+                        \   * 0 = Clean
+                        \
+                        \   * 1-49 = Offender
+                        \
+                        \   * 50+ = Fugitive
+                        \
+                        \ You get 64 points if you kill a cop, so that's a fast
+                        \ ticket to fugitive status
+
+.AVL
+
+ SKIP 17                \ Market availability in the current system
+                        \
+                        \ The available amount of market item X is stored in
+                        \ the X-th byte of AVL, so for example:
+                        \
+                        \   * AVL contains the amount of food (item 0)
+                        \
+                        \   * AVL+7 contains the amount of computers (item 7)
+                        \
+                        \ See QQ23 for a list of market item numbers and their
+                        \ storage units
+
+.QQ26
+
+ SKIP 1                 \ A random value used to randomise market data
+                        \
+                        \ This value is set to a new random number for each
+                        \ change of system, so we can add a random factor into
+                        \ the calculations for market prices
+
+.TALLY
+
+ SKIP 2                 \ Our combat rank
+                        \
+                        \ The combat rank is stored as the number of kills, in a
+                        \ 16-bit number TALLY(1 0) - so the high byte is in
+                        \ TALLY+1 and the low byte in TALLY
+                        \
+                        \ If the high byte in TALLY+1 is 0 then we have between
+                        \ 0 and 255 kills, so our rank is Harmless, Mostly
+                        \ Harmless, Poor, Average Above Average or Competent,
+                        \ according to the value of the low byte in TALLY:
+                        \
+                        \   Harmless         %00000000 to %00000111 = 0 to 7
+                        \   Mostly Harmless  %00001000 to %00001111 = 8 to 15
+                        \   Poor             %00010000 to %00011111 = 16 to 31
+                        \   Average          %00100000 to %00111111 = 32 to 63
+                        \   Above Average    %01000000 to %01111111 = 64 to 127
+                        \   Competent        %10000000 to %11111111 = 128 to 255
+                        \
+                        \ Note that the Competent range also covers kill counts
+                        \ from 256 to 511, as follows
+                        \
+                        \ If the high byte in TALLY+1 is non-zero then we are
+                        \ Competent, Dangerous, Deadly or Elite, according to
+                        \ the value of TALLY(1 0):
+                        \
+                        \   Competent   (1 0) to (1 255)   = 256 to 511 kills
+                        \   Dangerous   (2 0) to (9 255)   = 512 to 2559 kills
+                        \   Deadly      (10 0) to (24 255) = 2560 to 6399 kills
+                        \   Elite       (25 0) and up      = 6400 kills and up
+                        \
+                        \ You can see the rating calculation in the STATUS
+                        \ subroutine
+
+.SVC
+
+ SKIP 1                 \ The save count
+                        \
+                        \ When a new commander is created, the save count gets
+                        \ set to 128. This value gets halved each time the
+                        \ commander file is saved, but it is otherwise unused.
+                        \ It is presumably part of the security system for the
+                        \ competition, possibly another flag to catch out
+                        \ entries with manually altered commander files
+
+ SKIP 2                 \ The commander file checksum
+                        \
+                        \ These two bytes are reserved for the commander file
+                        \ checksum, so when the current commander block is
+                        \ copied from here to the last saved commander block at
+                        \ NA%, CHK and CHK2 get overwritten
+
+ NT% = SVC + 2 - TP     \ This sets the variable NT% to the size of the current
+                        \ commander data block, which starts at TP and ends at
+                        \ SVC+2 (inclusive)
+
+ PRINT "T% workspace from ", ~T%, "to ", ~P%-1, "inclusive"
 
                         \ --- End of moved code ------------------------------->
 
