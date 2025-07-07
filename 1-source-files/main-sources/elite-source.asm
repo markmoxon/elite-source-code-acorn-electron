@@ -1143,169 +1143,6 @@
 
  SKIP 0                 \ The start of the T% workspace
 
-                        \ --- Mod: Code moved for additional ships: ----------->
-
-.KL
-
- SKIP 1                 \ The following bytes implement a key logger that
-                        \ enables Elite to scan for concurrent key presses of
-                        \ the primary flight keys, plus a secondary flight key
-                        \
-                        \ See the deep dive on "The key logger" for more details
-                        \
-                        \ If a key is being pressed that is not in the keyboard
-                        \ table at KYTB, it can be stored here (as seen in
-                        \ routine DK4, for example)
-
-.KY1
-
- SKIP 1                 \ "?" is being pressed
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-.KY2
-
- SKIP 1                 \ Space is being pressed
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-.KY3
-
- SKIP 1                 \ "<" is being pressed
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-.KY4
-
- SKIP 1                 \ ">" is being pressed
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-.KY5
-
- SKIP 1                 \ "X" is being pressed
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-.KY6
-
- SKIP 1                 \ "S" is being pressed
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-.KY7
-
- SKIP 1                 \ "A" is being pressed
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-                        \
-                        \ This is also set when the joystick fire button has
-                        \ been pressed
-
-.KY12
-
- SKIP 1                 \ TAB is being pressed
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-.KY13
-
- SKIP 1                 \ ESCAPE is being pressed
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-.KY14
-
- SKIP 1                 \ "T" is being pressed
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-.KY15
-
- SKIP 1                 \ "U" is being pressed
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-.KY16
-
- SKIP 1                 \ "M" is being pressed
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-.KY17
-
- SKIP 1                 \ "E" is being pressed
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-.KY18
-
- SKIP 1                 \ "J" is being pressed
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-.KY19
-
- SKIP 1                 \ "C" is being pressed
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-                        \ --- End of moved code ------------------------------->
-
-                        \ --- Mod: Code added for better docking computer: ---->
-
-.KY20
-
- SKIP 1                 \ "P" is being pressed
-                        \
-                        \   * 0 = no
-                        \
-                        \   * Non-zero = yes
-
-                        \ --- End of added code ------------------------------->
-
-                        \ --- Mod: Code added for saving and loading: --------->
-
-.NAME
-
- SKIP 8                 \ The current commander name
-                        \
-                        \ The commander name can be up to 7 characters (the DFS
-                        \ limit for filenames), and is terminated by a carriage
-                        \ return
-
-                        \ --- End of added code ------------------------------->
-
 .TP
 
  SKIP 1                 \ The current mission status, which is always 0 for the
@@ -1597,31 +1434,6 @@
  NT% = SVC + 2 - TP     \ This sets the variable NT% to the size of the current
                         \ commander data block, which starts at TP and ends at
                         \ SVC+2 (inclusive)
-
-.XSAV2
-
- SKIP 1                 \ Temporary storage, used for storing the value of the X
-                        \ register in the TT26 routine
-
-.YSAV2
-
- SKIP 1                 \ Temporary storage, used for storing the value of the Y
-                        \ register in the TT26 routine
-
-                        \ --- Mod: Code added for docking fee: ---------------->
-
-.chargeDockingFee
-
- SKIP 1                 \ Records whether we have been charged a docking fee, so
-                        \ we don't get charged twice:
-                        \
-                        \   * 0 = we have not been charged a docking fee
-                        \
-                        \   * Non-zero = we have been charged a docking fee
-                        \
-                        \ The docking fee is 5.0 credits
-
-                        \ --- End of added code ------------------------------->
 
  PRINT "T% workspace from ", ~T%, "to ", ~P%-1, "inclusive"
 
@@ -16044,21 +15856,16 @@ ENDIF
 
 .DFAULT
 
- LDX #NT%+8             \ The size of the last saved commander data block is NT%
+ LDX #NT%               \ The size of the last saved commander data block is NT%
                         \ bytes, and it is preceded by the 8 bytes of the
                         \ commander name (seven characters plus a carriage
-                        \ return). The commander data block at NAME is followed
-                        \ by the commander data block, so we need to copy the
-                        \ name and data from the "last saved" buffer at NA% to
-                        \ the current commander workspace at NAME. So we set up
-                        \ a counter in X for the NT% + 8 bytes that we want to
-                        \ copy
+                        \ return)
 
 .QUL1
 
- LDA NA%-1,X            \ Copy the X-th byte of NA%-1 to the X-th byte of
- STA NAME-1,X           \ NAME-1 (the -1 is because X is counting down from
-                        \ NT% + 8 to 1)
+ LDA NA%+7,X            \ Copy the X-th byte of NA%-1 to the X-th byte of
+ STA TP-1,X             \ TP-1 (the -1 is because X is counting down from
+                        \ NT% to 1)
 
  DEX                    \ Decrement the loop counter
 
@@ -25599,6 +25406,202 @@ ENDMACRO
 
 \ ******************************************************************************
 \
+\       Name: KL
+\       Type: Variable
+\   Category: Keyboard
+\    Summary: The keyboard logger, moved from zero page
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code moved for additional ships: ----------->
+
+.KL
+
+ SKIP 1                 \ The following bytes implement a key logger that
+                        \ enables Elite to scan for concurrent key presses of
+                        \ the primary flight keys, plus a secondary flight key
+                        \
+                        \ See the deep dive on "The key logger" for more details
+                        \
+                        \ If a key is being pressed that is not in the keyboard
+                        \ table at KYTB, it can be stored here (as seen in
+                        \ routine DK4, for example)
+
+.KY1
+
+ SKIP 1                 \ "?" is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+.KY2
+
+ SKIP 1                 \ Space is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+.KY3
+
+ SKIP 1                 \ "<" is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+.KY4
+
+ SKIP 1                 \ ">" is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+.KY5
+
+ SKIP 1                 \ "X" is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+.KY6
+
+ SKIP 1                 \ "S" is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+.KY7
+
+ SKIP 1                 \ "A" is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+                        \
+                        \ This is also set when the joystick fire button has
+                        \ been pressed
+
+.KY12
+
+ SKIP 1                 \ TAB is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+.KY13
+
+ SKIP 1                 \ ESCAPE is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+.KY14
+
+ SKIP 1                 \ "T" is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+.KY15
+
+ SKIP 1                 \ "U" is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+.KY16
+
+ SKIP 1                 \ "M" is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+.KY17
+
+ SKIP 1                 \ "E" is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+.KY18
+
+ SKIP 1                 \ "J" is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+.KY19
+
+ SKIP 1                 \ "C" is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+                        \ --- End of moved code ------------------------------->
+
+                        \ --- Mod: Code added for better docking computer: ---->
+
+.KY20
+
+ SKIP 1                 \ "P" is being pressed
+                        \
+                        \   * 0 = no
+                        \
+                        \   * Non-zero = yes
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: XSAV2
+\       Type: Variable
+\   Category: Text
+\    Summary: Temporary storage, moved from zero page
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code moved for additional ships: ----------->
+
+.XSAV2
+
+ SKIP 1                 \ Temporary storage, used for storing the value of the X
+                        \ register in the TT26 routine
+
+                        \ --- End of moved code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: YSAV2
+\       Type: Variable
+\   Category: Text
+\    Summary: Temporary storage, moved from zero page
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code moved for additional ships: ----------->
+
+.YSAV2
+
+ SKIP 1                 \ Temporary storage, used for storing the value of the Y
+                        \ register in the TT26 routine
+
+                        \ --- End of moved code ------------------------------->
+
+\ ******************************************************************************
+\
 \       Name: checksum0
 \       Type: Variable
 \   Category: Copy protection
@@ -28371,6 +28374,21 @@ ENDMACRO
  SKIP 1                 \ The galactic y-coordinate of the crosshairs in the
                         \ galaxy chart (and, most of the time, the selected
                         \ system's galactic y-coordinate)
+
+                        \ --- Mod: Code added for docking fee: ---------------->
+
+.chargeDockingFee
+
+ SKIP 1                 \ Records whether we have been charged a docking fee, so
+                        \ we don't get charged twice:
+                        \
+                        \   * 0 = we have not been charged a docking fee
+                        \
+                        \   * Non-zero = we have been charged a docking fee
+                        \
+                        \ The docking fee is 5.0 credits
+
+                        \ --- End of added code ------------------------------->
 
                         \ --- Mod: Code moved for sideways RAM: --------------->
 
