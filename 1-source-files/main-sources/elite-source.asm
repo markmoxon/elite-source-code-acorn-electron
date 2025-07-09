@@ -15504,6 +15504,16 @@ ENDIF
 
                         \ --- End of replacement ------------------------------>
 
+                        \ --- Mod: Code added for joysticks: ------------------>
+
+ LDA JSTK               \ If joysticks were not chosen, reset joyType to zero so
+ BNE brjp1              \ it's ready to be toggled with the "K" pause option
+ STA joyType
+
+.brjp1
+
+                        \ --- End of added code ------------------------------->
+
  JSR ping               \ Set the target system coordinates (QQ9, QQ10) to the
                         \ current system coordinates (QQ0, QQ1) we just loaded
 
@@ -15801,8 +15811,14 @@ ENDIF
 
                         \ --- Mod: Code added for joysticks: ------------------>
 
+ LDY joyType            \ Set Y to joyType so the EnablePlus1 routine will
+                        \ enable or disable the Plus 1 as appropriate
+
+ BNE titl2              \ If the First Byte or Slogger joysticks are configured,
+                        \ jump to titl2
+
  BIT ADFS               \ If bit 6 of ADFS is clear then there is no ADC fitted,
- BVC titl2              \ so skip the following as there is no joystick fire
+ BVC titl4              \ so skip the following as there is no joystick fire
                         \ button to check (so we can't rely on the value of
                         \ &FC72 being correct)
 
@@ -15814,7 +15830,44 @@ ENDIF
 
  BEQ TL2                \ If the joystick fire button is pressed, jump to TL2
 
+ BNE titl4              \ Otherwise jump to titl4
+
 .titl2
+
+ CPY #1                 \ If the Slogger joystick is configured, jump to titl3
+ BEQ titl3
+
+                        \ If we get here then Y = 2 and the First Byte joystick
+                        \ is configured, so check for the First Byte fire button
+
+ LDA &FCC0              \ Read the First Byte status byte
+
+ AND #%00010000         \ Bit 4 of the byte is clear if joystick 1's fire
+                        \ button is pressed, otherwise it is set, so AND'ing
+                        \ the value with %10000 extracts this bit
+
+ BEQ TL2                \ If the joystick fire button is pressed, jump to TL2
+
+ BNE titl4              \ Otherwise jump to titl4
+
+.titl3
+
+                        \ If we get here then Y = 1 and the Slogger joystick is
+                        \ configured, so check for the Slogger fire button
+
+ LDA &FCD0              \ Read the Slogger status byte
+
+ EOR #%00011111         \ Invert the result so 0 means pressed and 1 means not
+                        \ pressed (to bring the Slogger byte in line with the
+                        \ Plus 1 and First Byte sticks)
+
+ AND #%00010000         \ Bit 4 of the byte is clear if joystick 1's fire
+                        \ button is pressed, otherwise it is set, so AND'ing
+                        \ the value with %10000 extracts this bit
+
+ BEQ TL2                \ If the joystick fire button is pressed, jump to TL2
+
+.titl4
 
                         \ --- End of added code ------------------------------->
 
@@ -15843,7 +15896,16 @@ ENDIF
 \       Name: EnablePlus1
 \       Type: Subroutine
 \   Category: Keyboard
-\    Summary: Enable the Plus 1 so we can support joysticks
+\    Summary: Enable or disable the Plus 1 so we can support joysticks
+\
+\ ------------------------------------------------------------------------------
+\
+\ Arguments:
+\
+\   Y                   Action:
+\
+\                         * Y = 0 to enable the Plus 1
+\                         * Y > 0 to disable the Plus 1
 \
 \ ******************************************************************************
 
@@ -15851,10 +15913,16 @@ ENDIF
 
 .EnablePlus1
 
- LDA #163               \ Call OSBYTE with A = 163, X = 128 and Y = 0 to enable
- LDX #128               \ the Plus 1 ADC (the ADC is disabled by the mode 7
- LDY #0                 \ ELITE loader program), returning from the subroutine
- JMP OSBYTE             \ using a tail call
+ CPY #0                 \ If Y > 0 then set Y = 1 to disable the Plus 1
+ BEQ enpl1
+ LDY #1
+
+.enpl1
+
+ LDA #163               \ Call OSBYTE with A = 163, X = 128 and Y = 0 or 1 to
+ LDX #128               \ enable or disable the Plus 1 ADC (the ADC is disabled
+ JMP OSBYTE             \ by the mode 7 ELITE loader program), returning from
+                        \ the subroutine using a tail call
 
                         \ --- End of added code ------------------------------->
 
@@ -17931,6 +17999,13 @@ ENDIF
  CPX T                  \ If X <> Y, jump to Dk3 to return from the subroutine
  BNE Dk3
 
+                        \ --- Mod: Code added for joysticks: ------------------>
+
+ CPX #&46               \ If this is the joystick toggle (&46, "K"), jump to
+ BEQ joys2              \ joys2 to process the different joystick types
+
+                        \ --- End of added code ------------------------------->
+
                         \ We have a match between X and Y, so now to toggle
                         \ the relevant configuration byte. CAPS LOCK has a key
                         \ value of &40 and has its configuration byte at
@@ -17949,26 +18024,6 @@ ENDIF
  EOR #&FF               \ put it back (0 means no and &FF means yes in the
  STA DAMP-&40,X         \ configuration bytes, so this toggles the setting)
 
-                        \ --- Mod: Code added for joysticks: ------------------>
-
- BEQ njoy1              \ If we just disabled the toggle, jump to njoy1
-
- CPX #&46               \ If this is not the joystick toggle (&46, "K"), jump
- BNE njoy1              \ to njoy1
-
-                        \ If we get here then we just enabled joysticks, so we
-                        \ need to enable the analogue to digital converter on
-                        \ the Plus 1 so we can read the joystick channels (it is
-                        \ disabled by the loader to prevent the ADC conversion
-                        \ from slowing the system down when joysticks are not
-                        \ being used)
-
- JSR EnablePlus1        \ Enable the Plus 1 so we can support joysticks
-
-.njoy1
-
-                        \ --- End of added code ------------------------------->
-
  JSR BELL               \ Make a beep sound so we know something has happened
 
  JSR DELAY              \ Wait for Y delay loops (Y is between 64 and 70)
@@ -17978,6 +18033,232 @@ ENDIF
 .Dk3
 
  RTS                    \ Return from the subroutine
+
+                        \ --- Mod: Code added for joysticks: ------------------>
+
+.joys2
+
+ LDA DAMP-&40,X         \ Fetch the current joystick configuration
+
+ BNE joys3              \ If joysticks are already enabled, jump to joys3 to
+                        \ skip the following
+
+ LDA #&FF               \ Set JSTK to &FF to configure joysticks
+ STA DAMP-&40,X
+
+ STA joyType            \ Set joyType = -1 so we increment it to 0 below, for
+                        \ the Plus 1
+
+.joys3
+
+ LDY joyType            \ Set Y to the joystick type
+
+ INY                    \ Move on to the next type
+
+ CPY #3                 \ If we have not yet gone past the end, jump to joys4 to
+ BCC joys4              \ confirm the joystick type
+
+                        \ Otherwise we have wrapped around, so enable the
+                        \ keyboard once again
+
+ STY joyType            \ Print the joystick configuration for keyboard
+ JSR PrintConfig
+
+ LDA #0                 \ Disable joysticks
+ STA DAMP-&40,X
+ STA joyType
+
+ LDY T                  \ Restore the configuration key argument into Y
+
+ RTS                    \ Return from the subroutine
+
+.joys4
+
+ STY joyType            \ If we get here then we have enabled joysticks of type
+                        \ Y, so store 
+
+ CPY #0                 \ If we didn't just enable Plus 1 joysticks, skip the
+ BNE joys5              \ following
+
+ JSR EnablePlus1        \ We just enabled Plus 1 joysticks, so enable the
+                        \ analogue to digital converter on the Plus 1 so we can
+                        \ read the joystick channels (it is disabled by the
+                        \ loader to prevent the ADC conversion from slowing the
+                        \ system down when joysticks are not being used)
+
+.joys5
+
+ JSR PrintConfig        \ Print the joystick configuration
+
+ LDY T                  \ Restore the configuration key argument into Y
+
+ RTS                    \ Return from the subroutine
+
+.PrintConfig
+
+ JSR BELL               \ Make a beep sound so we know something has happened
+
+ JSR prin1              \ Print the joystick configuration in the top-right
+                        \ corner
+
+ LDY #55                \ Wait for 55 delay loops
+ JSR DELAY
+
+                        \ Fall through into prin1 to print the joystick
+                        \ configuration in the top-right corner to remove it
+
+.prin1
+
+ LDA #29                \ Move the text cursor to column 29 on row 1
+ STA XC
+ LDA #1
+ STA YC
+
+ LDA joyType            \ Set A = A * 2 so we can use it as an index into the
+ ASL A                  \ joyConfig table
+ TAY
+
+ LDA joyConfig,Y        \ Print the two-character joystick configuration
+ JSR TT26
+ INY
+ LDA joyConfig,Y
+ JMP TT26
+
+                        \ --- End of added code ------------------------------->
+
+.joyType
+
+ EQUB 0                 \ The type of joystick configured:
+                        \
+                        \   * 0 = Plus 1
+                        \
+                        \   * 1 = Slogger
+                        \
+                        \   * 2 = First Byte
+
+.joyConfig
+
+ EQUS "+1"
+ EQUS "SL"
+ EQUS "FB"
+ EQUS "KB"
+
+\ ******************************************************************************
+\
+\       Name: RDJOY
+\       Type: Subroutine
+\   Category: Keyboard
+\    Summary: Read from a digital joystick
+\
+\ ******************************************************************************
+
+.RDJOY
+
+ CPY #1                 \ If the Slogger joystick is configured, jump to titl3
+ BEQ djoy2
+
+ LDA &FCC0              \ Read the First Byte status byte
+
+ JMP djoy3
+
+.djoy2
+
+ LDA &FCD0              \ Read the Slogger status byte
+
+ EOR #%00011111         \ Invert the result so 0 means pressed and 1 means not
+                        \ pressed (to bring the Slogger byte in line with the
+                        \ Plus 1 and First Byte sticks)
+
+.djoy3
+
+ LDX #&FF               \ Set X = &FF so we can use it to "press" keys in the
+                        \ key logger
+
+ LSR A                  \ If bit 0 of the status byte is set (up), skip the
+ BCS P%+5               \ following
+
+ STX KY6                \ Update the key logger at KY6 to "press" the "S" (pitch
+                        \ forward) button
+                        \
+                        \ Note that this is the opposite key press to the stick
+                        \ direction, as in the default configuration, we want to
+                        \ pitch up when we pull the joystick back (i.e. when the
+                        \ stick is down). To fix this, we flip this result below
+
+ LSR A                  \ If bit 1 of the status byte is set (down), skip the
+ BCS P%+5               \ following
+
+ STX KY5                \ Update the key logger at KY5 to "press" the "X" (pitch
+                        \ back) button
+                        \
+                        \ Note that this is the opposite key press to the stick
+                        \ direction, as in the default configuration, we want to
+                        \ pitch down when we push the joystick forward (i.e.
+                        \ when the stick is up). To fix this, we flip this
+                        \ result below
+
+ LSR A                  \ If bit 2 of the status byte is set (left), skip the
+ BCS P%+5               \ following
+
+ STX KY3                \ Update the key logger at KY3 to "press" the "<" (roll
+                        \ left) button
+
+ LSR A                  \ If bit 3 of the status byte is set (right), skip the
+ BCS P%+5               \ following
+
+ STX KY4                \ Update the key logger at KY4 to "press" the ">" (roll
+                        \ right) button
+
+ LSR A                  \ If bit 4 of the status byte is set (fire), skip the
+ BCS P%+5               \ the following
+
+ STX KY7                \ Update the key logger at KY7 to "press" the "A" (fire)
+                        \ button
+
+ LDA JSTE               \ JSTE contains &FF if both joystick channels are
+ BEQ DIG1               \ reversed and 0 otherwise, so skip to DIG1 if the
+                        \ joystick channels are not reversed
+
+ LDA KY3                \ Both the joystick channels are reversed, so swap the
+ LDX KY4                \ values of KY3 and KY4 (to swap the roll)
+ STX KY3
+ STA KY4
+
+.DIG1
+
+ LDA JSTE               \ Set A to &FF if both joystick channels are reversed
+                        \ and 0 otherwise
+
+ EOR JSTGY              \ JSTGY will be 0 if the game is configured to reverse
+                        \ the joystick Y channel, &FF otherwise, so A will be
+                        \ 0 if one of these is true:
+                        \
+                        \  * Both channels are normal and Y is reversed
+                        \  * Both channels are reversed and Y is not
+                        \
+                        \ i.e. it will be 0 if the Y channel is configured to be
+                        \ reversed
+
+ BEQ DIG2               \ If the result in A is 0, skip the following to leave
+                        \ the Y channel alone, as we already set the pitch keys
+                        \ above to the opposite direction to the stick
+
+                        \ If we get here, then the configuration settings are
+                        \ not set to reverse the Y channel, so we now swap KY5
+                        \ and KY6 around, as we set the pitch keys above to the
+                        \ opposite direction to the stick
+
+ LDA KY5                \ The Y channel should be reversed, so swap the values
+ LDX KY6                \ of KY5 and KY6 (to swap the pitch)
+ STX KY5
+ STA KY6
+
+.DIG2
+
+ JMP DK15               \ We are done scanning the joystick flight controls,
+                        \ so jump to DK15 to set the JSTX and JSTY values and
+                        \ scan for other keys, using a tail call so we can
+                        \ return from the subroutine there
 
 \ ******************************************************************************
 \
@@ -18009,6 +18290,9 @@ ENDIF
 
  INY                    \ Update the key logger for key 2 in the KYTB table, so
  JSR DKS1               \ KY2 will be &FF if Space (speed up) is being pressed
+
+ LDY joyType            \ If the First Byte or Slogger joysticks are configured,
+ BNE RDJOY              \ jump to RDJOY to read the digital joysticks
 
  LDA &FC72              \ Read the Plus 1 ADC status byte
 
@@ -27838,12 +28122,16 @@ ENDMACRO
                         \ overheats and cannot be fired again until it has
                         \ cooled down
 
-.HFX
+                        \ --- Mod: Code removed for sideways RAM: ------------->
 
- SKIP 1                 \ This flag is unused in this version of Elite. In the
-                        \ other versions, setting HFX to a non-zero value makes
-                        \ the hyperspace rings multi-coloured, but the Electron
-                        \ version is monochrome, so this has no effect
+\.HFX
+\
+\SKIP 1                 \ This flag is unused in this version of Elite. In the
+\                       \ other versions, setting HFX to a non-zero value makes
+\                       \ the hyperspace rings multi-coloured, but the Electron
+\                       \ version is monochrome, so this has no effect
+
+                        \ --- End of removed code ----------------------------->
 
 .EV
 
@@ -28059,9 +28347,13 @@ ENDMACRO
                         \ which case SLSP is lowered to provide more heap space,
                         \ assuming there is enough free memory to do so
 
-.XX24
+                        \ --- Mod: Code removed for sideways RAM: ------------->
 
- SKIP 1                 \ This byte appears to be unused
+\.XX24
+\
+\SKIP 1                 \ This byte appears to be unused
+
+                        \ --- End of removed code ----------------------------->
 
 .ALTIT
 
@@ -35072,9 +35364,13 @@ ENDMACRO
  STA SZ,Y               \ z_hi so the new particle starts in the far distance
  STA ZZ
 
- LDA Y1                 \ Set A to the new value of y_hi. This has no effect as
-                        \ STC1 starts with a jump to PIXEL2, which starts with a
-                        \ LDA instruction
+                        \ --- Mod: Code removed for sideways RAM: ------------->
+
+\LDA Y1                 \ Set A to the new value of y_hi. This has no effect as
+\                       \ STC1 starts with a jump to PIXEL2, which starts with a
+\                       \ LDA instruction
+
+                        \ --- End of removed code ----------------------------->
 
  JMP STC1               \ Jump up to STC1 to draw this new particle
 
@@ -46222,6 +46518,13 @@ ENDMACRO
                         \ crosshairs in an uncontrollable way, so this is
                         \ presumably a bug
 
+                        \ --- Mod: Code added for joysticks: ------------------>
+
+ LDY joyType            \ If this is not the Plus 1 joystick, jump to mjoy1 to
+ BNE mjoy1              \ process the digital joysticks
+
+                        \ --- End of added code ------------------------------->
+
  LDA JSTX               \ Fetch the joystick roll, ranging from 1 to 255 with
                         \ 128 as the centre point
 
@@ -46318,9 +46621,66 @@ ENDMACRO
 
  LDA KL                 \ Set A to the value of KL (the key pressed)
 
-                        \ --- End of removed code ----------------------------->
+                         \ --- End of added code ------------------------------->
 
  RTS                    \ Return from the subroutine
+
+                        \ --- Mod: Code added for joysticks: ------------------>
+
+.mjoy1
+
+                        \ If we get here then we are using a digital joystick,
+                        \ so process cursor movement accordingly
+
+ CPY #1                 \ If the Slogger joystick is configured, jump to titl3
+ BEQ mjoy2
+
+ LDA &FCC0              \ Read the First Byte status byte
+
+ JMP mjoy3
+
+.mjoy2
+
+ LDA &FCD0              \ Read the Slogger status byte
+
+ EOR #%00011111         \ Invert the result so 0 means pressed and 1 means not
+                        \ pressed (to bring the Slogger byte in line with the
+                        \ Plus 1 and First Byte sticks)
+
+.mjoy3
+
+                        \ --- Mod: Code added for joysticks: ------------------>
+
+ LDX #0                 \ Zero X and Y
+ LDY #0
+
+                         \ --- End of added code ------------------------------->
+
+ LSR A                  \ If bit 0 of the status byte is set (up), skip the
+ BCS P%+3               \ following
+
+ INY                    \ Set Y = Y + 1
+
+ LSR A                  \ If bit 1 of the status byte is set (down), skip the
+ BCS P%+3               \ following
+
+ DEY                    \ Set Y = Y - 1
+
+ LSR A                  \ If bit 2 of the status byte is set (left), skip the
+ BCS P%+3               \ following
+
+ DEX                    \ Set X = X - 1
+
+ LSR A                  \ If bit 3 of the status byte is set (right), skip the
+ BCS P%+3               \ following
+
+ INX                    \ Set X = X + 1
+
+ LDA KL                 \ Set A to the value of KL (the key pressed)
+
+ RTS                    \ Return from the subroutine
+
+                         \ --- End of added code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -54735,12 +55095,6 @@ ENDMACRO
 .BOMBTBY
 
  SKIP 10
-
-                        \ --- End of added code ------------------------------->
-
-                        \ --- Mod: Code added for fun: ------------------------>
-
- EQUS "Does your mother know you do this?"
 
                         \ --- End of added code ------------------------------->
 
