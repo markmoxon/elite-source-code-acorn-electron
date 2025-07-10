@@ -77,6 +77,10 @@
 
  LOAD% = &1D00          \ The address where the code will be loaded
 
+ CODE_SRAM% = &8000     \ The address of the sideways RAM code
+
+ LOAD_SRAM% = &8000     \ The address where the sideways RAM code will be loaded
+
                         \ --- End of replacement ------------------------------>
 
  CODE_WORDS% = &0400    \ The address where the text data will be run
@@ -27791,11 +27795,7 @@ ENDMACRO
 \
 \ ******************************************************************************
 
- CODE_R% = &8000
-
- LOAD_R% = CODE_R%
-
- ORG CODE_R%
+ ORG CODE_SRAM%
 
 \ ******************************************************************************
 \
@@ -55100,7 +55100,7 @@ ENDMACRO
 
 .endSRAM
 
- PRINT "Free space in SRAM = ", &BFFF - endSRAM, " bytes"
+ PRINT "Free space in SRAM = ", &C000 - endSRAM, " bytes"
 
 \ ******************************************************************************
 \
@@ -55109,12 +55109,12 @@ ENDMACRO
 \ ******************************************************************************
 
  PRINT "ELTROM"
- PRINT "Assembled at ", ~CODE_R%
+ PRINT "Assembled at ", ~CODE_SRAM%
  PRINT "Ends at ", ~P%
- PRINT "Code size is ", ~(P% - CODE_R%)
- PRINT "Execute at ", ~LOAD_R%
- PRINT "Reload at ", ~LOAD_R%
+ PRINT "Code size is ", ~(P% - CODE_SRAM%)
+ PRINT "Execute at ", ~LOAD_SRAM%
+ PRINT "Reload at ", ~LOAD_SRAM%
 
- PRINT "S.ELTROM ", ~CODE_R%, " ", ~P%, " ", ~LOAD_R%, " ", ~LOAD_R%
- SAVE "3-assembled-output/ELTROM1.bin", CODE_R%, CODE_R%+&2000, LOAD_R%
- SAVE "3-assembled-output/ELTROM2.bin", CODE_R%+&2000, P%, LOAD_R%
+ PRINT "S.ELTROM ", ~CODE_SRAM%, " ", ~P%, " ", ~LOAD_SRAM%, " ", ~LOAD_SRAM%
+ SAVE "3-assembled-output/ELTROM1.bin", CODE_SRAM%, CODE_SRAM%+&2000, LOAD_SRAM%
+ SAVE "3-assembled-output/ELTROM2.bin", CODE_SRAM%+&2000, P%, LOAD_SRAM%

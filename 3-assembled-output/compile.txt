@@ -30843,7 +30843,7 @@ End macro ITEM
 .BOMBTBY
      BFF5
 .endSRAM
-Free space in SRAM = 0  bytes
+Free space in SRAM = 1  bytes
 ELTROM
 Assembled at &8000 
 Ends at &BFFF 
