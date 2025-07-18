@@ -101,7 +101,7 @@ ENDIF
 \
 \ ******************************************************************************
 
- ORG &0004
+ ORG &0004              \ Set the assembly address to &0004
 
 .TRTB%
 
@@ -109,7 +109,7 @@ ENDIF
                         \ table, which is used to translate internal key
                         \ numbers to ASCII
 
- ORG &0070
+ ORG &0070              \ Set the assembly address to &0070
 
 .ZP
 
@@ -177,7 +177,7 @@ ENDIF
 \
 \ ******************************************************************************
 
- ORG CODE%
+ ORG CODE%              \ Set the assembly address to CODE%
 
 \ ******************************************************************************
 \
@@ -1880,7 +1880,7 @@ ENDMACRO
 
  Q% = P% - LE%
 
- ORG LE%
+ ORG LE%                \ Set the assembly address to LE%
 
 \ ******************************************************************************
 \
