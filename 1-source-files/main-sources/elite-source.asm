@@ -16543,6 +16543,36 @@ ENDIF
  TYA                    \ If no text was entered (Y = 0) then jump to SVE to
  BEQ SVE                \ display the disc access menu
 
+                        \ --- Mod: Code added for ADFS: ----------------------->
+
+ BIT ADFS               \ If bit 7 of ADFS is clear then this is not ADFS, so
+ BPL delt2              \ skip the following
+
+                        \ We now copy the entered filename from INWK to DELI, so
+                        \ that it overwrites the filename part of the string,
+                        \ i.e. the "1234567" part of "DE.:0.E.1234567"
+
+ LDX #7                 \ Set up a counter in X to count from 7 to 1, so that we
+                        \ copy the string starting at INWK+4+1 (i.e. INWK+5) to
+                        \ DELI+7+1 (i.e. DELI+8 onwards, or "1234567")
+
+.delt1
+
+ LDA INWK+4,X           \ Copy the X-th byte of INWK+4 to the X-th byte of
+ STA DELI+7,X           \ DELI+7
+
+ DEX                    \ Decrement the loop counter
+
+ BNE delt1              \ Loop back to delt1 to copy the next character until we
+                        \ have copied the whole filename
+
+ BEQ delt3              \ Jump to delt3 to skip the following (this BEQ is
+                        \ effectively a JMP as we just passed through a BNE)
+
+.delt2
+
+                        \ --- End of added code ------------------------------->
+
                         \ We now copy the entered filename from INWK to DELI, so
                         \ that it overwrites the filename part of the string,
                         \ i.e. the "E.1234567" part of "DE.:0.E.1234567"
@@ -16560,6 +16590,12 @@ ENDIF
 
  BNE DELL1              \ Loop back to DELL1 to copy the next character until we
                         \ have copied the whole filename
+
+                        \ --- Mod: Code added for ADFS: ----------------------->
+
+.delt3
+
+                        \ --- End of added code ------------------------------->
 
  LDX #LO(DELI)          \ Set (Y X) to point to the OS command at DELI, which
  LDY #HI(DELI)          \ contains the DFS command for deleting this file
