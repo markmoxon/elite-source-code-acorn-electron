@@ -4905,7 +4905,10 @@ ENDMACRO
                         \ fair distance from the planet, so jump to MA23 as we
                         \ haven't crashed into the planet
 
- SBC #36                \ Subtract 36 from x_hi^2 + y_hi^2 + z_hi^2
+ SBC #36                \ Subtract 37 from x_hi^2 + y_hi^2 + z_hi^2
+                        \
+                        \ The SBC subtracts 37 as we just passed through a BCS
+                        \ so we know the C flag is clear
                         \
                         \ When we do the 3D Pythagoras calculation, we only use
                         \ the high bytes of the coordinates, so that's x_hi,
@@ -4924,7 +4927,9 @@ ENDMACRO
                         \ So for the planet, the equivalent figure to test the
                         \ sum of the _hi bytes against is 36, so A now contains
                         \ the high byte of our altitude above the planet
-                        \ surface, squared
+                        \ surface, squared, with an extra 1 subtracted so the
+                        \ test in the next instruction will ensure we crash
+                        \ even if we are exactly one planet radius away
 
  BCC MA28               \ If A < 0 then jump to MA28 as we have crashed into
                         \ the planet
@@ -5200,7 +5205,7 @@ ENDMACRO
 \ Given a value in Y that points to the start of a ship data block as an offset
 \ from K%, calculate the following:
 \
-\   A = x_hi^2 + y_hi^2 + z_hi^2
+\   (A ?) = x_hi^2 + y_hi^2 + z_hi^2
 \
 \ returning A = &FF if the calculation overflows a one-byte result. The K%
 \ workspace contains the ship data blocks, so the offset in Y must be 0 or a
@@ -5215,9 +5220,15 @@ ENDMACRO
 \
 \ Returns
 \
-\   A                   A = x_hi^2 + y_hi^2 + z_hi^2
+\   A                   The high byte of x_hi^2 + y_hi^2 + z_hi^2
 \
-\                       A = &FF if the calculation overflows a one-byte result
+\   C flag              The overflow status (i.e. did the result fit into one
+\                       byte):
+\
+\                         * Clear if the calculation didn't overflow
+\
+\                         * Set if the calculation overflowed (in which case A
+\                           is set to &FF)
 \
 \ ******************************************************************************
 
@@ -5242,7 +5253,8 @@ ENDMACRO
  JSR SQUA2
 
  ADC R                  \ Add A (high byte of third result) to R, so R now
-                        \ contains the sum of x_hi^2 + y_hi^2 + z_hi^2
+                        \ contains the high byte of the entire sum, i.e. of
+                        \ x_hi^2 + y_hi^2 + z_hi^2
 
  BCC P%+4               \ If there is no carry, skip the following instruction
                         \ to return straight from the subroutine
