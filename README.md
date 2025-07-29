@@ -24,7 +24,7 @@ See the [introduction](#introduction) for more information, or jump straight int
 
 * [Flicker-free Elite](#flicker-free-elite)
 
-* [Elite Compendium](#elite-compendium)
+* [Compendium version](#compendium-version)
 
 * [Elite over Econet](#elite-over-econet)
 
@@ -153,13 +153,13 @@ The annotated source files in the `flicker-free` branch contain both the origina
 
 For more information on flicker-free Elite, see the [hacks section of the accompanying website](https://elite.bbcelite.com/hacks/flicker-free_elite.html).
 
-## Elite Compendium
+## Compendium version
 
-This repository also includes a version of Acorn Electron Elite for the Elite Compendium, which incorporates all the available hacks in one game. The Compendium version is in a separate branch called `elite-compendium`.
+This repository also includes a Compendium version of Acorn Electron Elite, which uses sideways RAM to produce a better, faster and stronger version of the game, incorporating almost every feature of BBC Micro Elite and the Elite Compendium. The Compendium version is in a separate branch called `elite-compendium`.
 
 The annotated source files in the `elite-compendium` branch contain both the original Acornsoft code and all of the modifications for the Elite Compendium, so you can look through the source to see exactly what's changed. Any code that I've removed from the original version is commented out in the source files, so when they are assembled they produce the Compendium binaries, while still containing details of all the modifications. You can find all the diffs by searching the sources for `Mod:`.
 
-For more information on the Elite Compendium, see the [hacks section of the accompanying website](https://elite.bbcelite.com/hacks/elite_compendium.html).
+For more information on the Compendium version of Acorn Electron Elite, see the [hacks section of the accompanying website](https://elite.bbcelite.com/hacks/elite_compendium_acorn_electron.html).
 
 ## Elite over Econet
 
