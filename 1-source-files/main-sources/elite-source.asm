@@ -3121,6 +3121,19 @@ ENDMACRO
 
                         \ --- End of added code ------------------------------->
 
+                        \ --- Mod: Code added for music: ---------------------->
+
+.musicStatus
+
+\ SKIP 1                 \ A flag to determine whether to play the currently
+                        \ selected music:
+                        \
+                        \   * 0 = do not play the music
+                        \
+                        \   * &FF = do play the music
+
+                        \ --- End of added code ------------------------------->
+
 \ ******************************************************************************
 \
 \       Name: IRQ1
@@ -3131,6 +3144,22 @@ ENDMACRO
 \ ******************************************************************************
 
 .IRQ1
+
+                        \ --- Mod: Code added for music: ---------------------->
+
+ LDA &FE00              \ If this is the Display End interrupt and music is playing,
+\ ORA musicStatus        \ call the music playing routine at &E03
+ AND #%00000101
+ CMP #%00000101
+ BNE over
+ LDA &00F4              \ Set bits 5 and 6 of the "interrupt clear and paging"
+ ORA #%00010000         \ register at SHEILA &05, to clear the RTC interrupt
+ STA VIA+&05            \ and screen interrupt, whichever is pending
+ JSR &0E03
+
+.over
+
+                        \ --- End of added code ------------------------------->
 
  LDA S%+6               \ Flip all the bits in S%+6 so it toggles between 0 and
  EOR #%11111111         \ &FF with each call to this routine (and set A to the
@@ -13146,40 +13175,44 @@ ENDIF
 \
 \ ******************************************************************************
 
- EQUB '(' EOR 164
- EQUB 'C' EOR 164
- EQUB ')' EOR 164
- EQUB 'B' EOR 164
- EQUB 'e' EOR 164
- EQUB 'l' EOR 164
- EQUB 'l' EOR 164
+                        \ --- Mod: Code removed for music: -------------------->
 
-IF _IB_ACORNSOFT
+\EQUB '(' EOR 164
+\EQUB 'C' EOR 164
+\EQUB ')' EOR 164
+\EQUB 'B' EOR 164
+\EQUB 'e' EOR 164
+\EQUB 'l' EOR 164
+\EQUB 'l' EOR 164
+\
+\IF _IB_ACORNSOFT
+\
+\EQUB '/' EOR 164
+\
+\ENDIF
+\
+\EQUB 'B' EOR 164
+\EQUB 'r' EOR 164
+\EQUB 'a' EOR 164
+\EQUB 'b' EOR 164
+\EQUB 'e' EOR 164
+\EQUB 'n' EOR 164
+\
+\IF _IB_SUPERIOR
+\
+\EQUB ''' EOR 164
+\
+\ELIF _IB_ACORNSOFT
+\
+\EQUB '1' EOR 164
+\EQUB '9' EOR 164
+\
+\ENDIF
+\
+\EQUB '8' EOR 164
+\EQUB '4' EOR 164
 
- EQUB '/' EOR 164
-
-ENDIF
-
- EQUB 'B' EOR 164
- EQUB 'r' EOR 164
- EQUB 'a' EOR 164
- EQUB 'b' EOR 164
- EQUB 'e' EOR 164
- EQUB 'n' EOR 164
-
-IF _IB_SUPERIOR
-
- EQUB ''' EOR 164
-
-ELIF _IB_ACORNSOFT
-
- EQUB '1' EOR 164
- EQUB '9' EOR 164
-
-ENDIF
-
- EQUB '8' EOR 164
- EQUB '4' EOR 164
+                        \ --- End of removed code ----------------------------->
 
 \ ******************************************************************************
 \
@@ -15277,6 +15310,12 @@ ENDIF
                         \ because the loader code in elite-loader.asm pushes
                         \ code onto the stack, and this effectively removes that
                         \ code so we start afresh
+
+                        \ --- Mod: Code added for music: ---------------------->
+
+ JSR &0E00              \ Initialise music
+
+                        \ --- End of added code ------------------------------->
 
                         \ Fall through into BR1 to start the game
 
@@ -24908,6 +24947,12 @@ ENDMACRO
  LDY #255               \ Wait for 255 delay loops so we finish the hyperspace
  JSR DELAY              \ or launch sound
 
+                        \ --- Mod: Code added for music: ---------------------->
+
+\ JSR LoadMusic2         \ Load the Blue Danube music
+
+                        \ --- End of added code ------------------------------->
+
  LDX #LO(SHIPI)         \ Set (Y X) to point to the OS command at SHIPI, which
  LDY #HI(SHIPI)         \ loads the relevant ship blueprints file
 
@@ -24958,6 +25003,12 @@ ENDMACRO
  STA GNTMP              \ Cool down the lasers completely
 
  STA QQ22+1             \ Reset the on-screen hyperspace counter
+
+                        \ --- Mod: Code added for music: ---------------------->
+
+\ JSR LoadMusic1         \ Load the Elite Theme music
+
+                        \ --- End of added code ------------------------------->
 
  LDA #25                \ Call SHIPinA to load ship blueprints file Z, which is
  JSR SHIPinA            \ the file that contains the Constrictor and the ship
@@ -55060,6 +55111,63 @@ ENDMACRO
 .BOMBTBY
 
  SKIP 10
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: MUSIC1
+\       Type: Variable
+\   Category: Loader
+\    Summary: The OS command string for loading the Elite theme tune
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for music: ---------------------->
+
+.MUSIC1
+
+ EQUS "L.MUSIC1"        \ This is short for "*LOAD MUSIC1"
+ EQUB 13
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: MUSIC2
+\       Type: Variable
+\   Category: Loader
+\    Summary: The OS command string for loading the Blue Danube tune
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for music: ---------------------->
+
+.MUSIC2
+
+ EQUS "L.MUSIC2"        \ This is short for "*LOAD MUSIC2"
+ EQUB 13
+
+                        \ --- End of added code ------------------------------->
+
+                        \ --- Mod: Code added for music: ---------------------->
+
+.LoadMusic1
+
+ LDX #LO(MUSIC1)        \ Set (Y X) to point to the OS command at MUSIC1, which
+ LDY #HI(MUSIC1)        \ loads the Elite Theme music file
+
+ JMP OSCLI              \ Call OSCLI to execute the OS command at (Y X), which
+                        \ loads the Elite Theme music file
+
+.LoadMusic2
+
+ LDX #LO(MUSIC2)        \ Set (Y X) to point to the OS command at MUSIC1, which
+ LDY #HI(MUSIC2)        \ loads the Elite Theme music file
+
+ JMP OSCLI              \ Call OSCLI to execute the OS command at (Y X), which
+                        \ loads the Elite Theme music file
+
 
                         \ --- End of added code ------------------------------->
 
