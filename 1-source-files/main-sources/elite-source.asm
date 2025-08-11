@@ -244,6 +244,15 @@
 
                         \ --- End of added code ------------------------------->
 
+                        \ --- Mod: Code added for music: ---------------------->
+
+ InitMusic = &0E00      \ Entry points for music code
+ PlayMusicIRQ = &0E03
+ LoadMusic1 = &0E06
+ LoadMusic2 = &0E09
+
+                        \ --- End of added code ------------------------------->
+
                         \ --- Mod: Code added for additional ships: ----------->
 
  SHIP_MISSILE = &4D00   \ The address of the missile ship blueprint
@@ -3121,19 +3130,6 @@ ENDMACRO
 
                         \ --- End of added code ------------------------------->
 
-                        \ --- Mod: Code added for music: ---------------------->
-
-.musicStatus
-
-\ SKIP 1                 \ A flag to determine whether to play the currently
-                        \ selected music:
-                        \
-                        \   * 0 = do not play the music
-                        \
-                        \   * &FF = do play the music
-
-                        \ --- End of added code ------------------------------->
-
 \ ******************************************************************************
 \
 \       Name: IRQ1
@@ -3155,7 +3151,7 @@ ENDMACRO
  LDA &00F4              \ Set bits 5 and 6 of the "interrupt clear and paging"
  ORA #%00010000         \ register at SHEILA &05, to clear the RTC interrupt
  STA VIA+&05            \ and screen interrupt, whichever is pending
- JSR &0E03
+ JSR PlayMusicIRQ
 
 .over
 
@@ -15313,7 +15309,7 @@ ENDIF
 
                         \ --- Mod: Code added for music: ---------------------->
 
- JSR &0E00              \ Initialise music
+ JSR InitMusic          \ Initialise music
 
                         \ --- End of added code ------------------------------->
 
@@ -24949,7 +24945,7 @@ ENDMACRO
 
                         \ --- Mod: Code added for music: ---------------------->
 
-\ JSR LoadMusic2         \ Load the Blue Danube music
+\JSR LoadMusic2         \ Load the Blue Danube music
 
                         \ --- End of added code ------------------------------->
 
@@ -25006,7 +25002,7 @@ ENDMACRO
 
                         \ --- Mod: Code added for music: ---------------------->
 
-\ JSR LoadMusic1         \ Load the Elite Theme music
+\JSR LoadMusic1         \ Load the Elite Theme music
 
                         \ --- End of added code ------------------------------->
 
@@ -55111,63 +55107,6 @@ ENDMACRO
 .BOMBTBY
 
  SKIP 10
-
-                        \ --- End of added code ------------------------------->
-
-\ ******************************************************************************
-\
-\       Name: MUSIC1
-\       Type: Variable
-\   Category: Loader
-\    Summary: The OS command string for loading the Elite theme tune
-\
-\ ******************************************************************************
-
-                        \ --- Mod: Code added for music: ---------------------->
-
-.MUSIC1
-
- EQUS "L.MUSIC1"        \ This is short for "*LOAD MUSIC1"
- EQUB 13
-
-                        \ --- End of added code ------------------------------->
-
-\ ******************************************************************************
-\
-\       Name: MUSIC2
-\       Type: Variable
-\   Category: Loader
-\    Summary: The OS command string for loading the Blue Danube tune
-\
-\ ******************************************************************************
-
-                        \ --- Mod: Code added for music: ---------------------->
-
-.MUSIC2
-
- EQUS "L.MUSIC2"        \ This is short for "*LOAD MUSIC2"
- EQUB 13
-
-                        \ --- End of added code ------------------------------->
-
-                        \ --- Mod: Code added for music: ---------------------->
-
-.LoadMusic1
-
- LDX #LO(MUSIC1)        \ Set (Y X) to point to the OS command at MUSIC1, which
- LDY #HI(MUSIC1)        \ loads the Elite Theme music file
-
- JMP OSCLI              \ Call OSCLI to execute the OS command at (Y X), which
-                        \ loads the Elite Theme music file
-
-.LoadMusic2
-
- LDX #LO(MUSIC2)        \ Set (Y X) to point to the OS command at MUSIC1, which
- LDY #HI(MUSIC2)        \ loads the Elite Theme music file
-
- JMP OSCLI              \ Call OSCLI to execute the OS command at (Y X), which
-                        \ loads the Elite Theme music file
-
 
                         \ --- End of added code ------------------------------->
 
