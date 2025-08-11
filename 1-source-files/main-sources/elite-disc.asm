@@ -67,7 +67,7 @@
  PUTFILE "3-assembled-output/D.MOP.bin", "D.MOP", &004E00, &004E00
  PUTFILE "3-assembled-output/D.MOZ.bin", "D.MOZ", &004E00, &004E00
 
- PUTFILE "1-source-files/music/MUSIC1", "MUSIC1", &000E00, &000E00
- PUTFILE "1-source-files/music/MUSIC2", "MUSIC2", &000E00, &000E00
+ PUTFILE "1-source-files/music/MUSIC1", "M.MUSIC1", &000E00, &000E00
+ PUTFILE "1-source-files/music/MUSIC2", "M.MUSIC2", &000E00, &000E00
 
  PUTFILE "3-assembled-output/README.txt", "README", &FFFFFF, &FFFFFF

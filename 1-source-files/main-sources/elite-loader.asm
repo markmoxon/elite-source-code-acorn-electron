@@ -89,6 +89,12 @@
 
  S% = C%                \ S% points to the entry point for the main game code
 
+                        \ --- Mod: Code added for music: ---------------------->
+
+ musicStatus = &1C00    \ The flag for controlling music so we can disable it
+
+                        \ --- End of added code ------------------------------->
+
  VIA = &FE00            \ Memory-mapped space for accessing internal hardware,
                         \ such as the video ULA, 6845 CRTC and 6522 VIAs (also
                         \ known as SHEILA)
@@ -1989,6 +1995,9 @@ ENDMACRO
  JSR OSCLI              \ Call OSCLI to execute the OS command at (Y X), which
                         \ loads the Elite Theme music file
 
+ LDA #0                 \ Prevent any music from playing until we have a chance
+ STA musicStatus        \ to set it up properly
+
                         \ --- End of added code ------------------------------->
 
  LDX #LO(MESS1)         \ Set (Y X) to point to MESS1 ("LOAD EliteCo FFFF2000")
@@ -2258,7 +2267,8 @@ ENDIF
 \       Name: MUSIC1
 \       Type: Variable
 \   Category: Loader
-\    Summary: The OS command string for loading the Elite theme tune
+\    Summary: The OS command string for loading the music driver and Elite Theme
+\             tune
 \
 \ ******************************************************************************
 
@@ -2266,7 +2276,7 @@ ENDIF
 
 .MUSIC1
 
- EQUS "L.MUSIC1"        \ This is short for "*LOAD MUSIC1"
+ EQUS "L.M.MUSIC1"      \ This is short for "*LOAD M.MUSIC1"
  EQUB 13
 
                         \ --- End of added code ------------------------------->

@@ -246,10 +246,13 @@
 
                         \ --- Mod: Code added for music: ---------------------->
 
- InitMusic = &0E00      \ Entry points for music code
- PlayMusicIRQ = &0E03
- LoadMusic1 = &0E06
- LoadMusic2 = &0E09
+ PlayMusicIRQ = &0E03   \ Entry points for music code
+ StopMusic = &0E06
+ StartMusic = &0E09
+ LoadPlayMusic1 = &0E0C
+ LoadInitMusic2 = &0E0F
+
+ musicStatus = &1C00    \ Variables for music code
 
                         \ --- End of added code ------------------------------->
 
@@ -3143,17 +3146,17 @@ ENDMACRO
 
                         \ --- Mod: Code added for music: ---------------------->
 
- LDA &FE00              \ If this is the Display End interrupt and music is playing,
-\ ORA musicStatus        \ call the music playing routine at &E03
- AND #%00000101
- CMP #%00000101
- BNE over
- LDA &00F4              \ Set bits 5 and 6 of the "interrupt clear and paging"
- ORA #%00010000         \ register at SHEILA &05, to clear the RTC interrupt
- STA VIA+&05            \ and screen interrupt, whichever is pending
- JSR PlayMusicIRQ
+ LDA musicStatus        \ If the music status flag is zero, then music is
+ BEQ mirq1              \ disabled, so jump to mirq1 to skip playing the
+                        \ currently selected music
 
-.over
+ LDA &FE00              \ If this is not the RTC interrupt, skip the following
+ AND #%00001000
+ BNE mirq1
+
+ JSR PlayMusicIRQ       \ Play the currently selected music
+
+.mirq1
 
                         \ --- End of added code ------------------------------->
 
@@ -15307,12 +15310,6 @@ ENDIF
                         \ code onto the stack, and this effectively removes that
                         \ code so we start afresh
 
-                        \ --- Mod: Code added for music: ---------------------->
-
- JSR InitMusic          \ Initialise music
-
-                        \ --- End of added code ------------------------------->
-
                         \ Fall through into BR1 to start the game
 
 \ ******************************************************************************
@@ -15351,6 +15348,12 @@ ENDIF
  LDA #25                \ Call SHIPinA to load ship blueprints file Z, which is
  JSR SHIPinA            \ the file that contains the Constrictor and the ship
                         \ hangar code
+
+                        \ --- End of added code ------------------------------->
+
+                        \ --- Mod: Code added for music: ---------------------->
+
+ JSR LoadPlayMusic1     \ Load and play the Elite Theme tune
 
                         \ --- End of added code ------------------------------->
 
@@ -15543,6 +15546,12 @@ ENDIF
  STA joyType
 
 .brjp1
+
+                        \ --- End of added code ------------------------------->
+
+                        \ --- Mod: Code added for music: ---------------------->
+
+ JSR StopMusic          \ Stop the title music
 
                         \ --- End of added code ------------------------------->
 
@@ -16786,6 +16795,12 @@ ENDIF
 \ ******************************************************************************
 
 .SVE
+
+                        \ --- Mod: Code added for music: ---------------------->
+
+\JSR StopMusic          \ Stop any music that is currently playing
+
+                        \ --- End of added code ------------------------------->
 
                         \ --- Mod: Code removed for saving and loading: ------->
 
@@ -24945,7 +24960,7 @@ ENDMACRO
 
                         \ --- Mod: Code added for music: ---------------------->
 
-\JSR LoadMusic2         \ Load the Blue Danube music
+ JSR LoadInitMusic2     \ Load and initialise the Blue Danube music
 
                         \ --- End of added code ------------------------------->
 
@@ -24991,6 +25006,12 @@ ENDMACRO
 
 .DOENTRY
 
+                        \ --- Mod: Code added for music: ---------------------->
+
+\JSR StopMusic          \ Stop any music that is currently playing
+
+                        \ --- End of added code ------------------------------->
+
  JSR RES2               \ Reset a number of flight variables and workspaces
 
  LDA #0                 \ Reset DELTA (speed) to 0
@@ -24999,12 +25020,6 @@ ENDMACRO
  STA GNTMP              \ Cool down the lasers completely
 
  STA QQ22+1             \ Reset the on-screen hyperspace counter
-
-                        \ --- Mod: Code added for music: ---------------------->
-
-\JSR LoadMusic1         \ Load the Elite Theme music
-
-                        \ --- End of added code ------------------------------->
 
  LDA #25                \ Call SHIPinA to load ship blueprints file Z, which is
  JSR SHIPinA            \ the file that contains the Constrictor and the ship
@@ -28920,6 +28935,12 @@ ENDMACRO
  LDA #0                 \ The "cancel docking computer" key is bring pressed,
  STA auto               \ so turn it off by setting auto to 0
 
+                        \ --- Mod: Code added for music: ---------------------->
+
+ JSR StopMusic          \ Stop any music that is currently playing
+
+                        \ --- End of added code ------------------------------->
+
 .MA78
 
                         \ --- End of added code ------------------------------->
@@ -28989,6 +29010,12 @@ ENDMACRO
                         \ computer is activated
 
                         \ --- End of replacement ------------------------------>
+
+                        \ --- Mod: Code added for music: ---------------------->
+
+ JSR StartMusic         \ Play the docking music
+
+                        \ --- End of added code ------------------------------->
 
 .MA68
 
@@ -29539,6 +29566,12 @@ ENDMACRO
 
  JSR RES4               \ Reset the shields and energy banks, stardust and INWK
                         \ workspace
+
+                        \ --- Mod: Code added for music: ---------------------->
+
+\JSR StopMusic          \ Stop any music that is currently playing
+
+                        \ --- End of added code ------------------------------->
 
                         \ --- Mod: Code removed for missions: ----------------->
 
