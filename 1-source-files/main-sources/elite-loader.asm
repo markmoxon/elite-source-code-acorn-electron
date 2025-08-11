@@ -1045,8 +1045,17 @@ ENDMACRO
 \
 \ ******************************************************************************
 
- JMP &0B11              \ Call relocated UU% routine to load the main game code
+                        \ --- Mod: Code removed for music: -------------------->
+
+\JMP &0B11              \ Call relocated UU% routine to load the main game code
+\                       \ at &2000, move it down to &0D00 and run it
+
+                        \ --- And replaced by: -------------------------------->
+
+ JMP &0B00              \ Call relocated UU% routine to load the main game code
                         \ at &2000, move it down to &0D00 and run it
+
+                        \ --- End of replacement ------------------------------>
 
  NOP                    \ This part of the loader has been disabled by the
  NOP                    \ crackers, as this is an unprotected version
@@ -1960,13 +1969,27 @@ ENDMACRO
 \
 \ ******************************************************************************
 
- EQUD &10101010         \ This data appears to be unused
- EQUD &10101010
- EQUD &10101010
- EQUD &10101010
- EQUB &10
+                        \ --- Mod: Code removed for music: -------------------->
+
+\EQUD &10101010         \ This data appears to be unused
+\EQUD &10101010
+\EQUD &10101010
+\EQUD &10101010
+\EQUB &10
+
+                        \ --- End of removed code ----------------------------->
 
 .ENTRY2
+
+                        \ --- Mod: Code added for music: ---------------------->
+
+ LDX #LO(MUSIC1)        \ Set (Y X) to point to the OS command at MUSIC1, which
+ LDY #HI(MUSIC1)        \ loads the Elite Theme music file
+
+ JSR OSCLI              \ Call OSCLI to execute the OS command at (Y X), which
+                        \ loads the Elite Theme music file
+
+                        \ --- End of added code ------------------------------->
 
  LDX #LO(MESS1)         \ Set (Y X) to point to MESS1 ("LOAD EliteCo FFFF2000")
  LDY #HI(MESS1)
@@ -2226,6 +2249,24 @@ ENDIF
                         \ --- Mod: Code added for saving and loading: --------->
 
  EQUS "*DIR E"
+ EQUB 13
+
+                        \ --- End of added code ------------------------------->
+
+\ ******************************************************************************
+\
+\       Name: MUSIC1
+\       Type: Variable
+\   Category: Loader
+\    Summary: The OS command string for loading the Elite theme tune
+\
+\ ******************************************************************************
+
+                        \ --- Mod: Code added for music: ---------------------->
+
+.MUSIC1
+
+ EQUS "L.MUSIC1"        \ This is short for "*LOAD MUSIC1"
  EQUB 13
 
                         \ --- End of added code ------------------------------->
