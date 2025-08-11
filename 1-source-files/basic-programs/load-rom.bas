@@ -11,6 +11,10 @@ PRINT'"Flicker-free routines, bug fixes and"
 PRINT"other enhancements by Mark Moxon"
 PRINT'"Sideways RAM loader, routines and"
 PRINT"inspiration by Wouter Hobers"
+PRINT'"Sound routines by Negative Charge"
+PRINT'"Original music by Aidan Bell and Julie"
+PRINT"Dunn (c) D. Braben and I. Bell 1985,"
+PRINT"ported from MIDI by Negative Charge"
 
 DIM code &100
 PROCassemble
