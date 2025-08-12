@@ -251,6 +251,8 @@
  StartMusic = &0E09
  LoadPlayMusic1 = &0E0C
  LoadInitMusic2 = &0E0F
+ ProcessOptions1 = &0E12
+ ProcessOptions2 = &0E15
 
  musicStatus = &1C00    \ Variables for music code
 
@@ -16798,7 +16800,7 @@ ENDIF
 
                         \ --- Mod: Code added for music: ---------------------->
 
-\JSR StopMusic          \ Stop any music that is currently playing
+ JSR StopMusic          \ Stop any music that is currently playing
 
                         \ --- End of added code ------------------------------->
 
@@ -16936,8 +16938,18 @@ ENDIF
  CMP #'1'               \ If A < ASCII "1", jump to SVEX to exit as the key
  BCC SVEX               \ press doesn't match a menu option
 
+                        \ --- Mod: Code removed for music: -------------------->
+
+\CMP #'4'               \ If "4" was pressed, jump to DELT to process option 4
+\BEQ DELT               \ (delete a file)
+
+                        \ --- And replaced by: -------------------------------->
+
  CMP #'4'               \ If "4" was pressed, jump to DELT to process option 4
- BEQ DELT               \ (delete a file)
+ BNE P%+5               \ (delete a file)
+ JMP DELT
+
+                        \ --- End of replacement ------------------------------>
 
  BCS SVEX               \ If A >= ASCII "4", jump to SVEX to exit as the key
                         \ press is either option 5 (exit), or it doesn't match a
@@ -18761,13 +18773,21 @@ ENDIF
  JSR RDKEY              \ Scan the keyboard for a key press and return the
                         \ internal key number in A and X (or 0 for no key press)
 
- CPX #&51               \ If "S" is not being pressed, skip to DK6
- BNE DK6
+                        \ --- Mod: Code removed for music: -------------------->
 
- LDA #0                 \ "S" is being pressed, so set DNOIZ to 0 to turn the
- STA DNOIZ              \ sound on
+\CPX #&51               \ If "S" is not being pressed, skip to DK6
+\BNE DK6
+\
+\LDA #0                 \ "S" is being pressed, so set DNOIZ to 0 to turn the
+\STA DNOIZ              \ sound on
+\
+\.DK6
 
-.DK6
+                        \ --- And replaced by: -------------------------------->
+
+ JSR ProcessOptions1    \ Process the music options ("S")
+
+                        \ --- End of replacement ------------------------------>
 
  LDY #&40               \ We now want to loop through the keys that toggle
                         \ various settings. These have internal key numbers
@@ -18789,13 +18809,21 @@ ENDIF
 
 .DK55
 
- CPX #&10               \ If "Q" is not being pressed, skip to DK7
- BNE DK7
+                        \ --- Mod: Code removed for music: -------------------->
 
- STX DNOIZ              \ "Q" is being pressed, so set DNOIZ to X, which is
-                        \ non-zero (&10), so this will turn the sound off
+\CPX #&10               \ If "Q" is not being pressed, skip to DK7
+\BNE DK7
+\
+\STX DNOIZ              \ "Q" is being pressed, so set DNOIZ to X, which is
+\                       \ non-zero (&10), so this will turn the sound off
+\
+\.DK7
 
-.DK7
+                        \ --- And replaced by: -------------------------------->
+
+ JSR ProcessOptions2    \ Process the music options ("Q")
+
+                        \ --- End of replacement ------------------------------>
 
  CPX #&70               \ If ESCAPE is not being pressed, skip over the next
  BNE P%+5               \ instruction
@@ -25008,7 +25036,7 @@ ENDMACRO
 
                         \ --- Mod: Code added for music: ---------------------->
 
-\JSR StopMusic          \ Stop any music that is currently playing
+ JSR StopMusic          \ Stop any music that is currently playing
 
                         \ --- End of added code ------------------------------->
 
@@ -29347,10 +29375,21 @@ ENDMACRO
                         \ the canister is below us and we have a fuel scoop
                         \ fitted
 
- BPL MA58               \ If the result is positive, then we either have no
-                        \ scoop or the canister is above us, and in both cases
+                        \ --- Mod: Code removed for music: -------------------->
+
+\BPL MA58               \ If the result is positive, then we either have no
+\                       \ scoop or the canister is above us, and in both cases
+\                       \ this means we can't scoop the item, so jump to MA58
+\                       \ to process a collision
+
+                        \ --- And replaced by: -------------------------------->
+
+ BMI P%+5               \ If the result is positive, then we either have no
+ JMP MA58               \ scoop or the canister is above us, and in both cases
                         \ this means we can't scoop the item, so jump to MA58
                         \ to process a collision
+
+                        \ --- End of replacement ------------------------------>
 
 \ ******************************************************************************
 \
@@ -29569,7 +29608,7 @@ ENDMACRO
 
                         \ --- Mod: Code added for music: ---------------------->
 
-\JSR StopMusic          \ Stop any music that is currently playing
+ JSR StopMusic          \ Stop any music that is currently playing
 
                         \ --- End of added code ------------------------------->
 
