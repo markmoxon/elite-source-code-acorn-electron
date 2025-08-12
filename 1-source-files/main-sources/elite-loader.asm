@@ -93,6 +93,8 @@
 
  musicStatus = &1C00    \ The flag for controlling music so we can disable it
 
+ musicOptions = &1C01   \ The flag for toggling music and the tune choice
+
                         \ --- End of added code ------------------------------->
 
  VIA = &FE00            \ Memory-mapped space for accessing internal hardware,
@@ -1997,6 +1999,8 @@ ENDMACRO
 
  LDA #0                 \ Prevent any music from playing until we have a chance
  STA musicStatus        \ to set it up properly
+
+ STA musicOptions       \ Set music to be enabled with the default tune choice
 
                         \ --- End of added code ------------------------------->
 
