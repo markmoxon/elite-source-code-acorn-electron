@@ -16,6 +16,8 @@ PRINT'"Original music by Aidan Bell and Julie"
 PRINT"Dunn (c) D. Braben and I. Bell 1985,"
 PRINT"ported from MIDI by Negative Charge"
 
+IF PAGE>&E00 PRINT'"Can't run: PAGE must be &0E00":END
+
 DIM code &100
 PROCassemble
 FOR A%=15 TO 0 STEP -1
