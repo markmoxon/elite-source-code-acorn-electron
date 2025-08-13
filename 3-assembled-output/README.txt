@@ -12,6 +12,14 @@
 Contains flicker-free planet drawing
 routines by Mark Moxon
 
+Sound routines by Negative Charge
+
+Original music by Aidan Bell and Julie
+Dunn (c) D. Braben and I. Bell 1985,
+ported from MIDI by Negative Charge
+
+Elite integration by Mark Moxon
+
 Based on the Acornsoft SLG38 release
 of Elite by Ian Bell and David Braben
 Copyright (c) Acornsoft 1984
@@ -21,6 +29,6 @@
 
 See www.bbcelite.com for details
 
-Build: 2025-08-13 10:26:45
+Build: 2025-08-13 12:51:33
 ---------------------------------------
 

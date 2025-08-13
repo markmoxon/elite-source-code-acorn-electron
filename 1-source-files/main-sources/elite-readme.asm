@@ -59,6 +59,19 @@
  EQUS "routines by Mark Moxon"
  EQUB 10, 13
  EQUB 10, 13
+ EQUS "Sound routines by Negative Charge"
+ EQUB 10, 13
+ EQUB 10, 13
+ EQUS "Original music by Aidan Bell and Julie"
+ EQUB 10, 13
+ EQUS "Dunn (c) D. Braben and I. Bell 1985,"
+ EQUB 10, 13
+ EQUS "ported from MIDI by Negative Charge"
+ EQUB 10, 13
+ EQUB 10, 13
+ EQUS "Elite integration by Mark Moxon"
+ EQUB 10, 13
+ EQUB 10, 13
  EQUS "Based on the Acornsoft SLG38 release"
  EQUB 10, 13
  EQUS "of Elite by Ian Bell and David Braben"
