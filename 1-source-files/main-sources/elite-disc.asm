@@ -37,12 +37,12 @@
  _IB_ACORNSOFT          = (_VARIANT = 2)
 
  PUTFILE "1-source-files/boot-files/$.!BOOT.bin", "!BOOT", &FFFFFF, &FFFFFF
- PUTBASIC "1-source-files/basic-programs/load-rom.bas", "ELITESR"
- PUTFILE "1-source-files/basic-programs/$.ELITE-disc.bin", "ELITE", &FF0E00, &FF8023
- PUTFILE "3-assembled-output/ELITEDA.bin", "ELITEDA", &FF4400, &FF5200
+ PUTBASIC "1-source-files/basic-programs/load-rom.bas", "ELITEC"
+ PUTFILE "1-source-files/basic-programs/$.ELITE-disc.bin", "ELITEC2", &FF0E00, &FF8023
+ PUTFILE "3-assembled-output/ELITEDA.bin", "ELITECD", &FF4400, &FF5200
  PUTFILE "3-assembled-output/ELTROM1.bin", "ELITER1", &FF8000, &FF8000
  PUTFILE "3-assembled-output/ELTROM2.bin", "ELITER2", &FFA000, &FFA000
- PUTFILE "3-assembled-output/ELITECO.bin", "ELITECO", &000000, &FFFFFF
+ PUTFILE "3-assembled-output/ELITECO.bin", "ELITECC", &000000, &FFFFFF
 
  PUTFILE "1-source-files/other-files/E.MAX.bin", "E.MAX", &000000, &000000
  PUTFILE "1-source-files/other-files/E.MISS1.bin", "E.MISS1", &000000, &000000

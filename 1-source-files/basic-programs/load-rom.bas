@@ -140,5 +140,5 @@ PRINT " OK"
 PRINT'"Press any key to play Elite";
 A$=GET$
 *FX138,0,32
-CHAIN "ELITE"
+CHAIN "ELITEC2"
 ENDPROC

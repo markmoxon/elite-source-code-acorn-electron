@@ -2200,7 +2200,7 @@ IF _DISC
 
                         \ --- And replaced by: -------------------------------->
 
- EQUS "LOAD EliteCo FFFF1D00"
+ EQUS "LOAD EliteCC FFFF1D00"
  EQUB 13
 
                         \ --- End of replacement ------------------------------>
