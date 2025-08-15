@@ -37,12 +37,12 @@
  _IB_ACORNSOFT          = (_VARIANT = 2)
 
  PUTFILE "1-source-files/boot-files/$.!BOOT.bin", "!BOOT", &FFFFFF, &FFFFFF
- PUTBASIC "1-source-files/basic-programs/load-rom.bas", "ELITESR"
- PUTFILE "1-source-files/basic-programs/$.ELITE-disc.bin", "ELITE", &FF0E00, &FF8023
- PUTFILE "3-assembled-output/ELITEDA.bin", "ELITEDA", &FF4400, &FF5200
- PUTFILE "3-assembled-output/ELTROM1.bin", "ELITER1", &FF8000, &FF8000
- PUTFILE "3-assembled-output/ELTROM2.bin", "ELITER2", &FFA000, &FFA000
- PUTFILE "3-assembled-output/ELITECO.bin", "ELITECO", &000000, &FFFFFF
+ PUTBASIC "1-source-files/basic-programs/load-rom.bas", "ELITEM"
+ PUTFILE "1-source-files/basic-programs/$.ELITE-disc.bin", "ELITEM2", &FF0E00, &FF8023
+ PUTFILE "3-assembled-output/ELITEDA.bin", "ELITEMD", &FF4400, &FF5200
+ PUTFILE "3-assembled-output/ELTROM1.bin", "ELITER3", &FF8000, &FF8000
+ PUTFILE "3-assembled-output/ELTROM2.bin", "ELITER4", &FFA000, &FFA000
+ PUTFILE "3-assembled-output/ELITECO.bin", "ELITEMC", &000000, &FFFFFF
 
  PUTFILE "1-source-files/other-files/E.MAX.bin", "E.MAX", &000000, &000000
  PUTFILE "1-source-files/other-files/E.MISS1.bin", "E.MISS1", &000000, &000000
@@ -65,7 +65,7 @@
  PUTFILE "3-assembled-output/D.MON.bin", "D.MON", &004E00, &004E00
  PUTFILE "3-assembled-output/D.MOO.bin", "D.MOO", &004E00, &004E00
  PUTFILE "3-assembled-output/D.MOP.bin", "D.MOP", &004E00, &004E00
- PUTFILE "3-assembled-output/D.MOZ.bin", "D.MOZ", &004E00, &004E00
+ PUTFILE "3-assembled-output/D.MOZ.bin", "D.MOY", &004E00, &004E00
 
  PUTFILE "1-source-files/music/MUSIC1", "M.MUSIC1", &000E00, &000E00
  PUTFILE "1-source-files/music/MUSIC2", "M.MUSIC2", &000E00, &000E00

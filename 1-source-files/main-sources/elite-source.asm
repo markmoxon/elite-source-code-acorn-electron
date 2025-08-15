@@ -15347,9 +15347,10 @@ ENDIF
 
                         \ --- Mod: Code added for additional ships: ----------->
 
- LDA #25                \ Call SHIPinA to load ship blueprints file Z, which is
+ LDA #24                \ Call SHIPinA to load ship blueprints file Y, which is
  JSR SHIPinA            \ the file that contains the Constrictor and the ship
-                        \ hangar code
+                        \ hangar code (note we load D.MOY for the musical
+                        \ version as D.MOZ is for the non-musical version)
 
                         \ --- End of added code ------------------------------->
 
@@ -25049,9 +25050,14 @@ ENDMACRO
 
  STA QQ22+1             \ Reset the on-screen hyperspace counter
 
- LDA #25                \ Call SHIPinA to load ship blueprints file Z, which is
+                        \ --- Mod: Code added for additional ships: ----------->
+
+ LDA #24                \ Call SHIPinA to load ship blueprints file Y, which is
  JSR SHIPinA            \ the file that contains the Constrictor and the ship
-                        \ hangar code
+                        \ hangar code (note we load D.MOY for the musical
+                        \ version as D.MOZ is for the non-musical version)
+
+                        \ --- End of added code ------------------------------->
 
  JSR RemoveLaunch       \ Remove the space station launch tunnel
 

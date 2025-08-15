@@ -134,11 +134,11 @@ DEF PROCelite(A%)
 PRINT'"Sideways RAM detected in bank ";?romNumber
 PRINT'"Loading code into RAM bank ";?romNumber;"...";
 REM Load first half of ROM image
-*LOAD ELITER1 3000
+*LOAD ELITER3 3000
 !&80=&3000
 CALL SRLOAD
 REM Load second half of ROM image
-*LOAD ELITER2 3000
+*LOAD ELITER4 3000
 !&80=&3000
 !toBlock = &A000
 CALL SRLOAD
@@ -146,5 +146,5 @@ PRINT " OK"
 PRINT'"Press any key to play Elite";
 A$=GET$
 *FX138,0,32
-CHAIN "ELITE"
+CHAIN "ELITEM2"
 ENDPROC

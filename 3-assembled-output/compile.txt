@@ -6097,7 +6097,7 @@ Saving file '3-assembled-output/ELTE.bin'
      3478   A2 03      LDX #&03
      347A   86 2C      STX &2C
      347C   20 B2 37   JSR &37B2
-     347F   A9 19      LDA #&19
+     347F   A9 18      LDA #&18
      3481   20 C2 4B   JSR &4BC2
      3484   20 0C 0E   JSR &0E0C
      3487   A2 0B      LDX #&0B
@@ -17916,7 +17916,7 @@ End macro ECHR
      4BE7   85 7D      STA &7D
      4BE9   8D 19 86   STA &8619
      4BEC   85 2F      STA &2F
-     4BEE   A9 19      LDA #&19
+     4BEE   A9 18      LDA #&18
      4BF0   20 C2 4B   JSR &4BC2
      4BF3   20 32 22   JSR &2232
      4BF6   20 87 56   JSR &5687
