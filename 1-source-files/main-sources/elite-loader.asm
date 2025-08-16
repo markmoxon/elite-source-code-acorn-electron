@@ -1989,21 +1989,6 @@ ENDMACRO
 
 .ENTRY2
 
-                        \ --- Mod: Code added for music: ---------------------->
-
- LDX #LO(MUSIC1)        \ Set (Y X) to point to the OS command at MUSIC1, which
- LDY #HI(MUSIC1)        \ loads the Elite Theme music file
-
- JSR OSCLI              \ Call OSCLI to execute the OS command at (Y X), which
-                        \ loads the Elite Theme music file
-
- LDA #0                 \ Prevent any music from playing until we have a chance
- STA musicStatus        \ to set it up properly
-
- STA musicOptions       \ Set music to be enabled with the default tune choice
-
-                        \ --- End of added code ------------------------------->
-
  LDX #LO(MESS1)         \ Set (Y X) to point to MESS1 ("LOAD EliteCo FFFF2000")
  LDY #HI(MESS1)
 
@@ -2041,6 +2026,21 @@ ENDMACRO
                         \ changes the disc directory to E
 
 .entr2
+
+                        \ --- End of added code ------------------------------->
+
+                        \ --- Mod: Code added for music: ---------------------->
+
+ LDX #LO(MUSIC1)        \ Set (Y X) to point to the OS command at MUSIC1, which
+ LDY #HI(MUSIC1)        \ loads the Elite Theme music file
+
+ JSR OSCLI              \ Call OSCLI to execute the OS command at (Y X), which
+                        \ loads the Elite Theme music file
+
+ LDA #0                 \ Prevent any music from playing until we have a chance
+ STA musicStatus        \ to set it up properly
+
+ STA musicOptions       \ Set music to be enabled with the default tune choice
 
                         \ --- End of added code ------------------------------->
 

@@ -31570,30 +31570,30 @@ End macro FNE
      5615   6C 78 52   JMP (&5278)
 .UU%
 .ENTRY2
-     0B00   A2 F5      LDX #&F5
+     0B00   A2 D5      LDX #&D5
      0B02   A0 0B      LDY #&0B
      0B04   20 F7 FF   JSR &FFF7
      0B07   A9 00      LDA #&00
-     0B09   8D 00 1C   STA &1C00
-     0B0C   8D 01 1C   STA &1C01
-     0B0F   A2 D5      LDX #&D5
-     0B11   A0 0B      LDY #&0B
-     0B13   20 F7 FF   JSR &FFF7
-     0B16   A9 00      LDA #&00
-     0B18   8D 27 1D   STA &1D27
-     0B1B   A9 00      LDA #&00
-     0B1D   A0 00      LDY #&00
-     0B1F   20 DA FF   JSR &FFDA
-     0B22   C9 08      CMP #&08
-     0B24   D0 07      BNE &0B2D
-     0B26   A9 80      LDA #&80
-     0B28   8D 27 1D   STA &1D27
-     0B2B   D0 07      BNE &0B34
+     0B09   8D 27 1D   STA &1D27
+     0B0C   A9 00      LDA #&00
+     0B0E   A0 00      LDY #&00
+     0B10   20 DA FF   JSR &FFDA
+     0B13   C9 08      CMP #&08
+     0B15   D0 07      BNE &0B1E
+     0B17   A9 80      LDA #&80
+     0B19   8D 27 1D   STA &1D27
+     0B1C   D0 07      BNE &0B25
 .entr1
-     0B2D   A2 EB      LDX #&EB
-     0B2F   A0 0B      LDY #&0B
-     0B31   20 F7 FF   JSR &FFF7
+     0B1E   A2 EB      LDX #&EB
+     0B20   A0 0B      LDY #&0B
+     0B22   20 F7 FF   JSR &FFF7
 .entr2
+     0B25   A2 F5      LDX #&F5
+     0B27   A0 0B      LDY #&0B
+     0B29   20 F7 FF   JSR &FFF7
+     0B2C   A9 00      LDA #&00
+     0B2E   8D 00 1C   STA &1C00
+     0B31   8D 01 1C   STA &1C01
      0B34   A9 BD      LDA #&BD
      0B36   A2 00      LDX #&00
      0B38   A0 FF      LDY #&FF
