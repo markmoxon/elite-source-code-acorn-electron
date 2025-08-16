@@ -31669,9 +31669,9 @@ End macro FNE
      0BEC   0D
 .MESS2
      0BED   2A 44 49 ...
-     0BF3   0D
-     0BF4
-S.ELITEDA &4400  &5719  &5200  &4400 
+     0BF6   0D
+     0BF7
+S.ELITEDA &4400  &571C  &5200  &4400 
 Saving file '3-assembled-output/ELITEDA.bin'
 .XX21
      4E00   00 4D

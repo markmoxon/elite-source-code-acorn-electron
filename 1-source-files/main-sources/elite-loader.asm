@@ -2225,7 +2225,7 @@ ENDIF
 
                         \ --- Mod: Code added for saving and loading: --------->
 
- EQUS "*DIR E"
+ EQUS "*DIR :0.E"
  EQUB 13
 
                         \ --- End of added code ------------------------------->
