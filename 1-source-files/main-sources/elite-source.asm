@@ -13176,7 +13176,7 @@ ENDIF
 \
 \ ******************************************************************************
 
-                        \ --- Mod: Code removed for music: -------------------->
+                        \ --- Mod: Code removed for sideways RAM: ------------->
 
 \EQUB '(' EOR 164
 \EQUB 'C' EOR 164
