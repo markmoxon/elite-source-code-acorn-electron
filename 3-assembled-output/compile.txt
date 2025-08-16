@@ -31570,7 +31570,7 @@ End macro FNE
      5615   6C 78 52   JMP (&5278)
 .UU%
 .ENTRY2
-     0B00   A2 F2      LDX #&F2
+     0B00   A2 F5      LDX #&F5
      0B02   A0 0B      LDY #&0B
      0B04   20 F7 FF   JSR &FFF7
      0B07   A9 00      LDA #&00
@@ -31664,12 +31664,12 @@ End macro FNE
      0BEA   0D
 .MESS2
      0BEB   2A 44 49 ...
-     0BF1   0D
+     0BF4   0D
 .MUSIC1
-     0BF2   4C 2E 4D ...
-     0BFC   0D
-     0BFD
-S.ELITEDA &4400  &5722  &5200  &4400 
+     0BF5   4C 2E 4D ...
+     0BFF   0D
+     0C00
+S.ELITEDA &4400  &5725  &5200  &4400 
 Saving file '3-assembled-output/ELITEDA.bin'
 .XX21
      4E00   00 4D
