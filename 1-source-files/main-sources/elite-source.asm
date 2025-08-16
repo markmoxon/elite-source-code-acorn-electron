@@ -13146,40 +13146,44 @@ ENDIF
 \
 \ ******************************************************************************
 
- EQUB '(' EOR 164
- EQUB 'C' EOR 164
- EQUB ')' EOR 164
- EQUB 'B' EOR 164
- EQUB 'e' EOR 164
- EQUB 'l' EOR 164
- EQUB 'l' EOR 164
+                        \ --- Mod: Code removed for sideways RAM: ------------->
 
-IF _IB_ACORNSOFT
+\EQUB '(' EOR 164
+\EQUB 'C' EOR 164
+\EQUB ')' EOR 164
+\EQUB 'B' EOR 164
+\EQUB 'e' EOR 164
+\EQUB 'l' EOR 164
+\EQUB 'l' EOR 164
+\
+\IF _IB_ACORNSOFT
+\
+\EQUB '/' EOR 164
+\
+\ENDIF
+\
+\EQUB 'B' EOR 164
+\EQUB 'r' EOR 164
+\EQUB 'a' EOR 164
+\EQUB 'b' EOR 164
+\EQUB 'e' EOR 164
+\EQUB 'n' EOR 164
+\
+\IF _IB_SUPERIOR
+\
+\EQUB ''' EOR 164
+\
+\ELIF _IB_ACORNSOFT
+\
+\EQUB '1' EOR 164
+\EQUB '9' EOR 164
+\
+\ENDIF
+\
+\EQUB '8' EOR 164
+\EQUB '4' EOR 164
 
- EQUB '/' EOR 164
-
-ENDIF
-
- EQUB 'B' EOR 164
- EQUB 'r' EOR 164
- EQUB 'a' EOR 164
- EQUB 'b' EOR 164
- EQUB 'e' EOR 164
- EQUB 'n' EOR 164
-
-IF _IB_SUPERIOR
-
- EQUB ''' EOR 164
-
-ELIF _IB_ACORNSOFT
-
- EQUB '1' EOR 164
- EQUB '9' EOR 164
-
-ENDIF
-
- EQUB '8' EOR 164
- EQUB '4' EOR 164
+                        \ --- End of removed code ----------------------------->
 
 \ ******************************************************************************
 \
