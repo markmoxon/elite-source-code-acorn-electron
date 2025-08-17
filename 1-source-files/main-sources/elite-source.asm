@@ -3084,6 +3084,21 @@ ENDMACRO
                         \ joysticks moves the chart crosshairs in an
                         \ uncontrollable way (which is presumably a bug)
 
+                        \ --- Mod: Code added for Bitstik: -------------------->
+
+.BSTK
+
+ SKIP 1                 \ Bitstik configuration setting
+                        \
+                        \   * 0 = keyboard or joystick (default)
+                        \
+                        \   * &FF = Bitstik
+                        \
+                        \ Toggled by pressing "B" when paused, see the DKS3
+                        \ routine for details
+
+                        \ --- End of added code ------------------------------->
+
                         \ --- Mod: Code added for saving and loading: --------->
 
 .CATF
@@ -9987,8 +10002,12 @@ ENDIF
  LDA QQ19+4             \ Store the updated y-coordinate in QQ10 (the current
  STA QQ10               \ y-coordinate of the crosshairs)
 
- STA QQ19+1             \ This instruction has no effect, as QQ19+1 is
-                        \ overwritten below, both in TT103 and TT105
+                        \ --- Mod: Code removed for Bitstik: ------------------>
+
+\STA QQ19+1             \ This instruction has no effect, as QQ19+1 is
+\                       \ overwritten below, both in TT103 and TT105
+
+                        \ --- End of removed code ----------------------------->
 
  PLA                    \ Store the x-delta in QQ19+3 and fetch the current
  STA QQ19+3             \ x-coordinate of the crosshairs from QQ10 into A, ready
@@ -10001,8 +10020,12 @@ ENDIF
  LDA QQ19+4             \ Store the updated x-coordinate in QQ9 (the current
  STA QQ9                \ x-coordinate of the crosshairs)
 
- STA QQ19               \ This instruction has no effect, as QQ19 is overwritten
-                        \ below, both in TT103 and TT105
+                        \ --- Mod: Code removed for Bitstik: ------------------>
+
+\STA QQ19               \ This instruction has no effect, as QQ19 is overwritten
+\                       \ below, both in TT103 and TT105
+
+                        \ --- End of removed code ----------------------------->
 
                         \ Now we've updated the coordinates of the crosshairs,
                         \ fall through into TT103 to redraw them at their new
@@ -17320,8 +17343,12 @@ ENDIF
  LDA #200               \ X, and return from the subroutine using a tail call
  JMP OSBYTE
 
- RTS                    \ This instruction has no effect, as we already returned
-                        \ from the subroutine
+                        \ --- Mod: Code removed for Bitstik: ------------------>
+
+\RTS                    \ This instruction has no effect, as we already returned
+\                       \ from the subroutine
+
+                        \ --- End of removed code ----------------------------->
 
                         \ --- Mod: Code moved for sideways RAM: --------------->
 
@@ -18453,6 +18480,12 @@ ENDIF
 
                         \ --- End of added code ------------------------------->
 
+                        \ --- Mod: Code added for Bitstik: -------------------->
+
+ STA BSTK               \ Set BSTK = 0 to disable the Bitstik
+
+                        \ --- End of added code ------------------------------->
+
  LDY #7                 \ We're going to work our way through the primary flight
                         \ control keys (pitch, roll, speed and laser), so set a
                         \ counter in Y so we can loop through all 7
@@ -18756,6 +18789,29 @@ ENDIF
 
  JMP DEATH2             \ ESCAPE is being pressed, so jump to DEATH2 to end
                         \ the game
+
+                        \ --- Mod: Code added for Bitstik: -------------------->
+
+ CPX #&64               \ If "B" is not being pressed, skip to nobit
+ BNE nobit
+
+ LDA #0                 \ Set the joystick type to Plus 1, as Bitstik will only
+ STA joyType            \ work with the ADC interface
+
+ LDA BSTK               \ Toggle the value of BSTK between 0 and &FF
+ EOR #&FF
+ STA BSTK
+
+ STA JSTK               \ Configure JSTK to the same value, so when the Bitstik
+                        \ is enabled, so is the joystick
+
+ STA JSTE               \ Configure JSTE to the same value, so when the Bitstik
+                        \ is enabled, the joystick is configured with reversed
+                        \ channels
+
+.nobit
+
+                        \ --- End of added code ------------------------------->
 
  CPX #&59               \ If DELETE is not being pressed, we are still paused,
  BNE FREEZE             \ so loop back up to keep listening for configuration
@@ -28726,6 +28782,37 @@ ENDMACRO
 
  ORA BET2               \ Store A in BETA, but with the sign set to BET2 (so
  STA BETA               \ BETA has the same sign as the actual pitch rate)
+
+                        \ --- Mod: Code added for Bitstik: -------------------->
+
+ LDA BSTK               \ If BSTK = 0 then the Bitstik is not configured, so
+ BEQ BS2                \ jump to BS2 to skip the following
+
+ LDX #3                 \ Call OSBYTE with A = 128 to fetch the 16-bit value
+ LDA #128               \ from ADC channel 3 (the Bitstik rotation value),
+ JSR OSBYTE             \ returning the value in (Y X)
+
+ TYA                    \ Copy Y to A, so the result is now in (A X)
+
+ LSR A                  \ Divide A by 4
+ LSR A
+
+ CMP #40                \ If A < 40, skip the following instruction
+ BCC P%+4
+
+ LDA #40                \ Set A = 40, which ensures a maximum speed of 40
+
+ STA DELTA              \ Update our speed in DELTA
+
+ BNE MA4                \ If the speed we just set is non-zero, then jump to MA4
+                        \ to skip the following, as we don't need to check the
+                        \ keyboard for speed keys, otherwise do check the
+                        \ keyboard (so Bitstik users can still use the keyboard
+                        \ for speed adjustments if they twist the stick to zero)
+
+.BS2
+
+                        \ --- End of added code ------------------------------->
 
 \ ******************************************************************************
 \
