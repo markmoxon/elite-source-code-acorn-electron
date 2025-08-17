@@ -6879,19 +6879,19 @@ Saving file '3-assembled-output/ELTE.bin'
      3A4D   D0 03      BNE &3A52
      3A4F   8E 1E 1D   STX &1D1E
 .DK7
-     3A52   E0 70      CPX #&70
-     3A54   D0 03      BNE &3A59
-     3A56   4C 57 34   JMP &3457
-     3A59   E0 64      CPX #&64
-     3A5B   D0 13      BNE &3A70
-     3A5D   A9 00      LDA #&00
-     3A5F   8D E8 38   STA &38E8
-     3A62   AD 26 1D   LDA &1D26
-     3A65   49 FF      EOR #&FF
-     3A67   8D 26 1D   STA &1D26
-     3A6A   8D 25 1D   STA &1D25
-     3A6D   8D 24 1D   STA &1D24
+     3A52   E0 64      CPX #&64
+     3A54   D0 13      BNE &3A69
+     3A56   A9 00      LDA #&00
+     3A58   8D E8 38   STA &38E8
+     3A5B   AD 26 1D   LDA &1D26
+     3A5E   49 FF      EOR #&FF
+     3A60   8D 26 1D   STA &1D26
+     3A63   8D 25 1D   STA &1D25
+     3A66   8D 24 1D   STA &1D24
 .nobit
+     3A69   E0 70      CPX #&70
+     3A6B   D0 03      BNE &3A70
+     3A6D   4C 57 34   JMP &3457
      3A70   E0 59      CPX #&59
      3A72   D0 BE      BNE &3A32
 .DK2

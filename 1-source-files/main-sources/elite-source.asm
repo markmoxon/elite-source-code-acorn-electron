@@ -18784,12 +18784,6 @@ ENDIF
 
 .DK7
 
- CPX #&70               \ If ESCAPE is not being pressed, skip over the next
- BNE P%+5               \ instruction
-
- JMP DEATH2             \ ESCAPE is being pressed, so jump to DEATH2 to end
-                        \ the game
-
                         \ --- Mod: Code added for Bitstik: -------------------->
 
  CPX #&64               \ If "B" is not being pressed, skip to nobit
@@ -18812,6 +18806,12 @@ ENDIF
 .nobit
 
                         \ --- End of added code ------------------------------->
+
+ CPX #&70               \ If ESCAPE is not being pressed, skip over the next
+ BNE P%+5               \ instruction
+
+ JMP DEATH2             \ ESCAPE is being pressed, so jump to DEATH2 to end
+                        \ the game
 
  CPX #&59               \ If DELETE is not being pressed, we are still paused,
  BNE FREEZE             \ so loop back up to keep listening for configuration
