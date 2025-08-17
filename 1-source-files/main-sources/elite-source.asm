@@ -10002,7 +10002,7 @@ ENDIF
  LDA QQ19+4             \ Store the updated y-coordinate in QQ10 (the current
  STA QQ10               \ y-coordinate of the crosshairs)
 
-                        \ --- Mod: Code removed for Bitstik: ------------------>
+                        \ --- Mod: Code removed for sideways RAM: ------------->
 
 \STA QQ19+1             \ This instruction has no effect, as QQ19+1 is
 \                       \ overwritten below, both in TT103 and TT105
@@ -10020,7 +10020,7 @@ ENDIF
  LDA QQ19+4             \ Store the updated x-coordinate in QQ9 (the current
  STA QQ9                \ x-coordinate of the crosshairs)
 
-                        \ --- Mod: Code removed for Bitstik: ------------------>
+                        \ --- Mod: Code removed for sideways RAM: ------------->
 
 \STA QQ19               \ This instruction has no effect, as QQ19 is overwritten
 \                       \ below, both in TT103 and TT105
@@ -17343,7 +17343,7 @@ ENDIF
  LDA #200               \ X, and return from the subroutine using a tail call
  JMP OSBYTE
 
-                        \ --- Mod: Code removed for Bitstik: ------------------>
+                        \ --- Mod: Code removed for sideways RAM: ------------->
 
 \RTS                    \ This instruction has no effect, as we already returned
 \                       \ from the subroutine
