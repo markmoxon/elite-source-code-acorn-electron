@@ -3098,6 +3098,21 @@ ENDMACRO
                         \ joysticks moves the chart crosshairs in an
                         \ uncontrollable way (which is presumably a bug)
 
+                        \ --- Mod: Code added for Bitstik: -------------------->
+
+.BSTK
+
+ SKIP 1                 \ Bitstik configuration setting
+                        \
+                        \   * 0 = keyboard or joystick (default)
+                        \
+                        \   * &FF = Bitstik
+                        \
+                        \ Toggled by pressing "B" when paused, see the DKS3
+                        \ routine for details
+
+                        \ --- End of added code ------------------------------->
+
                         \ --- Mod: Code added for saving and loading: --------->
 
 .CATF
@@ -10017,8 +10032,12 @@ ENDIF
  LDA QQ19+4             \ Store the updated y-coordinate in QQ10 (the current
  STA QQ10               \ y-coordinate of the crosshairs)
 
- STA QQ19+1             \ This instruction has no effect, as QQ19+1 is
-                        \ overwritten below, both in TT103 and TT105
+                        \ --- Mod: Code removed for sideways RAM: ------------->
+
+\STA QQ19+1             \ This instruction has no effect, as QQ19+1 is
+\                       \ overwritten below, both in TT103 and TT105
+
+                        \ --- End of removed code ----------------------------->
 
  PLA                    \ Store the x-delta in QQ19+3 and fetch the current
  STA QQ19+3             \ x-coordinate of the crosshairs from QQ10 into A, ready
@@ -10031,8 +10050,12 @@ ENDIF
  LDA QQ19+4             \ Store the updated x-coordinate in QQ9 (the current
  STA QQ9                \ x-coordinate of the crosshairs)
 
- STA QQ19               \ This instruction has no effect, as QQ19 is overwritten
-                        \ below, both in TT103 and TT105
+                        \ --- Mod: Code removed for sideways RAM: ------------->
+
+\STA QQ19               \ This instruction has no effect, as QQ19 is overwritten
+\                       \ below, both in TT103 and TT105
+
+                        \ --- End of removed code ----------------------------->
 
                         \ Now we've updated the coordinates of the crosshairs,
                         \ fall through into TT103 to redraw them at their new
@@ -17379,8 +17402,12 @@ ENDIF
  LDA #200               \ X, and return from the subroutine using a tail call
  JMP OSBYTE
 
- RTS                    \ This instruction has no effect, as we already returned
-                        \ from the subroutine
+                        \ --- Mod: Code removed for sideways RAM: ------------->
+
+\RTS                    \ This instruction has no effect, as we already returned
+\                       \ from the subroutine
+
+                        \ --- End of removed code ----------------------------->
 
                         \ --- Mod: Code moved for sideways RAM: --------------->
 
@@ -18509,6 +18536,12 @@ ENDIF
                         \ to read the joystick flight controls, before jumping
                         \ to DK4 to scan for pause, configuration and secondary
                         \ flight keys
+
+                        \ --- End of added code ------------------------------->
+
+                        \ --- Mod: Code added for Bitstik: -------------------->
+
+ STA BSTK               \ Set BSTK = 0 to disable the Bitstik
 
                         \ --- End of added code ------------------------------->
 
@@ -28815,6 +28848,37 @@ ENDMACRO
  ORA BET2               \ Store A in BETA, but with the sign set to BET2 (so
  STA BETA               \ BETA has the same sign as the actual pitch rate)
 
+                        \ --- Mod: Code added for Bitstik: -------------------->
+
+ LDA BSTK               \ If BSTK = 0 then the Bitstik is not configured, so
+ BEQ BS2                \ jump to BS2 to skip the following
+
+ LDX #3                 \ Call OSBYTE with A = 128 to fetch the 16-bit value
+ LDA #128               \ from ADC channel 3 (the Bitstik rotation value),
+ JSR OSBYTE             \ returning the value in (Y X)
+
+ TYA                    \ Copy Y to A, so the result is now in (A X)
+
+ LSR A                  \ Divide A by 4
+ LSR A
+
+ CMP #40                \ If A < 40, skip the following instruction
+ BCC P%+4
+
+ LDA #40                \ Set A = 40, which ensures a maximum speed of 40
+
+ STA DELTA              \ Update our speed in DELTA
+
+ BNE MA4                \ If the speed we just set is non-zero, then jump to MA4
+                        \ to skip the following, as we don't need to check the
+                        \ keyboard for speed keys, otherwise do check the
+                        \ keyboard (so Bitstik users can still use the keyboard
+                        \ for speed adjustments if they twist the stick to zero)
+
+.BS2
+
+                        \ --- End of added code ------------------------------->
+
 \ ******************************************************************************
 \
 \       Name: Main flight loop (Part 3 of 16)
@@ -31945,8 +32009,12 @@ ENDMACRO
                         \
                         \ nosev_y = nosev_y - alpha * nosev_x_hi
 
- STX P                  \ This instruction has no effect as MAD overwrites P,
-                        \ but it sets P = nosev_y_lo
+                        \ --- Mod: Code removed for sideways RAM: ------------->
+
+\STX P                  \ This instruction has no effect as MAD overwrites P,
+\                       \ but it sets P = nosev_y_lo
+
+                        \ --- End of removed code ----------------------------->
 
  LDX INWK,Y             \ Set (S R) = nosev_x
  STX R
@@ -31962,8 +32030,12 @@ ENDMACRO
                         \
                         \ nosev_x = nosev_x + alpha * nosev_y_hi
 
- STX P                  \ This instruction has no effect as MAD overwrites P,
-                        \ but it sets P = nosev_x_lo
+                        \ --- Mod: Code removed for sideways RAM: ------------->
+
+\STX P                  \ This instruction has no effect as MAD overwrites P,
+\                       \ but it sets P = nosev_x_lo
+
+                        \ --- End of removed code ----------------------------->
 
  LDA BETA               \ Set Q = beta (the pitch angle to rotate through)
  STA Q
@@ -31974,8 +32046,12 @@ ENDMACRO
  STX S
  LDX INWK+4,Y
 
- STX P                  \ This instruction has no effect as MAD overwrites P,
-                        \ but it sets P = nosev_y
+                        \ --- Mod: Code removed for sideways RAM: ------------->
+
+\STX P                  \ This instruction has no effect as MAD overwrites P,
+\                       \ but it sets P = nosev_y
+
+                        \ --- End of removed code ----------------------------->
 
  LDA INWK+5,Y           \ Set A = -nosev_z_hi
  EOR #%10000000
@@ -31987,8 +32063,12 @@ ENDMACRO
                         \
                         \ nosev_y = nosev_y - beta * nosev_z_hi
 
- STX P                  \ This instruction has no effect as MAD overwrites P,
-                        \ but it sets P = nosev_y_lo
+                        \ --- Mod: Code removed for sideways RAM: ------------->
+
+\STX P                  \ This instruction has no effect as MAD overwrites P,
+\                       \ but it sets P = nosev_y_lo
+
+                        \ --- End of removed code ----------------------------->
 
  LDX INWK+4,Y           \ Set (S R) = nosev_z
  STX R

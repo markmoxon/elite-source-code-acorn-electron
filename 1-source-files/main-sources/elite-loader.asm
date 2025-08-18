@@ -741,8 +741,8 @@ ENDMACRO
                         \ until the Plus 1's ADC port is enabled, which we only
                         \ do if joysticks are chosen (se DKS3 in the main game)
 
- LDA #16                \ Call OSBYTE with A = 16, X = 2 and Y = 0 to set the
- LDX #2                 \ ADC to sample 2 channels from the joystick
+ LDA #16                \ Call OSBYTE with A = 16, X = 3 and Y = 0 to set the
+ LDX #3                 \ ADC to sample 3 channels from the joystick
  LDY #0
  JSR OSBYTE
 
@@ -2047,11 +2047,11 @@ ENDMACRO
                         \ --- Mod: Code added for joysticks: ------------------>
 
  LDA #189               \ Call OSBYTE with A = 189, X = 0 and Y = &FF to read
- LDX #0                 \ the number of ADC channels, which we set to 2 earlier
+ LDX #0                 \ the number of ADC channels, which we set to 3 earlier
  LDY #&FF
  JSR OSBYTE
 
- CPX #2                 \ If the number of channels is not 2 then the OSBYTE to
+ CPX #3                 \ If the number of channels is not 3 then the OSBYTE to
  BNE entr3              \ set the number of channels was ignored, which means
                         \ there is no ADC fitted, so jump to entr3 to skip the
                         \ following
