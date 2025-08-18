@@ -17343,12 +17343,8 @@ ENDIF
  LDA #200               \ X, and return from the subroutine using a tail call
  JMP OSBYTE
 
-                        \ --- Mod: Code removed for sideways RAM: ------------->
-
-\RTS                    \ This instruction has no effect, as we already returned
-\                       \ from the subroutine
-
-                        \ --- End of removed code ----------------------------->
+ RTS                    \ This instruction has no effect, as we already returned
+                        \ from the subroutine
 
                         \ --- Mod: Code moved for sideways RAM: --------------->
 
