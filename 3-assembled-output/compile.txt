@@ -31594,14 +31594,14 @@ End macro FNE
      0B13   A0 0B      LDY #&0B
      0B15   20 F7 FF   JSR &FFF7
      0B18   A9 00      LDA #&00
-     0B1A   8D 27 1D   STA &1D27
+     0B1A   8D 28 1D   STA &1D28
      0B1D   A9 00      LDA #&00
      0B1F   A0 00      LDY #&00
      0B21   20 DA FF   JSR &FFDA
      0B24   C9 08      CMP #&08
      0B26   D0 07      BNE &0B2F
      0B28   A9 80      LDA #&80
-     0B2A   8D 27 1D   STA &1D27
+     0B2A   8D 28 1D   STA &1D28
      0B2D   D0 07      BNE &0B36
 .entr1
      0B2F   A2 ED      LDX #&ED
@@ -31614,9 +31614,9 @@ End macro FNE
      0B3C   20 F4 FF   JSR &FFF4
      0B3F   E0 03      CPX #&03
      0B41   D0 08      BNE &0B4B
-     0B43   AD 27 1D   LDA &1D27
+     0B43   AD 28 1D   LDA &1D28
      0B46   09 40      ORA #&40
-     0B48   8D 27 1D   STA &1D27
+     0B48   8D 28 1D   STA &1D28
 .entr3
      0B4B   A9 03      LDA #&03
      0B4D   8D 58 02   STA &0258
