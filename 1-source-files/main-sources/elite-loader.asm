@@ -103,7 +103,7 @@
 
                         \ --- Mod: Code added for ADFS: ----------------------->
 
- ADFS = S%+&27          \ The address of the ADFS variable in the main game code
+ ADFS = S%+&28          \ The address of the ADFS variable in the main game code
 
  OSARGS = &FFDA         \ The address for the OSARGS routine
 
