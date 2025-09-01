@@ -16121,7 +16121,7 @@ ENDIF
 
  BNE DELY3              \ Loop back up as part of the chain of delay loops
 
- TAX                    \ retrieve X from A, so it gets preserved
+ TAX                    \ Retrieve X from A, so it gets preserved
 
  DEY                    \ Decrement the counter in Y
 
