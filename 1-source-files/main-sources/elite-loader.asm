@@ -27,6 +27,14 @@
 \
 \   * ELITEDA.bin
 \
+\ after reading in the following files:
+\
+\   * P.A-SOFT.bin
+\   * P.(C)ASFT.bin
+\   * DIALS.bin
+\   * P.ELITE.bin
+\   * WORDS9.bin
+\
 \ ******************************************************************************
 
  INCLUDE "1-source-files/main-sources/elite-build-options.asm"
