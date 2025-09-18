@@ -40069,6 +40069,12 @@ ENDMACRO
 \
 \ ******************************************************************************
 
+                        \ --- Mod: Code added for better docking computer: ---->
+
+ LDY #10                \ Set Y = 10 so we calculate nosev . XX15
+
+                        \ --- End of added code ------------------------------->
+
 .TAS3
 
  LDX INWK,Y             \ Set Q = the Y-th byte of INWK, i.e. vect_x
