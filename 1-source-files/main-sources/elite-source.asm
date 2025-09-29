@@ -29346,10 +29346,14 @@ ENDMACRO
                         \ missile, and it has its own dedicated collision
                         \ checks in the TACTICS routine
 
- CPX #OIL               \ If ship type >= OIL (i.e. it's a cargo canister or
- BCS P%+5               \ escape pod), skip the JMP instruction and continue
- JMP MA58               \ on, otherwise jump to MA58 to process a potential
-                        \ collision
+                        \ --- Mod: Code removed for additional ships: --------->
+
+\CPX #OIL               \ If ship type >= OIL (i.e. it's a cargo canister or
+\BCS P%+5               \ escape pod), skip the JMP instruction and continue
+\JMP MA58               \ on, otherwise jump to MA58 to process a potential
+\                       \ collision
+
+                        \ --- End of removed code ----------------------------->
 
  LDA BST                \ If we have fuel scoops fitted then BST will be &FF,
                         \ otherwise it will be 0
