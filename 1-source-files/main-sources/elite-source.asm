@@ -15929,7 +15929,7 @@ ENDIF
 \   Y                   Action:
 \
 \                         * Y = 0 to enable the Plus 1
-\                         * Y > 0 to disable the Plus 1
+\                         * Y = 1 or 2 to disable the Plus 1
 \
 \ ******************************************************************************
 
@@ -18137,9 +18137,6 @@ ENDIF
  STY joyType            \ If we get here then we have enabled joysticks of type
                         \ Y, so store 
 
- CPY #0                 \ If we didn't just enable Plus 1 joysticks, skip the
- BNE joys5              \ following
-
  JSR EnablePlus1        \ We just enabled Plus 1 joysticks, so enable the
                         \ analogue to digital converter on the Plus 1 so we can
                         \ read the joystick channels (it is disabled by the
@@ -18184,8 +18181,6 @@ ENDIF
  LDA joyConfig,Y
  JMP TT26
 
-                        \ --- End of added code ------------------------------->
-
 .joyType
 
  EQUB 0                 \ The type of joystick configured:
@@ -18203,6 +18198,8 @@ ENDIF
  EQUS "FB"
  EQUS "KB"
 
+                        \ --- End of added code ------------------------------->
+
 \ ******************************************************************************
 \
 \       Name: RDJOY
@@ -18214,12 +18211,12 @@ ENDIF
 
 .RDJOY
 
- CPY #1                 \ If the Slogger joystick is configured, jump to titl3
+ CPY #1                 \ If the Slogger joystick is configured, jump to djoy2
  BEQ djoy2
 
  LDA &FCC0              \ Read the First Byte status byte
 
- JMP djoy3
+ JMP djoy3              \ Jump to djoy3 to process the First Byte status byte
 
 .djoy2
 
