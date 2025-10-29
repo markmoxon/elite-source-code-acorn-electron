@@ -254,7 +254,16 @@
  ProcessOptions1 = &0E12
  ProcessOptions2 = &0E15
 
- musicStatus = &1C00    \ Variables for music code
+ musicStatus = &1CD0    \ Variables for music code
+
+                        \ --- End of added code ------------------------------->
+
+                        \ --- Mod: Code added for Delta 14B: ------------------>
+
+ b_14 = &115A
+ b_14a = &1170
+ joys2 = &11A8
+ joyType = &11FF
 
                         \ --- End of added code ------------------------------->
 
@@ -15971,8 +15980,8 @@ ENDIF
 \
 \   Y                   Action:
 \
-\                         * Y = 0 to enable the Plus 1
-\                         * Y > 0 to disable the Plus 1
+\                         * Y = 0, 3 or 4 to enable the Plus 1
+\                         * Y = 1 or 2 to disable the Plus 1
 \
 \ ******************************************************************************
 
@@ -15980,9 +15989,23 @@ ENDIF
 
 .EnablePlus1
 
- CPY #0                 \ If Y > 0 then set Y = 1 to disable the Plus 1
+                        \ --- Mod: Code removed for Delta 14B: ---------------->
+
+\CPY #0                 \ If Y > 0 then set Y = 1 to disable the Plus 1
+\BEQ enpl1
+\LDY #1
+
+                        \ --- And replaced by: -------------------------------->
+
+ CPY #0                 \ If Y = 0 then set Y = 0 to disable the Plus 1
  BEQ enpl1
- LDY #1
+
+ CPY #3                 \ If Y = 3 or 4 then jump to enpl2 to set Y = 0 to
+ BCS enpl2              \ disable the Plus 1
+
+ LDY #1                 \ Otherwise set Y = 1 to disable the Plus 1
+
+                        \ --- End of replacement ------------------------------>
 
 .enpl1
 
@@ -15990,6 +16013,31 @@ ENDIF
  LDX #128               \ enable or disable the Plus 1 ADC (the ADC is disabled
  JMP OSBYTE             \ by the mode 7 ELITE loader program), returning from
                         \ the subroutine using a tail call
+
+                        \ --- End of added code ------------------------------->
+
+                        \ --- Mod: Code added for Delta 14B: ------------------>
+
+.enpl2
+
+                        \ If we get here then we are configuring the Delta 14B
+
+ LDA #%11110000         \ Set the Data Direction Register (DDR) of port B of the
+ STA &FCB2              \ user port so we can read the buttons on the Delta 14B
+                        \ joystick, using PB4 to PB7 as output (so we can write
+                        \ to the button columns to select the column we are
+                        \ interested in) and PB0 to PB3 as input (so we can read
+                        \ from the button rows)
+
+ STA &FCB3              \ Set the Data Direction Register (DDR) of port A of the
+                        \ user port so we can read the buttons on the Delta 14B
+                        \ joystick, using PB4 to PB7 as output (so we can write
+                        \ to the button columns to select the column we are
+                        \ interested in) and PB0 to PB3 as input (so we can read
+                        \ from the button rows)
+
+ LDY #0                 \ Set Y = 0 and jump to enpl1 (this BEQ is effectively a
+ BEQ enpl1              \ JMP as Y is always zero)
 
                         \ --- End of added code ------------------------------->
 
@@ -17879,9 +17927,41 @@ ENDIF
 \
 \ ******************************************************************************
 
+                        \ --- Mod: Code added for Delta 14B: ------------------>
+
+.portA
+
+ JSR b_14a              \ Call b_14a to check the Delta 14B joystick buttons
+                        \ and populate the key logger for user port A
+
+ JMP fill1              \ Jump to fill1 to keep going
+
+                        \ --- End of added code ------------------------------->
+
                         \ --- Mod: Code added for joysticks: ------------------>
 
 .DKS1
+
+                        \ --- Mod: Code added for Delta 14B: ------------------>
+
+ LDA joyType            \ If joyType is 0, 1 or 2, then the Delta 14B joystick
+ CMP #3                 \ is not configured, so jump to fill1 to skip the
+ BCC fill1              \ following
+
+ PHP                    \ Store the flags on the stack
+
+ LDA #%10000000         \ Set A to 128, as that's what the b_14 routine expects
+                        \ as a parameter
+
+ PLP                    \ If Delta 14B port A is configured, jump to portA
+ BEQ portA
+
+ JSR b_14               \ Call b_14 to check the Delta 14B joystick buttons and
+                        \ populate the key logger
+
+.fill1
+
+                        \ --- End of added code ------------------------------->
 
  LDX KYTB,Y             \ Get the internal key number from the Y-th byte of the
                         \ KYTB table above
@@ -18120,8 +18200,18 @@ ENDIF
 
                         \ --- Mod: Code added for joysticks: ------------------>
 
+                        \ --- Mod: Code removed for Delta 14B: ---------------->
+
+\CPX #&46               \ If this is the joystick toggle (&46, "K"), jump to
+\BEQ joys2              \ joys2 to process the different joystick types
+
+                        \ --- And replaced by: -------------------------------->
+
  CPX #&46               \ If this is the joystick toggle (&46, "K"), jump to
- BEQ joys2              \ joys2 to process the different joystick types
+ BNE P%+5               \ joys2 to process the different joystick types
+ JMP joys2
+
+                        \ --- End of replacement ------------------------------>
 
                         \ --- End of added code ------------------------------->
 
@@ -18153,114 +18243,111 @@ ENDIF
 
  RTS                    \ Return from the subroutine
 
-                        \ --- Mod: Code added for joysticks: ------------------>
+                        \ --- Mod: Code moved for Delta 14B: ------------------>
 
-.joys2
+\.joys2
+\
+\LDA DAMP-&40,X         \ Fetch the current joystick configuration
+\
+\BNE joys3              \ If joysticks are already enabled, jump to joys3 to
+\                       \ skip the following
+\
+\LDA #&FF               \ Set JSTK to &FF to configure joysticks
+\STA DAMP-&40,X
+\
+\STA joyType            \ Set joyType = -1 so we increment it to 0 below, for
+\                       \ the Plus 1
+\
+\.joys3
+\
+\LDY joyType            \ Set Y to the joystick type
+\
+\INY                    \ Move on to the next type
+\
+\CPY #3                 \ If we have not yet gone past the end, jump to joys4 to
+\BCC joys4              \ confirm the joystick type
+\
+\                       \ Otherwise we have wrapped around, so enable the
+\                       \ keyboard once again
+\
+\STY joyType            \ Print the joystick configuration for keyboard
+\JSR PrintConfig
+\
+\LDA #0                 \ Disable joysticks
+\STA DAMP-&40,X
+\STA joyType
+\
+\LDY T                  \ Restore the configuration key argument into Y
+\
+\RTS                    \ Return from the subroutine
+\
+\.joys4
+\
+\STY joyType            \ If we get here then we have enabled joysticks of type
+\                       \ Y, so store 
+\
+\JSR EnablePlus1        \ We just enabled Plus 1 joysticks, so enable the
+\                       \ analogue to digital converter on the Plus 1 so we can
+\                       \ read the joystick channels (it is disabled by the
+\                       \ loader to prevent the ADC conversion from slowing the
+\                       \ system down when joysticks are not being used)
+\
+\.joys5
+\
+\JSR PrintConfig        \ Print the joystick configuration
+\
+\LDY T                  \ Restore the configuration key argument into Y
+\
+\RTS                    \ Return from the subroutine
+\
+\.PrintConfig
+\
+\JSR BELL               \ Make a beep sound so we know something has happened
+\
+\JSR prin1              \ Print the joystick configuration in the top-right
+\                       \ corner
+\
+\LDY #55                \ Wait for 55 delay loops
+\JSR DELAY
+\
+\                       \ Fall through into prin1 to print the joystick
+\                       \ configuration in the top-right corner to remove it
+\
+\.prin1
+\
+\LDA #29                \ Move the text cursor to column 29 on row 1
+\STA XC
+\LDA #1
+\STA YC
+\
+\LDA joyType            \ Set A = A * 2 so we can use it as an index into the
+\ASL A                  \ joyConfig table
+\TAY
+\
+\LDA joyConfig,Y        \ Print the two-character joystick configuration
+\JSR TT26
+\INY
+\LDA joyConfig,Y
+\JMP TT26
+\
+\.joyType
+\
+\EQUB 0                 \ The type of joystick configured:
+\                       \
+\                       \   * 0 = Plus 1
+\                       \
+\                       \   * 1 = Slogger
+\                       \
+\                       \   * 2 = First Byte
+\
+\.joyConfig
+\
+\EQUS "+1"
+\EQUS "SL"
+\EQUS "FB"
+\EQUS "KB"
 
- LDA DAMP-&40,X         \ Fetch the current joystick configuration
-
- BNE joys3              \ If joysticks are already enabled, jump to joys3 to
-                        \ skip the following
-
- LDA #&FF               \ Set JSTK to &FF to configure joysticks
- STA DAMP-&40,X
-
- STA joyType            \ Set joyType = -1 so we increment it to 0 below, for
-                        \ the Plus 1
-
-.joys3
-
- LDY joyType            \ Set Y to the joystick type
-
- INY                    \ Move on to the next type
-
- CPY #3                 \ If we have not yet gone past the end, jump to joys4 to
- BCC joys4              \ confirm the joystick type
-
-                        \ Otherwise we have wrapped around, so enable the
-                        \ keyboard once again
-
- STY joyType            \ Print the joystick configuration for keyboard
- JSR PrintConfig
-
- LDA #0                 \ Disable joysticks
- STA DAMP-&40,X
- STA joyType
-
- LDY T                  \ Restore the configuration key argument into Y
-
- RTS                    \ Return from the subroutine
-
-.joys4
-
- STY joyType            \ If we get here then we have enabled joysticks of type
-                        \ Y, so store 
-
- CPY #0                 \ If we didn't just enable Plus 1 joysticks, skip the
- BNE joys5              \ following
-
- JSR EnablePlus1        \ We just enabled Plus 1 joysticks, so enable the
-                        \ analogue to digital converter on the Plus 1 so we can
-                        \ read the joystick channels (it is disabled by the
-                        \ loader to prevent the ADC conversion from slowing the
-                        \ system down when joysticks are not being used)
-
-.joys5
-
- JSR PrintConfig        \ Print the joystick configuration
-
- LDY T                  \ Restore the configuration key argument into Y
-
- RTS                    \ Return from the subroutine
-
-.PrintConfig
-
- JSR BELL               \ Make a beep sound so we know something has happened
-
- JSR prin1              \ Print the joystick configuration in the top-right
-                        \ corner
-
- LDY #55                \ Wait for 55 delay loops
- JSR DELAY
-
-                        \ Fall through into prin1 to print the joystick
-                        \ configuration in the top-right corner to remove it
-
-.prin1
-
- LDA #29                \ Move the text cursor to column 29 on row 1
- STA XC
- LDA #1
- STA YC
-
- LDA joyType            \ Set A = A * 2 so we can use it as an index into the
- ASL A                  \ joyConfig table
- TAY
-
- LDA joyConfig,Y        \ Print the two-character joystick configuration
- JSR TT26
- INY
- LDA joyConfig,Y
- JMP TT26
-
-                        \ --- End of added code ------------------------------->
-
-.joyType
-
- EQUB 0                 \ The type of joystick configured:
-                        \
-                        \   * 0 = Plus 1
-                        \
-                        \   * 1 = Slogger
-                        \
-                        \   * 2 = First Byte
-
-.joyConfig
-
- EQUS "+1"
- EQUS "SL"
- EQUS "FB"
- EQUS "KB"
+                        \ --- End of moved code ------------------------------->
 
 \ ******************************************************************************
 \
@@ -18273,12 +18360,27 @@ ENDIF
 
 .RDJOY
 
- CPY #1                 \ If the Slogger joystick is configured, jump to titl3
+ CPY #1                 \ If the Slogger joystick is configured, jump to djoy2
  BEQ djoy2
+
+                        \ --- Mod: Code added for Delta 14B: ------------------>
+
+ CPY #2                 \ If the First Byte joystick is configured, jump to djoy1
+ BEQ djoy1
+
+ LDA #%10000000         \ Set A to 128, as that's what the b_14 routine expects
+                        \ as a parameter
+
+ JMP b_14               \ Call b_14 to check the Delta 14B joystick buttons and
+                        \ populate the key logger
+
+.djoy1
+
+                        \ --- End of added code ------------------------------->
 
  LDA &FCC0              \ Read the First Byte status byte
 
- JMP djoy3
+ JMP djoy3              \ Jump to djoy3 to process the First Byte status byte
 
 .djoy2
 
@@ -18410,8 +18512,63 @@ ENDIF
  INY                    \ Update the key logger for key 2 in the KYTB table, so
  JSR DKS1               \ KY2 will be &FF if Space (speed up) is being pressed
 
- LDY joyType            \ If the First Byte or Slogger joysticks are configured,
- BNE RDJOY              \ jump to RDJOY to read the digital joysticks
+                        \ --- Mod: Code removed for Delta 14B: ---------------->
+
+\LDY joyType            \ If the First Byte or Slogger joysticks are configured,
+\BNE RDJOY              \ jump to RDJOY to read the digital joysticks
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDY joyType            \ If the Plus 1 joystick is configured, jump to plus2 to
+ BEQ plus2              \ read the Plus 1 fire button
+
+ CPY #1                 \ If the First Byte or Slogger joysticks are configured,
+ BEQ RDJOY              \ jump to RDJOY to read the digital joysticks
+ CPY #2
+ BEQ RDJOY
+
+                        \ If we get here then Delta 14B is configured
+
+ LDA #&51               \ Set A for the fire button
+
+ CPY #3                 \ If Delta 14B port A is configured, 
+ BEQ plus1
+
+ STA &FCB0              \ Set 6522 User VIA output register ORB (&FCB0) to
+                        \ the Delta 14B joystick button in the middle column
+                        \ (high nibble &5) and top row (low nibble &1), which
+                        \ corresponds to the fire button
+
+ LDA &FCB0              \ Read 6522 System VIA input register IRB (&FCB0)
+
+.plus0
+
+ AND #1                 \ Extract bit 0, which will be 0 if the fire button is
+                        \ pressed and 1 if it is not
+
+ EOR #1                 \ Flip bit 0 so A is now non-zero if the fire button is
+ STA KY7                \ being pressed, and store the result in the keyboard
+                        \ logger at location KY7, which is also where the A key
+                        \ (fire lasers) key is logged
+
+ JMP plus3              \ Jump to plus3 to read the analogue part of the stick
+
+.plus1
+
+ STA &FCB1              \ Set 6522 User VIA output register ORA (&FCB1) to
+                        \ the Delta 14B joystick button in the middle column
+                        \ (high nibble &5) and top row (low nibble &1), which
+                        \ corresponds to the fire button
+
+ LDA &FCB1              \ Read 6522 System VIA input register IRA (&FCB1)
+
+ JMP plus0              \ Jump to plus0 to read the fire button
+
+.plus2
+
+                        \ If we get here then the Plus 1 joystick is configured
+
+                        \ --- End of replacement ------------------------------>
 
  LDA &FC72              \ Read the Plus 1 ADC status byte
 
@@ -18425,6 +18582,12 @@ ENDIF
                         \ (fire lasers) key is logged
 
                         \ --- Mod: Code added for joystick fire button: ------->
+
+                        \ --- Mod: Code added for Delta 14B: ------------------>
+
+.plus3
+
+                        \ --- End of added code ------------------------------->
 
  LDY #7                 \ Update the key logger for key 7 in the KYTB table, so
  JSR DKS1               \ KY7 will be &FF if "A" (fire laser) is being pressed
@@ -46693,8 +46856,20 @@ ENDMACRO
 
                         \ --- Mod: Code added for joysticks: ------------------>
 
- LDY joyType            \ If this is not the Plus 1 joystick, jump to mjoy1 to
- BNE mjoy1              \ process the digital joysticks
+                        \ --- Mod: Code removed for Delta 14B: ---------------->
+
+\LDY joyType            \ If this is not the Plus 1 joystick, jump to mjoy1 to
+\BNE mjoy1              \ process the digital joysticks
+
+                        \ --- And replaced by: -------------------------------->
+
+ LDY joyType            \ If this is the First Byte or Slogger joystick, jump to
+ CPY #1                 \ mjoy1 to process the digital joysticks
+ BEQ mjoy1
+ CPY #2
+ BEQ mjoy1
+
+                        \ --- End of replacement ------------------------------>
 
                         \ --- End of added code ------------------------------->
 
