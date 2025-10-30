@@ -19055,24 +19055,35 @@ ENDIF
 
                         \ --- End of replacement ------------------------------>
 
- LDA #&FF               \ Set A to &FF so we can store this in the keyboard
-                        \ logger for keys that are being pressed
+                        \ --- Mod: Code removed for Delta 14B: ---------------->
+
+\LDA #&FF               \ Set A to &FF so we can store this in the keyboard
+\                       \ logger for keys that are being pressed
+\
+\.DKL1
+\
+\LDX KYTB,Y             \ Get the internal key number of the Y-th flight key
+\                       \ the KYTB keyboard table
+\
+\CPX KL                 \ We stored the key that's being pressed in KL above,
+\                       \ so check to see if the Y-th flight key is being
+\                       \ pressed
+\
+\BNE DK1                \ If it is not being pressed, skip to DK1 below
+\
+\STA KL,Y               \ The Y-th flight key is being pressed, so set that
+\                       \ key's location in the key logger to &FF
+\
+\.DK1
+
+                        \ --- And replaced by: -------------------------------->
 
 .DKL1
 
- LDX KYTB,Y             \ Get the internal key number of the Y-th flight key
-                        \ the KYTB keyboard table
+ JSR DKS1               \ Call DKS1 to see if the KYTB key at offset Y is being
+                        \ pressed, and set the key logger accordingly
 
- CPX KL                 \ We stored the key that's being pressed in KL above,
-                        \ so check to see if the Y-th flight key is being
-                        \ pressed
-
- BNE DK1                \ If it is not being pressed, skip to DK1 below
-
- STA KL,Y               \ The Y-th flight key is being pressed, so set that
-                        \ key's location in the key logger to &FF
-
-.DK1
+                        \ --- End of replacement ------------------------------>
 
  DEY                    \ Decrement the loop counter
 
