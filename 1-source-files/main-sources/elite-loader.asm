@@ -91,9 +91,9 @@
 
                         \ --- Mod: Code added for music: ---------------------->
 
- musicStatus = &1C00    \ The flag for controlling music so we can disable it
+ musicStatus = &1CD0    \ The flag for controlling music so we can disable it
 
- musicOptions = &1C01   \ The flag for toggling music and the tune choice
+ musicOptions = &1CD1   \ The flag for toggling music and the tune choice
 
                         \ --- End of added code ------------------------------->
 

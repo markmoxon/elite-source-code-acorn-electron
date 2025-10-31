@@ -31593,8 +31593,8 @@ End macro FNE
      0B27   A0 0B      LDY #&0B
      0B29   20 F7 FF   JSR &FFF7
      0B2C   A9 00      LDA #&00
-     0B2E   8D 00 1C   STA &1C00
-     0B31   8D 01 1C   STA &1C01
+     0B2E   8D D0 1C   STA &1CD0
+     0B31   8D D1 1C   STA &1CD1
      0B34   A9 BD      LDA #&BD
      0B36   A2 00      LDX #&00
      0B38   A0 FF      LDY #&FF
