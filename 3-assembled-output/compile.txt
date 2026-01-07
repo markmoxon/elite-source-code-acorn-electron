@@ -15948,23 +15948,31 @@ S.SHIPS &4ED4  &5800  &2000  &61D4
 Saving file '3-assembled-output/SHIPS.bin'
 .elitea
 elitea = &D00 
+     0D00   40 00 00 ... INCBIN "versions/electron/3-assembled-output/ELTA.bin"
 .eliteb
 eliteb = &159D 
+     159D   4A 41 4D ... INCBIN "versions/electron/3-assembled-output/ELTB.bin"
 .elitec
 elitec = &1EBF 
+     1EBF   A9 00 20 ... INCBIN "versions/electron/3-assembled-output/ELTC.bin"
 .elited
 elited = &294A 
+     294A   48 A2 0C ... INCBIN "versions/electron/3-assembled-output/ELTD.bin"
 .elitee
 elitee = &342C 
+     342C   8C E7 8D ... INCBIN "versions/electron/3-assembled-output/ELTE.bin"
 .elitef
 elitef = &3B40 
+     3B40   A5 1B 8D ... INCBIN "versions/electron/3-assembled-output/ELTF.bin"
 .eliteg
 eliteg = &45AF 
+     45AF   20 17 47 ... INCBIN "versions/electron/3-assembled-output/ELTG.bin"
 .checksum0
 checksum0 = &4ED3 
      4ED3
 .ships
 ships = &4ED4 
+     4ED4   EA 4E 92 ... INCBIN "versions/electron/3-assembled-output/SHIPS.bin"
 .end
 P% = &5800 
 S.ELITECO &D00  &5800  &2000  &2000 
@@ -15999,10 +16007,15 @@ Saving file '3-assembled-output/ELITECO.unprot.bin'
 .EXCN
      0085
 WORDS9 = &4400 
+     4400   DC 00 03 ... INCBIN "versions/electron/3-assembled-output/WORDS9.bin"
 P.DIALS = &4800 
+     4800   FF C0 DF ... INCBIN "versions/electron/1-source-files/images/P.DIALS.bin"
 P.ELITE = &4F00 
+     4F00   00 00 00 ... INCBIN "versions/electron/1-source-files/images/P.ELITE.bin"
 P.A-SOFT = &5000 
+     5000   00 00 00 ... INCBIN "versions/electron/1-source-files/images/P.A-SOFT.bin"
 P.(C)ASFT = &5100 
+     5100   00 00 00 ... INCBIN "versions/electron/1-source-files/images/P.(C)ASFT.bin"
 .run
      5200   4C 94 52   JMP &5294
 .B%
