@@ -45,18 +45,9 @@
  EQUS "For the Electron with 16K sideways RAM"
  EQUB 10, 13
  EQUB 10, 13
- EQUS "Contains the flicker-free ship drawing"
+ EQUS "Flicker-free routines, bug fixes and"
  EQUB 10, 13
- EQUS "routines from the BBC Master version,"
- EQUB 10, 13
- EQUS "bug fixes and many other enhancements,"
- EQUB 10, 13
- EQUS "all backported by Mark Moxon"
- EQUB 10, 13
- EQUB 10, 13
- EQUS "Contains flicker-free planet drawing"
- EQUB 10, 13
- EQUS "routines by Mark Moxon"
+ EQUS "other enhancements by Mark Moxon"
  EQUB 10, 13
  EQUB 10, 13
  EQUS "Sound routines by Negative Charge"

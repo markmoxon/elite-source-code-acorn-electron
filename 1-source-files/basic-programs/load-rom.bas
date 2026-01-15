@@ -131,7 +131,6 @@ ENDFN
 :
 DEF PROCelite(A%)
 ?romNumber=A% AND &FF
-PRINT'"Sideways RAM detected in bank ";?romNumber
 PRINT'"Loading code into RAM bank ";?romNumber;"...";
 REM Load first half of ROM image
 *LOAD ELITER3 3000
