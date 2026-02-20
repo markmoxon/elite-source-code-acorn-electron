@@ -1073,7 +1073,8 @@ ENDMACRO
                         \ or 1280 times, and draws the planet part of the
                         \ loading screen's Saturn
 
- JSR DORND              \ Set A and X to random numbers, say A = r1
+ JSR DORND              \ Set A and X to signed random numbers between -128 and
+                        \ 127, so let's say A = r1
 
  JSR SQUA2              \ Set (A P) = A * A
                         \           = r1^2
@@ -1082,7 +1083,8 @@ ENDMACRO
  LDA P                  \             = r1^2
  STA ZP
 
- JSR DORND              \ Set A and X to random numbers, say A = r2
+ JSR DORND              \ Set A and X to signed random numbers between -128 and
+                        \ 127, so let's say A = r2
 
  STA YY                 \ Set YY = A
                         \        = r2
@@ -1199,7 +1201,7 @@ ENDMACRO
 .PLL2
 
  JSR DORND              \ Set A and X to signed random numbers between -128 and
-                        \ 127, say A = r3
+                        \ 127, so let's say A = r3
 
  TAX                    \ Set X = A
                         \       = r3
@@ -1211,7 +1213,7 @@ ENDMACRO
                         \          = r3^2 / 256
 
  JSR DORND              \ Set A and X to signed random numbers between -128 and
-                        \ 127, say A = r4
+                        \ 127, so let's say A = r4
 
  STA YY                 \ Set YY = r4
 
@@ -1268,7 +1270,8 @@ ENDMACRO
 
 .PLL3
 
- JSR DORND              \ Set A and X to random numbers, say A = r5
+ JSR DORND              \ Set A and X to signed random numbers between -128 and
+                        \ 127, so let's say A = r5
 
  STA ZP                 \ Set ZP = r5
 
@@ -1278,7 +1281,8 @@ ENDMACRO
  STA ZP+1               \ Set ZP+1 = A
                         \          = r5^2 / 256
 
- JSR DORND              \ Set A and X to random numbers, say A = r6
+ JSR DORND              \ Set A and X to signed random numbers between -128 and
+                        \ 127, so let's say A = r6
 
  STA YY                 \ Set YY = r6
 
