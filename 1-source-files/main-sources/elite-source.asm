@@ -25708,6 +25708,20 @@ ENDIF
  EQUB &11, &04, &C2, &FF    \ 64 - E.C.M. on
  EQUB &11, &00, &00, &00    \ 72 - E.C.M. off
 
+\ ******************************************************************************
+\
+\       Name: SFX2
+\       Type: Variable
+\   Category: Sound
+\    Summary: The priority and a minimum duration for each sound
+\
+\ ------------------------------------------------------------------------------
+\
+\ In the Electron version, each of the game's sounds is allocated a priority and
+\ a minimum duration.
+\
+\ ******************************************************************************
+
 .SFX2
 
  EQUB &70               \ 0  - Priority 112, minimum duration 0
