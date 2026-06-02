@@ -7240,7 +7240,7 @@ ENDIF
 \       Type: Subroutine
 \   Category: Drawing lines
 \    Summary: Draw a line: Calculate the line gradient in the form of deltas
-\  Deep dive: Bresenham's line algorithm
+\  Deep dive: Elite's line-drawing algorithm
 \
 \ ------------------------------------------------------------------------------
 \
@@ -7346,7 +7346,7 @@ ENDIF
 \       Type: Subroutine
 \   Category: Drawing lines
 \    Summary: Draw a line: Line has a shallow gradient, step right along x-axis
-\  Deep dive: Bresenham's line algorithm
+\  Deep dive: Elite's line-drawing algorithm
 \
 \ ------------------------------------------------------------------------------
 \
@@ -7513,7 +7513,7 @@ ENDIF
 \       Type: Subroutine
 \   Category: Drawing lines
 \    Summary: Draw a shallow line going right and up or left and down
-\  Deep dive: Bresenham's line algorithm
+\  Deep dive: Elite's line-drawing algorithm
 \
 \ ------------------------------------------------------------------------------
 \
@@ -7628,7 +7628,7 @@ ENDIF
 \       Type: Subroutine
 \   Category: Drawing lines
 \    Summary: Draw a shallow line going right and down or left and up
-\  Deep dive: Bresenham's line algorithm
+\  Deep dive: Elite's line-drawing algorithm
 \
 \ ------------------------------------------------------------------------------
 \
@@ -7735,7 +7735,7 @@ ENDIF
 \       Type: Subroutine
 \   Category: Drawing lines
 \    Summary: Draw a line: Line has a steep gradient, step up along y-axis
-\  Deep dive: Bresenham's line algorithm
+\  Deep dive: Elite's line-drawing algorithm
 \
 \ ------------------------------------------------------------------------------
 \
@@ -7903,7 +7903,7 @@ ENDIF
 \       Type: Subroutine
 \   Category: Drawing lines
 \    Summary: Draw a steep line going up and left or down and right
-\  Deep dive: Bresenham's line algorithm
+\  Deep dive: Elite's line-drawing algorithm
 \
 \ ------------------------------------------------------------------------------
 \
@@ -8011,7 +8011,7 @@ ENDIF
 \       Type: Subroutine
 \   Category: Drawing lines
 \    Summary: Draw a steep line going up and right or down and left
-\  Deep dive: Bresenham's line algorithm
+\  Deep dive: Elite's line-drawing algorithm
 \
 \ ------------------------------------------------------------------------------
 \
