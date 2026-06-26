@@ -3695,7 +3695,7 @@ ENDMACRO
 \ The key presses that are processed are as follows:
 \
 \   * Space and "?" to speed up and slow down
-\   * "U", "T" and "M" to disarm, arm and fire missiles
+\   * "U", "T" and "M" to unarm, target and fire missiles
 \   * "-" to fire an energy bomb
 \   * ESCAPE to launch an escape pod
 \   * "J" to initiate an in-system jump
@@ -3735,12 +3735,12 @@ ENDMACRO
  AND NOMSL              \ in NOMSL is non-zero, keep going, otherwise jump down
  BEQ MA20               \ to MA20 to skip the following
 
- JSR ABORT-2            \ The "disarm missiles" key is being pressed, so call
-                        \ ABORT-2 to disarm the missile and update the missile
+ JSR ABORT-2            \ The "unarm missiles" key is being pressed, so call
+                        \ ABORT-2 to unarm the missile and update the missile
                         \ indicators on the dashboard to white squares (Y = &09)
 
  LDA #40                \ Call the NOISE routine with A = 40 to make a low,
- JSR NOISE              \ long beep to indicate the missile is now disarmed
+ JSR NOISE              \ long beep to indicate the missile is now unarmed
 
 .MA31
 
@@ -5403,8 +5403,7 @@ ENDMACRO
 .MV30
 
  JSR SCAN               \ Draw the ship on the scanner, which has the effect of
-                        \ removing it, as it's already at this point and hasn't
-                        \ yet moved
+                        \ removing it as it hasn't yet moved
 
 \ ******************************************************************************
 \
@@ -23857,18 +23856,18 @@ ENDIF
 \       Name: ABORT
 \       Type: Subroutine
 \   Category: Dashboard
-\    Summary: Disarm missiles and update the dashboard indicators
+\    Summary: Unarm missiles and update the dashboard indicators
 \
 \ ------------------------------------------------------------------------------
 \
 \ Other entry points:
 \
-\   ABORT-2             Set the indicator to disarmed (white square)
+\   ABORT-2             Set the indicator to unarmed (white square)
 \
 \ ******************************************************************************
 
  LDY #&09               \ Set Y = &09 so we set the missile to a white square
-                        \ (disarmed)
+                        \ (unarmed)
 
 .ABORT
 
@@ -23876,7 +23875,7 @@ ENDIF
                         \ no target lock for our missile
 
                         \ Fall through into ABORT2 to set the missile lock to
-                        \ the value in X, which effectively disarms the missile
+                        \ the value in X, which effectively unarms the missile
 
 \ ******************************************************************************
 \
@@ -23904,7 +23903,7 @@ ENDIF
 \
 \                         * &0D = black box in white square (armed)
 \
-\                         * &09 = white square (disarmed)
+\                         * &09 = white square (unarmed)
 \
 \ ******************************************************************************
 
@@ -24113,7 +24112,7 @@ ENDIF
 \
 \                         * &0D = black box in white square (armed)
 \
-\                         * &09 = white square (disarmed)
+\                         * &09 = white square (unarmed)
 \
 \ ------------------------------------------------------------------------------
 \
@@ -24131,13 +24130,14 @@ ENDIF
  PHA                    \ the call to the subroutine
 
  ASL A                  \ Set T = X * 8
- ASL A
- ASL A
- STA T
+ ASL A                  \
+ ASL A                  \ This also clears the C flag, as X is in the range 0
+ STA T                  \ to 3
 
- LDA #209               \ Set SC = &80 + 32 + 49 - T
- SBC T                  \        = &80 + 32 + 48 + 1 - (X * 8)
- STA SC                 \
+ LDA #209               \ Set SC = &80 + 32 + 49 - T - (1 - C)
+ SBC T                  \        = &80 + 32 + 49 - (X * 8) - 1
+ STA SC                 \        = &80 + 32 + 48 - (X * 8)
+                        \
                         \ The &80 part comes from the fact that the character
                         \ row containing the missile starts at address &7D80,
                         \ and the low byte of this is &80
@@ -24156,9 +24156,6 @@ ENDIF
                         \
                         \   * 48 (character block 7, as byte #7 * 8 = 48), the
                         \     character block of the rightmost missile
-                        \
-                        \   * 1 (so we start drawing on the second row of the
-                        \     character block)
                         \
                         \   * Move left one character (8 bytes) for each count
                         \     of X, so when X = 0 we are drawing the rightmost
@@ -24215,7 +24212,7 @@ ENDIF
  EQUB %00000000
  EQUB %00000000
 
- EQUB %11111100         \ Disarmed (white square)
+ EQUB %11111100         \ Unarmed (white square)
  EQUB %11111100         \
  EQUB %11111100         \ Shares the first row from the next indicator
  EQUB %11111100
@@ -25414,8 +25411,8 @@ ENDIF
  BNE KS5                \ If our missile is not locked on this ship, jump to KS5
 
  JSR ABORT-2            \ Otherwise we need to remove our missile lock, so call
-                        \ ABORT-2 to disarm the missile and update the missile
-                        \ indicators on the dashboard to disarmed (white
+                        \ ABORT-2 to unarm the missile and update the missile
+                        \ indicators on the dashboard to unarmed (white
                         \ squares)
 
  LDA #200               \ Print recursive token 40 ("TARGET LOST") as an
@@ -28887,7 +28884,7 @@ ENDIF
 
  EQUB &17               \ -         KYTB+8      Energy bomb
  EQUB &70               \ ESCAPE    KYTB+9      Launch escape pod
- EQUB &23               \ T         KYTB+10     Arm missile
+ EQUB &23               \ T         KYTB+10     Target missile
  EQUB &35               \ U         KYTB+11     Unarm missile
  EQUB &65               \ M         KYTB+12     Fire missile
  EQUB &22               \ E         KYTB+13     E.C.M.
