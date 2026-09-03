@@ -39,7 +39,7 @@
  EQUB 10, 13
  EQUS "---------------------------------------"
  EQUB 10, 13
- EQUS "Acornsoft Elite (Compendium version)"
+ EQUS "BBC Micro Elite on the Acorn Electron"
  EQUB 10, 13
  EQUB 10, 13
  EQUS "For the Electron with 16K sideways RAM"
@@ -47,7 +47,7 @@
  EQUB 10, 13
  EQUS "Flicker-free routines, bug fixes and"
  EQUB 10, 13
- EQUS "other enhancements by Mark Moxon"
+ EQUS "port of BBC features by Mark Moxon"
  EQUB 10, 13
  EQUB 10, 13
  EQUS "Sound routines by Negative Charge"

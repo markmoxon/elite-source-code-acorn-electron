@@ -2,13 +2,13 @@ MODE6
 fromAddr = &80
 romNumber = &87 : REM Set to address of .sramBankNumber
 
-PRINT'"Electron Elite (Compendium version)"
-PRINT"==================================="
+PRINT'"BBC Micro Elite on the Acorn Electron"
+PRINT"====================================="
 PRINT'"Based on the Acornsoft SLG38 release"
 PRINT"of Elite by Ian Bell and David Braben"
 PRINT"Copyright (c) Acornsoft 1984"
 PRINT'"Flicker-free routines, bug fixes and"
-PRINT"other enhancements by Mark Moxon"
+PRINT"port of BBC features by Mark Moxon"
 PRINT'"Sideways RAM loader, routines and"
 PRINT"inspiration by Wouter Hobers"
 PRINT'"Sound routines by Negative Charge"

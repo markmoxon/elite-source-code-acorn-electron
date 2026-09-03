@@ -1,11 +1,11 @@
 
 ---------------------------------------
-Acornsoft Elite (Compendium version)
+BBC Micro Elite on the Acorn Electron
 
 For the Electron with 16K sideways RAM
 
 Flicker-free routines, bug fixes and
-other enhancements by Mark Moxon
+port of BBC features by Mark Moxon
 
 Sound routines by Negative Charge
 
@@ -24,6 +24,6 @@
 
 See www.bbcelite.com for details
 
-Build: 2026-09-03 13:49:37
+Build: 2026-09-03 15:07:17
 ---------------------------------------
 
