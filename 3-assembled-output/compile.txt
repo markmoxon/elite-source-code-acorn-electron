@@ -28558,8 +28558,8 @@ WP workspace from &85E0 to &87DB inclusive
      B090   C9 64      CMP #&64
      B092   B0 29      BCS &B0BD
      B094   EE 1A 86   INC &861A
-     B097   29 03      AND #&03
-     B099   4A         LSR A
+     B097   4A         LSR A
+     B098   29 03      AND #&03
      B09A   69 18      ADC #&18
      B09C   A8         TAY
      B09D   20 4B 33   JSR &334B
@@ -30852,18 +30852,25 @@ Saving file '3-assembled-output/ELTROM1.bin'
 Saving file '3-assembled-output/ELTROM2.bin'
 .elitea
 elitea = &1D00 
+     1D00   00 00 00 ... INCBIN "3-assembled-output/ELTA.bin"
 .eliteb
 eliteb = &1D59 
+     1D59   4A 41 4D ... INCBIN "3-assembled-output/ELTB.bin"
 .elitec
 elitec = &2219 
+     2219   A9 38 20 ... INCBIN "3-assembled-output/ELTC.bin"
 .elited
 elited = &2507 
+     2507   85 04 A9 ... INCBIN "3-assembled-output/ELTD.bin"
 .elitee
 elitee = &30DE 
+     30DE   A2 05 B5 ... INCBIN "3-assembled-output/ELTE.bin"
 .elitef
 elitef = &3319 
+     3319   11 01 00 ... INCBIN "3-assembled-output/ELTF.bin"
 .eliteg
 eliteg = &3CD4 
+     3CD4   57 5E 5C ... INCBIN "3-assembled-output/ELTG.bin"
 .end
 P% = &4DFE 
 S.ELITECO &1D00  &4DFE  &1D00  &1D00 
@@ -30900,10 +30907,15 @@ Saving file '3-assembled-output/ELITECO.unprot.bin'
 .sramBankNumber
      0087
 WORDS9 = &4400 
+     4400   4C 32 24 ... INCBIN "3-assembled-output/WORDS9.bin"
 P.DIALS = &4800 
+     4800   FF C0 DF ... INCBIN "1-source-files/images/P.DIALS.bin"
 P.ELITE = &4F00 
+     4F00   00 00 00 ... INCBIN "1-source-files/images/P.ELITE.bin"
 P.A-SOFT = &5000 
+     5000   00 00 00 ... INCBIN "1-source-files/images/P.A-SOFT.bin"
 P.(C)ASFT = &5100 
+     5100   00 00 00 ... INCBIN "1-source-files/images/P.(C)ASFT.bin"
 .run
      5200   4C 94 52   JMP &5294
 .B%
@@ -87231,57 +87243,43 @@ Saving file '3-assembled-output/D.MOP.bin'
      007A   0D
      007B   0A
      007C   0D
-     007D   43 6F 6E ...
-     00A3   0A
-     00A4   0D
-     00A5   72 6F 75 ...
-     00CA   0A
-     00CB   0D
-     00CC   62 75 67 ...
-     00F2   0A
-     00F3   0D
-     00F4   61 6C 6C ...
-     0110   0A
-     0111   0D
+     007D   46 6C 69 ...
+     00A1   0A
+     00A2   0D
+     00A3   6F 74 68 ...
+     00C3   0A
+     00C4   0D
+     00C5   0A
+     00C6   0D
+     00C7   42 61 73 ...
+     00EB   0A
+     00EC   0D
+     00ED   6F 66 20 ...
      0112   0A
      0113   0D
-     0114   43 6F 6E ...
-     0138   0A
-     0139   0D
-     013A   72 6F 75 ...
-     0150   0A
-     0151   0D
-     0152   0A
-     0153   0D
-     0154   42 61 73 ...
-     0178   0A
-     0179   0D
-     017A   6F 66 20 ...
-     019F   0A
-     01A0   0D
-     01A1   43 6F 70 ...
-     01BD   0A
-     01BE   0D
-     01BF   0A
-     01C0   0D
-     01C1   53 69 64 ...
-     01E4   0A
-     01E5   0D
-     01E6   69 6E 73 ...
-     0202   0A
-     0203   0D
-     0204   0A
-     0205   0D
-     0206   53 65 65 ...
-     0226   0A
-     0227   0D
-     0228   0A
-     0229   0D
-     022A   42 75 69 ...
-     0231   32 30 32 ...
-     0244   0A
-     0245   0D
-     0246   2D 2D 2D ...
-     026D   0A
-     026E   0D
+     0114   43 6F 70 ...
+     0130   0A
+     0131   0D
+     0132   0A
+     0133   0D
+     0134   53 69 64 ...
+     0157   0A
+     0158   0D
+     0159   69 6E 73 ...
+     0175   0A
+     0176   0D
+     0177   0A
+     0178   0D
+     0179   53 65 65 ...
+     0199   0A
+     019A   0D
+     019B   0A
+     019C   0D
+     019D   42 75 69 ...
+     01A4   32 30 32 ...
+     01B7   0A
+     01B8   0D
+     01B9   2D 2D 2D ...
+     01E0   0A
+     01E1   0D
 Saving file '3-assembled-output/README.txt'
