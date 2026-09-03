@@ -3,7 +3,7 @@ fromAddr = &80
 romNumber = &87 : REM Set to address of .sramBankNumber
 
 PRINT'"BBC Micro Elite on the Acorn Electron"
-PRINT"======================================"
+PRINT"====================================="
 PRINT'"Based on the Acornsoft SLG38 release"
 PRINT"of Elite by Ian Bell and David Braben"
 PRINT"Copyright (c) Acornsoft 1984"
