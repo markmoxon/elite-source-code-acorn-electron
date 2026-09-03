@@ -4,13 +4,8 @@
 
 For the Electron with 16K sideways RAM
 
-Contains the flicker-free ship drawing
-routines from the BBC Master version,
-bug fixes and many other enhancements,
-all backported by Mark Moxon
-
-Contains flicker-free planet drawing
-routines by Mark Moxon
+Flicker-free routines, bug fixes and
+other enhancements by Mark Moxon
 
 Sound routines by Negative Charge
 
@@ -29,6 +24,6 @@
 
 See www.bbcelite.com for details
 
-Build: 2025-10-31 15:03:46
+Build: 2026-09-03 13:49:37
 ---------------------------------------
 

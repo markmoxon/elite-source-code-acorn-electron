@@ -28548,8 +28548,8 @@ WP workspace from &85E0 to &87DB inclusive
      B09A   C9 64      CMP #&64
      B09C   B0 29      BCS &B0C7
      B09E   EE 1A 86   INC &861A
-     B0A1   29 03      AND #&03
-     B0A3   4A         LSR A
+     B0A1   4A         LSR A
+     B0A2   29 03      AND #&03
      B0A4   69 18      ADC #&18
      B0A6   A8         TAY
      B0A7   20 5A 33   JSR &335A
@@ -30842,18 +30842,25 @@ Saving file '3-assembled-output/ELTROM1.bin'
 Saving file '3-assembled-output/ELTROM2.bin'
 .elitea
 elitea = &1D00 
+     1D00   00 00 00 ... INCBIN "3-assembled-output/ELTA.bin"
 .eliteb
 eliteb = &1D68 
+     1D68   4A 41 4D ... INCBIN "3-assembled-output/ELTB.bin"
 .elitec
 elitec = &2228 
+     2228   A9 38 20 ... INCBIN "3-assembled-output/ELTC.bin"
 .elited
 elited = &2516 
+     2516   85 04 A9 ... INCBIN "3-assembled-output/ELTD.bin"
 .elitee
 elitee = &30ED 
+     30ED   A2 05 B5 ... INCBIN "3-assembled-output/ELTE.bin"
 .elitef
 elitef = &3328 
+     3328   11 01 00 ... INCBIN "3-assembled-output/ELTF.bin"
 .eliteg
 eliteg = &3CBD 
+     3CBD   57 5E 5C ... INCBIN "3-assembled-output/ELTG.bin"
 .end
 P% = &4DFE 
 S.ELITECO &1D00  &4DFE  &1D00  &1D00 
@@ -30890,10 +30897,15 @@ Saving file '3-assembled-output/ELITECO.unprot.bin'
 .sramBankNumber
      0087
 WORDS9 = &4400 
+     4400   4C 32 24 ... INCBIN "3-assembled-output/WORDS9.bin"
 P.DIALS = &4800 
+     4800   FF C0 DF ... INCBIN "1-source-files/images/P.DIALS.bin"
 P.ELITE = &4F00 
+     4F00   00 00 00 ... INCBIN "1-source-files/images/P.ELITE.bin"
 P.A-SOFT = &5000 
+     5000   00 00 00 ... INCBIN "1-source-files/images/P.A-SOFT.bin"
 P.(C)ASFT = &5100 
+     5100   00 00 00 ... INCBIN "1-source-files/images/P.(C)ASFT.bin"
 .run
      5200   4C 94 52   JMP &5294
 .B%
@@ -87225,78 +87237,64 @@ Saving file '3-assembled-output/D.MOP.bin'
      007A   0D
      007B   0A
      007C   0D
-     007D   43 6F 6E ...
-     00A3   0A
-     00A4   0D
-     00A5   72 6F 75 ...
-     00CA   0A
-     00CB   0D
-     00CC   62 75 67 ...
-     00F2   0A
-     00F3   0D
-     00F4   61 6C 6C ...
-     0110   0A
-     0111   0D
+     007D   46 6C 69 ...
+     00A1   0A
+     00A2   0D
+     00A3   6F 74 68 ...
+     00C3   0A
+     00C4   0D
+     00C5   0A
+     00C6   0D
+     00C7   53 6F 75 ...
+     00E8   0A
+     00E9   0D
+     00EA   0A
+     00EB   0D
+     00EC   4F 72 69 ...
      0112   0A
      0113   0D
-     0114   43 6F 6E ...
+     0114   44 75 6E ...
      0138   0A
      0139   0D
-     013A   72 6F 75 ...
-     0150   0A
-     0151   0D
-     0152   0A
-     0153   0D
-     0154   53 6F 75 ...
-     0175   0A
-     0176   0D
-     0177   0A
-     0178   0D
-     0179   4F 72 69 ...
-     019F   0A
-     01A0   0D
-     01A1   44 75 6E ...
-     01C5   0A
-     01C6   0D
-     01C7   70 6F 72 ...
-     01EA   0A
-     01EB   0D
-     01EC   0A
-     01ED   0D
-     01EE   45 6C 69 ...
-     020D   0A
-     020E   0D
-     020F   0A
-     0210   0D
-     0211   42 61 73 ...
-     0235   0A
-     0236   0D
-     0237   6F 66 20 ...
-     025C   0A
-     025D   0D
-     025E   43 6F 70 ...
-     027A   0A
-     027B   0D
-     027C   0A
-     027D   0D
-     027E   53 69 64 ...
-     02A1   0A
-     02A2   0D
-     02A3   69 6E 73 ...
-     02BF   0A
-     02C0   0D
-     02C1   0A
-     02C2   0D
-     02C3   53 65 65 ...
-     02E3   0A
-     02E4   0D
-     02E5   0A
-     02E6   0D
-     02E7   42 75 69 ...
-     02EE   32 30 32 ...
-     0301   0A
-     0302   0D
-     0303   2D 2D 2D ...
-     032A   0A
-     032B   0D
+     013A   70 6F 72 ...
+     015D   0A
+     015E   0D
+     015F   0A
+     0160   0D
+     0161   45 6C 69 ...
+     0180   0A
+     0181   0D
+     0182   0A
+     0183   0D
+     0184   42 61 73 ...
+     01A8   0A
+     01A9   0D
+     01AA   6F 66 20 ...
+     01CF   0A
+     01D0   0D
+     01D1   43 6F 70 ...
+     01ED   0A
+     01EE   0D
+     01EF   0A
+     01F0   0D
+     01F1   53 69 64 ...
+     0214   0A
+     0215   0D
+     0216   69 6E 73 ...
+     0232   0A
+     0233   0D
+     0234   0A
+     0235   0D
+     0236   53 65 65 ...
+     0256   0A
+     0257   0D
+     0258   0A
+     0259   0D
+     025A   42 75 69 ...
+     0261   32 30 32 ...
+     0274   0A
+     0275   0D
+     0276   2D 2D 2D ...
+     029D   0A
+     029E   0D
 Saving file '3-assembled-output/README.txt'
