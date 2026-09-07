@@ -28,6 +28,11 @@ P%=code
 [OPT P
 \ A contains bank# to check
 JSR pagein
+\ Check ROM table at &2A0
+TAY
+LDA &02A0,Y
+\ If entry is non-zero, occupied
+BNE fail
 \ Change first byte
 LDA &8000
 EOR #&FF
