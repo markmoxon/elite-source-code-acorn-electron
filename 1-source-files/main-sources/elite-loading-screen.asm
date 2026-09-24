@@ -578,8 +578,7 @@
 
 .jsr4
 
-                        \ If we get here then this is a BBC Micro, so we can
-                        \ show the game's name in the mode 7 screen
+                        \ If we get here then this is an Electron
 
  JSR prstr - PROT1      \ Call prstr to print the following characters,
                         \ restarting from the NOP instruction (this destination
