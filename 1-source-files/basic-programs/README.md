@@ -6,6 +6,10 @@ This folder contains the BASIC programs from the original game disc for the Elec
 
 * [ELITE-cassette.bin](ELITE-cassette.bin) is the tokenised version of the BASIC source and is the one that's used in the build process; this version includes a blank window for showing loading progress
 
+* [ELITE-compendium.bas](ELITE-cassette.bas) is the BASIC loader program for the Compendium, which has the binary mode 7 screen from elite-loading-screen.asm  appended in order to create the final hybrid BASIC/machine code loader program; this file is not used in the build process and is included for reference
+
+* [ELITE-compendium.bin](ELITE-cassette.bin) is the tokenised version of the BASIC source and is the one that's used in the build process; this version includes a blank window for showing loading progress
+
 * [ELITE-disc.bas](ELITE-disc.bas) is the BASIC loader program for the disc version, which has the binary mode 7 screen appended in order to create the final hybrid BASIC/machine code loader program; this file is not used in the build process and is included for reference
 
 * [ELITE-disc.bin](ELITE-disc.bin) is the tokenised version of the BASIC source and is the one that's used in the build process; this version does not a blank window
