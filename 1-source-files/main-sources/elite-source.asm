@@ -323,7 +323,7 @@
 \
 \ ******************************************************************************
 
- ORG &0000
+ ORG &0000              \ Set the assembly address to &0000
 
 .ZP
 
@@ -502,7 +502,7 @@
 .ECMA
 
  SKIP 1                 \ The E.C.M. countdown timer, which determines whether
-                        \ an E.C.M. system is currently operating:
+                        \ an E.C.M. system is currently operating
                         \
                         \   * 0 = E.C.M. is off
                         \
@@ -791,7 +791,7 @@
 .QQ17
 
  SKIP 1                 \ Contains a number of flags that affect how text tokens
-                        \ are printed, particularly capitalisation:
+                        \ are printed, particularly capitalisation
                         \
                         \   * If all bits are set (255) then text printing is
                         \     disabled
@@ -1060,7 +1060,9 @@
                         \ the smoother the circle. The values used are:
                         \
                         \   * 2 for big planets and the circles on the charts
+                        \
                         \   * 4 for medium planets and the launch tunnel
+                        \
                         \   * 8 for small planets and the hyperspace tunnel
                         \
                         \ As the step size increases we move from smoother
@@ -1113,7 +1115,7 @@
 
  SKIP 4                 \ Temporary storage, used in a number of places
 
- ORG &00D1
+ ORG &00D1              \ Set the assembly address to &00D1
 
 .T
 
@@ -1149,7 +1151,7 @@
 \
 \ ******************************************************************************
 
- ORG &0100
+ ORG &0100              \ Set the assembly address to &0100
 
 .XX3
 
@@ -1188,7 +1190,7 @@
 \
 \ ******************************************************************************
 
- ORG CODE_WORDS%
+ ORG CODE_WORDS%        \ Set the assembly address to CODE_WORDS%
 
 \ ******************************************************************************
 \
@@ -2858,7 +2860,7 @@ ENDMACRO
 \
 \ ******************************************************************************
 
- ORG CODE%
+ ORG CODE%              \ Set the assembly address to CODE%
 
  LOAD_A% = LOAD%
 
@@ -7902,7 +7904,7 @@ ENDIF
 
  BNE DELY3              \ Loop back up as part of the chain of delay loops
 
- TAX                    \ retrieve X from A, so it gets preserved
+ TAX                    \ Retrieve X from A, so it gets preserved
 
  DEY                    \ Decrement the counter in Y
 
@@ -12591,9 +12593,9 @@ ENDIF
                         \ --- End of replacement ------------------------------>
 
  STA Q                  \ Set QQ25 = A (so QQ25 is in the range 3-12 and
- STA QQ25               \ represents number of the most advanced item available
- INC Q                  \ in this system, which we can pass to gnum below when
-                        \ asking which item we want to buy)
+ STA QQ25               \ represents the number of the most advanced item
+ INC Q                  \ available in this system, which we can pass to gnum
+                        \ below when asking which item we want to buy)
                         \
                         \ Set Q = A + 1 (so Q is in the range 4-13 and contains
                         \ QQ25 + 1, i.e. the highest item number on sale + 1)
@@ -42672,8 +42674,8 @@ ENDMACRO
                         \           = y +/- random * cloud size
 
  BNE EX11               \ If A is non-zero, the particle is off-screen as the
-                        \ coordinate is bigger than 255), so jump to EX11 to do
-                        \ the next particle
+                        \ coordinate is either negative or bigger than 255, so
+                        \ jump to EX11 to do the next particle
 
  CPX #2*Y-1             \ If X > the y-coordinate of the bottom of the screen,
  BCS EX11               \ the particle is off the bottom of the screen, so jump
@@ -43888,18 +43890,18 @@ ENDMACRO
 \       Name: ABORT
 \       Type: Subroutine
 \   Category: Dashboard
-\    Summary: Disarm missiles and update the dashboard indicators
+\    Summary: Unarm missiles and update the dashboard indicators
 \
 \ ------------------------------------------------------------------------------
 \
 \ Other entry points:
 \
-\   ABORT-2             Set the indicator to disarmed (white square)
+\   ABORT-2             Set the indicator to unarmed (white square)
 \
 \ ******************************************************************************
 
  LDY #&09               \ Set Y = &09 so we set the missile to a white square
-                        \ (disarmed)
+                        \ (unarmed)
 
 .ABORT
 
@@ -43907,7 +43909,7 @@ ENDMACRO
                         \ no target lock for our missile
 
                         \ Fall through into ABORT2 to set the missile lock to
-                        \ the value in X, which effectively disarms the missile
+                        \ the value in X, which effectively unarms the missile
 
 \ ******************************************************************************
 \
@@ -43935,7 +43937,7 @@ ENDMACRO
 \
 \                         * &0D = black box in white square (armed)
 \
-\                         * &09 = white square (disarmed)
+\                         * &09 = white square (unarmed)
 \
 \ ******************************************************************************
 
@@ -44144,7 +44146,7 @@ ENDMACRO
 \
 \                         * &0D = black box in white square (armed)
 \
-\                         * &09 = white square (disarmed)
+\                         * &09 = white square (unarmed)
 \
 \ ------------------------------------------------------------------------------
 \
@@ -44162,13 +44164,14 @@ ENDMACRO
  PHA                    \ the call to the subroutine
 
  ASL A                  \ Set T = X * 8
- ASL A
- ASL A
- STA T
+ ASL A                  \
+ ASL A                  \ This also clears the C flag, as X is in the range 0
+ STA T                  \ to 3
 
- LDA #209               \ Set SC = &80 + 32 + 49 - T
- SBC T                  \        = &80 + 32 + 48 + 1 - (X * 8)
- STA SC                 \
+ LDA #209               \ Set SC = &80 + 32 + 49 - T - (1 - C)
+ SBC T                  \        = &80 + 32 + 49 - (X * 8) - 1
+ STA SC                 \        = &80 + 32 + 48 - (X * 8)
+                        \
                         \ The &80 part comes from the fact that the character
                         \ row containing the missile starts at address &7D80,
                         \ and the low byte of this is &80
@@ -44187,9 +44190,6 @@ ENDMACRO
                         \
                         \   * 48 (character block 7, as byte #7 * 8 = 48), the
                         \     character block of the rightmost missile
-                        \
-                        \   * 1 (so we start drawing on the second row of the
-                        \     character block)
                         \
                         \   * Move left one character (8 bytes) for each count
                         \     of X, so when X = 0 we are drawing the rightmost
@@ -44246,7 +44246,7 @@ ENDMACRO
  EQUB %00000000
  EQUB %00000000
 
- EQUB %11111100         \ Disarmed (white square)
+ EQUB %11111100         \ Unarmed (white square)
  EQUB %11111100         \
  EQUB %11111100         \ Shares the first row from the next indicator
  EQUB %11111100
@@ -44377,7 +44377,7 @@ ENDMACRO
 
  TXA                    \ And then the high bytes. #Y is the y-coordinate of
  ADC #0                 \ the centre of the space view, so this converts the
- STA K4+1               \ space x-coordinate into a screen y-coordinate
+ STA K4+1               \ space y-coordinate into a screen y-coordinate
 
  CLC                    \ Clear the C flag to indicate success
 
@@ -47385,8 +47385,8 @@ ENDMACRO
  BNE KS5                \ If our missile is not locked on this ship, jump to KS5
 
  JSR ABORT-2            \ Otherwise we need to remove our missile lock, so call
-                        \ ABORT-2 to disarm the missile and update the missile
-                        \ indicators on the dashboard to disarmed (white
+                        \ ABORT-2 to unarm the missile and update the missile
+                        \ indicators on the dashboard to unarmed (white
                         \ squares)
 
  LDA #200               \ Print recursive token 40 ("TARGET LOST") as an
@@ -47739,8 +47739,9 @@ ENDMACRO
 \       Name: Ze
 \       Type: Subroutine
 \   Category: Universe
-\    Summary: Initialise the INWK workspace to a hostile ship
+\    Summary: Initialise the INWK workspace to a fairly aggressive ship
 \  Deep dive: Fixing ship positions
+\             Aggression and hostility in ship tactics
 \
 \ ------------------------------------------------------------------------------
 \
@@ -47753,7 +47754,7 @@ ENDMACRO
 \
 \   * Give the ship a 4% chance of having E.C.M.
 \
-\   * Set the ship to hostile, with AI enabled
+\   * Set the ship's aggression level to at least 32 out of 63, with AI enabled
 \
 \ This routine also sets A, X, T1 and the C flag to random values.
 \
@@ -47789,8 +47790,8 @@ ENDMACRO
  ROL A                  \ Set bit 0 of A to the C flag (i.e. there's a 4%
                         \ chance of this ship having E.C.M.)
 
- ORA #%11000000         \ Set bits 6 and 7 of A, so the ship is hostile (bit 6
-                        \ and has AI (bit 7)
+ ORA #%11000000         \ Set bits 6 and 7 of A, so the ship has AI (bit 7) and
+                        \ an aggression level of at least 32 out of 63
 
  STA INWK+32            \ Store A in the AI flag of this ship
 
@@ -47856,6 +47857,7 @@ ENDMACRO
 \    Summary: Spawn a trader (a peaceful Cobra Mk III)
 \  Deep dive: Program flow of the main game loop
 \             Ship data blocks
+\             Aggression and hostility in ship tactics
 \
 \ ------------------------------------------------------------------------------
 \
@@ -47866,9 +47868,9 @@ ENDMACRO
 \
 \ This section covers the following:
 \
-\   * Spawn a trader, i.e. a Cobra Mk III that isn't hostile, with a 50% chance
-\     of it having a missile, a 50% chance of it having an E.C.M., a speed
-\     between 16 and 31, and a gentle clockwise roll
+\   * Spawn a trader, i.e. a Cobra Mk III with AI disabled, a 50% chance of it
+\     having an E.C.M., a speed between 16 and 31, a random aggression level
+\     and a gentle clockwise roll
 \
 \ We call this from within the main loop, with A set to a random number.
 \
@@ -47892,9 +47894,25 @@ ENDMACRO
                         \ clockwise roll (as bit 7 is clear), and a 1 in 127
                         \ chance of it having no damping
 
- ROL INWK+31            \ Set bit 0 of the ship's missile count randomly (as the
-                        \ C flag was set), giving the ship either no missiles or
-                        \ one missile
+ ROL INWK+31            \ This instruction would appear to set bit 0 of the
+                        \ ship's missile count randomly (as the C flag was set),
+                        \ giving the ship either no missiles or one missile
+                        \
+                        \ However, INWK+31 is overwritten in the call to the
+                        \ NWSHP routine below, where it is set to the number of
+                        \ missiles from the ship blueprint, and the value of the
+                        \ C flag is not used, so this instruction actually has
+                        \ no effect
+                        \
+                        \ Interestingly, the original source code for the NWSPS
+                        \ routine also has an instruction that sets INWK+31 and
+                        \ which gets overwritten when it falls through into
+                        \ NWSHP, but in this case the instruction is commented
+                        \ out in the source. Perhaps the original version of
+                        \ NWSHP didn't set the missile count and instead relied
+                        \ on the calling code to set it, and when the authors
+                        \ changed it, they commented out the INWK+31 instruction
+                        \ in NWSPS and forgot about this one. Who knows?
 
                         \ --- Mod: Code removed for additional ships: --------->
 
@@ -48028,9 +48046,9 @@ ENDMACRO
                         \ hunters)
                         \
                         \ If we are in that 13%, then 50% of the time this will
-                        \ be a Cobra Mk III trader, and the other 50% of the
-                        \ time it will either be an asteroid (98.5% chance) or,
-                        \ very rarely, a cargo canister (1.5% chance)
+                        \ be a trader, and the other 50% of the time it will
+                        \ either be an asteroid (98.5% chance) or, very rarely,
+                        \ a cargo canister (1.5% chance)
 
                         \ --- Mod: Code added for witchspace: ----------------->
 
@@ -48205,7 +48223,7 @@ ENDMACRO
 
  STA T                  \ Store our badness level in T
 
- JSR Ze                 \ Call Ze to initialise INWK to a potentially hostile
+ JSR Ze                 \ Call Ze to initialise INWK to a fairly aggressive
                         \ ship, and set A and X to random values
                         \
                         \ Note that because Ze uses the value of X returned by
@@ -48247,6 +48265,7 @@ ENDMACRO
 \  Deep dive: Program flow of the main game loop
 \             Ship data blocks
 \             Fixing ship positions
+\             Aggression and hostility in ship tactics
 \
 \ ------------------------------------------------------------------------------
 \
@@ -48343,7 +48362,7 @@ ENDMACRO
                         \ Now to spawn a lone bounty hunter or a group of
                         \ pirates
 
- JSR Ze                 \ Call Ze to initialise INWK to a potentially hostile
+ JSR Ze                 \ Call Ze to initialise INWK to a fairly aggressive
                         \ ship, and set A and X to random values
                         \
                         \ Note that because Ze uses the value of X returned by
@@ -49409,8 +49428,10 @@ ENDMACRO
 \
 \ A normalised vector (also known as a unit vector) has length 1, so this
 \ routine takes an existing vector in K3 and scales it so the length of the
-\ new vector is 1. This is used in two places: when drawing the compass, and
-\ when applying AI tactics to ships.
+\ new vector is 1. This is used in a number of places: when drawing the compass,
+\ when applying AI tactics to ships (so traders fly towards planets and missiles
+\ fly towards their targets, for example), and when implementing the docking
+\ computer in the enhanced versions of Elite.
 \
 \ We do this in two stages. This stage shifts the 16-bit vector coordinates in
 \ K3 to the left as far as they will go without losing any bits off the end, so
@@ -50969,9 +50990,7 @@ ENDMACRO
 \ When called from part 6 of LL9, XX12 contains the vector [x y z] of the vertex
 \ we're analysing, and XX16 contains the transposed orientation vectors with
 \ each of them containing the x, y and z elements of the original vectors, so it
-\ ------------------------------------------------------------------------------
-\
-\ Returns:
+\ returns:
 \
 \   [ x ]   [ sidev_x ]         [ x ]   [ sidev_y ]         [ x ]   [ sidev_z ]
 \   [ y ] . [ roofv_x ]         [ y ] . [ roofv_y ]         [ y ] . [ roofv_z ]
@@ -51364,7 +51383,7 @@ ENDMACRO
                         \ this vertex's entry in the XX3 heap will still be 255,
                         \ which we can check in part 9 to see if the laser
                         \ vertex is visible (and therefore whether we should
-                        \ draw laser lines if the ship is firing on us)
+                        \ draw laser lines if the ship is firing at us)
 
  LDA XX1+6              \ Set (A T) = (z_hi z_lo)
  STA T
