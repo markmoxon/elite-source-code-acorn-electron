@@ -41,14 +41,14 @@
 IF _DISC
 
  PUTFILE "1-source-files/boot-files/$.!BOOT.bin", "!BOOT", &FFFFFF, &FFFFFF
- PUTFILE "1-source-files/basic-programs/$.ELITE-disc.bin", "ELITE", &FF0E00, &FF8023
+ PUTFILE "3-assembled-output/ELITE-disc.bin", "ELITE", &FF0E00, &FF8023
  PUTFILE "3-assembled-output/ELITECO.bin", "ELITECO", &000000, &FFFFFF
  PUTFILE "3-assembled-output/ELITEDA.bin", "ELITEDA", &FF4400, &FF5200
 
 ELSE
 
  PUTFILE "1-source-files/boot-files/$.!BOOT.bin", "!BOOT", &FFFFFF, &FFFFFF
- PUTFILE "1-source-files/basic-programs/$.ELITE-cassette.bin", "ELITE", &FF0E00, &FF8023
+ PUTFILE "3-assembled-output/ELITE-cassette.bin", "ELITE", &FF0E00, &FF8023
 \PUTFILE "3-assembled-output/ELITECO.bin", "ELITEcode", &000000, &FFFFFF
 \PUTFILE "3-assembled-output/ELITEDA.bin", "ELITEdata", &FF4400, &FF5200
  PUTFILE "3-assembled-output/ELITECO.bin", "ELITEco", &000000, &FFFFFF

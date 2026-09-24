@@ -6460,7 +6460,6 @@ Saving file '3-assembled-output/ELTB.bin'
      247F   A6 87      LDX &87
      2481   86 1B      STX &1B
 .MULTS
-<<<<<<< HEAD
      2483   AA         TAX
      2484   29 80      AND #&80
      2486   85 D1      STA &D1
@@ -6487,182 +6486,6 @@ Saving file '3-assembled-output/ELTB.bin'
      24AA   90 02      BCC &24AE
      24AC   65 06      ADC &06
      24AE   6A         ROR A
-=======
-     23AD   AA         TAX
-     23AE   29 80      AND #&80
-     23B0   85 D1      STA &D1
-     23B2   8A         TXA
-     23B3   29 7F      AND #&7F
-     23B5   F0 64      BEQ &241B
-     23B7   AA         TAX
-     23B8   CA         DEX
-     23B9   86 06      STX &06
-     23BB   A9 00      LDA #&00
-     23BD   46 1B      LSR &1B
-     23BF   90 02      BCC &23C3
-     23C1   65 06      ADC &06
-     23C3   6A         ROR A
-     23C4   66 1B      ROR &1B
-     23C6   90 02      BCC &23CA
-     23C8   65 06      ADC &06
-     23CA   6A         ROR A
-     23CB   66 1B      ROR &1B
-     23CD   90 02      BCC &23D1
-     23CF   65 06      ADC &06
-     23D1   6A         ROR A
-     23D2   66 1B      ROR &1B
-     23D4   90 02      BCC &23D8
-     23D6   65 06      ADC &06
-     23D8   6A         ROR A
-     23D9   66 1B      ROR &1B
-     23DB   90 02      BCC &23DF
-     23DD   65 06      ADC &06
-     23DF   6A         ROR A
-     23E0   66 1B      ROR &1B
-     23E2   4A         LSR A
-     23E3   66 1B      ROR &1B
-     23E5   4A         LSR A
-     23E6   66 1B      ROR &1B
-     23E8   4A         LSR A
-     23E9   66 1B      ROR &1B
-     23EB   05 D1      ORA &D1
-     23ED   60         RTS
-.SQUA
-     23EE   29 7F      AND #&7F
-.SQUA2
-     23F0   85 1B      STA &1B
-     23F2   AA         TAX
-     23F3   D0 12      BNE &2407
-.MU1
-     23F5   18         CLC
-     23F6   86 1B      STX &1B
-     23F8   8A         TXA
-     23F9   60         RTS
-.MLU1
-     23FA   B9 62 03   LDA &0362,Y
-     23FD   85 32      STA &32
-.MLU2
-     23FF   29 7F      AND #&7F
-     2401   85 1B      STA &1B
-.MULTU
-     2403   A6 A0      LDX &A0
-     2405   F0 EE      BEQ &23F5
-.MU11
-     2407   CA         DEX
-     2408   86 D1      STX &D1
-     240A   A9 00      LDA #&00
-     240C   A2 08      LDX #&08
-     240E   46 1B      LSR &1B
-.MUL6
-     2410   90 02      BCC &2414
-     2412   65 D1      ADC &D1
-     2414   6A         ROR A
-     2415   66 1B      ROR &1B
-     2417   CA         DEX
-     2418   D0 F6      BNE &2410
-     241A   60         RTS
-.MU6
-     241B   85 1C      STA &1C
-     241D   85 1B      STA &1B
-     241F   60         RTS
-.FMLTU2
-     2420   29 1F      AND #&1F
-     2422   AA         TAX
-     2423   BD 3B 23   LDA &233B,X
-     2426   85 A0      STA &A0
-     2428   A5 3D      LDA &3D
-.FMLTU
-     242A   49 FF      EOR #&FF
-     242C   38         SEC
-     242D   6A         ROR A
-     242E   85 1B      STA &1B
-     2430   A9 00      LDA #&00
-.MUL3
-     2432   B0 08      BCS &243C
-     2434   65 A0      ADC &A0
-     2436   6A         ROR A
-     2437   46 1B      LSR &1B
-     2439   D0 F7      BNE &2432
-     243B   60         RTS
-.MU7
-     243C   4A         LSR A
-     243D   46 1B      LSR &1B
-     243F   D0 F1      BNE &2432
-     2441   60         RTS
-     2442   A6 A0      LDX &A0
-     2444   F0 AF      BEQ &23F5
-     2446   CA         DEX
-     2447   86 D1      STX &D1
-     2449   A9 00      LDA #&00
-     244B   A2 08      LDX #&08
-     244D   46 1B      LSR &1B
-.MUL6K
-     244F   90 02      BCC &2453
-     2451   65 D1      ADC &D1
-     2453   6A         ROR A
-     2454   66 1B      ROR &1B
-     2456   CA         DEX
-     2457   D0 F6      BNE &244F
-     2459   60         RTS
-     245A   86 A0      STX &A0
-.MLTU2
-     245C   49 FF      EOR #&FF
-     245E   4A         LSR A
-     245F   85 1C      STA &1C
-     2461   A9 00      LDA #&00
-     2463   A2 10      LDX #&10
-     2465   66 1B      ROR &1B
-.MUL7
-     2467   B0 0B      BCS &2474
-     2469   65 A0      ADC &A0
-     246B   6A         ROR A
-     246C   66 1C      ROR &1C
-     246E   66 1B      ROR &1B
-     2470   CA         DEX
-     2471   D0 F4      BNE &2467
-     2473   60         RTS
-.MU21
-     2474   4A         LSR A
-     2475   66 1C      ROR &1C
-     2477   66 1B      ROR &1B
-     2479   CA         DEX
-     247A   D0 EB      BNE &2467
-     247C   60         RTS
-.MUT3
-     247D   A6 87      LDX &87
-     247F   86 1B      STX &1B
-.MUT2
-     2481   A6 25      LDX &25
-     2483   86 A2      STX &A2
-.MUT1
-     2485   A6 24      LDX &24
-     2487   86 A1      STX &A1
-.MULT1
-     2489   AA         TAX
-     248A   29 7F      AND #&7F
-     248C   4A         LSR A
-     248D   85 1B      STA &1B
-     248F   8A         TXA
-     2490   45 A0      EOR &A0
-     2492   29 80      AND #&80
-     2494   85 D1      STA &D1
-     2496   A5 A0      LDA &A0
-     2498   29 7F      AND #&7F
-     249A   F0 18      BEQ &24B4
-     249C   AA         TAX
-     249D   CA         DEX
-     249E   86 06      STX &06
-     24A0   A9 00      LDA #&00
-     24A2   A2 07      LDX #&07
-.MUL4
-     24A4   90 02      BCC &24A8
-     24A6   65 06      ADC &06
-     24A8   6A         ROR A
-     24A9   66 1B      ROR &1B
-     24AB   CA         DEX
-     24AC   D0 F6      BNE &24A4
-     24AE   4A         LSR A
->>>>>>> main
      24AF   66 1B      ROR &1B
      24B1   90 02      BCC &24B5
      24B3   65 06      ADC &06
@@ -16110,23 +15933,31 @@ S.SHIPS &4ED0  &57FC  &2000  &61D0
 Saving file '3-assembled-output/SHIPS.bin'
 .elitea
 elitea = &D00 
+     0D00   40 00 00 ... INCBIN "3-assembled-output/ELTA.bin"
 .eliteb
 eliteb = &1590 
+     1590   4A 41 4D ... INCBIN "3-assembled-output/ELTB.bin"
 .elitec
 elitec = &1F9D 
+     1F9D   A9 00 20 ... INCBIN "3-assembled-output/ELTC.bin"
 .elited
 elited = &29A0 
+     29A0   48 A2 0C ... INCBIN "3-assembled-output/ELTD.bin"
 .elitee
 elitee = &3467 
+     3467   8C E7 8D ... INCBIN "3-assembled-output/ELTE.bin"
 .elitef
 elitef = &3B3E 
+     3B3E   A5 1B 8D ... INCBIN "3-assembled-output/ELTF.bin"
 .eliteg
 eliteg = &45A3 
+     45A3   20 AE 39 ... INCBIN "3-assembled-output/ELTG.bin"
 .checksum0
 checksum0 = &4ECF 
      4ECF
 .ships
 ships = &4ED0 
+     4ED0   E6 4E 8E ... INCBIN "3-assembled-output/SHIPS.bin"
 .end
 P% = &57FC 
 S.ELITECO &D00  &57FC  &2000  &2000 
@@ -16161,10 +15992,15 @@ Saving file '3-assembled-output/ELITECO.unprot.bin'
 .EXCN
      0085
 WORDS9 = &4400 
+     4400   DC 00 03 ... INCBIN "3-assembled-output/WORDS9.bin"
 P.DIALS = &4800 
+     4800   FF C0 DF ... INCBIN "1-source-files/images/P.DIALS.bin"
 P.ELITE = &4F00 
+     4F00   00 00 00 ... INCBIN "1-source-files/images/P.ELITE.bin"
 P.A-SOFT = &5000 
+     5000   00 00 00 ... INCBIN "1-source-files/images/P.A-SOFT.bin"
 P.(C)ASFT = &5100 
+     5100   00 00 00 ... INCBIN "1-source-files/images/P.(C)ASFT.bin"
 .run
      5200   4C 94 52   JMP &5294
 .B%
@@ -16930,6 +16766,734 @@ End macro FNE
      0BDE
 S.ELITEDA &4400  &5700  &5200  &4400 
 Saving file '3-assembled-output/ELITEDA.bin'
+.TRTB%
+     0004
+.S
+     0070
+.ZP
+     0071
+.P
+     0073
+.Q
+     0074
+.R
+     0075
+.T
+     0076
+.SC
+     0081
+.SCH
+     0082
+.ECHAR
+     1000   00
+     1001   00
+     1002   00
+     1003   00
+     1004   00
+     1005   00
+     1006   00
+     1007   00
+     1008   E0
+     1009   E0
+     100A   00
+     100B   00
+     100C   00
+     100D   00
+     100E   00
+     100F   00
+     1010   0E
+     1011   0E
+     1012   00
+     1013   00
+     1014   00
+     1015   00
+     1016   00
+     1017   00
+     1018   00
+     1019   00
+     101A   00
+     101B   00
+     101C   00
+     101D   00
+     101E   0E
+     101F   0E
+     1020   E0
+     1021   E0
+     1022   00
+     1023   E0
+     1024   E0
+     1025   00
+     1026   00
+     1027   00
+     1028   EE
+     1029   EE
+     102A   00
+     102B   E0
+     102C   E0
+     102D   00
+     102E   00
+     102F   00
+     1030   EE
+     1031   EE
+     1032   00
+     1033   0E
+     1034   0E
+     1035   00
+     1036   00
+     1037   00
+     1038   00
+     1039   00
+     103A   00
+     103B   00
+     103C   00
+     103D   00
+     103E   E0
+     103F   E0
+     1040   E0
+     1041   E0
+     1042   00
+     1043   00
+     1044   00
+     1045   00
+     1046   E0
+     1047   E0
+     1048   00
+     1049   00
+     104A   00
+     104B   E0
+     104C   E0
+     104D   00
+     104E   E0
+     104F   E0
+     1050   E0
+     1051   E0
+     1052   00
+     1053   E0
+     1054   E0
+     1055   00
+     1056   E0
+     1057   E0
+     1058   EE
+     1059   EE
+     105A   00
+     105B   E0
+     105C   E0
+     105D   00
+     105E   E0
+     105F   E0
+     1060   EE
+     1061   EE
+     1062   00
+     1063   EE
+     1064   EE
+     1065   00
+     1066   E0
+     1067   E0
+     1068   EE
+     1069   EE
+     106A   00
+     106B   00
+     106C   00
+     106D   00
+     106E   00
+     106F   00
+     1070   00
+     1071   00
+     1072   00
+     1073   0E
+     1074   0E
+     1075   00
+     1076   0E
+     1077   0E
+     1078   0E
+     1079   0E
+     107A   00
+     107B   0E
+     107C   0E
+     107D   00
+     107E   0E
+     107F   0E
+     1080   EE
+     1081   EE
+     1082   00
+     1083   0E
+     1084   0E
+     1085   00
+     1086   0E
+     1087   0E
+     1088   EE
+     1089   EE
+     108A   00
+     108B   EE
+     108C   EE
+     108D   00
+     108E   0E
+     108F   0E
+     1090   00
+     1091   00
+     1092   00
+     1093   00
+     1094   00
+     1095   00
+     1096   EE
+     1097   EE
+     1098   EE
+     1099   EE
+     109A   00
+     109B   00
+     109C   00
+     109D   00
+     109E   EE
+     109F   EE
+     10A0   00
+     10A1   00
+     10A2   00
+     10A3   E0
+     10A4   E0
+     10A5   00
+     10A6   EE
+     10A7   EE
+     10A8   E0
+     10A9   E0
+     10AA   00
+     10AB   E0
+     10AC   E0
+     10AD   00
+     10AE   EE
+     10AF   EE
+     10B0   00
+     10B1   00
+     10B2   00
+     10B3   0E
+     10B4   0E
+     10B5   00
+     10B6   EE
+     10B7   EE
+     10B8   0E
+     10B9   0E
+     10BA   00
+     10BB   0E
+     10BC   0E
+     10BD   00
+     10BE   EE
+     10BF   EE
+     10C0   00
+     10C1   00
+     10C2   00
+     10C3   EE
+     10C4   EE
+     10C5   00
+     10C6   EE
+     10C7   EE
+     10C8   E0
+     10C9   E0
+     10CA   00
+     10CB   EE
+     10CC   EE
+     10CD   00
+     10CE   EE
+     10CF   EE
+     10D0   0E
+     10D1   0E
+     10D2   00
+     10D3   EE
+     10D4   EE
+     10D5   00
+     10D6   EE
+     10D7   EE
+     10D8   EE
+     10D9   EE
+     10DA   00
+     10DB   EE
+     10DC   EE
+     10DD   00
+     10DE   EE
+     10DF   EE
+.LOGO
+     10E0   A0
+     10E1   A1
+     10E2   A2
+     10E3   E0
+     10E4   A5
+     10E5   A7
+     10E6   AB
+     10E7   B0
+     10E8   B1
+     10E9   B4
+     10EA   B5
+     10EB   B7
+     10EC   BF
+     10ED   A3
+     10EE   E8
+     10EF   EA
+     10F0   EB
+     10F1   EF
+     10F2   F0
+     10F3   F3
+     10F4   F4
+     10F5   F5
+     10F6   F8
+     10F7   FA
+     10F8   FC
+     10F9   FD
+     10FA   FE
+     10FB   FF
+     10FC   00
+     10FD   00
+     10FE   00
+     10FF   18
+     1100   09
+     1101   03
+     1102   18
+     1103   18
+     1104   07
+     1105   00
+     1106   16
+     1107   18
+     1108   14
+     1109   00
+     110A   18
+     110B   18
+     110C   18
+     110D   07
+     110E   0E
+     110F   14
+     1110   00
+     1111   0E
+     1112   09
+     1113   16
+     1114   18
+     1115   18
+     1116   07
+     1117   00
+     1118   1A
+     1119   1B
+     111A   09
+     111B   00
+     111C   18
+     111D   18
+     111E   18
+     111F   18
+     1120   18
+     1121   18
+     1122   00
+     1123   00
+     1124   17
+     1125   1B
+     1126   0A
+     1127   1B
+     1128   05
+     1129   06
+     112A   1B
+     112B   0F
+     112C   0C
+     112D   0D
+     112E   11
+     112F   0A
+     1130   1B
+     1131   0D
+     1132   10
+     1133   0A
+     1134   0F
+     1135   1B
+     1136   09
+     1137   0F
+     1138   0A
+     1139   1B
+     113A   08
+     113B   06
+     113C   04
+     113D   0F
+     113E   1B
+     113F   1B
+     1140   1B
+     1141   00
+     1142   1B
+     1143   0D
+     1144   0D
+     1145   0D
+     1146   1B
+     1147   0D
+     1148   00
+     1149   0E
+     114A   0C
+     114B   10
+     114C   0A
+     114D   1B
+     114E   00
+     114F   00
+     1150   00
+     1151   0F
+     1152   0A
+     1153   00
+     1154   0F
+     1155   0A
+     1156   1B
+     1157   18
+     1158   1A
+     1159   04
+     115A   0F
+     115B   0C
+     115C   1B
+     115D   17
+     115E   0A
+     115F   06
+     1160   1B
+     1161   19
+     1162   07
+     1163   1B
+     1164   1B
+     1165   1B
+     1166   1B
+     1167   0A
+     1168   1B
+     1169   1B
+     116A   1B
+     116B   00
+     116C   1B
+     116D   00
+     116E   03
+     116F   1B
+     1170   19
+     1171   1A
+     1172   0A
+     1173   1B
+     1174   07
+     1175   03
+     1176   18
+     1177   0F
+     1178   15
+     1179   00
+     117A   17
+     117B   0A
+     117C   1B
+     117D   06
+     117E   19
+     117F   00
+     1180   0F
+     1181   0A
+     1182   10
+     1183   1B
+     1184   0A
+     1185   12
+     1186   00
+     1187   10
+     1188   1B
+     1189   13
+     118A   13
+     118B   13
+     118C   13
+     118D   08
+     118E   1B
+     118F   00
+     1190   00
+     1191   00
+     1192   1B
+     1193   00
+     1194   1A
+     1195   0B
+     1196   00
+     1197   0F
+     1198   0A
+     1199   06
+     119A   1B
+     119B   1B
+     119C   05
+     119D   02
+     119E   11
+     119F   1B
+     11A0   0C
+     11A1   01
+     11A2   1B
+     11A3   00
+     11A4   10
+     11A5   15
+     11A6   0F
+     11A7   0A
+     11A8   00
+     11A9   11
+     11AA   0A
+     11AB   11
+     11AC   1B
+     11AD   1B
+     11AE   04
+     11AF   11
+     11B0   1B
+     11B1   1B
+     11B2   1B
+     11B3   04
+     11B4   1B
+     11B5   00
+     11B6   00
+     11B7   00
+     11B8   1B
+     11B9   00
+     11BA
+     11D6   02
+     11D7   0D
+     11D8
+.PROT1
+     11E0   A9 68      LDA #&68
+     11E2   8D 00 01   STA &0100
+     11E5   8D 03 01   STA &0103
+     11E8   A9 85      LDA #&85
+     11EA   8D 01 01   STA &0101
+     11ED   8D 04 01   STA &0104
+     11F0   A2 71      LDX #&71
+     11F2   8E 07 01   STX &0107
+     11F5   8E 02 01   STX &0102
+     11F8   E8         INX
+     11F9   8E 05 01   STX &0105
+     11FC   A9 6C      LDA #&6C
+     11FE   8D 06 01   STA &0106
+     1201   A9 00      LDA #&00
+     1203   8D 08 01   STA &0108
+.do
+     1206   20 00 01   JSR &0100
+     1209   00
+     120A   A5 71      LDA &71
+     120C   38         SEC
+     120D   E9 28      SBC #&28
+     120F   85 71      STA &71
+     1211   A5 72      LDA &72
+     1213   E9 00      SBC #&00
+     1215   85 72      STA &72
+     1217   A0 63      LDY #&63
+.PROT1a
+     1219   B1 71      LDA (&71),Y
+     121B   18         CLC
+     121C   65 71      ADC &71
+     121E   85 81      STA &81
+     1220   C8         INY
+     1221   B1 71      LDA (&71),Y
+     1223   65 72      ADC &72
+     1225   85 82      STA &82
+     1227   A2 00      LDX #&00
+     1229   A1 81      LDA (&81,X)
+     122B   18         CLC
+     122C   65 71      ADC &71
+     122E   81 81      STA (&81,X)
+     1230   E6 81      INC &81
+     1232   D0 02      BNE &1236
+     1234   E6 82      INC &82
+     1236   A1 81      LDA (&81,X)
+     1238   65 72      ADC &72
+     123A   81 81      STA (&81,X)
+     123C   C8         INY
+     123D   C0 7D      CPY #&7D
+     123F   D0 D8      BNE &1219
+     1241   F0 1A      BEQ &125D
+.TABLE
+     1243   D0 00
+     1245   E2 00
+     1247   E9 00
+     1249   1F 01
+     124B   32 01
+     124D   3D 01
+     124F   46 01
+     1251
+.LOADSCR
+     125D   A5 71      LDA &71
+     125F   38         SEC
+     1260   E9 E0      SBC #&E0
+     1262   85 71      STA &71
+     1264   A5 72      LDA &72
+     1266   E9 01      SBC #&01
+     1268   85 72      STA &72
+     126A   A2 00      LDX #&00
+     126C   86 70      STX &70
+     126E   A0 FF      LDY #&FF
+     1270   A9 81      LDA #&81
+     1272   20 F4 FF   JSR &FFF4
+     1275   E0 01      CPX #&01
+     1277   D0 21      BNE &129A
+     1279   C6 70      DEC &70
+     127B   A0 00      LDY #&00
+.eloop
+     127D   A2 07      LDX #&07
+     127F   A9 17      LDA #&17
+     1281   20 EE FF   JSR &FFEE
+     1284   98         TYA
+     1285   4A         LSR A
+     1286   4A         LSR A
+     1287   4A         LSR A
+     1288   09 E0      ORA #&E0
+     128A   20 EE FF   JSR &FFEE
+.vloop
+     128D   B1 71      LDA (&71),Y
+     128F   20 EE FF   JSR &FFEE
+     1292   C8         INY
+     1293   CA         DEX
+     1294   10 F7      BPL &128D
+     1296   C0 E0      CPY #&E0
+     1298   D0 E3      BNE &127D
+.bbc
+     129A   A5 71      LDA &71
+     129C   18         CLC
+     129D   69 E0      ADC #&E0
+     129F   85 71      STA &71
+     12A1   90 02      BCC &12A5
+     12A3   E6 72      INC &72
+     12A5   A9 16      LDA #&16
+     12A7   20 EE FF   JSR &FFEE
+     12AA   A9 07      LDA #&07
+     12AC   20 EE FF   JSR &FFEE
+.jsr1
+     12AF   20 90 01   JSR &0190
+     12B2   17
+     12B3   00
+     12B4   0A
+     12B5   20
+     12B6   00
+     12B7   00
+     12B8   00
+     12B9   00
+     12BA   00
+     12BB   00
+     12BC   EA         NOP
+     12BD   A9 91      LDA #&91
+     12BF   85 76      STA &76
+.jsr2
+     12C1   20 3C 01   JSR &013C
+     12C4   24 70      BIT &70
+     12C6   30 36      BMI &12FE
+.jsr3
+     12C8   20 90 01   JSR &0190
+     12CB   1C
+     12CC   0F
+     12CD   0D
+     12CE   17
+     12CF   0A
+     12D0   0C
+     12D1   0A
+     12D2   87
+     12D3   8D
+     12D4   45 4C 49 ...
+     12D9   8C
+     12DA   92
+     12DB   87
+     12DC   8D
+     12DD   45 4C 49 ...
+     12E2   1C
+     12E3   09
+     12E4   17
+     12E5   1F
+     12E6   14
+     12E7   87
+     12E8   0D
+     12E9   0A
+     12EA   08
+     12EB   94
+     12EC   87
+     12ED   0D
+     12EE   0A
+     12EF   08
+     12F0   94
+     12F1   87
+     12F2   08
+     12F3   08
+     12F4   0A
+     12F5   94
+     12F6   1C
+     12F7   0A
+     12F8   16
+     12F9   1E
+     12FA   14
+     12FB   0C
+     12FC   EA         NOP
+     12FD   60         RTS
+.jsr4
+     12FE   20 90 01   JSR &0190
+     1301   1C
+     1302   0F
+     1303   0C
+     1304   17
+     1305   0A
+     1306   0C
+     1307   1A
+     1308   1F
+     1309   11
+     130A   0B
+     130B   45 4C 49 ...
+     1310   EA         NOP
+.jsr5
+     1311   20 90 01   JSR &0190
+     1314   1C
+     1315   0A
+     1316   16
+     1317   1E
+     1318   14
+     1319   00
+     131A   EA         NOP
+     131B   60         RTS
+.jsr6
+     131C   20 45 01   JSR &0145
+     131F   20 E7 FF   JSR &FFE7
+     1322   20 E7 FF   JSR &FFE7
+.jsr7
+     1325   20 4B 01   JSR &014B
+     1328   20 E7 FF   JSR &FFE7
+.LOGOS
+     132B   A0 1C      LDY #&1C
+.aloop
+     132D   A2 26      LDX #&26
+     132F   24 70      BIT &70
+     1331   30 0D      BMI &1340
+     1333   A5 76      LDA &76
+     1335   20 EE FF   JSR &FFEE
+     1338   A9 9A      LDA #&9A
+     133A   20 EE FF   JSR &FFEE
+     133D   18         CLC
+     133E   90 05      BCC &1345
+.eskip1
+     1340   A9 20      LDA #&20
+     1342   20 EE FF   JSR &FFEE
+.cloop
+     1345   B1 71      LDA (&71),Y
+     1347   24 70      BIT &70
+     1349   30 09      BMI &1354
+     134B   84 73      STY &73
+     134D   A8         TAY
+     134E   B1 71      LDA (&71),Y
+     1350   A4 73      LDY &73
+     1352   D0 02      BNE &1356
+.eskip2
+     1354   09 E0      ORA #&E0
+     1356   20 EE FF   JSR &FFEE
+     1359   C8         INY
+     135A   C0 FF      CPY #&FF
+     135C   F0 0F      BEQ &136D
+     135E   CA         DEX
+     135F   D0 E4      BNE &1345
+     1361   24 70      BIT &70
+     1363   10 05      BPL &136A
+     1365   A9 20      LDA #&20
+     1367   20 EE FF   JSR &FFEE
+     136A   18         CLC
+     136B   90 C0      BCC &132D
+.adone
+     136D   E6 76      INC &76
+     136F   60         RTS
+.prstr
+     1370   68         PLA
+     1371   85 74      STA &74
+     1373   68         PLA
+     1374   85 75      STA &75
+.p1
+     1376   E6 74      INC &74
+     1378   D0 02      BNE &137C
+     137A   E6 75      INC &75
+     137C   A0 00      LDY #&00
+     137E   B1 74      LDA (&74),Y
+     1380   C9 EA      CMP #&EA
+     1382   F0 06      BEQ &138A
+     1384   20 EE FF   JSR &FFEE
+     1387   18         CLC
+     1388   90 EC      BCC &1376
+.p2
+     138A   6C 74 00   JMP (&0074)
+S.SCREEN &1000  &138D  &1000  &1000 
+Saving file '3-assembled-output/SCREEN.bin'
 .readme
      0000   0A
      0001   0D

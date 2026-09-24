@@ -27,6 +27,14 @@
 \
 \   * ELITEDA.bin
 \
+\ after reading in the following files:
+\
+\   * P.A-SOFT.bin
+\   * P.(C)ASFT.bin
+\   * DIALS.bin
+\   * P.ELITE.bin
+\   * WORDS9.bin
+\
 \ ******************************************************************************
 
  INCLUDE "1-source-files/main-sources/elite-build-options.asm"
@@ -101,7 +109,7 @@ ENDIF
 \
 \ ******************************************************************************
 
- ORG &0004
+ ORG &0004              \ Set the assembly address to &0004
 
 .TRTB%
 
@@ -109,7 +117,7 @@ ENDIF
                         \ table, which is used to translate internal key
                         \ numbers to ASCII
 
- ORG &0070
+ ORG &0070              \ Set the assembly address to &0070
 
 .ZP
 
@@ -177,7 +185,7 @@ ENDIF
 \
 \ ******************************************************************************
 
- ORG CODE%
+ ORG CODE%              \ Set the assembly address to CODE%
 
 \ ******************************************************************************
 \
@@ -1065,7 +1073,8 @@ ENDMACRO
                         \ or 1280 times, and draws the planet part of the
                         \ loading screen's Saturn
 
- JSR DORND              \ Set A and X to random numbers, say A = r1
+ JSR DORND              \ Set A and X to signed random numbers between -128 and
+                        \ 127, so let's say A = r1
 
  JSR SQUA2              \ Set (A P) = A * A
                         \           = r1^2
@@ -1074,7 +1083,8 @@ ENDMACRO
  LDA P                  \             = r1^2
  STA ZP
 
- JSR DORND              \ Set A and X to random numbers, say A = r2
+ JSR DORND              \ Set A and X to signed random numbers between -128 and
+                        \ 127, so let's say A = r2
 
  STA YY                 \ Set YY = A
                         \        = r2
@@ -1130,36 +1140,27 @@ ENDMACRO
  CMP #128               \ If YY >= 128, set the C flag (so the C flag is now set
                         \ to bit 7 of A)
 
- ROR A                  \ Rotate A and set the sign bit to the C flag, so bits
-                        \ 6 and 7 are now the same, i.e. A is a random number in
-                        \ one of these ranges:
+ ROR A                  \ Rotate A and set the sign bit to the C flag, so A is
+                        \ halved while retaining its sign
                         \
-                        \   %00000000 - %00111111  = 0 to 63    (r2 = 0 - 127)
-                        \   %11000000 - %11111111  = 192 to 255 (r2 = 128 - 255)
-                        \
-                        \ The PIX routine flips bit 7 of A before drawing, and
-                        \ that makes -A in these ranges:
-                        \
-                        \   %10000000 - %10111111  = 128-191
-                        \   %01000000 - %01111111  = 64-127
-                        \
-                        \ so that's in the range 64 to 191
+                        \ A is still a signed number from -128 to 127
 
- JSR PIX                \ Draw a pixel at screen coordinate (X, -A), i.e. at
+ JSR PIX                \ Draw a pixel at screen coordinate (X + 128, A + 128),
+                        \ where:
                         \
-                        \   (ZP / 2, -A)
-                        \
-                        \ where ZP = SQRT(128^2 - (r1^2 + r2^2))
+                        \   X = ZP / 2
+                        \   A = r2 / 2
+                        \   ZP = SQRT(128^2 - (r1^2 + r2^2))
                         \
                         \ So this is the same as plotting at (x, y) where:
                         \
-                        \   r1 = random number from 0 to 255
-                        \   r2 = random number from 0 to 255
+                        \   r1 = random number from -128 to 127
+                        \   r2 = random number from -128 to 127
+                        \
                         \   (r1^2 + r2^2) < 128^2
                         \
-                        \   y = r2, squished into 64 to 191 by negation
-                        \
-                        \   x = SQRT(128^2 - (r1^2 + r2^2)) / 2
+                        \   x = (SQRT(128^2 - (r1^2 + r2^2)) / 2) + 128
+                        \   y = (r2 / 2) + 128
                         \
                         \ which is what we want
 
@@ -1199,7 +1200,8 @@ ENDMACRO
 
 .PLL2
 
- JSR DORND              \ Set A and X to random numbers, say A = r3
+ JSR DORND              \ Set A and X to signed random numbers between -128 and
+                        \ 127, so let's say A = r3
 
  TAX                    \ Set X = A
                         \       = r3
@@ -1210,7 +1212,8 @@ ENDMACRO
  STA ZP+1               \ Set ZP+1 = A
                         \          = r3^2 / 256
 
- JSR DORND              \ Set A and X to random numbers, say A = r4
+ JSR DORND              \ Set A and X to signed random numbers between -128 and
+                        \ 127, so let's say A = r4
 
  STA YY                 \ Set YY = r4
 
@@ -1226,16 +1229,21 @@ ENDMACRO
 
  LDA YY                 \ Set A = r4
 
- JSR PIX                \ Draw a pixel at screen coordinate (X, -A), i.e. at
-                        \ (r3, -r4), where (r3^2 + r4^2) / 256 >= 17
+ JSR PIX                \ Draw a pixel at screen coordinate (X + 128, A + 128),
+                        \ where:
                         \
-                        \ Negating a random number from 0 to 255 still gives a
-                        \ random number from 0 to 255, so this is the same as
-                        \ plotting at (x, y) where:
+                        \   X = r3
+                        \   A = r4
                         \
-                        \   x = random number from 0 to 255
-                        \   y = random number from 0 to 255
-                        \   HI(x^2 + y^2) >= 17
+                        \ So this is the same as plotting at (x, y) where:
+                        \
+                        \   r3 = random number from -128 to 127
+                        \   r4 = random number from -128 to 127
+                        \
+                        \   (r3^2 + r4^2) / 256 >= 17
+                        \
+                        \   x = r3
+                        \   y = r4
                         \
                         \ which is what we want
 
@@ -1271,7 +1279,8 @@ ENDMACRO
 
 .PLL3
 
- JSR DORND              \ Set A and X to random numbers, say A = r5
+ JSR DORND              \ Set A and X to signed random numbers between -128 and
+                        \ 127, so let's say A = r5
 
  STA ZP                 \ Set ZP = r5
 
@@ -1281,7 +1290,8 @@ ENDMACRO
  STA ZP+1               \ Set ZP+1 = A
                         \          = r5^2 / 256
 
- JSR DORND              \ Set A and X to random numbers, say A = r6
+ JSR DORND              \ Set A and X to signed random numbers between -128 and
+                        \ 127, so let's say A = r6
 
  STA YY                 \ Set YY = r6
 
@@ -1370,21 +1380,17 @@ ENDMACRO
  LDA YY                 \ Set A = YY
                         \       = r6
 
- JSR PIX                \ Draw a pixel at screen coordinate (X, -A), where:
+ JSR PIX                \ Draw a pixel at screen coordinate (X + 128, A + 128),
+                        \ where:
                         \
                         \   X = (random -32 to 31) + r6
                         \   A = r6
                         \
-                        \ Negating a random number from 0 to 255 still gives a
-                        \ random number from 0 to 255, so this is the same as
-                        \ plotting at (x, y) where:
+                        \ So this is the same as plotting at (x, y) where:
                         \
-                        \   r5 = random number from 0 to 255
-                        \   r6 = random number from 0 to 255
+                        \   r5 = random number from -128 to 127
+                        \   r6 = random number from -128 to 127
                         \   r7 = r5, squashed into -32 to 31
-                        \
-                        \   x = r6 + r7
-                        \   y = r6
                         \
                         \   32 <= ((r6 + r7)^2 + r5^2 + r6^2) / 256 < 80
                         \
@@ -1392,6 +1398,9 @@ ENDMACRO
                         \
                         \   Or:     ((r6 + r7)^2 + r6^2) / 256 <  16
                         \           r5 >= 128
+                        \
+                        \   x = r6 + r7 + 128
+                        \   y = r6 + 128
                         \
                         \ which is what we want
 
@@ -1519,11 +1528,10 @@ ENDMACRO
 \
 \ ------------------------------------------------------------------------------
 \
-\ Draw a pixel at screen coordinate (X, -A). The sign bit of A gets flipped
-\ before drawing, and then the routine uses the same approach as the PIXEL
-\ routine in the main game code, except it plots a single pixel from TWOS
-\ instead of a two pixel dash from TWOS2. This applies to the top part of the
-\ screen (the space view).
+\ Draw a pixel at screen coordinate (X + 128, A + 128). The routine uses the
+\ same approach as the PIXEL routine in the main game code, except it plots a
+\ single pixel from TWOS instead of a two pixel dash from TWOS2. This applies
+\ to the top part of the screen (the space view).
 \
 \ See the PIXEL routine in the main game code for more details.
 \
@@ -1531,9 +1539,13 @@ ENDMACRO
 \
 \ Arguments:
 \
-\   X                   The screen x-coordinate of the pixel to draw
+\   X                   The signed screen x-coordinate of the pixel to draw,
+\                       from -128 to 127, to be plotted relative to the origin
+\                       at (128, 128)
 \
-\   A                   The screen y-coordinate of the pixel to draw, negated
+\   A                   The signed screen y-coordinate of the pixel to draw,
+\                       from -128 to 127, to be plotted relative to the origin
+\                       at (128, 128)
 \
 \ ------------------------------------------------------------------------------
 \
@@ -1550,7 +1562,8 @@ ENDMACRO
 
  TAY                    \ Copy A into Y, for use later
 
- EOR #%10000000         \ Flip the sign of A
+ EOR #%10000000         \ Add 128 to A and treat this as an unsigned number from
+                        \ now on
 
  CMP #248               \ If the y-coordinate in A >= 248, then this is the
  BCS PIX-1              \ bottom row of the screen, which we want to leave blank
@@ -1880,7 +1893,7 @@ ENDMACRO
 
  Q% = P% - LE%
 
- ORG LE%
+ ORG LE%                \ Set the assembly address to LE%
 
 \ ******************************************************************************
 \
