@@ -662,6 +662,15 @@ ENDIF
 
  NOP                    \ Marks the end of the VDU block
 
+                        \ --- Mod: Code added for Econet: --------------------->
+
+ LDX #&90               \ Call OSBYTE with A = 129, X = 144 and Y = 1 to scan
+ LDY #1                 \ the keyboard for &190 centiseconds (4 seconds)
+ LDA #129
+ JSR OSBYTE
+
+                        \ --- End of added code ------------------------------->
+
  RTS                    \ Return from the PROT1 subroutine
 
 .jsr6
