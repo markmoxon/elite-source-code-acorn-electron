@@ -91,13 +91,13 @@ all:
 	$(PYTHON) 2-build-files/elite-checksum.py $(unencrypt) -rel$(variant-number)
 ifeq ($(disc), no)
   ifeq ($(OS), Windows_NT)
-	copy /b /y versions\electron\1-source-files\basic-programs\ELITE-cassette.bin + versions\electron\3-assembled-output\SCREEN.bin versions\electron\3-assembled-output\ELITE-cassette.bin
+	copy /b /y 1-source-files\basic-programs\ELITE-cassette.bin + 3-assembled-output\SCREEN.bin 3-assembled-output\ELITE-cassette.bin
   else
 	cat 1-source-files/basic-programs/ELITE-cassette.bin 3-assembled-output/SCREEN.bin > 3-assembled-output/ELITE-cassette.bin
   endif
 else
   ifeq ($(OS), Windows_NT)
-	copy /b /y versions\electron\1-source-files\basic-programs\ELITE-disc.bin + versions\electron\3-assembled-output\SCREEN.bin versions\electron\3-assembled-output\ELITE-disc.bin
+	copy /b /y 1-source-files\basic-programs\ELITE-disc.bin + 3-assembled-output\SCREEN.bin 3-assembled-output\ELITE-disc.bin
   else
 	cat 1-source-files/basic-programs/ELITE-disc.bin 3-assembled-output/SCREEN.bin > 3-assembled-output/ELITE-disc.bin
   endif
