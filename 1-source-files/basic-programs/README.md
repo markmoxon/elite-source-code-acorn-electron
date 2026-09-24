@@ -14,6 +14,8 @@ This folder contains the BASIC programs from the original game disc for the Elec
 
 * [ELITE-econet.bin](ELITE-econet.bin) is the tokenised version of the BASIC source and is the one that's used in the build process; this version does not include a blank window
 
+* [load-rom.bas](load-rom.bas) is the sideways RAM detector and loader
+
 By default the disc version is included in the build, but this can be changed using the disc=no build option.
 
 ---
