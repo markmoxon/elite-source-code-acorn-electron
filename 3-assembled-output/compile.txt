@@ -30097,9 +30097,9 @@ Saving file '3-assembled-output/ELITEDA.bin'
      1245   E2 00
      1247   E9 00
      1249   1F 01
-     124B   32 01
-     124D   3D 01
-     124F   46 01
+     124B   3E 01
+     124D   49 01
+     124F   52 01
      1251
 .LOADSCR
      125D   A5 71      LDA &71
@@ -30148,7 +30148,7 @@ Saving file '3-assembled-output/ELITEDA.bin'
      12AA   A9 07      LDA #&07
      12AC   20 EE FF   JSR &FFEE
 .jsr1
-     12AF   20 90 01   JSR &0190
+     12AF   20 9C 01   JSR &019C
      12B2   17
      12B3   00
      12B4   0A
@@ -30163,11 +30163,11 @@ Saving file '3-assembled-output/ELITEDA.bin'
      12BD   A9 91      LDA #&91
      12BF   85 76      STA &76
 .jsr2
-     12C1   20 3C 01   JSR &013C
+     12C1   20 48 01   JSR &0148
      12C4   24 70      BIT &70
      12C6   30 36      BMI &12FE
 .jsr3
-     12C8   20 90 01   JSR &0190
+     12C8   20 9C 01   JSR &019C
      12CB   1C
      12CC   0F
      12CD   0D
@@ -30212,96 +30212,97 @@ Saving file '3-assembled-output/ELITEDA.bin'
      12FC   EA         NOP
      12FD   60         RTS
 .jsr4
-     12FE   20 90 01   JSR &0190
+     12FE   20 9C 01   JSR &019C
      1301   1C
-     1302   0F
+     1302   09
      1303   0C
-     1304   17
+     1304   1D
      1305   0A
      1306   0C
      1307   1A
      1308   1F
-     1309   11
+     1309   0B
      130A   0B
      130B   45 4C 49 ...
-     1310   EA         NOP
+     1316   45 63 6F ...
+     131C   EA         NOP
 .jsr5
-     1311   20 90 01   JSR &0190
-     1314   1C
-     1315   0A
-     1316   16
-     1317   1E
-     1318   14
-     1319   00
-     131A   EA         NOP
-     131B   60         RTS
+     131D   20 9C 01   JSR &019C
+     1320   1C
+     1321   0A
+     1322   16
+     1323   1E
+     1324   14
+     1325   00
+     1326   EA         NOP
+     1327   60         RTS
 .jsr6
-     131C   20 45 01   JSR &0145
-     131F   20 E7 FF   JSR &FFE7
-     1322   20 E7 FF   JSR &FFE7
+     1328   20 51 01   JSR &0151
+     132B   20 E7 FF   JSR &FFE7
+     132E   20 E7 FF   JSR &FFE7
 .jsr7
-     1325   20 4B 01   JSR &014B
-     1328   20 E7 FF   JSR &FFE7
+     1331   20 57 01   JSR &0157
+     1334   20 E7 FF   JSR &FFE7
 .LOGOS
-     132B   A0 1C      LDY #&1C
+     1337   A0 1C      LDY #&1C
 .aloop
-     132D   A2 26      LDX #&26
-     132F   24 70      BIT &70
-     1331   30 0D      BMI &1340
-     1333   A5 76      LDA &76
-     1335   20 EE FF   JSR &FFEE
-     1338   A9 9A      LDA #&9A
-     133A   20 EE FF   JSR &FFEE
-     133D   18         CLC
-     133E   90 05      BCC &1345
+     1339   A2 26      LDX #&26
+     133B   24 70      BIT &70
+     133D   30 0D      BMI &134C
+     133F   A5 76      LDA &76
+     1341   20 EE FF   JSR &FFEE
+     1344   A9 9A      LDA #&9A
+     1346   20 EE FF   JSR &FFEE
+     1349   18         CLC
+     134A   90 05      BCC &1351
 .eskip1
-     1340   A9 20      LDA #&20
-     1342   20 EE FF   JSR &FFEE
+     134C   A9 20      LDA #&20
+     134E   20 EE FF   JSR &FFEE
 .cloop
-     1345   B1 71      LDA (&71),Y
-     1347   24 70      BIT &70
-     1349   30 09      BMI &1354
-     134B   84 73      STY &73
-     134D   A8         TAY
-     134E   B1 71      LDA (&71),Y
-     1350   A4 73      LDY &73
-     1352   D0 02      BNE &1356
+     1351   B1 71      LDA (&71),Y
+     1353   24 70      BIT &70
+     1355   30 09      BMI &1360
+     1357   84 73      STY &73
+     1359   A8         TAY
+     135A   B1 71      LDA (&71),Y
+     135C   A4 73      LDY &73
+     135E   D0 02      BNE &1362
 .eskip2
-     1354   09 E0      ORA #&E0
-     1356   20 EE FF   JSR &FFEE
-     1359   C8         INY
-     135A   C0 FF      CPY #&FF
-     135C   F0 0F      BEQ &136D
-     135E   CA         DEX
-     135F   D0 E4      BNE &1345
-     1361   24 70      BIT &70
-     1363   10 05      BPL &136A
-     1365   A9 20      LDA #&20
-     1367   20 EE FF   JSR &FFEE
-     136A   18         CLC
-     136B   90 C0      BCC &132D
+     1360   09 E0      ORA #&E0
+     1362   20 EE FF   JSR &FFEE
+     1365   C8         INY
+     1366   C0 FF      CPY #&FF
+     1368   F0 0F      BEQ &1379
+     136A   CA         DEX
+     136B   D0 E4      BNE &1351
+     136D   24 70      BIT &70
+     136F   10 05      BPL &1376
+     1371   A9 20      LDA #&20
+     1373   20 EE FF   JSR &FFEE
+     1376   18         CLC
+     1377   90 C0      BCC &1339
 .adone
-     136D   E6 76      INC &76
-     136F   60         RTS
+     1379   E6 76      INC &76
+     137B   60         RTS
 .prstr
-     1370   68         PLA
-     1371   85 74      STA &74
-     1373   68         PLA
-     1374   85 75      STA &75
+     137C   68         PLA
+     137D   85 74      STA &74
+     137F   68         PLA
+     1380   85 75      STA &75
 .p1
-     1376   E6 74      INC &74
-     1378   D0 02      BNE &137C
-     137A   E6 75      INC &75
-     137C   A0 00      LDY #&00
-     137E   B1 74      LDA (&74),Y
-     1380   C9 EA      CMP #&EA
-     1382   F0 06      BEQ &138A
-     1384   20 EE FF   JSR &FFEE
-     1387   18         CLC
-     1388   90 EC      BCC &1376
+     1382   E6 74      INC &74
+     1384   D0 02      BNE &1388
+     1386   E6 75      INC &75
+     1388   A0 00      LDY #&00
+     138A   B1 74      LDA (&74),Y
+     138C   C9 EA      CMP #&EA
+     138E   F0 06      BEQ &1396
+     1390   20 EE FF   JSR &FFEE
+     1393   18         CLC
+     1394   90 EC      BCC &1382
 .p2
-     138A   6C 74 00   JMP (&0074)
-S.SCREEN &1000  &138D  &1000  &1000 
+     1396   6C 74 00   JMP (&0074)
+S.SCREEN &1000  &1399  &1000  &1000 
 Saving file '3-assembled-output/SCREEN.bin'
 .readme
      0000   0A

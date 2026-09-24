@@ -586,22 +586,48 @@
                         \ address is modified by the code above that adds PROT1
                         \ to the address)
 
+                        \ --- Mod: Code removed for Econet: ------------------->
+
+\EQUB 28                \ Define a text window as follows:
+\EQUB 15, 12, 23, 10    \
+\                       \   * Left = 15
+\                       \   * Right = 23
+\                       \   * Top = 10
+\                       \   * Bottom = 12
+\                       \
+\                       \ i.e. 2 rows high, 8 columns wide at (15, 10)
+
+                        \ --- And replaced by: -------------------------------->
+
  EQUB 28                \ Define a text window as follows:
- EQUB 15, 12, 23, 10    \
-                        \   * Left = 15
-                        \   * Right = 23
+ EQUB 9, 12, 29, 10     \
+                        \   * Left = 9
+                        \   * Right = 29
                         \   * Top = 10
                         \   * Bottom = 12
                         \
-                        \ i.e. 2 rows high, 8 columns wide at (15, 10)
+                        \ i.e. 2 rows high, 20 columns wide at (9, 10)
+
+                        \ --- End of replacement ------------------------------>
 
  EQUB 12                \ Clear text area
 
  EQUB 26                \ Restore default windows
 
- EQUB 31, 17, 11        \ Move text cursor to (17, 11)
+                        \ --- Mod: Code removed for Econet: ------------------->
 
- EQUS "ELITE"           \ The game name
+\EQUB 31, 17, 11        \ Move text cursor to (17, 11)
+\
+\EQUS "ELITE"           \ The game name
+
+                        \ --- And replaced by: -------------------------------->
+
+ EQUB 31, 11, 11        \ Move text cursor to (11, 11)
+
+ EQUS "ELITE over "     \ The game name
+ EQUS "Econet"
+
+                        \ --- End of replacement ------------------------------>
 
  NOP                    \ Marks the end of the VDU block
 
