@@ -8,7 +8,7 @@ This folder contains the BASIC programs from the original game disc for the Elec
 
 * [ELITE-disc.bas](ELITE-disc.bas) is the BASIC loader program for the disc version, which has the binary mode 7 screen appended in order to create the final hybrid BASIC/machine code loader program; this file is not used in the build process and is included for reference
 
-* [ELITE-disc.bin](ELITE-disc.bin) is the tokenised version of the BASIC source and is the one that's used in the build process; this version does not a blank window
+* [ELITE-disc.bin](ELITE-disc.bin) is the tokenised version of the BASIC source and is the one that's used in the build process; this version does not include a blank window
 
 By default the disc version is included in the build, but this can be changed using the disc=no build option.
 
