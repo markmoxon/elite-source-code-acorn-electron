@@ -38,7 +38,7 @@
 
  PUTFILE "1-source-files/boot-files/$.!BOOT.bin", "!BOOT", &FFFFFF, &FFFFFF
  PUTBASIC "1-source-files/basic-programs/load-rom.bas", "ELITEC"
- PUTFILE "1-source-files/basic-programs/$.ELITE-disc.bin", "ELITEC2", &FF0E00, &FF8023
+ PUTFILE "3-assembled-output/ELITE-compendium.bin", "ELITEC2", &FF0E00, &FF8023
  PUTFILE "3-assembled-output/ELITEDA.bin", "ELITECD", &FF4400, &FF5200
  PUTFILE "3-assembled-output/ELTROM1.bin", "ELITER1", &FF8000, &FF8000
  PUTFILE "3-assembled-output/ELTROM2.bin", "ELITER2", &FFA000, &FFA000
